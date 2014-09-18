@@ -1649,6 +1649,7 @@ k_status analyse_path(char* path, ppath_t ret)
 		//The path begins from root directory
 	}
 
+	
 	pm_set_errno(ESUCCESS);
 	return ESUCCESS;
 }
