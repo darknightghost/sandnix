@@ -66,10 +66,10 @@
 #define	S_IXOTH	0x00000001		//Others has execute permission
 
 //Access modes
-#define	F_OK	0x00000000		//Read
+#define	F_OK	0x00000000		//Exist
 #define	X_OK	0x00000001		//Execute
 #define	W_OK	0x00000002		//Write
-#define	R_OK	0x00000004		//Exist
+#define	R_OK	0x00000004		//Read
 
 //Seek
 #define	SEEK_SET	0x00000000

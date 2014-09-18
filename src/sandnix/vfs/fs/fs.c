@@ -115,8 +115,8 @@ void fs_init()
 	//Mount ramdisk as root filesytem
 	dbg_print("Mounting ramdisk...\n");
 	root_mount_point.fs_dev = initrd_fs;
-	root_mount_point.volume_dev = initrd_volume;
-	root_mount_point.path.volume_dev = initrd_volume;
+	root_mount_point.p_mount_point = &root_mount_point;
+	root_mount_point.path.p_mount_point = NULL;
 	root_mount_point.path.path = "";
 	root_mount_point.uid = 0;
 	root_mount_point.gid = 0;
@@ -131,7 +131,7 @@ void fs_init()
 	    process_id = rtl_array_list_get_next_index(&file_desc_info_table,
 	                 process_id + 1)) {
 		p_proc_fd_info = rtl_array_list_get(&file_desc_info_table, process_id);
-		p_proc_fd_info->root.volume_dev = initrd_volume;
+		p_proc_fd_info->root.p_mount_point = root_mount_point;
 		p_proc_fd_info->root.path = mm_hp_alloc(1, NULL);
 
 		if(p_proc_fd_info->root.path == NULL) {
@@ -140,7 +140,7 @@ void fs_init()
 
 		*(p_proc_fd_info->root.path) = '\0';
 
-		p_proc_fd_info->pwd.volume_dev = initrd_volume;
+		p_proc_fd_info->pwd.p_mount_point = &root_mount_point;
 		p_proc_fd_info->pwd.path = mm_hp_alloc(1, NULL);
 
 		if(p_proc_fd_info->pwd.path == NULL) {
@@ -332,7 +332,7 @@ k_status vfs_mount(char* src, char* target,
 	}
 
 	//Create mount point
-	p_mount_point->path.volume_dev = k_path.volume_dev;
+	p_mount_point->path.p_mount_point = k_path.p_mount_point;
 	p_mount_point->path.path = k_path.path;
 	p_mount_point->mode = p_info->mode;
 	p_mount_point->volume_dev = p_info->volume_dev;
@@ -408,7 +408,7 @@ k_status vfs_umount(char* path)
 
 	//Send message
 	status = vfs_send_dev_message(kernel_drv_num,
-	                              k_path.volume_dev,
+	                              k_path.p_mount_point->volume_dev,
 	                              p_msg,
 	                              &send_result,
 	                              &complete_result);
@@ -450,6 +450,14 @@ k_status vfs_chroot(char* path)
 	pvfs_proc_info p_proc_fd_info;
 	path_t k_path;
 
+	//Check if the path exists
+	status = vfs_access(path,F_OK);
+	if(status != ESUCCESS){
+		pm_set_errno(status);
+		return status;
+	}
+	
+	//Change root directory
 	p_proc_fd_info = get_proc_fs_info();
 	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
 	status = analyse_path(path, &k_path);
@@ -461,7 +469,7 @@ k_status vfs_chroot(char* path)
 
 	pm_acqr_mutex(&(p_proc_fd_info->lock), TIMEOUT_BLOCK);
 	mm_hp_free(p_proc_fd_info->root.path, NULL);
-	p_proc_fd_info->root.volume_dev = k_path.volume_dev;
+	p_proc_fd_info->root.p_mount_point = k_path.p_mount_point;
 	p_proc_fd_info->root.path = k_path.path;
 	pm_rls_mutex(&(p_proc_fd_info->lock));
 
@@ -475,6 +483,14 @@ k_status vfs_chdir(char* path)
 	pvfs_proc_info p_proc_fd_info;
 	path_t k_path;
 
+	//Check if the path exists
+	status = vfs_access(path,F_OK);
+	if(status != ESUCCESS){
+		pm_set_errno(status);
+		return status;
+	}
+
+	//Change work directory
 	p_proc_fd_info = get_proc_fs_info();
 	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
 	status = analyse_path(path, &k_path);
@@ -486,7 +502,7 @@ k_status vfs_chdir(char* path)
 
 	pm_acqr_mutex(&(p_proc_fd_info->lock), TIMEOUT_BLOCK);
 	mm_hp_free(p_proc_fd_info->pwd.path, NULL);
-	p_proc_fd_info->pwd.volume_dev = k_path.volume_dev;
+	p_proc_fd_info->pwd.p_mount_point = k_path.p_mount_point;
 	p_proc_fd_info->pwd.path = k_path.path;
 	pm_rls_mutex(&(p_proc_fd_info->lock));
 
@@ -666,7 +682,7 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 
 	//Send message
 	status = vfs_send_dev_message(kernel_drv_num,
-	                              k_path.volume_dev,
+	                              k_path.p_mount_point->volume_dev,
 	                              p_msg,
 	                              &send_result,
 	                              &complete_result);
@@ -838,7 +854,7 @@ k_status vfs_access(char* path, u32 mode)
 
 	//Send message
 	status = vfs_send_dev_message(kernel_drv_num,
-	                              path_info.volume_dev,
+	                              path_info.p_mount_point->volume_dev,
 	                              p_msg,
 	                              &send_result,
 	                              &complete_result);
@@ -1162,7 +1178,7 @@ k_status vfs_stat(char* path, ppmo_t buf)
 
 	//Send message
 	status = vfs_send_file_message(kernel_drv_num,
-	                               k_path.volume_dev,
+	                               k_path.p_mount_point->volume_dev,
 	                               p_msg,
 	                               &msg_state,
 	                               &complete_state);
@@ -1229,7 +1245,7 @@ k_status vfs_remove(char* path)
 
 	//Send message
 	status = vfs_send_dev_message(kernel_drv_num,
-	                              path_info.volume_dev,
+	                              path_info.p_mount_point->volume_dev,
 	                              p_msg,
 	                              &send_result,
 	                              &complete_result);
@@ -1292,7 +1308,7 @@ k_status vfs_mkdir(char* path, u32 mode)
 
 	//Send message
 	status = vfs_send_dev_message(kernel_drv_num,
-	                              path_info.volume_dev,
+	                              path_info.p_mount_point->volume_dev,
 	                              p_msg,
 	                              &send_result,
 	                              &complete_result);
@@ -1637,13 +1653,22 @@ void file_desc_destroy_callback(pfile_desc_t p_fd,
 k_status analyse_path(char* path, ppath_t ret)
 {
 	char* p;
-	stack_t path_stack;
+	list_t path_list;
+	char* name_buf;
+	char* path_buf;
 
 	//Analyse begining directory
-	p = path;
-	path_stack = NULL;
+	if(*path != "/"){
+		//The path begins from current directory
+	}
+	
+	path_list = NULL;
+	
+	//Analyse path
+	for(p = path;)
 
-	if(*p == '/') {
+	//Find mount point
+	if(*path == '/') {
 		//The path begins from current directory
 	} else {
 		//The path begins from root directory

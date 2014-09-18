@@ -25,8 +25,8 @@
 #define	INVALID_FD			0xFFFFFFFF
 
 typedef	struct	_path {
-	u32			volume_dev;
-	char*		path;
+	pmount_point_t	p_mount_point;
+	char*			path;
 } path_t, *ppath_t;
 
 typedef	struct	_vfs_proc_info {
