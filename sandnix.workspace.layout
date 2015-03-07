@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_workspace_layout_file>
-	<ActiveProject path="readme/readme.cbp" />
+	<ActiveProject path="src/sandnix/sandnix.cbp" />
 	<PreferredTarget name="build" />
 </CodeBlocks_workspace_layout_file>
