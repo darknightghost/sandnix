@@ -11,4 +11,4 @@ SOURCES = loader.S
 all : $(TARGET)
 
 $(TARGET) : $(SOURCES)
-	AS $(ASFLAGS) $(SOURCES) -o $(TARGET)
+	AS $(ASFLAGS) loader.S -o $(TARGET)
