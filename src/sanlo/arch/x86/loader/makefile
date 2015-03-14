@@ -1,16 +1,15 @@
 AS = as
+CC = gcc
 ASFLAGS =
+CCFLAGS = 
 
 root_path = ../../../../..
 
-TARGET_DIR = (root_path)/bin/sanlo/x86
+TARGET_DIR = $(root_path)/bin/sanlo/x86
+TARGET = $(TARGET_DIR)/sanlo_x86_loader
 
-TARGET = $(TARGET_DIR)/sandix_kernel_loader_x86
-
-SOURCES = loader.S
-
+AS_SOURCES = loader.S
 OBJS_DIR = $(root_path)/obj/sanlo/x86
-
 OBJS = $(OBJS_DIR)/loader.o
 
 .PHONY : all clean
@@ -18,9 +17,11 @@ OBJS = $(OBJS_DIR)/loader.o
 all : $(TARGET)
 
 $(TARGET) : $(OBJS)
-	ld --oformat binary -N -Ttext 0x7c00 -o $@ $<
+	mkdir -p $(TARGET_DIR)
+	ld --oformat binary -N -Ttext 0x0100 -o $@ $<
 
-$(OBJS) : $(SOURCES)
+$(OBJS) : $(AS_SOURCES)
+	mkdir -p $(OBJS_DIR)
 	$(AS) $(ASFLAGS) -o $@ $<  
 	
 clean :
