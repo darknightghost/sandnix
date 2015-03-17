@@ -13,7 +13,7 @@ BINARYS = $(BOOT_SECTOR) \
 
 IMG = floppy.img
 
-.PHONY : all clean
+.PHONY : all clean delete
 
 all : $(TARGET)
 
@@ -29,5 +29,9 @@ $(BINARYS):
 clean :
 	$(MAKE) -C boot clean
 	$(MAKE) -C loader clean
-	rm $(BINARYS)
+	-rm $(BINARYS)
 
+delete :
+	$(MAKE) -C boot delete
+	$(MAKE) -C loader delete
+	-rm $(TARGET)

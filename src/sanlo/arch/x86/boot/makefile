@@ -6,11 +6,11 @@ root_path = ../../../../..
 TARGET_DIR = $(root_path)/bin/sanlo/x86
 TARGET = $(TARGET_DIR)/sanlo_x86_boot
 
-SOURCES = boot.S
+SOURCES = boot.s
 OBJS_DIR = $(root_path)/obj/sanlo/x86
 OBJS = $(OBJS_DIR)/boot.o
 
-.PHONY : all clean
+.PHONY : all clean delete
 
 all : $(TARGET)
 
@@ -23,4 +23,8 @@ $(OBJS) : $(SOURCES)
 	$(AS) $(ASFLAGS) -o $@ $<  
 	
 clean :
-	rm $(OBJS)
+	-rm $(OBJS)
+	
+delete :
+	-rm $(OBJS)
+	-rm $(TARGET)
