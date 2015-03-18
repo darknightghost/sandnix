@@ -17,4 +17,7 @@
 
 #ifndef	STDOUT_H_INCLUDE
 #define	STDOUT_H_INCLUDE
+
+void		init_stdout();
+
 #endif	//! STDOUT_H_INCLUDE

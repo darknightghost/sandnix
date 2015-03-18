@@ -15,7 +15,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-void	c_entry()
+#include "io/io.h"
+#include "io/stdout.h"
+
+void	c_main()
 {
+	init_stdout()
 	return;
 }

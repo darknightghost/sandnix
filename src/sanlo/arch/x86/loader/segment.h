@@ -14,12 +14,15 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-.section	.text
-.code32
-.global		c_init
 
-c_init:
-	//Initialize stack
-	movl	$0x00000500,%ebp
-	movl	%ebp,%esp
-	call	c_main
+#ifndef	SEGMENT_H_INCLUDE
+#define	SEGMENT_H_INCLUDE
+
+#define	DESCRIPTOR_SIZE			8
+#define	SELECTOR_K_DATA			(1 * DESCRIPTOR_SIZE)
+#define	SELECTOR_K_CODE			(2 * DESCRIPTOR_SIZE)
+#define	SELECTOR_U_DATA			(3 * DESCRIPTOR_SIZE | 3)
+#define	SELECTOR_U_CODE			(4 * DESCRIPTOR_SIZE | 3)
+#define	BASIC_VIDEO_BASE_ADDR	0x000A0000
+
+#endif	//! SEGMENT_H_INCLUDE
