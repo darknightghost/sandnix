@@ -18,6 +18,7 @@
 #ifndef	STRING_H_INCLUDE
 #define	STRING_H_INCLUDE
 
-void			memset(char* addr, size_t size, char value);
+void		memset(void* addr, unsigned long size, unsigned char value);
+void		memcpy(void* dest, void* src, unsigned long len);
 
 #endif	//! STRING_H_INCLUDE

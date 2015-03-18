@@ -22,22 +22,68 @@
 
 #define	CRTC_ADDR_REG		0x03D4
 #define	CRTC_DATA_REG		0x03D5
+#define	CURSOR_POS_H_REG	0x0E
+#define	CURSOR_POS_L_REG	0x0F
 #define	START_ADDR_H_REG	0x0C
 #define	START_ADDR_L_REG	0x0D
 
-void init_stdout()
+static unsigned short current_cursor_line = 0;
+static unsigned short current_cursor_row = 0;
+
+void cls(unsigned char color)
 {
-	memset(BASIC_VIDEO_BASE_ADDR, 0x4000, 0);
-	out_byte(
-		START_ADDR_H_REG,
-		CRTC_ADDR_REG);
-	out_byte(
-		(BASIC_VIDEO_BASE_ADDR >> 8) & 0xFF
-		, CRTC_DATA_REG);
-	out_byte(
-		START_ADDR_L_REG,
-		CRTC_ADDR_REG);
-	out_byte(
-		BASIC_VIDEO_BASE_ADDR & 0xFF
-		, CRTC_DATA_REG);
+	unsigned long size;
+	size = DEFAULT_STDOUT_WIDTH * DEFAULT_STDOUT_HEIGHT;
+	__asm__ __volatile__(
+		"cld\n\t"
+		"movl		%2,%%edi\n\t"
+		"movl		%0,%%ecx\n\t"
+		"movb		%1,%%ah\n\t"
+		"movb		$0x20,%%al\n\t"
+		"rep		stosw"
+		::"m"(size), "m"(color), "i"(BASIC_VIDEO_BASE_ADDR));
+	current_cursor_line = 0;
+	current_cursor_row = 0;
+	set_cursor_pos(0, 0);
+	return;
 }
+
+
+void print_string(char* str, unsigned char color)
+{
+	return;
+}
+
+void set_cursor_pos(unsigned short line, unsigned short row)
+{
+	unsigned short pos;
+
+	if(line >= DEFAULT_STDOUT_HEIGHT
+	   || row >= DEFAULT_STDOUT_WIDTH) {
+		return;
+	}
+
+	pos = line * DEFAULT_STDOUT_WIDTH + row;
+	current_cursor_line = line;
+	current_cursor_row = row;
+	//Disable interruptions
+	__asm__ __volatile__(
+		"pushfd\n\t"
+		"cli\n\t");
+	out_byte(CRTC_ADDR_REG, CURSOR_POS_H_REG);
+	out_byte(CRTC_DATA_REG, (pos >> 8) & 0xFF);
+	out_byte(CRTC_ADDR_REG, CURSOR_POS_L_REG);
+	out_byte(CRTC_DATA_REG, pos & 0xFF);
+	__asm__ __volatile__(
+		"popfd\n\t");
+	return;
+}
+
+//Write video buf
+void		write_video_buf(
+	unsigned short* p_data,		//Data to write
+	unsigned long size,			//How mant bytes to write
+	//start position
+	unsigned short line,
+	unsigned short row);
+

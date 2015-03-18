@@ -20,6 +20,9 @@
 
 void	c_main()
 {
-	init_stdout()
+	cls();
+
+	while(1);
+
 	return;
 }

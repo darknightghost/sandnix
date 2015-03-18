@@ -83,6 +83,8 @@ descriptor_user_data:
 SEGMENT_DESCRIPTOR	0,				0xFFFFF,			DA_DRW | DA_DPL3 | DA_32
 descriptor_user_code:
 SEGMENT_DESCRIPTOR	0,				0xFFFFF,			DA_CR | DA_DPL3 | DA_32
+descriptor_basic_video:
+SEGMENT_DESCRIPTOR	0x0B8000,		0xFFFFF,			DA_DRW | DA_DPL0 | DA_32
 gdt_end:
 
 gdtr_value:
@@ -273,5 +275,6 @@ protect_mode_entry:
 	movw	%ax,%ss
 	movw	%ax,%es
 	movw	%ax,%fs
+	movw	$SELECTOR_BASIC_VIDEO,%ax
 	movw	%ax,%gs
 	jmp		c_init
