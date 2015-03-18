@@ -18,8 +18,26 @@
 #include "stdout.h"
 #include "io.h"
 #include "../segment.h"
+#include "../string/string.h"
+
+#define	CRTC_ADDR_REG		0x03D4
+#define	CRTC_DATA_REG		0x03D5
+#define	START_ADDR_H_REG	0x0C
+#define	START_ADDR_L_REG	0x0D
 
 void init_stdout()
 {
+	memset(BASIC_VIDEO_BASE_ADDR, 0x4000, 0);
 	out_byte(
+		START_ADDR_H_REG,
+		CRTC_ADDR_REG);
+	out_byte(
+		(BASIC_VIDEO_BASE_ADDR >> 8) & 0xFF
+		, CRTC_DATA_REG);
+	out_byte(
+		START_ADDR_L_REG,
+		CRTC_ADDR_REG);
+	out_byte(
+		BASIC_VIDEO_BASE_ADDR & 0xFF
+		, CRTC_DATA_REG);
 }

@@ -11,6 +11,7 @@ TARGET = $(TARGET_DIR)/sanlo_x86_loader
 SOURCES = loader.s \
 			c_init.s \
 			main.c	\
+			string/string.c \
 			io/io.c \
 			io/stdout.c
 
