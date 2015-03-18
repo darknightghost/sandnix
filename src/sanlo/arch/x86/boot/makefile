@@ -8,9 +8,9 @@ root_path = ../../../../..
 TARGET_DIR = $(root_path)/bin/sanlo/x86
 TARGET = $(TARGET_DIR)/sanlo_x86_boot
 
-OBJS_DIR = $(root_path)/obj/sanlo/x86/boot
-
 SOURCES = boot.s
+
+OBJS_DIR = $(root_path)/obj/sanlo/x86/boot
 
 OBJS = $(foreach filename,\
 		$(SOURCES),\
@@ -21,11 +21,9 @@ OBJS = $(foreach filename,\
 all : $(TARGET)
 
 $(TARGET) : $(OBJS) $(TARGET_DIR)
-	mkdir -p $(TARGET_DIR)
 	ld --oformat binary -m elf_i386 -N -Ttext 0x0000 -o $(TARGET) $(OBJS)
 
 $(OBJS) : $(SOURCES) $(OBJS_DIR)
-	mkdir -p $(OBJS_DIR)
 	$(foreach filename,$(SOURCES),\
 		$(if $(filter .c,$(suffix $(filename))),\
 			$(shell \
@@ -40,7 +38,6 @@ $(OBJS) : $(SOURCES) $(OBJS_DIR)
 			$(AS) $(ASFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(filename))\
 		)\
 	)
-
 $(TARGET_DIR) :
 	mkdir -p $(TARGET_DIR)
 	
