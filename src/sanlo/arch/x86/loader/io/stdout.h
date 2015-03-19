@@ -22,21 +22,21 @@
 #define	DEFAULT_STDOUT_HEIGHT	25
 
 //Colors
-#define	BC_BLACK			0x00
-#define	FC_BLACK			0x00
-#define	BC_WHITE			0x70
-#define	FC_BRIGHT_WHITE		0x0F
+#define	BG_BLACK			0x00
+#define	FG_BLACK			0x00
+#define	BG_WHITE			0x70
+#define	FG_BRIGHT_WHITE		0x0F
 
 //Clear screen
 void		cls();
 
 //Print string
-void		print_string(char* str, unsigned char color);
+void		print_string(char* str, unsigned char color,unsigned char bg_color);
 
 //Set cursor position
 void		set_cursor_pos(unsigned short line, unsigned short row);
 
-//Write video buf
+//Write video buffer
 void		write_video_buf(
 	unsigned short* p_data,		//Data to write
 	unsigned long size,			//How mant bytes to write

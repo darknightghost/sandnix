@@ -21,7 +21,10 @@
 void	c_main()
 {
 	cls();
-
+	print_string(
+		"Protect mode entered.\nSearching for sanlo.cfg...\n",
+		FG_BRIGHT_WHITE|BG_BLACK,
+		BG_BLACK);
 	while(1);
 
 	return;

@@ -13,7 +13,8 @@ SOURCES = loader.s \
 			main.c	\
 			string/string.c \
 			io/io.c \
-			io/stdout.c
+			io/stdout.c \
+			memory/memory.c
 
 OBJS_DIR = $(root_path)/obj/sanlo/x86/loader
 
