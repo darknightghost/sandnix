@@ -18,12 +18,14 @@
 #ifndef	IO_H_INCLUDE
 #define	IO_H_INCLUDE
 
+#include "../types.h"
+
 //Read port
-unsigned char	in_byte(unsigned short port);
-unsigned short	in_word(unsigned short port);
+u8		in_byte(u16 port);
+u16		in_word(u16 port);
 
 //Write port
-void			out_byte(unsigned char data, unsigned short port);
-void			out_word(unsigned short data, unsigned short port);
+void	out_byte(u8 data, u16 port);
+void	out_word(u16 data, u16 port);
 
 #endif	//! IO_H_INCLUDE

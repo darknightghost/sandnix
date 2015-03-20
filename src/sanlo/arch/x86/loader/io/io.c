@@ -18,9 +18,9 @@
 #include "io.h"
 
 //Read port
-unsigned char in_byte(unsigned short port)
+u8 in_byte(u16 port)
 {
-	unsigned char data;
+	u8 data;
 	__asm__ __volatile__(
 		"movw		%1,%%dx\n\t"
 		"inb		%%dx,%%al\n\t"
@@ -29,9 +29,9 @@ unsigned char in_byte(unsigned short port)
 	return data;
 }
 
-unsigned short in_word(unsigned short port)
+u16 in_word(u16 port)
 {
-	unsigned short data;
+	u16 data;
 	__asm__ __volatile__(
 		"movw		%1,%%dx\n\t"
 		"inw		%%dx,%%ax\n\t"
@@ -41,7 +41,7 @@ unsigned short in_word(unsigned short port)
 }
 
 //Write port
-void out_byte(unsigned char data, unsigned short port)
+void out_byte(u8 data, u16 port)
 {
 	__asm__ __volatile__(
 		"movw		%1,%%dx\n\t"
@@ -51,7 +51,7 @@ void out_byte(unsigned char data, unsigned short port)
 	return;
 }
 
-void out_word(unsigned short data, unsigned short port)
+void out_word(u16 data, u16 port)
 {
 	__asm__ __volatile__(
 		"movw		%1,%%dx\n\t"

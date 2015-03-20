@@ -18,7 +18,24 @@
 #ifndef	MEMORY_H_INCLUDE
 #define	MEMORY_H_INCLUDE
 
-void*		malloc(unsigned long size);
+#include "../types.h"
+
+#define	HEAP_BASE		(void*)0x00040000
+#define	HEAP_SIZE		0x50000
+
+typedef struct _mem_block_head {
+	struct _mem_block_head*		p_prev;
+	struct _mem_block_head*		p_next;
+	void*						start_addr;
+	int							allocated_flag;
+	size_t						size;
+} mem_block_head, *pmem_block_head;
+
+//Initialize heap
+void		heap_init();
+//Allocate memory
+void*		malloc(size_t size);
+//Free memory
 void		free(void* addr);
 
 #endif	//! MEMORY_H_INCLUDE

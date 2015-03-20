@@ -17,14 +17,16 @@
 
 #include "io/io.h"
 #include "io/stdout.h"
+#include "exception/exception.h"
 
 void	c_main()
 {
-	cls();
+	cls(BG_BLACK | FG_BRIGHT_WHITE);
 	print_string(
 		"Protect mode entered.\nSearching for sanlo.cfg...\n",
-		FG_BRIGHT_WHITE|BG_BLACK,
+		FG_BRIGHT_WHITE | BG_BLACK,
 		BG_BLACK);
+
 	while(1);
 
 	return;

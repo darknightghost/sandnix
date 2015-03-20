@@ -18,7 +18,9 @@
 #ifndef	STRING_H_INCLUDE
 #define	STRING_H_INCLUDE
 
-void		memset(void* addr, unsigned long size, unsigned char value);
-void		memcpy(void* dest, void* src, unsigned long len);
+#include "../types.h"
+
+void		memset(void* addr, size_t size, u8 value);
+void		memcpy(void* dest, void* src, size_t len);
 
 #endif	//! STRING_H_INCLUDE

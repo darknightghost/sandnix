@@ -23,3 +23,6 @@ c_init:
 	movl	$0x00000500,%ebp
 	movl	%ebp,%esp
 	call	c_main
+	//Reboot
+	movb	$0xFE,%al
+	outb	%al,$0x64

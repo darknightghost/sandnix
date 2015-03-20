@@ -1,7 +1,7 @@
 AS = as
 CC = gcc
 ASFLAGS = --32
-CCFLAGS = -m32 -nostdlib -fno-builtin -c
+CCFLAGS = -std=c99 -m32 -nostdlib -fno-builtin -c
 
 root_path = ../../../../..
 
@@ -14,7 +14,8 @@ SOURCES = loader.s \
 			string/string.c \
 			io/io.c \
 			io/stdout.c \
-			memory/memory.c
+			memory/memory.c \
+			exception/exception.c
 
 OBJS_DIR = $(root_path)/obj/sanlo/x86/loader
 

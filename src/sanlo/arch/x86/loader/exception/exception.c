@@ -15,38 +15,32 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	STDOUT_H_INCLUDE
-#define	STDOUT_H_INCLUDE
+#include "exception.h"
 
-#include "../types.h"
+#include "../io/stdout.h"
 
-#define	DEFAULT_STDOUT_WIDTH	80
-#define	DEFAULT_STDOUT_HEIGHT	25
+char*	exception_table[] = {
+	"UNKNOW EXCEPTION OCCURED",
+	"HEAP CORRUPTION DETECTED"
+};
 
-//Colors
-#define	BG_BLACK			0x00
-#define	BG_RED				0x40
-#define	BG_WHITE			0x70
-#define	FG_BLACK			0x00
-#define	FG_BRIGHT_RED		0x0C
-#define	FG_BRIGHT_WHITE		0x0F
+void panic(u32 reason)
+{
+	cls(BG_BLACK | FG_BRIGHT_RED);
+	print_string(
+		"Function panic() has been called.\n",
+		BG_BLACK | FG_BRIGHT_RED,
+		BG_BLACK);
+	print_string(
+		exception_table[reason],
+		BG_BLACK | FG_BRIGHT_RED,
+		BG_BLACK);
+	print_string(
+		"\nAn unhandled exception has been occured,please restart your computer.\n",
+		BG_BLACK | FG_BRIGHT_RED,
+		BG_BLACK);
 
-//Clear screen
-void		cls(u8 color);
+	while(1);
 
-//Print string
-void		print_string(char* str, u8 color, u8 bg_color);
-
-//Set cursor position
-void		set_cursor_pos(u16 line, u16 row);
-
-//Write video buffer
-void		write_video_buf(
-	u16* p_data,				//Data to write
-	size_t size,				//How mant bytes to write
-	//start position
-	u16 line,
-	u16 row);
-
-
-#endif	//! STDOUT_H_INCLUDE
+	return;
+}

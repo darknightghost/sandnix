@@ -17,7 +17,7 @@
 
 #include "string.h"
 
-void memset(void* addr, unsigned long size, unsigned char value)
+void memset(void* addr, size_t size, u8 value)
 {
 	__asm__ __volatile__(
 		"cld\n\t"
@@ -29,7 +29,7 @@ void memset(void* addr, unsigned long size, unsigned char value)
 	return;
 }
 
-void memcpy(void* dest, void* src, unsigned long len)
+void memcpy(void* dest, void* src, size_t len)
 {
 	__asm__ __volatile__(
 		"cld\n\t"

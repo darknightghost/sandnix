@@ -30,11 +30,11 @@
 static	unsigned short	current_cursor_line = 0;
 static	unsigned short	current_cursor_row = 0;
 
-static	void			scroll_down(unsigned short line,unsigned char color);
+static	void			scroll_down(u16 line, u16 color);
 
-void cls(unsigned char color)
+void cls(u8 color)
 {
-	unsigned long size;
+	size_t size;
 	size = DEFAULT_STDOUT_WIDTH * DEFAULT_STDOUT_HEIGHT;
 	__asm__ __volatile__(
 		"cld\n\t"
@@ -51,48 +51,55 @@ void cls(unsigned char color)
 }
 
 
-void print_string(char* str, unsigned char color,unsigned char bg_color)
+void print_string(char* str, u8 color, u8 bg_color)
 {
 	char* p;
-	unsigned short character;
-	unsigned short p_video_mem;
-	
-	for(p=str;*p!='\0';p++){
-		if(p == '\n'){
+	u16 character;
+	u16* p_video_mem;
+
+	for(p = str; *p != '\0'; p++) {
+		if(*p == '\n') {
 			current_cursor_line++;
-			current_cursor_row=0;
-			if(current_cursor_line>=DEFAULT_STDOUT_HEIGHT){
+			current_cursor_row = 0;
+
+			if(current_cursor_line >= DEFAULT_STDOUT_HEIGHT) {
 				//Scroll down
 				current_cursor_line--;
-				scroll_down(1,bg_color);
+				scroll_down(1, bg_color);
 			}
-			set_cursor_pos(current_cursor_line,current_cursor_row);
-		}else{
+
+			set_cursor_pos(current_cursor_line, current_cursor_row);
+		} else {
 			//Print character
-			character=(unsigned short)color<<8+*p
-			p_video_mem=
-				(unsigned short*)BASIC_VIDEO_BASE_ADDR+current_cursor_line*current_cursor_row;
-			*p_video_mem=character;
+			character = (u16)color << 8 + *p;
+			p_video_mem =
+				(u16*)BASIC_VIDEO_BASE_ADDR
+				+ current_cursor_line * current_cursor_row;
+			*p_video_mem = character;
 			current_cursor_row++;
-			if(current_cursor_row>=DEFAULT_STDOUT_WIDTH){
-				current_cursor_row=0;
+
+			if(current_cursor_row >= DEFAULT_STDOUT_WIDTH) {
+				current_cursor_row = 0;
 				current_cursor_line++;
-				if(current_cursor_line>=DEFAULT_STDOUT_HEIGHT){
+
+				if(current_cursor_line >= DEFAULT_STDOUT_HEIGHT) {
 					//Scroll down
 					current_cursor_line--;
-					scroll_down(1,bg_color);
+					scroll_down(1, bg_color);
 				}
 			}
-			set_cursor_pos(current_cursor_line,current_cursor_row);
+
+			set_cursor_pos(current_cursor_line, current_cursor_row);
 		}
 	}
+
 	return;
 }
 
-void set_cursor_pos(unsigned short line, unsigned short row)
+void set_cursor_pos(u16 line, u16 row)
 {
-	unsigned short pos;
-	
+	u16 pos;
+
 	//Check the range of position
 	if(line >= DEFAULT_STDOUT_HEIGHT
 	   || row >= DEFAULT_STDOUT_WIDTH) {
@@ -104,70 +111,71 @@ void set_cursor_pos(unsigned short line, unsigned short row)
 	current_cursor_row = row;
 	//Disable interruptions
 	__asm__ __volatile__(
-		"pushfd\n\t"
+		"pushf\n\t"
 		"cli\n\t");
-	out_byte(CRTC_ADDR_REG, CURSOR_POS_H_REG);
-	out_byte(CRTC_DATA_REG, (pos >> 8) & 0xFF);
-	out_byte(CRTC_ADDR_REG, CURSOR_POS_L_REG);
-	out_byte(CRTC_DATA_REG, pos & 0xFF);
+	out_byte((u8)CURSOR_POS_H_REG, (u16)CRTC_ADDR_REG);
+	out_byte((u8)((pos >> 8) & 0xFF), (u16)CRTC_DATA_REG);
+	out_byte((u8)CURSOR_POS_L_REG, (u16)CRTC_ADDR_REG);
+	out_byte((u8)(pos & 0xFF), (u16)CRTC_DATA_REG);
 	__asm__ __volatile__(
-		"popfd\n\t");
+		"popf\n\t");
 	return;
 }
 
-//Write video buf
 void write_video_buf(
-	unsigned short* p_data,		//Data to write
-	unsigned long size,			//How many bytes to write
-	//start position
-	unsigned short line,
-	unsigned short row)
+	u16* p_data,
+	size_t size,
+	u16 line,
+	u16 row)
 {
-	unsigned short offset;
-	unsigned short* p_dest;
+	u16 offset;
+	u16* p_dest;
 	offset = line * row * 2;
-	
+
 	//Check bound
-	if(offset + size 
-		> DEFAULT_STDOUT_HEIGHT * DEFAULT_STDOUT_WIDTH*2){
+	if(offset + size
+	   > DEFAULT_STDOUT_HEIGHT * DEFAULT_STDOUT_WIDTH * 2) {
 		return;
 	}
-	size = size \ 2 * 2;
-	
+
+	size = (size_t)(size / 2) * 2;
 	//Write buf
-	p_dest = (char*)BASIC_VIDEO_BASE_ADDR + offset;
-	memcpy(p_dest,p_data,size);
+	p_dest = (u16*)((u8*)BASIC_VIDEO_BASE_ADDR + offset);
+	memcpy(p_dest, p_data, size);
 	return;
 }
 
-void scroll_down(unsigned short line,unsigned char color)
+void scroll_down(u16 line, u16 color)
 {
-	unsigned short offset;
-	unsigned short len;
-	
-	if(line >= DEFAULT_STDOUT_HEIGHT){
-		cls();
+	u16 offset;
+	u16 len;
+
+	if(line >= DEFAULT_STDOUT_HEIGHT) {
+		cls(color);
 		return;
 	}
-	
-	offset=(line-1)*DEFAULT_STDOUT_WIDTH*2;
-	len=DEFAULT_STDOUT_HEIGHT * DEFAULT_STDOUT_WIDTH*2-offset;
-	
+
+	offset = (line - 1) * DEFAULT_STDOUT_WIDTH * 2;
+	len = DEFAULT_STDOUT_HEIGHT * DEFAULT_STDOUT_WIDTH * 2 - offset;
 	__asm__ __volatile__(
 		"cld\n\t"
 		"movl		%0,%%edi\n\t"
 		"movl		%0,%%esi\n\t"
-		"movl		%1,eax%%\n\t"
+		"xorl		%%eax,%%eax\n\t"
+		"movw		%1,%%ax\n\t"
 		"addl		%%eax,%%esi\n\t"
-		"movl		%2,%%ecx\n\t"
+		"xorl		%%ecx,%%ecx\n\t"
+		"movw		%2,%%cx\n\t"
 		"rep		movsb\n\t"
 		"movl		%0,%%edi\n\t"
-		"movl		%2,%%eax\n\t"
+		"xorl		%%eax,%%eax\n\t"
+		"movw		%2,%%ax\n\t"
 		"addl		%%eax,%%edi\n\t"
-		"movl		%1,%%ecx\n\t"
+		"xorl		%%ecx,%%ecx\n\t"
+		"movw		%1,%%cx\n\t"
 		"movb		%3,%%ah\n\t"
 		"movb		$0x20,%%al\n\t"
 		"rep		stosb\n\t"
-		::"i"(BASIC_VIDEO_BASE_ADDR),"m"(offset),"m"(len),"m"(color));
+		::"i"(BASIC_VIDEO_BASE_ADDR), "m"(offset), "m"(len), "m"(color));
 	return;
 }

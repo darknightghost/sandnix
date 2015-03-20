@@ -15,38 +15,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	STDOUT_H_INCLUDE
-#define	STDOUT_H_INCLUDE
+#ifndef	EXCEPTION_H_INCLUDE
+#define	EXCEPTION_H_INCLUDE
 
 #include "../types.h"
 
-#define	DEFAULT_STDOUT_WIDTH	80
-#define	DEFAULT_STDOUT_HEIGHT	25
+#define	EXCEPTION_UNKNOW_EXCEPTION		0x00000000
+#define	EXCEPTION_HEAP_CORRUPTION		0x00000001
 
-//Colors
-#define	BG_BLACK			0x00
-#define	BG_RED				0x40
-#define	BG_WHITE			0x70
-#define	FG_BLACK			0x00
-#define	FG_BRIGHT_RED		0x0C
-#define	FG_BRIGHT_WHITE		0x0F
+void		panic(u32 reason);
 
-//Clear screen
-void		cls(u8 color);
-
-//Print string
-void		print_string(char* str, u8 color, u8 bg_color);
-
-//Set cursor position
-void		set_cursor_pos(u16 line, u16 row);
-
-//Write video buffer
-void		write_video_buf(
-	u16* p_data,				//Data to write
-	size_t size,				//How mant bytes to write
-	//start position
-	u16 line,
-	u16 row);
-
-
-#endif	//! STDOUT_H_INCLUDE
+#endif	//! EXCEPTION_H_INCLUDE
