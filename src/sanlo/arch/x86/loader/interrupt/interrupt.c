@@ -22,6 +22,11 @@ void				io_delay();
 
 static void			init_8259A();
 
+void interrupt_init()
+{
+	init_8259A();
+}
+
 void init_8259A()
 {
 	//Master ICW1
@@ -30,4 +35,41 @@ void init_8259A()
 	
 	//Slave	ICW1
 	out_byte(0x11,0xA0);
+	io_delay();
+	
+	//Master ICW2
+	//The interrupt number of IRQ starts from 0x20
+	out_byte(0x20,0x21);
+	io_delay();
+	
+	//Slave ICW2
+	out_byte(0x28,0xA1);
+	io_delay();
+	
+	//Master ICW3
+	out_byte(0x04,0x21);
+	io_delay();
+	
+	//Slave ICW3
+	out_byte(0x02,0xA1);
+	io_delay();
+	
+	//Master ICW4
+	out_byte(0x01,0x21);
+	io_delay();
+	
+	//Slave ICW4
+	out_byte(0x01,0xA1);
+	io_delay();
+	
+	//Master OCW1
+	//Only Keyboard interrupt should be enabled
+	out_byte(0xFD,0x21);	//0xFD=1111 1101
+	io_delay();
+	
+	//Slave OCW1
+	out_byte(0xFF,0x21);
+	io_delay();
+	
+	return;
 }
