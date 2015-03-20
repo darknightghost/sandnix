@@ -1,0 +1,379 @@
+
+Discarded input sections
+
+ .note.GNU-stack
+                0x0000000000000000        0x0 ../../../../../obj/sanlo/x86/loader/main.o
+ .note.GNU-stack
+                0x0000000000000000        0x0 ../../../../../obj/sanlo/x86/loader/string/string.o
+ .note.GNU-stack
+                0x0000000000000000        0x0 ../../../../../obj/sanlo/x86/loader/io/io.o
+ .note.GNU-stack
+                0x0000000000000000        0x0 ../../../../../obj/sanlo/x86/loader/io/stdout.o
+ .note.GNU-stack
+                0x0000000000000000        0x0 ../../../../../obj/sanlo/x86/loader/memory/memory.o
+ .note.GNU-stack
+                0x0000000000000000        0x0 ../../../../../obj/sanlo/x86/loader/exception/exception.o
+
+内存配置
+
+名称           来源             长度             属性
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+段 .text 的地址设置为 0x0
+LOAD ../../../../../obj/sanlo/x86/loader/loader.o
+LOAD ../../../../../obj/sanlo/x86/loader/c_init.o
+LOAD ../../../../../obj/sanlo/x86/loader/main.o
+LOAD ../../../../../obj/sanlo/x86/loader/string/string.o
+LOAD ../../../../../obj/sanlo/x86/loader/io/io.o
+LOAD ../../../../../obj/sanlo/x86/loader/io/stdout.o
+LOAD ../../../../../obj/sanlo/x86/loader/memory/memory.o
+LOAD ../../../../../obj/sanlo/x86/loader/exception/exception.o
+                0x0000000008048000                PROVIDE (__executable_start, 0x8048000)
+                0x0000000008048000                . = (0x8048000 + SIZEOF_HEADERS)
+
+.interp
+ *(.interp)
+
+.note.gnu.build-id
+ *(.note.gnu.build-id)
+
+.hash
+ *(.hash)
+
+.gnu.hash
+ *(.gnu.hash)
+
+.dynsym
+ *(.dynsym)
+
+.dynstr
+ *(.dynstr)
+
+.gnu.version
+ *(.gnu.version)
+
+.gnu.version_d
+ *(.gnu.version_d)
+
+.gnu.version_r
+ *(.gnu.version_r)
+
+.rel.init
+ *(.rel.init)
+
+.rel.text
+ *(.rel.text .rel.text.* .rel.gnu.linkonce.t.*)
+
+.rel.fini
+ *(.rel.fini)
+
+.rel.rodata
+ *(.rel.rodata .rel.rodata.* .rel.gnu.linkonce.r.*)
+
+.rel.data.rel.ro
+ *(.rel.data.rel.ro .rel.data.rel.ro.* .rel.gnu.linkonce.d.rel.ro.*)
+
+.rel.data
+ *(.rel.data .rel.data.* .rel.gnu.linkonce.d.*)
+
+.rel.tdata
+ *(.rel.tdata .rel.tdata.* .rel.gnu.linkonce.td.*)
+
+.rel.tbss
+ *(.rel.tbss .rel.tbss.* .rel.gnu.linkonce.tb.*)
+
+.rel.ctors
+ *(.rel.ctors)
+
+.rel.dtors
+ *(.rel.dtors)
+
+.rel.got
+ *(.rel.got)
+
+.rel.bss
+ *(.rel.bss .rel.bss.* .rel.gnu.linkonce.b.*)
+
+.rel.ifunc
+ *(.rel.ifunc)
+
+.rel.plt        0x0000000008048000        0x0
+ *(.rel.plt)
+                0x0000000008048000                PROVIDE (__rel_iplt_start, .)
+ *(.rel.iplt)
+                0x0000000008048000                PROVIDE (__rel_iplt_end, .)
+
+.init
+ *(SORT(.init))
+
+.plt
+ *(.plt)
+ *(.iplt)
+
+.text           0x0000000000000000      0x929
+ *(.text.unlikely .text.*_unlikely .text.unlikely.*)
+ *(.text.exit .text.exit.*)
+ *(.text.startup .text.startup.*)
+ *(.text.hot .text.hot.*)
+ *(.text .stub .text.* .gnu.linkonce.t.*)
+ .text          0x0000000000000000      0x17d ../../../../../obj/sanlo/x86/loader/loader.o
+                0x0000000000000000                _start
+                0x000000000000009a                print_at_pos
+ .text          0x000000000000017d       0x10 ../../../../../obj/sanlo/x86/loader/c_init.o
+                0x000000000000017d                c_init
+ .text          0x000000000000018d       0x4a ../../../../../obj/sanlo/x86/loader/main.o
+                0x000000000000018d                c_main
+ .text          0x00000000000001d7       0x2d ../../../../../obj/sanlo/x86/loader/string/string.o
+                0x00000000000001d7                memset
+                0x00000000000001f2                memcpy
+ .text          0x0000000000000204       0x77 ../../../../../obj/sanlo/x86/loader/io/io.o
+                0x0000000000000204                in_byte
+                0x000000000000021f                in_word
+                0x000000000000023c                out_byte
+                0x000000000000025a                out_word
+ .text          0x000000000000027b      0x358 ../../../../../obj/sanlo/x86/loader/io/stdout.o
+                0x000000000000027b                cls
+                0x00000000000002c8                print_string
+                0x0000000000000434                set_cursor_pos
+                0x00000000000004e9                write_video_buf
+                0x0000000000000550                scroll_down
+ .text          0x00000000000005d3      0x2e8 ../../../../../obj/sanlo/x86/loader/memory/memory.o
+                0x00000000000005d3                heap_init
+                0x0000000000000614                malloc
+                0x000000000000077e                free
+ .text          0x00000000000008bb       0x6e ../../../../../obj/sanlo/x86/loader/exception/exception.o
+                0x00000000000008bb                panic
+ *(.gnu.warning)
+
+.fini
+ *(SORT(.fini))
+                0x0000000000000929                PROVIDE (__etext, .)
+                0x0000000000000929                PROVIDE (_etext, .)
+                0x0000000000000929                PROVIDE (etext, .)
+
+.rodata         0x000000000000092c       0xa0
+ *(.rodata .rodata.* .gnu.linkonce.r.*)
+ .rodata        0x000000000000092c       0xa0 ../../../../../obj/sanlo/x86/loader/exception/exception.o
+
+.rodata1
+ *(.rodata1)
+
+.eh_frame_hdr
+ *(.eh_frame_hdr)
+
+.eh_frame       0x00000000000009cc      0x288
+ *(.eh_frame)
+ .eh_frame      0x00000000000009cc       0x34 ../../../../../obj/sanlo/x86/loader/main.o
+ .eh_frame      0x0000000000000a00       0x58 ../../../../../obj/sanlo/x86/loader/string/string.o
+ .eh_frame      0x0000000000000a58       0x98 ../../../../../obj/sanlo/x86/loader/io/io.o
+ .eh_frame      0x0000000000000af0       0xb8 ../../../../../obj/sanlo/x86/loader/io/stdout.o
+ .eh_frame      0x0000000000000ba8       0x78 ../../../../../obj/sanlo/x86/loader/memory/memory.o
+ .eh_frame      0x0000000000000c20       0x34 ../../../../../obj/sanlo/x86/loader/exception/exception.o
+
+.gcc_except_table
+ *(.gcc_except_table .gcc_except_table.*)
+
+.exception_ranges
+ *(.exception_ranges .exception_ranges*)
+                0x0000000000000c54                . = .
+
+.eh_frame
+ *(.eh_frame)
+
+.gcc_except_table
+ *(.gcc_except_table .gcc_except_table.*)
+
+.exception_ranges
+ *(.exception_ranges .exception_ranges*)
+
+.tdata
+ *(.tdata .tdata.* .gnu.linkonce.td.*)
+
+.tbss
+ *(.tbss .tbss.* .gnu.linkonce.tb.*)
+ *(.tcommon)
+
+.preinit_array  0x0000000000000c54        0x0
+                0x0000000000000c54                PROVIDE (__preinit_array_start, .)
+ *(.preinit_array)
+                0x0000000000000c54                PROVIDE (__preinit_array_end, .)
+
+.init_array     0x0000000000000c54        0x0
+                0x0000000000000c54                PROVIDE (__init_array_start, .)
+ *(SORT(.init_array.*) SORT(.ctors.*))
+ *(.init_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .ctors)
+                0x0000000000000c54                PROVIDE (__init_array_end, .)
+
+.fini_array     0x0000000000000c54        0x0
+                0x0000000000000c54                PROVIDE (__fini_array_start, .)
+ *(SORT(.fini_array.*) SORT(.dtors.*))
+ *(.fini_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .dtors)
+                0x0000000000000c54                PROVIDE (__fini_array_end, .)
+
+.ctors
+ *crtbegin.o(.ctors)
+ *crtbegin?.o(.ctors)
+ *(EXCLUDE_FILE(*crtend?.o *crtend.o) .ctors)
+ *(SORT(.ctors.*))
+ *(.ctors)
+
+.dtors
+ *crtbegin.o(.dtors)
+ *crtbegin?.o(.dtors)
+ *(EXCLUDE_FILE(*crtend?.o *crtend.o) .dtors)
+ *(SORT(.dtors.*))
+ *(.dtors)
+
+.jcr
+ *(.jcr)
+
+.data.rel.ro
+ *(.data.rel.ro.local* .gnu.linkonce.d.rel.ro.local.*)
+ *(.data.rel.ro .data.rel.ro.* .gnu.linkonce.d.rel.ro.*)
+
+.dynamic
+ *(.dynamic)
+
+.got
+ *(.got)
+ *(.igot)
+
+.got.plt
+ *(.got.plt)
+ *(.igot.plt)
+
+.data           0x0000000000000c54        0x8
+ *(.data .data.* .gnu.linkonce.d.*)
+ .data          0x0000000000000c54        0x0 ../../../../../obj/sanlo/x86/loader/loader.o
+ .data          0x0000000000000c54        0x0 ../../../../../obj/sanlo/x86/loader/c_init.o
+ .data          0x0000000000000c54        0x0 ../../../../../obj/sanlo/x86/loader/main.o
+ .data          0x0000000000000c54        0x0 ../../../../../obj/sanlo/x86/loader/string/string.o
+ .data          0x0000000000000c54        0x0 ../../../../../obj/sanlo/x86/loader/io/io.o
+ .data          0x0000000000000c54        0x0 ../../../../../obj/sanlo/x86/loader/io/stdout.o
+ .data          0x0000000000000c54        0x0 ../../../../../obj/sanlo/x86/loader/memory/memory.o
+ .data          0x0000000000000c54        0x8 ../../../../../obj/sanlo/x86/loader/exception/exception.o
+                0x0000000000000c54                exception_table
+
+.data1
+ *(.data1)
+                0x0000000000000c5c                _edata = .
+                0x0000000000000c5c                PROVIDE (edata, .)
+                0x0000000000000c5c                . = .
+                0x0000000000000c5c                __bss_start = .
+
+.bss            0x0000000000000c5c        0x4
+ *(.dynbss)
+ *(.bss .bss.* .gnu.linkonce.b.*)
+ .bss           0x0000000000000c5c        0x0 ../../../../../obj/sanlo/x86/loader/loader.o
+ .bss           0x0000000000000c5c        0x0 ../../../../../obj/sanlo/x86/loader/c_init.o
+ .bss           0x0000000000000c5c        0x0 ../../../../../obj/sanlo/x86/loader/main.o
+ .bss           0x0000000000000c5c        0x0 ../../../../../obj/sanlo/x86/loader/string/string.o
+ .bss           0x0000000000000c5c        0x0 ../../../../../obj/sanlo/x86/loader/io/io.o
+ .bss           0x0000000000000c5c        0x4 ../../../../../obj/sanlo/x86/loader/io/stdout.o
+ .bss           0x0000000000000c60        0x0 ../../../../../obj/sanlo/x86/loader/memory/memory.o
+ .bss           0x0000000000000c60        0x0 ../../../../../obj/sanlo/x86/loader/exception/exception.o
+ *(COMMON)
+                0x0000000000000c60                . = ALIGN ((. != 0x0)?0x4:0x1)
+                0x0000000000000c60                . = ALIGN (0x4)
+                0x0000000000000c60                . = SEGMENT_START ("ldata-segment", .)
+                0x0000000000000c60                . = ALIGN (0x4)
+                0x0000000000000c60                _end = .
+                0x0000000000000c60                PROVIDE (end, .)
+
+.stab
+ *(.stab)
+
+.stabstr
+ *(.stabstr)
+
+.stab.excl
+ *(.stab.excl)
+
+.stab.exclstr
+ *(.stab.exclstr)
+
+.stab.index
+ *(.stab.index)
+
+.stab.indexstr
+ *(.stab.indexstr)
+
+.comment        0x0000000000000000       0xde
+ *(.comment)
+ .comment       0x0000000000000000       0x25 ../../../../../obj/sanlo/x86/loader/main.o
+ .comment       0x0000000000000025       0x25 ../../../../../obj/sanlo/x86/loader/string/string.o
+ .comment       0x000000000000004a       0x25 ../../../../../obj/sanlo/x86/loader/io/io.o
+ .comment       0x000000000000006f       0x25 ../../../../../obj/sanlo/x86/loader/io/stdout.o
+ .comment       0x0000000000000094       0x25 ../../../../../obj/sanlo/x86/loader/memory/memory.o
+ .comment       0x00000000000000b9       0x25 ../../../../../obj/sanlo/x86/loader/exception/exception.o
+
+.debug
+ *(.debug)
+
+.line
+ *(.line)
+
+.debug_srcinfo
+ *(.debug_srcinfo)
+
+.debug_sfnames
+ *(.debug_sfnames)
+
+.debug_aranges
+ *(.debug_aranges)
+
+.debug_pubnames
+ *(.debug_pubnames)
+
+.debug_info
+ *(.debug_info .gnu.linkonce.wi.*)
+
+.debug_abbrev
+ *(.debug_abbrev)
+
+.debug_line
+ *(.debug_line .debug_line.* .debug_line_end)
+
+.debug_frame
+ *(.debug_frame)
+
+.debug_str
+ *(.debug_str)
+
+.debug_loc
+ *(.debug_loc)
+
+.debug_macinfo
+ *(.debug_macinfo)
+
+.debug_weaknames
+ *(.debug_weaknames)
+
+.debug_funcnames
+ *(.debug_funcnames)
+
+.debug_typenames
+ *(.debug_typenames)
+
+.debug_varnames
+ *(.debug_varnames)
+
+.debug_pubtypes
+ *(.debug_pubtypes)
+
+.debug_ranges
+ *(.debug_ranges)
+
+.debug_macro
+ *(.debug_macro)
+
+.gnu.attributes
+ *(.gnu.attributes)
+
+/DISCARD/
+ *(.note.GNU-stack)
+ *(.gnu_debuglink)
+ *(.gnu.lto_*)
+OUTPUT(../../../../../bin/sanlo/x86/sanlo_x86_loader binary)

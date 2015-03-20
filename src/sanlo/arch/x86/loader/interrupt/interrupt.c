@@ -14,15 +14,20 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-.section	.text
-.code32
-.global		c_init
 
-c_init:
-		//Initialize stack
-		movl	$0x00000500,%ebp
-		movl	%ebp,%esp
-		call	c_main
-		//Reboot
-		movb	$0xFE,%al
-		outb	%al,$0x64
+#include "interrupt.h"
+#include "../io/io.h"
+
+void				io_delay();
+
+static void			init_8259A();
+
+void init_8259A()
+{
+	//Master ICW1
+	out_byte(0x11,0x20);
+	io_delay();
+	
+	//Slave	ICW1
+	out_byte(0x11,0xA0);
+}

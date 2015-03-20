@@ -14,15 +14,18 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+.include	"./segment.inc"
 .section	.text
 .code32
-.global		c_init
 
-c_init:
-		//Initialize stack
-		movl	$0x00000500,%ebp
-		movl	%ebp,%esp
-		call	c_main
-		//Reboot
-		movb	$0xFE,%al
-		outb	%al,$0x64
+.global		io_delay
+
+//------------------------------Functions---------------------------------------
+
+io_delay:
+		nop
+		nop
+		nop
+		nop
+		ret

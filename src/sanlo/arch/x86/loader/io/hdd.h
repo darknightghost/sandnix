@@ -14,15 +14,16 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-.section	.text
-.code32
-.global		c_init
 
-c_init:
-		//Initialize stack
-		movl	$0x00000500,%ebp
-		movl	%ebp,%esp
-		call	c_main
-		//Reboot
-		movb	$0xFE,%al
-		outb	%al,$0x64
+#ifndef	HDD_H_INCLUDE
+#define	HDD_H_INCLUDE
+
+#include "io.h"
+#include "../types.h"
+
+#define	SECTOR_SIZE			512
+
+int		is_hdd_exists(u8 dev);
+u32		hdd_read(u32 start_sector,u32 sector_num,u8* buf);
+
+#endif	//! HDD_H_INCLUDE
