@@ -1,5 +1,5 @@
 /*
-	Copyright 2015,°µÒ¹ÓÄÁé <darknightghost.cn@gmail.com>
+	Copyright 2015,æš—å¤œå¹½çµ <darknightghost.cn@gmail.com>
 
 	This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
