@@ -19,28 +19,17 @@
 #include "io/stdout.h"
 #include "exception/exception.h"
 #include "segment.h"
+#include "interrupt/interrupt.h"
 
 void	c_main()
 {
-	u16 character=0x0C*0x100+'A';
-	u16 offset=2;
 	cls(BG_BLACK | FG_BRIGHT_WHITE);
-	/*print_string(
-		"Protect mode entered.\nSearching for sanlo.cfg...\n",
+	setup_interrupt();
+	print_string(
+		GET_REAL_ADDR("Protect mode entered.\nSearching for sanlo.cfg...\n"),
 		FG_BRIGHT_WHITE | BG_BLACK,
-		BG_BLACK);*/
-	__asm__ __volatile__(
-		"nop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"movzwl		%1,%%ebx\n\t"
-		"movw		%0,%%ax\n\t"
-		"movw		%%ax,%%gs:0x280(%%ebx)"
-		::"m"(character),"m"(offset));
-	scroll_down(3,0x20);
+		BG_BLACK);
+
 	while(1);
 
 	return;

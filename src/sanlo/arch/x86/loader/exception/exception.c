@@ -16,27 +16,43 @@
 */
 
 #include "exception.h"
-
 #include "../io/stdout.h"
 
-char*	exception_table[] = {
-	"UNKNOW EXCEPTION OCCURED",
-	"HEAP CORRUPTION DETECTED"
-};
+#define	SET_EXCEPTION_STR(num,value) {\
+	case (num):\
+		exception_str=GET_REAL_ADDR(value);\
+		break;\
+	}
 
 void panic(u32 reason)
 {
+	char* exception_str;
+
+	switch(reason) {
+		SET_EXCEPTION_STR(0, "EXCEPTION_UNKNOW_EXCEPTION");
+		SET_EXCEPTION_STR(1, "EXCEPTION_HEAP_CORRUPTION");
+
+	default:
+		exception_str = GET_REAL_ADDR("UNKNOW");
+	}
+
 	cls(BG_BLACK | FG_BRIGHT_RED);
 	print_string(
-		"Function panic() has been called.\n",
+		GET_REAL_ADDR("Function panic() has been called.\n\n"),
 		BG_BLACK | FG_BRIGHT_RED,
 		BG_BLACK);
 	print_string(
-		exception_table[reason],
+		exception_str,
 		BG_BLACK | FG_BRIGHT_RED,
 		BG_BLACK);
 	print_string(
-		"\nAn unhandled exception has been occured,please restart your computer.\n",
+		GET_REAL_ADDR(
+			"\n\nThis function is called when an unhandled exception has been occured.\n"),
+		BG_BLACK | FG_BRIGHT_RED,
+		BG_BLACK);
+	print_string(
+		GET_REAL_ADDR(
+			"The Sandnix loader cannot continue running,please restart your computer."),
 		BG_BLACK | FG_BRIGHT_RED,
 		BG_BLACK);
 

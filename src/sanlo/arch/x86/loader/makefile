@@ -16,7 +16,8 @@ SOURCES = loader.s \
 			io/io.c \
 			io/stdout.c \
 			memory/memory.c \
-			exception/exception.c
+			exception/exception.c \
+			interrupt/interrupt.c
 
 OBJS_DIR = $(root_path)/obj/sanlo/x86/loader
 
@@ -29,8 +30,9 @@ OBJS = $(foreach filename,\
 all : $(TARGET)
 
 $(TARGET) : $(OBJS) $(TARGET_DIR)
-	ld --oformat binary -m elf_i386 -N -Ttext 0x0000 -Map $(MAP) -o $(TARGET) $(OBJS)
-
+	#ld --oformat binary -m elf_i386 -N -Ttext 0x0000 -Map $(MAP) -o $(TARGET) $(OBJS)
+	ld -m elf_i386 -Ttext 0x0000 -Map $(MAP) -o $(TARGET).elf $(OBJS)
+	objcopy -R .note -R .comment -S -O binary $(TARGET).elf $(TARGET)
 $(OBJS) : $(SOURCES) $(OBJS_DIR)
 	$(foreach filename,$(SOURCES),\
 		$(if $(filter .c,$(suffix $(filename))),\

@@ -22,21 +22,21 @@
 
 
 #pragma	pack(1)
-typedef	struct	_idt{
+typedef	struct	_idt {
 	u16		offset1;			//0-15 bits of offset
 	u16		selector;			//Selector
-	struct{
-		u16		reserved:5;		//Zero
-		u16		zero:3;			//Zero
-		u16		type:4;			//Interrupt or trap
-		u16		s:1;			//Zero
-		u16		dpl:2;			//Dpl
-		u16		p:1;			//Segment present flag
-	}attr;
+	struct {
+		u16		reserved: 5;		//Zero
+		u16		zero: 3;			//Zero
+		u16		type: 4;			//Interrupt or trap
+		u16		s: 1;			//Zero
+		u16		dpl: 2;			//Dpl
+		u16		p: 1;			//Segment present flag
+	} attr;
 	u16		offset2;			//16-32 bits of offset
-}idt,*pidt;
+} idt, *pidt;
 #pragma	pack()
 
-void		interrupt_init();
+void		setup_interrupt();
 
 #endif	//! INTERRUPT_H_INCLUDE

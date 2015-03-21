@@ -18,6 +18,11 @@
 #ifndef	TYPES_H_INCLUDE
 #define	TYPES_H_INCLUDE
 
+#define	LOADER_OFFSET			0x00030000
+
+#define	GET_REAL_ADDR(p)		(((char*)(p)) + LOADER_OFFSET)
+#define	GET_REAL_VARIABLE(p)	(*((char*)(&p) + LOADER_OFFSET))
+
 #define	NULL			((void*)0)
 
 typedef	unsigned int	size_t;

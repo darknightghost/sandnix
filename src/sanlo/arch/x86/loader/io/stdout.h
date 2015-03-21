@@ -47,7 +47,7 @@ void		write_video_buf(
 	//start position
 	u16 line,
 	u16 row);
-	
+
 void		scroll_down(u16 line, u16 color);
 
 
