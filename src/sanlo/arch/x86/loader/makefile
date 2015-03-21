@@ -33,6 +33,7 @@ $(TARGET) : $(OBJS) $(TARGET_DIR)
 	#ld --oformat binary -m elf_i386 -N -Ttext 0x0000 -Map $(MAP) -o $(TARGET) $(OBJS)
 	ld -m elf_i386 -Ttext 0x0000 -Map $(MAP) -o $(TARGET).elf $(OBJS)
 	objcopy -R .note -R .comment -S -O binary $(TARGET).elf $(TARGET)
+	rm $(TARGET).elf
 $(OBJS) : $(SOURCES) $(OBJS_DIR)
 	$(foreach filename,$(SOURCES),\
 		$(if $(filter .c,$(suffix $(filename))),\
