@@ -277,4 +277,10 @@ protect_mode_entry:
 		movw	%ax,%fs
 		movw	$SELECTOR_BASIC_VIDEO,%ax
 		movw	%ax,%gs
-		jmp		c_init
+		//Initialize stack
+		movl	$0x00010000,%ebp
+		movl	%ebp,%esp
+		call	loader_main
+		//Reboot
+		movb	$0xFE,%al
+		outb	%al,$0x64

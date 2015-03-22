@@ -18,7 +18,7 @@
 #include "memory.h"
 #include "../exception/exception.h"
 
-void heap_init()
+void setup_heap()
 {
 	pmem_block_head p_first_head;
 	p_first_head = HEAP_BASE;

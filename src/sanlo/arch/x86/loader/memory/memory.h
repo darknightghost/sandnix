@@ -32,7 +32,7 @@ typedef struct _mem_block_head {
 } mem_block_head, *pmem_block_head;
 
 //Initialize heap
-void		heap_init();
+void		setup_heap();
 //Allocate memory
 void*		malloc(size_t size);
 //Free memory

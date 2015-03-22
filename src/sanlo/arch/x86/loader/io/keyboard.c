@@ -15,5 +15,3 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-.equ		LOADER_SECTORS,32
-.equ		LOADER_SECTION,0x3000

@@ -9,15 +9,16 @@ TARGET_DIR = $(root_path)/bin/sanlo/x86
 TARGET = $(TARGET_DIR)/sanlo_x86_loader
 MAP = $(TARGET_DIR)/sanlo_x86_loader.map
 
-SOURCES = loader.s \
-			c_init.s \
+SOURCES = init.s \
 			main.c	\
 			string/string.c \
 			io/io.c \
 			io/stdout.c \
+			io/keyboard.c \
 			memory/memory.c \
 			exception/exception.c \
-			interrupt/interrupt.c
+			interrupt/interrupt.c \
+			interrupt/interrupt_routines.s
 
 OBJS_DIR = $(root_path)/obj/sanlo/x86/loader
 

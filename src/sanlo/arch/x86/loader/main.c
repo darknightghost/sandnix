@@ -15,18 +15,25 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "segment.h"
 #include "io/io.h"
 #include "io/stdout.h"
-#include "exception/exception.h"
-#include "segment.h"
 #include "interrupt/interrupt.h"
+#include "exception/exception.h"
+#include "memory/memory.h"
 
-void	c_main()
+
+void loader_main()
 {
-	cls(BG_BLACK | FG_BRIGHT_WHITE);
 	setup_interrupt();
+	cls(BG_BLACK | FG_BRIGHT_WHITE);
 	print_string(
-		GET_REAL_ADDR("Protect mode entered.\nSearching for sanlo.cfg...\n"),
+		GET_REAL_ADDR("Protect mode entered.\n"),
+		FG_BRIGHT_WHITE | BG_BLACK,
+		BG_BLACK);
+	setup_heap();
+	print_string(
+		GET_REAL_ADDR("Searching for sanlo.cfg...\n"),
 		FG_BRIGHT_WHITE | BG_BLACK,
 		BG_BLACK);
 
