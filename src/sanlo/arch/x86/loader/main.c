@@ -32,7 +32,7 @@ void loader_main()
 		GET_REAL_ADDR("Protect mode entered.\n"),
 		FG_BRIGHT_WHITE | BG_BLACK,
 		BG_BLACK);
-	setup_heap();
+	init_heap();
 	print_string(
 		GET_REAL_ADDR("Searching for sanlo.cfg...\n"),
 		FG_BRIGHT_WHITE | BG_BLACK,

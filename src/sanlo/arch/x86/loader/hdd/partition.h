@@ -15,34 +15,18 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	HDD_H_INCLUDE
-#define	HDD_H_INCLUDE
+#ifndef	PARTION_H_INCLUDE
+#define	PARTION_H_INCLUDE
 
-#include "io.h"
+#include "hdd.h"
 #include "../types.h"
 
-#define	SECTOR_SIZE			512
-#define	DEVICE_NOT_EXISTS			0x00000001
-#define	DEVICE_MASTER_FLAG			0x00000002
-#define	DEVICE_PORT_PRIMARY_FLAG	0x00000004
-
 #pragma	pack(1)
-typedef union _ide_device_reg {
-	u8		value;
-	struct {
-		u8	hs0: 1;
-		u8	hs1: 1;
-		u8	hs2: 1;
-		u8	hs3: 1;
-		u8	drv_slave_flag: 1;
-		u8	always_1_1: 1;
-		u8	lba_mode: 1;
-		u8	always_1_2: 1;
-	}
-} ide_device_reg, *pide_device_reg;
+typedef	struct	_partition_table{
+	
+}partition_table,*ppartition_table;
 #pragma	pack()
 
-u32		get_hdd_status(u8 dev);
-u32		hdd_read(u32 start_sector, u32 sector_num, u8* buf);
+bool		get_partition_info(u8 disk,u8 partition,u8* offset,u8* size);
 
-#endif	//! HDD_H_INCLUDE
+#endif

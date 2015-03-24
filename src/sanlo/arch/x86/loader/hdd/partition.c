@@ -15,29 +15,23 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	TYPES_H_INCLUDE
-#define	TYPES_H_INCLUDE
+#include "partition.h"
+#include "../memory/memory.h"
 
-#define	LOADER_OFFSET			0x00030000
-
-#define	GET_REAL_ADDR(p)		(((char*)(p)) + LOADER_OFFSET)
-#define	GET_REAL_VARIABLE(p)	(*((char*)(&p) + LOADER_OFFSET))
-
-#define	NULL			((void*)0)
-
-#define	true			1
-#define	false			0
-
-typedef	unsigned int	size_t;
-
-typedef unsigned char	u8;
-typedef unsigned short	u16;
-typedef unsigned long	u32;
-typedef signed char		s8;
-typedef short			s16;
-typedef long			s32;
-
-typedef	int				bool;
-
-
-#endif	//! TYPES_H_INCLUDE
+bool get_partition_info(u8 disk,u8 partition,u8* offset,u8* size)
+{
+	u32 disk_info;
+	u8* sector_buf;
+	u8* p;
+	
+	disk_info=get_hdd_info(disk);
+	
+	if(disk_info&DEVICE_NOT_EXISTS){
+		return false;
+	}
+	
+	sector_buf=malloc(HDD_SECTOR_SIZE);
+	
+	//Read boot sector
+	hdd_read(disk_info,0,1,sector_buf);
+}

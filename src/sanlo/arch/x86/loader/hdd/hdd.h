@@ -15,29 +15,31 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	TYPES_H_INCLUDE
-#define	TYPES_H_INCLUDE
+#ifndef	HDD_H_INCLUDE
+#define	HDD_H_INCLUDE
 
-#define	LOADER_OFFSET			0x00030000
+#include "../io/io.h"
+#include "../types.h"
 
-#define	GET_REAL_ADDR(p)		(((char*)(p)) + LOADER_OFFSET)
-#define	GET_REAL_VARIABLE(p)	(*((char*)(&p) + LOADER_OFFSET))
+#define	HDD_SECTOR_SIZE				512
+#define	DEVICE_NOT_EXISTS			0x00000001
+#define	DEVICE_MASTER_FLAG			0x00000002
+#define	DEVICE_PORT_PRIMARY_FLAG	0x00000004
 
-#define	NULL			((void*)0)
+#pragma	pack(1)
+typedef union _ide_device_reg {
+	u8		value;
+	struct {
+		u8	lba_high: 4;
+		u8	drv_slave_flag: 1;
+		u8	always_1_1: 1;
+		u8	lba_mode: 1;
+		u8	always_1_2: 1;
+	}
+} ide_device_reg, *pide_device_reg;
+#pragma	pack()
 
-#define	true			1
-#define	false			0
+u32		get_hdd_info(u8 dev);
+void	hdd_read(u32 hdd_info,u32 start_sector, u8 sector_num, u8* buf);
 
-typedef	unsigned int	size_t;
-
-typedef unsigned char	u8;
-typedef unsigned short	u16;
-typedef unsigned long	u32;
-typedef signed char		s8;
-typedef short			s16;
-typedef long			s32;
-
-typedef	int				bool;
-
-
-#endif	//! TYPES_H_INCLUDE
+#endif	//! HDD_H_INCLUDE

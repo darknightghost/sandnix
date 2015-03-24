@@ -17,7 +17,7 @@
 
 #include "hdd.h"
 
-u32 get_hdd_status(u8 dev)
+u32 get_hdd_info(u8 dev)
 {
 	u8 dev_found;
 	u8 checked_dev;
@@ -85,6 +85,66 @@ u32 get_hdd_status(u8 dev)
 	return DEVICE_NOT_EXISTS;
 }
 
-u32 hdd_read(u32 start_sector, u32 sector_num, u8* buf);
+void hdd_read(u32 hdd_info,u32 start_sector, u8 sector_num, u8* buf)
+{
+	u16 data_reg;
+	u16 error_reg;
+	u16 sector_count_reg;
+	u16 lba_low_reg;
+	u16 lba_mid_reg;
+	u16 lba_high_reg;
+	u16 device_reg;
+	u16 status_reg;
+	u16 alter_statuc_reg;
+	
+	ide_device_reg dev_reg_value;
+	
+	if(hdd_status&DEVICE_NOT_EXISTS){
+		return 0;
+	}
+	
+	//Compute I/O port
+	if(hdd_status&DEVICE_PORT_PRIMARY_FLAG){
+		data_reg = 0x01F0;
+	}else{
+		data_reg = 0x0170;
+	}
+	error_reg = data_reg + 1;
+	sector_count_reg = data_reg + 2;
+	lba_low_reg = data_reg + 3;
+	lba_mid_reg = data_reg + 4;
+	lba_high_reg = data_reg + 5;
+	device_reg = data_reg + 6;
+	status_reg = data_reg + 7;
+	alter_statuc_reg = data_reg + 0x0206;
+	
+	//Setup IDE regs
+	outb(0x02,alter_statuc_reg);
+	outb(0,error_reg);
+	outb(sector_num,sector_count_reg);
+	outb((u8)(start_sector&0xFF),lba_low_reg);
+	outb((u8)((start_sector>>8)&0xFF),lba_mid_reg);
+	outb((u8)((start_sector>>16)&0xFF),lba_high_reg);
+	
+	dev_reg_value.value=0;
+	dev_reg_value.lba_high=(u8)((start_sector>>24)&0x0F);
+	dev_reg_value.lba_mode=1;
+	dev_reg_value.always_1_1=1;
+	dev_reg_value.always_1_2=1;
+	if(hdd_status&DEVICE_MASTER_FLAG){
+		dev_reg_value.drv_slave_flag=0;
+	}else{
+		dev_reg_value.drv_slave_flag=1;
+	}
+	outb(dev_reg_value.value,device_reg);
+	outb(0x20,status_reg);
+	
+	//Read disk
+	while(!(inb(status_reg)&0x08);		//0x08=0000 1000
+	
+	in_bytes(data_reg,HDD_SECTOR_SIZE*sector_num,buf);
+	
+	return;
+}
 
 
