@@ -20,4 +20,11 @@
 
 #include "../types.h"
 
+#define	KEY_UP_PRESSED		0x01
+#define	KEY_DOWN_PRESSED	0x02
+#define	KEY_ENTER_PRESSED	0x03
+#define	KEY_ESC_PRESSED		0x04
+
+u32		get_keyboard_input();
+
 #endif	//!	KEYBOARD_H_INCLUDE

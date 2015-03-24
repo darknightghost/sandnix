@@ -81,8 +81,7 @@ void setup_8259A()
 	out_byte(0x01, 0xA1);
 	io_delay();
 	//Master OCW1
-	//Only Keyboard interrupt should be enabled
-	out_byte(0xFD, 0x21);	//0xFD=1111 1101
+	out_byte(0xFF, 0x21);
 	io_delay();
 	//Slave OCW1
 	out_byte(0xFF, 0x21);
@@ -104,14 +103,7 @@ void io_delay()
 void setup_idt()
 {
 	idt_reg idt_value;
-	__asm__ __volatile__(
-		".global bp1\n\t"
-		"bp1:\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-	);
+
 	memset((void*)IDT_BASE_ADDR, INTERRUPT_MAX_NUM * sizeof(idt), 0);
 	SET_IDT(0x00, int_00, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1);
 	SET_IDT(0x01, int_01, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1);
@@ -131,15 +123,7 @@ void setup_idt()
 	SET_IDT(0x11, int_11, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1);
 	SET_IDT(0x12, int_12, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1);
 	SET_IDT(0x13, int_13, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1);
-	SET_IDT(0x21, int_21, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1);
-	__asm__ __volatile__(
-		".global bp2\n\t"
-		"bp2:\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-	);
+
 	idt_value.base = IDT_BASE_ADDR;
 	idt_value.limit = INTERRUPT_MAX_NUM * sizeof(idt) - 1;
 	__asm__ __volatile__(

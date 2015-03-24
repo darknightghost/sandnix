@@ -120,6 +120,3 @@ int_13:
 		pushl	$EXCEPTION_XF
 		call	panic
 
-int_21:
-		iret
-

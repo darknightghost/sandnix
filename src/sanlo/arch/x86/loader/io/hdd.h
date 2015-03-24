@@ -22,8 +22,27 @@
 #include "../types.h"
 
 #define	SECTOR_SIZE			512
+#define	DEVICE_NOT_EXISTS			0x00000001
+#define	DEVICE_MASTER_FLAG			0x00000002
+#define	DEVICE_PORT_PRIMARY_FLAG	0x00000004
 
-int		is_hdd_exists(u8 dev);
-u32		hdd_read(u32 start_sector,u32 sector_num,u8* buf);
+#pragma	pack(1)
+typedef union _ide_device_reg {
+	u8		value;
+	struct {
+		u8	hs0: 1;
+		u8	hs1: 1;
+		u8	hs2: 1;
+		u8	hs3: 1;
+		u8	drv_slave_flag: 1;
+		u8	always_1_1: 1;
+		u8	lba_mode: 1;
+		u8	always_1_2: 1;
+	}
+} ide_device_reg, *pide_device_reg;
+#pragma	pack()
+
+u32		get_hdd_status(u8 dev);
+u32		hdd_read(u32 start_sector, u32 sector_num, u8* buf);
 
 #endif	//! HDD_H_INCLUDE

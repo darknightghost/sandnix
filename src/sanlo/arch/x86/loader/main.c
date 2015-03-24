@@ -21,6 +21,7 @@
 #include "interrupt/interrupt.h"
 #include "exception/exception.h"
 #include "memory/memory.h"
+#include "io/keyboard.h"
 
 
 void loader_main()
@@ -36,7 +37,6 @@ void loader_main()
 		GET_REAL_ADDR("Searching for sanlo.cfg...\n"),
 		FG_BRIGHT_WHITE | BG_BLACK,
 		BG_BLACK);
-
 	while(1);
 
 	return;

@@ -17,6 +17,7 @@
 
 #include "exception.h"
 #include "../io/stdout.h"
+#include "../io/keyboard.h"
 
 #define	SET_EXCEPTION_STR(num,value) {\
 		if(reason==(num)){\
@@ -72,12 +73,15 @@ print_err:
 		BG_BLACK);
 	print_string(
 		GET_REAL_ADDR(
-			"The Sandnix loader cannot continue running,please restart your computer."),
+			"The Sandnix loader cannot continue running,Press <ESC> to restart your computer."),
 		BG_BLACK | FG_BRIGHT_RED,
 		BG_BLACK);
 
-	while(1);
+	while(get_keyboard_input() != KEY_ESC_PRESSED);
 
+	__asm__ __volatile__(
+		"movb	$0xFE,%al\n\t"
+		"outb	%al,$0x64\n\t");
 	return;
 }
 #pragma GCC pop_options
