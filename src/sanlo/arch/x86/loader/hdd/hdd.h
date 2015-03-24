@@ -35,11 +35,11 @@ typedef union _ide_device_reg {
 		u8	always_1_1: 1;
 		u8	lba_mode: 1;
 		u8	always_1_2: 1;
-	}
+	} members;
 } ide_device_reg, *pide_device_reg;
 #pragma	pack()
 
 u32		get_hdd_info(u8 dev);
-void	hdd_read(u32 hdd_info,u32 start_sector, u8 sector_num, u8* buf);
+bool	hdd_read(u32 hdd_info, u32 start_sector, u8 sector_num, u8* buf);
 
 #endif	//! HDD_H_INCLUDE
