@@ -24,14 +24,14 @@
 u8		in_byte(u16 port);
 u16		in_word(u16 port);
 
-void	in_bytes(u16 port,u32 times,void* buf);
-void	in_words(u16 port,u32 times,void* buf);
+void	in_bytes(u16 port, u32 times, void* buf);
+void	in_words(u16 port, u32 times, void* buf);
 
 //Write port
 void	out_byte(u8 data, u16 port);
 void	out_word(u16 data, u16 port);
 
-void	out_bytes(void* data,u16 port,u32 times);
-void	out_words(void* data,u16 port,u32 times);
+void	out_bytes(void* data, u16 port, u32 times);
+void	out_words(void* data, u16 port, u32 times);
 
 #endif	//! IO_H_INCLUDE

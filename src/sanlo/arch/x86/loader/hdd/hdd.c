@@ -16,6 +16,7 @@
 */
 
 #include "hdd.h"
+#include "../io/stdout.h"
 
 u32 get_hdd_info(u8 dev)
 {
@@ -31,6 +32,8 @@ u32 get_hdd_info(u8 dev)
 	u16 status_reg;
 	u16 alter_statuc_reg;
 	u32 ret;
+	u8 id1;
+	u8 id2;
 	ide_device_reg dev_reg_value;
 	dev_found = 0;
 
@@ -63,6 +66,34 @@ u32 get_hdd_info(u8 dev)
 		out_byte(0x55, lba_low_reg);
 
 		if(in_byte(sector_count_reg) == 0x45) {
+			//Check if it is a harddisk
+			out_byte(0x04, alter_statuc_reg);
+			out_byte(0x00, alter_statuc_reg);
+			id1 = in_byte(lba_mid_reg);
+			id2 = in_byte(lba_high_reg);
+
+			if(id1 == 0x00 && id2 == 0x00) {
+				print_string(
+					GET_REAL_ADDR("PATA"),
+					FG_BRIGHT_WHITE | BG_BLACK,
+					BG_BLACK);
+			}else if(id1 == 0x14 && id2 == 0xeb) {
+				print_string(
+					GET_REAL_ADDR("PATAPI"),
+					FG_BRIGHT_WHITE | BG_BLACK,
+					BG_BLACK);
+			}else if(id1 == 0x3c && id2 == 0xc3) {
+				print_string(
+					GET_REAL_ADDR("SATA"),
+					FG_BRIGHT_WHITE | BG_BLACK,
+					BG_BLACK);
+			}else if(id1 == 0x69 && id2 == 0x96) {
+				print_string(
+					GET_REAL_ADDR("SATAPI"),
+					FG_BRIGHT_WHITE | BG_BLACK,
+					BG_BLACK);
+			}
+
 			dev_found++;
 
 			//Return device status

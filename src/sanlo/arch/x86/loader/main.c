@@ -37,6 +37,17 @@ void loader_main()
 		GET_REAL_ADDR("Searching for sanlo.cfg...\n"),
 		FG_BRIGHT_WHITE | BG_BLACK,
 		BG_BLACK);
+		
+	__asm__ __volatile__(
+		".global bp\n\t"
+		"bp:\n\t"
+		"nop\n\t"
+		"nop\n\t"
+		"nop\n\t"
+		"nop\n\t"
+	);
+	get_hdd_info(0);
+	get_hdd_info(1);
 	while(1);
 
 	return;
