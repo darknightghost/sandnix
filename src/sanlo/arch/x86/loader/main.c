@@ -22,6 +22,7 @@
 #include "exception/exception.h"
 #include "memory/memory.h"
 #include "io/keyboard.h"
+#include "hdd/hdd.h"
 
 
 void loader_main()
@@ -46,8 +47,18 @@ void loader_main()
 		"nop\n\t"
 		"nop\n\t"
 	);
-	get_hdd_info(0);
-	get_hdd_info(1);
+
+	__asm__ __volatile__(
+		"nop\n\t"
+		"nop\n\t"
+		"nop\n\t"
+		"nop\n\t"
+		"movl		%0,%%eax\n\t"
+	::"m"(p));
+	print_string(
+		GET_REAL_ADDR("\nEnd\n"),
+		FG_BRIGHT_WHITE | BG_BLACK,
+		BG_BLACK);
 	while(1);
 
 	return;

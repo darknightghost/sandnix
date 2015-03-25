@@ -18,7 +18,6 @@
 #ifndef	HDD_H_INCLUDE
 #define	HDD_H_INCLUDE
 
-#include "../io/io.h"
 #include "../types.h"
 
 #define	HDD_SECTOR_SIZE				512

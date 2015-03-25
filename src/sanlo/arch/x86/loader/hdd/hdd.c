@@ -16,7 +16,7 @@
 */
 
 #include "hdd.h"
-#include "../io/stdout.h"
+#include "../io/io.h"
 
 u32 get_hdd_info(u8 dev)
 {
@@ -30,11 +30,10 @@ u32 get_hdd_info(u8 dev)
 	u16 lba_high_reg;
 	u16 device_reg;
 	u16 status_reg;
-	u16 alter_statuc_reg;
+	u16 alter_status_reg;
 	u32 ret;
-	u8 id1;
-	u8 id2;
 	ide_device_reg dev_reg_value;
+	u16 status;
 	dev_found = 0;
 
 	for(checked_dev = 0; checked_dev < 4; checked_dev++) {
@@ -52,7 +51,7 @@ u32 get_hdd_info(u8 dev)
 		lba_high_reg = data_reg + 5;
 		device_reg = data_reg + 6;
 		status_reg = data_reg + 7;
-		alter_statuc_reg = data_reg + 0x0206;
+		alter_status_reg = data_reg + 0x0206;
 		dev_reg_value.value = 0;
 
 		if(checked_dev % 2 == 0) {
@@ -67,31 +66,14 @@ u32 get_hdd_info(u8 dev)
 
 		if(in_byte(sector_count_reg) == 0x45) {
 			//Check if it is a harddisk
-			out_byte(0x04, alter_statuc_reg);
-			out_byte(0x00, alter_statuc_reg);
-			id1 = in_byte(lba_mid_reg);
-			id2 = in_byte(lba_high_reg);
+			out_byte(dev_reg_value.value, device_reg);
+			out_byte(0xec, status_reg);
 
-			if(id1 == 0x00 && id2 == 0x00) {
-				print_string(
-					GET_REAL_ADDR("PATA"),
-					FG_BRIGHT_WHITE | BG_BLACK,
-					BG_BLACK);
-			}else if(id1 == 0x14 && id2 == 0xeb) {
-				print_string(
-					GET_REAL_ADDR("PATAPI"),
-					FG_BRIGHT_WHITE | BG_BLACK,
-					BG_BLACK);
-			}else if(id1 == 0x3c && id2 == 0xc3) {
-				print_string(
-					GET_REAL_ADDR("SATA"),
-					FG_BRIGHT_WHITE | BG_BLACK,
-					BG_BLACK);
-			}else if(id1 == 0x69 && id2 == 0x96) {
-				print_string(
-					GET_REAL_ADDR("SATAPI"),
-					FG_BRIGHT_WHITE | BG_BLACK,
-					BG_BLACK);
+			while(!((status = in_byte(status_reg)) & 0x08)) {		//0x08=0000 1000
+				if(status & 0x81) {
+					dev_found--;
+					break;
+				}
 			}
 
 			dev_found++;
@@ -126,8 +108,9 @@ bool hdd_read(u32 hdd_info, u32 start_sector, u8 sector_num, u8* buf)
 	u16 lba_high_reg;
 	u16 device_reg;
 	u16 status_reg;
-	u16 alter_statuc_reg;
+	u16 alter_status_reg;
 	ide_device_reg dev_reg_value;
+	u8 status;
 
 	if(hdd_info & DEVICE_NOT_EXISTS) {
 		return false;
@@ -147,9 +130,9 @@ bool hdd_read(u32 hdd_info, u32 start_sector, u8 sector_num, u8* buf)
 	lba_high_reg = data_reg + 5;
 	device_reg = data_reg + 6;
 	status_reg = data_reg + 7;
-	alter_statuc_reg = data_reg + 0x0206;
+	alter_status_reg = data_reg + 0x0206;
 	//Setup IDE regs
-	out_byte(0x02, alter_statuc_reg);
+	out_byte(0x02, alter_status_reg);
 	out_byte(0, error_reg);
 	out_byte(sector_num, sector_count_reg);
 	out_byte((u8)(start_sector & 0xFF), lba_low_reg);
@@ -173,7 +156,13 @@ bool hdd_read(u32 hdd_info, u32 start_sector, u8 sector_num, u8* buf)
 	//Read disk
 	while(!(in_byte(status_reg) & 0x08));		//0x08=0000 1000
 
-	in_bytes(data_reg, HDD_SECTOR_SIZE * sector_num, buf);
+	status = in_byte(error_reg);
+
+	if(status & 0x01) {
+		return false;
+	}
+
+	in_words(data_reg, HDD_SECTOR_SIZE * sector_num / 2, buf);
 	return true;
 }
 

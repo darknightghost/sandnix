@@ -23,7 +23,14 @@
 
 #pragma	pack(1)
 typedef	struct	_partition_table{
-	
+	u8		state;
+	u8		begin_head;
+	u16		begin_sector;
+	u8		partition_type;
+	u8		end_head;
+	u16		end_sector;
+	u32		start_lba;
+	u32		sector_num;
 }partition_table,*ppartition_table;
 #pragma	pack()
 
