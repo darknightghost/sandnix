@@ -21,8 +21,13 @@
 #include "hdd.h"
 #include "../types.h"
 
+#define		PARTITION_NOT_FOUND		0
+#define		PARTITION_PRIMARY		1
+#define		PARTITION_EXTENDED		2
+#define		PARTITION_LOGIC			3
+
 #pragma	pack(1)
-typedef	struct	_partition_table{
+typedef	struct	_partition_table {
 	u8		state;
 	u8		begin_head;
 	u16		begin_sector;
@@ -30,10 +35,10 @@ typedef	struct	_partition_table{
 	u8		end_head;
 	u16		end_sector;
 	u32		start_lba;
-	u32		sector_num;
-}partition_table,*ppartition_table;
+	u32		sector_count;
+} partition_table, *ppartition_table;
 #pragma	pack()
 
-bool		get_partition_info(u8 disk,u8 partition,u8* offset,u8* size);
+u32		get_partition_info(u8 disk, u8 partition, u8* p_start_lba, u8* p_sector_count);
 
 #endif

@@ -40,6 +40,7 @@
 #define	EXCEPTION_AC					0x00000011
 #define	EXCEPTION_MC					0x00000012
 #define	EXCEPTION_XF					0x00000013
+#define	EXCEPTION_NOT_ENOUGH_MEMORY		0x00000014
 
 void		panic(u32 reason);
 
