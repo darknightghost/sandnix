@@ -17,11 +17,12 @@
 
 #include "partition.h"
 #include "../memory/memory.h"
+#include "../exception/exception.h"
 
 static	u32			get_logical_partion_info(u32 extended_lba, u32 disk_info, u8 partition,
-		u8* p_start_lba, u8* p_sector_count);
+		u32* p_start_lba, u32* p_sector_count);
 
-u32 get_partition_info(u8 disk, u8 partition, u8* p_start_lba, u8* p_sector_count)
+u32 get_partition_info(u8 disk, u8 partition, u32* p_start_lba, u32* p_sector_count)
 {
 	u32 disk_info;
 	u8* sector_buf;
@@ -94,7 +95,7 @@ u32 get_partition_info(u8 disk, u8 partition, u8* p_start_lba, u8* p_sector_coun
 }
 
 u32 get_logical_partion_info(u32 extended_lba, u32 disk_info, u8 partition,
-							 u8* p_start_lba, u8* p_sector_count)
+							 u32* p_start_lba, u32* p_sector_count)
 {
 	u32 count;
 	u8* sector_buf;
