@@ -46,7 +46,7 @@ void loader_main()
 		BG_BLACK);
 	p = malloc(512);
 	
-	partition = get_partition_info(0, 0, &offset, &size);
+	partition = get_partition_info(0, 5, &offset, &size);
 
 	if(partition == PARTITION_NOT_FOUND) {
 		print_string(
