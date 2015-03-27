@@ -15,16 +15,37 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	STRING_H_INCLUDE
-#define	STRING_H_INCLUDE
+#ifndef	FS_H_INCLUDE
+#define	FS_H_INCLUDE
 
 #include "../types.h"
-char*		strcat(char* dest, char* src);
-char*		strcut(char* dest, char* src, char end_str);
-size_t		strlen(char* str);
-int			strcmp(char* dest, char* src);
-char*		strcpy(char* dest, char* src);
-void		memset(void* addr, size_t size, u8 value);
-void		memcpy(void* dest, void* src, size_t len);
+#include "../hdd.h"
+#include "../partition.h"
 
-#endif	//! STRING_H_INCLUDE
+#define		FS_TYPE_EXT2		0x83
+
+#define		FILE_TYPE_FILE		0
+#define		FILE_TYPE_DIRECTORY	1
+
+#define		FILE_POS_BEGIN		0
+#define		FILE_POS_END		1
+#define		FILE_POS_CURRENT	2
+
+typedef	struct	_file {
+	u32		disk_info;			//Which disk
+	u32		partition_lba;		//Partition lba
+	u8		fs_type;			//Type of file system
+	u8		file_type;			//Type of file
+	size_t	pos;				//Current position
+	size_t	size;				//Size of file
+	void*	extended_info;		//Used by file system functions
+} file, *pfile;
+
+pfile			open(char* path);
+u32				read(pfile fp, u8* buf, size_t buf_len);
+s32				seek(pfile fp, s32 offset, u8 start_pos);
+void			close(pfile fp);
+
+
+
+#endif	//! FS_H_INCLUDE

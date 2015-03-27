@@ -39,6 +39,6 @@ typedef	struct	_partition_table {
 } partition_table, *ppartition_table;
 #pragma	pack()
 
-u32		get_partition_info(u8 disk, u8 partition, u32* p_start_lba, u32* p_sector_count);
+u32		get_partition_info(u8 disk, u8 partition, u32* p_start_lba, u32* p_sector_count,u8* p_type);
 
 #endif

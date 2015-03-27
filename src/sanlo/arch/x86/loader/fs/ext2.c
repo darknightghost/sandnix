@@ -15,16 +15,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	STRING_H_INCLUDE
-#define	STRING_H_INCLUDE
+#ifndef	EXT2_H_INCLUDE
+#define	EXT2_H_INCLUDE
 
 #include "../types.h"
-char*		strcat(char* dest, char* src);
-char*		strcut(char* dest, char* src, char end_str);
-size_t		strlen(char* str);
-int			strcmp(char* dest, char* src);
-char*		strcpy(char* dest, char* src);
-void		memset(void* addr, size_t size, u8 value);
-void		memcpy(void* dest, void* src, size_t len);
+#include "../hdd.h"
+#include "../partition.h"
+#include "../memory/memory.h"
 
-#endif	//! STRING_H_INCLUDE
+
+
+#endif	//! EXT2_H_INCLUDE

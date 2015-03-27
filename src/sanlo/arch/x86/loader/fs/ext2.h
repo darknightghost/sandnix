@@ -15,16 +15,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	STRING_H_INCLUDE
-#define	STRING_H_INCLUDE
+#include "ext2.h"
+#include "fs.h"
 
-#include "../types.h"
-char*		strcat(char* dest, char* src);
-char*		strcut(char* dest, char* src, char end_str);
-size_t		strlen(char* str);
-int			strcmp(char* dest, char* src);
-char*		strcpy(char* dest, char* src);
-void		memset(void* addr, size_t size, u8 value);
-void		memcpy(void* dest, void* src, size_t len);
-
-#endif	//! STRING_H_INCLUDE
+bool		ext2_open(pfile fp, char* path);
+u32			ext2_read(pfile fp, u8* buf, size_t buf_len);
+void		ext2_close(pfile fp);

@@ -40,3 +40,72 @@ void memcpy(void* dest, void* src, size_t len)
 		::"m"(dest), "m"(src), "m"(len));
 	return;
 }
+
+char* strcat(char* dest, char* src)
+{
+	char* p;
+	p = dest + strlen(dest);
+	strcpy(p, src);
+	return dest;
+}
+
+char* strcut(char* dest, char* src, char end_str)
+{
+	char* p_dest;
+	char* p_src;
+
+	for(p_dest = dest, p_src = src;
+		*p_src != '\0' && *p_src != end_str;
+		p_dest++, p_src++) {
+		*p_dest = *p_src;
+	}
+
+	return dest;
+}
+
+size_t strlen(char* str)
+{
+	size_t ret;
+	__asm__ __volatile__(
+		"cld\n\t"
+		"movl		$0xFFFFFFFF,%%ecx\n\t"
+		"movl		%1,%%edi\n\t"
+		"xorl		%%eax,%%eax\n\t"
+		"repnz		scasb\n\t"
+		"movl		$0xFFFFFFFF,%%eax\n\t"
+		"subl		%%ecx,%%eax\n\t"
+		"decl		%%eax\n\t"
+		:"=%%eax"(ret)
+		:"m"(str));
+	return ret;
+}
+
+char* strcpy(char* dest, char* src)
+{
+	size_t len;
+	len = strlen(src) + 1;
+	__asm__ __volatile__(
+		"cld\n\t"
+		"xorl		%%eax,%%eax\n\t"
+		"movl		%2,%%ecx\n\t"
+		"movl		%0,%%esi\n\t"
+		"movl		%1,%%edi\n\t"
+		"repnz		movsb\n\t"
+		::"m"(src), "m"(dest), "m"(len));
+	return dest;
+}
+
+int strcmp(char* dest, char* src)
+{
+	int ret;
+	char* p1;
+	char* p2;
+
+	for(p1 = dest, p2 = src;
+		*p1 != '\0' && *p2 != '\0';
+		p1++, p2++) {
+		ret = *p1 - *p2;
+	}
+
+	return ret;
+}
