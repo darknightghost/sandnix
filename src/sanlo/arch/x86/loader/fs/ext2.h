@@ -27,12 +27,6 @@
 #define	EXT2_TIND_BLOCK				(EXT2_DIND_BLOCK + 1)
 #define	EXT2_N_BLOCKS				(EXT2_TIND_BLOCK + 1)
 
-
-typedef	struct _ext2_file_info
-{
-	u32			block_size;
-}ext2_file_info,pext2_file_info;
-
 #pragma	pack(1)
 
 /*
@@ -78,12 +72,12 @@ typedef	struct _ext2_super_block {
 	 * things it doesn't understand...
 	 */
 	le32	s_first_ino; 		/* First non-reserved inode */
-	le16   s_inode_size; 		/* size of inode structure */
+	le16	s_inode_size; 		/* size of inode structure */
 	le16	s_block_group_nr; 	/* block group # of this superblock */
 	le32	s_feature_compat; 	/* compatible feature set */
 	le32	s_feature_incompat; 	/* incompatible feature set */
 	le32	s_feature_ro_compat; 	/* readonly-compatible feature set */
-	u8	s_uuid[16];		/* 128-bit uuid for volume */
+	u8		s_uuid[16];		/* 128-bit uuid for volume */
 	char	s_volume_name[16]; 	/* volume name */
 	char	s_last_mounted[64]; 	/* directory where last mounted */
 	le32	s_algorithm_usage_bitmap; /* For compression */
@@ -210,6 +204,12 @@ enum {
 	EXT2_FT_MAX
 };
 #pragma	pack()
+
+typedef	struct _ext2_file_info
+{
+	u32			block_size;
+	ext2_inode	inode;
+}ext2_file_info,pext2_file_info;
 
 bool		ext2_open(pfile fp, char* path);
 u32			ext2_read(pfile fp, u8* buf, size_t buf_len);
