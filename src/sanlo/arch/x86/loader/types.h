@@ -37,6 +37,10 @@ typedef signed char		s8;
 typedef short			s16;
 typedef long			s32;
 
+typedef unsigned char	le8;
+typedef unsigned short	le16;
+typedef unsigned long	le32;
+
 typedef	int				bool;
 
 

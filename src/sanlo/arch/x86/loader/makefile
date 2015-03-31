@@ -20,7 +20,9 @@ SOURCES = init.s \
 			interrupt/interrupt.c \
 			interrupt/interrupt_routines.s \
 			hdd/hdd.c \
-			hdd/partition.c
+			hdd/partition.c \
+			fs/fs.c \
+			fs/ext2.c
 
 OBJS_DIR = $(root_path)/obj/sanlo/x86/loader
 

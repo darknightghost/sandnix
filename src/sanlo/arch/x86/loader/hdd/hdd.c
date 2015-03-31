@@ -122,7 +122,7 @@ bool hdd_read(u32 hdd_info, u32 start_sector, u8 sector_num, u8* buf)
 	} else {
 		data_reg = 0x0170;
 	}
-
+	
 	error_reg = data_reg + 1;
 	sector_count_reg = data_reg + 2;
 	lba_low_reg = data_reg + 3;
@@ -152,7 +152,7 @@ bool hdd_read(u32 hdd_info, u32 start_sector, u8 sector_num, u8* buf)
 
 	out_byte(dev_reg_value.value, device_reg);
 	out_byte(0x20, status_reg);
-
+	
 	//Read disk
 	while(!(in_byte(status_reg) & 0x08));		//0x08=0000 1000
 
@@ -163,6 +163,7 @@ bool hdd_read(u32 hdd_info, u32 start_sector, u8 sector_num, u8* buf)
 	}
 
 	in_words(data_reg, HDD_SECTOR_SIZE * sector_num / 2, buf);
+
 	return true;
 }
 

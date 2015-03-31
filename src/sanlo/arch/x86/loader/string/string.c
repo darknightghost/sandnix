@@ -16,6 +16,7 @@
 */
 
 #include "string.h"
+#include "../io/stdout.h"
 
 void memset(void* addr, size_t size, u8 value)
 {
@@ -108,4 +109,73 @@ int strcmp(char* dest, char* src)
 	}
 
 	return ret;
+}
+
+char* dectostr(u32 num, char* buf)
+{
+	u32 n;
+	char* p1;
+	char* p2;
+	char t;
+	p1 = buf;
+	
+	n = num;
+	while(1) {
+		
+		*p1 = '0' + n % 10;
+		p1++;
+		n = n / 10;
+
+		if(n == 0) {
+			break;
+		}
+	}
+	*p1 = '\0';
+
+	for(p2 = p1 - 1, p1 = buf;
+		p2 > p1;
+		p1++, p2--) {
+		t = *p1;
+		*p1 = *p2;
+		*p2 = t;
+	}
+
+	return buf;
+}
+
+char* hextostr(u32 num, char* buf)
+{
+	u32 n;
+	char* p1;
+	char* p2;
+	char t;
+	p1 = buf;
+	
+	n = num;
+	while(1) {
+		if(n % 0x10 < 10) {
+			*p1 = '0' + n % 0x10;
+		} else {
+			*p1 = 'A' + n % 0x10 - 0x0A;
+		}
+
+		p1++;
+		n = n / 0x10;
+
+		if(n == 0) {
+			break;
+		}
+	}
+
+	*p1 = '\0';
+
+	for(p2 = p1 - 1, p1 = buf;
+		p2 > p1;
+		p1++, p2--) {
+		t = *p1;
+		*p1 = *p2;
+		*p2 = t;
+	}
+
+	return buf;
 }

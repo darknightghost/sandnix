@@ -72,6 +72,12 @@ void* malloc(size_t size)
 			}
 
 			p_head->allocated_flag = 1;
+
+			if(p_head->start_addr > HEAP_BASE + HEAP_SIZE
+			   || p_head->start_addr < HEAP_BASE) {
+				panic(EXCEPTION_HEAP_CORRUPTION);
+			}
+
 			return p_head->start_addr;
 		} else {
 			//Get next memory block

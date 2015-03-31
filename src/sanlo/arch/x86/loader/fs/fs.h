@@ -19,8 +19,8 @@
 #define	FS_H_INCLUDE
 
 #include "../types.h"
-#include "../hdd.h"
-#include "../partition.h"
+#include "../hdd/hdd.h"
+#include "../hdd/partition.h"
 
 #define		FS_TYPE_EXT2		0x83
 
@@ -34,6 +34,7 @@
 typedef	struct	_file {
 	u32		disk_info;			//Which disk
 	u32		partition_lba;		//Partition lba
+	u32		partition_size;
 	u8		fs_type;			//Type of file system
 	u8		file_type;			//Type of file
 	size_t	pos;				//Current position

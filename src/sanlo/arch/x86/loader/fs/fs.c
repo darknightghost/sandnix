@@ -19,6 +19,7 @@
 #include "ext2.h"
 #include "../memory/memory.h"
 #include "../string/string.h"
+#include "../io/stdout.h"
 
 pfile open(char* path)
 {
@@ -34,7 +35,7 @@ pfile open(char* path)
 	//Get disk
 	p = path;
 
-	if(*p == '(' && *(p + 1) == 'h' * (p + 2) = 'd') {
+	if(*p == '(' && *(p + 1) == 'h' && *(p + 2) == 'd') {
 		p += 3;
 	} else {
 		return 0;
@@ -44,6 +45,7 @@ pfile open(char* path)
 
 	while(*p >= '0' && *p <= '9') {
 		disk = (*p - '0') + disk * 10;
+		p++;
 	}
 
 	diskinfo = get_hdd_info(disk);
@@ -62,6 +64,7 @@ pfile open(char* path)
 
 	while(*p >= '0' && *p <= '9') {
 		partition = (*p - '0') + partition * 10;
+		p++;
 	}
 
 	p++;
@@ -82,6 +85,7 @@ pfile open(char* path)
 	ret = malloc(sizeof(file));
 	ret->disk_info = diskinfo;
 	ret->partition_lba = start_lba;
+	ret->partition_size = sector_count * HDD_SECTOR_SIZE;
 	ret->fs_type = fs_type;
 	ret->pos = 0;
 
@@ -139,8 +143,8 @@ s32 seek(pfile fp, s32 offset, u8 start_pos)
 		}
 	} else if(start_pos == FILE_POS_CURRENT) {
 		if(fp->pos + offset > fp->size) {
-			ret = fp->size - fp->pos
-				  fp->pos = fp->size;
+			ret = fp->size - fp->pos;
+			fp->pos = fp->size;
 			return ret;
 		} else if(fp->pos + offset < 0) {
 			ret = -fp->pos;
