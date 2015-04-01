@@ -205,11 +205,13 @@ enum {
 };
 #pragma	pack()
 
-typedef	struct _ext2_file_info
-{
-	u32			block_size;
-	ext2_inode	inode;
-}ext2_file_info,pext2_file_info;
+typedef	struct _ext2_file_info {
+	u32					block_size;
+	ext2_inode			inode;
+	pext2_group_desc	p_group_desc;
+	u32					current_block;
+	char*				block_buf;
+} ext2_file_info, pext2_file_info;
 
 bool		ext2_open(pfile fp, char* path);
 u32			ext2_read(pfile fp, u8* buf, size_t buf_len);
