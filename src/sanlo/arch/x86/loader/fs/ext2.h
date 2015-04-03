@@ -186,7 +186,7 @@ typedef	struct _ext2_dir_entry_2 {
 	le16	rec_len;		/* Directory entry length */
 	u8		name_len;		/* Name length */
 	u8		file_type;
-	char	name[];			/* File name, up to EXT2_NAME_LEN */
+	char	name[256];			/* File name, up to EXT2_NAME_LEN */
 } ext2_dir_entry_2, *pext2_dir_entry_2;
 /*
  * Ext2 directory file types.  Only the low 3 bits are used.  The
@@ -213,6 +213,7 @@ typedef	struct _ext2_file_info {
 	char*				block_buf;
 } ext2_file_info, pext2_file_info;
 
+#define	EXT2_DIR_ENTRY_BASIC_SIZE	(sizeof(ext2_dir_entry_2)-256)
 bool		ext2_open(pfile fp, char* path);
 u32			ext2_read(pfile fp, u8* buf, size_t buf_len);
 void		ext2_close(pfile fp);

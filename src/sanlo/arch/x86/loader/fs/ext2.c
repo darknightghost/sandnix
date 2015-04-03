@@ -28,7 +28,8 @@ static	void		get_inode_offset(
 	pext2_super_block p_super_block, pext2_group_desc p_group_desc,
 	u32 block_size, u32 inode_num,
 	/*out*/		u32* p_block, u32* p_offset);
-static	u32			get_file_inode(pext2_inode p_parent_inode, char* name);
+static	u32			get_file_inode(pfile fp, pext2_inode p_parent_inode, u32 block_size, char* name, bool* is_directory);
+static	bool		load_file_block(pfile fp, pext2_inode p_inode, u32 block);
 
 bool ext2_open(pfile fp, char* path)
 {
@@ -50,6 +51,7 @@ bool ext2_open(pfile fp, char* path)
 	u32 next_inode;
 	u32 inode_block_num;
 	pext2_inode p_inode;
+	bool directory_flag;
 
 	if(p_super_block == NULL) {
 		return false;
@@ -112,18 +114,28 @@ bool ext2_open(pfile fp, char* path)
 	p_file_info->p_group_desc = p_group_desc;
 	//Get Root inode
 	get_inode_offset(p_super_block, p_group_desc, block_size, 2, &block, &offset);
-	f(!hdd_read(fp->disk_info,
-				fp->partition_lba + block * p_file_info->block_size / HDD_SECTOR_SIZE,
-				EXT2_SUPER_BLOCK_SIZE / HDD_SECTOR_SIZE,
-				(void*)p_group_desc)) {
+
+	if(!hdd_read(fp->disk_info,
+				 fp->partition_lba + block * p_file_info->block_size / HDD_SECTOR_SIZE,
+				 EXT2_SUPER_BLOCK_SIZE / HDD_SECTOR_SIZE,
+				 (void*)p_group_desc)) {
 		free(p_file_info);
 		free(p_super_block);
 		free(block_buf);
 		return false;
 	}
+
 	p_inode = block_buf + offset;
+
 	//Read directories
-	p = path;
+	if(*path != '\0') {
+		p = path + 1;
+	} else {
+		p = path;
+	}
+
+	directory_flag = true;
+	fp->extended_info = p_file_info;
 
 	while(*p != '\0') {
 		//Get next inode
@@ -134,7 +146,15 @@ bool ext2_open(pfile fp, char* path)
 			p++;
 		}
 
-		next_inode = get_file_inode(p_inode, file_name);
+		if(!directory_flag) {
+			free(p_file_info);
+			free(p_super_block);
+			free(block_buf);
+			return false;
+		}
+
+		next_inode = get_file_inode(fp, p_inode, p_file_info->block_size,
+									&directory_flag, file_name);
 
 		if(next_inode == 0) {
 			(void*)p_group_desc)) {
@@ -157,7 +177,6 @@ bool ext2_open(pfile fp, char* path)
 	}
 
 	memcpy(&(p_file_info->inode), p_inode, sizeof(ext2_file_info));
-	fp->extended_info = p_file_info;
 	/*print_string(
 			dectostr(block_size,buf),
 			FG_BRIGHT_WHITE | BG_BLACK,
@@ -170,6 +189,8 @@ bool ext2_open(pfile fp, char* path)
 
 u32 ext2_read(pfile fp, u8 * buf, size_t buf_len)
 {
+	pext2_file_info p_file_info;
+	p_file_info = fp->extended_info;
 	return 0;
 }
 
@@ -199,7 +220,120 @@ void get_inode_offset(
 	return;
 }
 
-u32 get_file_inode(pext2_inode p_parent_inode, char* name)
+u32 get_file_inode(pfile fp, pext2_inode p_parent_inode, u32 block_size, char* name, bool* is_directory)
 {
+	u32 current_block_num;
+	char* block_buf;
+	char* p;
+	u32 read_len;
+	u32 ret;
+	pext2_dir_entry_2 p_dir_entry;
+	p_dir_entry = malloc(sizeof(ext2_dir_entry));
 
+	if(p_dir_entry == NULL) {
+		return 0;
+	}
+
+	block_buf = malloc(block_size);
+
+	if(block_buf == NULL) {
+		free(p_dir_entry);
+		return 0;
+	}
+
+	//Read dir entries
+	read_len = 0;
+	current_block_num = 0;
+	p = block_buf;
+
+	if(!load_file_block(fp, p_parent_inode, 0)) {
+		free(p_dir_entry);
+		free(block_buf);
+		return 0;
+	}
+
+	while(read_len < p_parent_inode->i_size) {
+		//Get dir entry
+		if(block_size - (p - block_buf) < EXT2_DIR_ENTRY_BASIC_SIZE) {
+			memcpy(p_dir_entry, p, block_size - (p - block_buf));
+			current_block_num++;
+
+			if(!load_file_block(fp, p_parent_inode, current_block_num)) {
+				free(p_dir_entry);
+				free(block_buf);
+				return 0;
+			}
+
+			memcpy(p_dir_entry + (block_size - (p - block_buf)), block_buf,
+				   EXT2_DIR_ENTRY_BASIC_SIZE - (block_size - (p - block_buf)));
+			p = block_buf + (EXT2_DIR_ENTRY_BASIC_SIZE - (block_size - (p - block_buf)));
+		} else {
+			memcpy(p_dir_entry, p, EXT2_DIR_ENTRY_BASIC_SIZE);
+			p += EXT2_DIR_ENTRY_BASIC_SIZE;
+		}
+
+		if(p - block_buf >= block_size) {
+			current_block_num++;
+
+			if(!load_file_block(fp, p_parent_inode, current_block_num)) {
+				free(p_dir_entry);
+				free(block_buf);
+				return 0;
+			}
+
+			p = block_buf;
+		}
+
+		//Get dir name
+		if(block_size - (p - block_buf) < p_dir_entry->rec_len - EXT2_DIR_ENTRY_BASIC_SIZE) {
+			memcpy(p_dir_entry->name, p, block_size - (p - block_buf));
+			current_block_num++;
+
+			if(!load_file_block(fp, p_parent_inode, current_block_num)) {
+				free(p_dir_entry);
+				free(block_buf);
+				return 0;
+			}
+
+			memcpy(p_dir_entry->name + (block_size - (p - block_buf)), block_buf,
+				   p_dir_entry->rec_len - EXT2_DIR_ENTRY_BASIC_SIZE - (block_size - (p - block_buf)));
+			p = block_buf + (p_dir_entry->rec_len - EXT2_DIR_ENTRY_BASIC_SIZE - (block_size - (p - block_buf)));
+		} else {
+			memcpy(p_dir_entry->name, p, p_dir_entry->rec_len - EXT2_DIR_ENTRY_BASIC_SIZE);
+			p += p_dir_entry->rec_len - EXT2_DIR_ENTRY_BASIC_SIZE;
+		}
+
+		//Compare dir name
+		if(strcmp(p_dir_entry->name, name) == 0) {
+			ret = p_dir_entry->inode;
+			if(p_dir_entry->file_type==EXT2_FT_DIR){
+				*is_directory=true;
+			}else{
+				*is_directory=false;
+			}
+			free(p_dir_entry);
+			free(block_buf);
+			return ret;
+		}
+
+		if(p - block_buf >= block_size) {
+			current_block_num++;
+
+			if(!load_file_block(fp, p_parent_inode, current_block_num)) {
+				free(p_dir_entry);
+				free(block_buf);
+				return 0;
+			}
+
+			p = block_buf;
+		}
+
+		read_len += p_dir_entry->rec_len;
+	}
+
+	free(p_dir_entry);
+	free(block_buf);
+	return 0;
 }
+
+bool load_file_block(pfile fp, pext2_inode p_inode, u32 block);

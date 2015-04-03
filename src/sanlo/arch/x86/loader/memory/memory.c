@@ -17,6 +17,7 @@
 
 #include "memory.h"
 #include "../exception/exception.h"
+#include "../io/stdout.h"
 
 void init_heap()
 {
@@ -85,7 +86,11 @@ void* malloc(size_t size)
 			p_head = p_head->p_next;
 		}
 	}
-
+	print_string(
+		GET_REAL_ADDR(
+			"\nNOT ENOUGH MEMORY!!!.\n"),
+		BG_BLACK | FG_BRIGHT_RED,
+		BG_BLACK);
 	return NULL;
 }
 
