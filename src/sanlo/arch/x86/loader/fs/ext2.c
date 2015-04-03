@@ -29,7 +29,7 @@ static	void		get_inode_offset(
 	u32 block_size, u32 inode_num,
 	/*out*/		u32* p_block, u32* p_offset);
 static	u32			get_file_inode(pfile fp, pext2_inode p_parent_inode, u32 block_size, char* name, bool* is_directory);
-static	bool		load_file_block(pfile fp, pext2_inode p_inode, u32 block);
+static	bool		load_file_block(pfile fp, pext2_inode p_inode, u32 block,u32 block_size,void* buf);
 
 bool ext2_open(pfile fp, char* path)
 {
@@ -246,7 +246,7 @@ u32 get_file_inode(pfile fp, pext2_inode p_parent_inode, u32 block_size, char* n
 	current_block_num = 0;
 	p = block_buf;
 
-	if(!load_file_block(fp, p_parent_inode, 0)) {
+	if(!load_file_block(fp, p_parent_inode, 0,block_size,block_buf)) {
 		free(p_dir_entry);
 		free(block_buf);
 		return 0;
@@ -258,7 +258,7 @@ u32 get_file_inode(pfile fp, pext2_inode p_parent_inode, u32 block_size, char* n
 			memcpy(p_dir_entry, p, block_size - (p - block_buf));
 			current_block_num++;
 
-			if(!load_file_block(fp, p_parent_inode, current_block_num)) {
+			if(!load_file_block(fp, p_parent_inode, current_block_num,block_size,block_buf)) {
 				free(p_dir_entry);
 				free(block_buf);
 				return 0;
@@ -275,7 +275,7 @@ u32 get_file_inode(pfile fp, pext2_inode p_parent_inode, u32 block_size, char* n
 		if(p - block_buf >= block_size) {
 			current_block_num++;
 
-			if(!load_file_block(fp, p_parent_inode, current_block_num)) {
+			if(!load_file_block(fp, p_parent_inode, current_block_num,block_size,block_buf)) {
 				free(p_dir_entry);
 				free(block_buf);
 				return 0;
@@ -289,7 +289,7 @@ u32 get_file_inode(pfile fp, pext2_inode p_parent_inode, u32 block_size, char* n
 			memcpy(p_dir_entry->name, p, block_size - (p - block_buf));
 			current_block_num++;
 
-			if(!load_file_block(fp, p_parent_inode, current_block_num)) {
+			if(!load_file_block(fp, p_parent_inode, current_block_num,block_size,block_buf)) {
 				free(p_dir_entry);
 				free(block_buf);
 				return 0;
@@ -319,7 +319,7 @@ u32 get_file_inode(pfile fp, pext2_inode p_parent_inode, u32 block_size, char* n
 		if(p - block_buf >= block_size) {
 			current_block_num++;
 
-			if(!load_file_block(fp, p_parent_inode, current_block_num)) {
+			if(!load_file_block(fp, p_parent_inode, current_block_num,block_size,block_buf)) {
 				free(p_dir_entry);
 				free(block_buf);
 				return 0;
@@ -336,4 +336,130 @@ u32 get_file_inode(pfile fp, pext2_inode p_parent_inode, u32 block_size, char* n
 	return 0;
 }
 
-bool load_file_block(pfile fp, pext2_inode p_inode, u32 block);
+bool load_file_block(pfile fp, pext2_inode p_inode, u32 block,u32 block_size,void* buf)
+{
+	if(block<=11){
+		if(p_inode->i_block[block]!=NULL){
+			//Directly addressing
+			if(!hdd_read(fp->disk_info,
+				fp->partition_lba+p_inode->i_block[block]*block_size/HDD_SECTOR_SIZE,
+				block_size / HDD_SECTOR_SIZE, buf)) {
+				return false;
+			}
+			return true;
+		}else{
+			return false;
+		}
+	}else if(block<=11+block_size/4){
+		//Once indirect addressing
+		if(p_inode->i_block[12]!=NULL){
+			//1
+			if(!hdd_read(fp->disk_info,
+				fp->partition_lba+p_inode->i_block[12]*block_size/HDD_SECTOR_SIZE,
+				block_size / HDD_SECTOR_SIZE, buf)) {
+				return false;
+			}
+			if(((u32*)buf)[block-12]!=NULL){
+				//2
+				if(!hdd_read(fp->disk_info,
+					fp->partition_lba+((u32*)buf)[block-12]*block_size/HDD_SECTOR_SIZE,
+					block_size / HDD_SECTOR_SIZE, buf)) {
+					return false;
+				}
+				return true;
+			}else{
+				return false;
+			}
+		}else{
+			return false;
+		}
+	}else if(block<=11+block_size/4*block_size/4){
+		//Twice indirect addressing
+		if(p_inode->i_block[13]!=NULL){
+			//1
+			if(!hdd_read(fp->disk_info,
+				fp->partition_lba+p_inode->i_block[12]*block_size/HDD_SECTOR_SIZE,
+				block_size / HDD_SECTOR_SIZE, buf)) {
+				return false;
+			}
+			if(((u32*)buf)[(block-12-block_size/4)/(block_size/4)]!=NULL){
+				//2
+				if(!hdd_read(fp->disk_info,
+					fp->partition_lba+((u32*)buf)[(block-12-block_size/4)/(block_size/4)]*block_size/HDD_SECTOR_SIZE,
+					block_size / HDD_SECTOR_SIZE, buf)) {
+					return false;
+				}
+				//3
+				if(((u32*)buf)[(block-12-block_size/4)%(block_size/4)]!=NULL){
+					if(!hdd_read(fp->disk_info,
+						fp->partition_lba+((u32*)buf)[(block-12-block_size/4)%(block_size/4)]*block_size/HDD_SECTOR_SIZE,
+						block_size / HDD_SECTOR_SIZE, buf)) {
+						return false;
+					}
+					return true;
+				}else{
+					return false;
+				}
+			}else{
+				return false;
+			}
+		}else{
+			return false;
+		}
+	}else{
+		//Triple indirect addressing
+		if(p_inode->i_block[14]!=NULL){
+			//1
+			if(!hdd_read(fp->disk_info,
+				fp->partition_lba+
+				p_inode->i_block[14]*block_size/HDD_SECTOR_SIZE,
+				block_size / HDD_SECTOR_SIZE, buf)) {
+				return false;
+			}
+			if(((u32*)buf)[(block-12-block_size/4-(block_size/4)*(block_size/4))
+					/((block_size/4)*(block_size/4))]!=NULL){
+				//2
+				if(!hdd_read(fp->disk_info,
+					fp->partition_lba+
+					((u32*)buf)[(block-12-block_size/4-(block_size/4)*(block_size/4))
+					/((block_size/4)*(block_size/4))]*block_size/HDD_SECTOR_SIZE,
+					block_size / HDD_SECTOR_SIZE, buf)) {
+					return false;
+				}
+				//3
+				if(((u32*)buf)[(block-12-block_size/4-(block_size/4)*(block_size/4))
+					/(block_size/4)%(block_size/4)]!=NULL){
+					if(!hdd_read(fp->disk_info,
+						fp->partition_lba+
+						((u32*)buf)[(block-12-block_size/4-(block_size/4)*(block_size/4))
+							/(block_size/4)%(block_size/4)]
+						*block_size/HDD_SECTOR_SIZE,
+						block_size / HDD_SECTOR_SIZE, buf)) {
+						return false;
+					}
+					//4
+					if(((u32*)buf)[(block-12-block_size/4-(block_size/4)*(block_size/4))
+						%(block_size/4)%(block_size/4)]!=NULL){
+						if(!hdd_read(fp->disk_info,
+							fp->partition_lba+
+							((u32*)buf)[(block-12-block_size/4-(block_size/4)*(block_size/4))
+								%(block_size/4)%(block_size/4)]
+							*block_size/HDD_SECTOR_SIZE,
+							block_size / HDD_SECTOR_SIZE, buf)) {
+							return false;
+						}
+						return true;
+					}else{
+						return false;
+					}					
+				}else{
+					return false;
+				}
+			}else{
+				return false;
+			}
+		}else{
+			return false;
+		}
+	}
+}
