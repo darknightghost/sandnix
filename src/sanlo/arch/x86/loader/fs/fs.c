@@ -32,6 +32,7 @@ pfile open(char* path)
 	u8 fs_type;
 	u32 start_lba;
 	u32 sector_count;
+	
 	//Get disk
 	p = path;
 
@@ -40,9 +41,9 @@ pfile open(char* path)
 	} else {
 		return 0;
 	}
-
+	
 	disk = 0;
-
+	
 	while(*p >= '0' && *p <= '9') {
 		disk = (*p - '0') + disk * 10;
 		p++;
@@ -102,13 +103,20 @@ pfile open(char* path)
 	return ret;
 }
 
-u32 read(pfile fp, u8* buf, size_t buf_len)
+u32 read(pfile fp, u8* buf, size_t len)
 {
-	if(fp->fs_type == FS_TYPE_EXT2) {
-		return ext2_read(fp, buf, buf_len);
+	u32 length_read;
+
+	if(fp->pos + len > fp->size) {
+		len = fp->size - fp->pos;
 	}
 
-	return 0;
+	if(fp->fs_type == FS_TYPE_EXT2) {
+		length_read = ext2_read(fp, buf, len);
+	}
+
+	seek(fp, length_read, FILE_POS_CURRENT);
+	return length_read;
 }
 
 s32 seek(pfile fp, s32 offset, u8 start_pos)

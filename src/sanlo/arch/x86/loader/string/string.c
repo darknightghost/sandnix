@@ -61,9 +61,9 @@ char* strcut(char* dest, char* src, char end_str)
 		*p_dest = *p_src;
 	}
 
+	*p_dest = '\0';
 	return dest;
 }
-
 size_t strlen(char* str)
 {
 	size_t ret;
@@ -80,7 +80,6 @@ size_t strlen(char* str)
 		:"m"(str));
 	return ret;
 }
-
 char* strcpy(char* dest, char* src)
 {
 	size_t len;
@@ -95,7 +94,6 @@ char* strcpy(char* dest, char* src)
 		::"m"(src), "m"(dest), "m"(len));
 	return dest;
 }
-
 int strcmp(char* dest, char* src)
 {
 	int ret;
@@ -110,7 +108,6 @@ int strcmp(char* dest, char* src)
 
 	return ret;
 }
-
 char* dectostr(u32 num, char* buf)
 {
 	u32 n;
@@ -118,10 +115,9 @@ char* dectostr(u32 num, char* buf)
 	char* p2;
 	char t;
 	p1 = buf;
-	
 	n = num;
+
 	while(1) {
-		
 		*p1 = '0' + n % 10;
 		p1++;
 		n = n / 10;
@@ -130,6 +126,7 @@ char* dectostr(u32 num, char* buf)
 			break;
 		}
 	}
+
 	*p1 = '\0';
 
 	for(p2 = p1 - 1, p1 = buf;
@@ -142,7 +139,6 @@ char* dectostr(u32 num, char* buf)
 
 	return buf;
 }
-
 char* hextostr(u32 num, char* buf)
 {
 	u32 n;
@@ -150,8 +146,8 @@ char* hextostr(u32 num, char* buf)
 	char* p2;
 	char t;
 	p1 = buf;
-	
 	n = num;
+
 	while(1) {
 		if(n % 0x10 < 10) {
 			*p1 = '0' + n % 0x10;

@@ -1,7 +1,7 @@
 AS = as
 CC = gcc
 ASFLAGS = --32
-CCFLAGS = -std=c99 -m32 -nostdlib -fno-builtin -c
+CCFLAGS = -std=c99 -m32 -nostdlib -fno-builtin -DVERSION=0x0000000001 -c
 
 root_path = ../../../../..
 
@@ -22,7 +22,9 @@ SOURCES = init.s \
 			hdd/hdd.c \
 			hdd/partition.c \
 			fs/fs.c \
-			fs/ext2.c
+			fs/ext2.c \
+			menu/menu.c \
+			k_loader/k_loader.c
 
 OBJS_DIR = $(root_path)/obj/sanlo/x86/loader
 
@@ -35,7 +37,6 @@ OBJS = $(foreach filename,\
 all : $(TARGET)
 
 $(TARGET) : $(OBJS) $(TARGET_DIR)
-	#ld --oformat binary -m elf_i386 -N -Ttext 0x0000 -Map $(MAP) -o $(TARGET) $(OBJS)
 	ld -m elf_i386 -Ttext 0x0000 -Map $(MAP) -o $(TARGET).elf $(OBJS)
 	objcopy -R .note -R .comment -S -O binary $(TARGET).elf $(TARGET)
 	rm $(TARGET).elf

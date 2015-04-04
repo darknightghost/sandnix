@@ -15,10 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "fs.h"
-
 #ifndef	EXT2_H_INCLUDE
 #define	EXT2_H_INCLUDE
+
+#include "fs.h"
 
 #define	EXT2_SUPER_BLOCK_SIZE		1024
 #define	EXT2_NDIR_BLOCKS			12
@@ -116,7 +116,7 @@ typedef	struct _ext2_group_desc {
 	le16	bg_used_dirs_count;	/* Directories count */
 	le16	bg_pad;
 	le32	bg_reserved[3];
-} ext2_group_desc, pext2_group_desc;
+} ext2_group_desc, *pext2_group_desc;
 
 /*
  * Structure of an inode on the disk
@@ -173,7 +173,7 @@ typedef	struct _ext2_inode {
 			u32	m_i_reserved2[2];
 		} masix2;
 	} osd2;				/* OS dependent 2 */
-} ext2_inode, pext2_inode;
+} ext2_inode, *pext2_inode;
 
 /*
  * The new version of the directory entry.  Since EXT2 structures are
@@ -211,11 +211,11 @@ typedef	struct _ext2_file_info {
 	pext2_group_desc	p_group_desc;
 	u32					current_block;
 	char*				block_buf;
-} ext2_file_info, pext2_file_info;
+} ext2_file_info, *pext2_file_info;
 
 #define	EXT2_DIR_ENTRY_BASIC_SIZE	(sizeof(ext2_dir_entry_2)-256)
 bool		ext2_open(pfile fp, char* path);
-u32			ext2_read(pfile fp, u8* buf, size_t buf_len);
+u32			ext2_read(pfile fp, u8* buf, size_t len);
 void		ext2_close(pfile fp);
 
 #endif	//!	EXT2_H_INCLUDE

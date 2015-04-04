@@ -261,7 +261,7 @@ _code_start:
 		rep		movsb
 		//Load gdt
 		lgdt	gdtr_value
-		//Set cr0.pe
+		//Set CR0.PE
 		movl	%cr0,%eax
 		orl		$0x00000001,%eax
 		movl	%eax,%cr0

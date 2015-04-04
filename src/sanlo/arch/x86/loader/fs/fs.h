@@ -43,7 +43,7 @@ typedef	struct	_file {
 } file, *pfile;
 
 pfile			open(char* path);
-u32				read(pfile fp, u8* buf, size_t buf_len);
+u32				read(pfile fp, u8* buf, size_t len);
 s32				seek(pfile fp, s32 offset, u8 start_pos);
 void			close(pfile fp);
 

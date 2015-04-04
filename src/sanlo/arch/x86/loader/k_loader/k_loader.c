@@ -15,29 +15,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "segment.h"
-#include "io/io.h"
-#include "io/stdout.h"
-#include "interrupt/interrupt.h"
-#include "exception/exception.h"
-#include "memory/memory.h"
-#include "io/keyboard.h"
-#include "hdd/hdd.h"
-#include "hdd/partition.h"
-#include "menu/menu.h"
+#include "k_loader.h"
+#include "../fs/fs.h"
+#include "../io/stdout.h"
+#include "../string/string.h"
 
-
-void loader_main()
+bool load_os_kernel(char* path, char* paramters)
 {
-	setup_interrupt();
-	cls(BG_BLACK | FG_BRIGHT_WHITE);
-	print_string(
-		GET_REAL_ADDR("Protect mode entered.\n"),
-		FG_BRIGHT_WHITE | BG_BLACK,
-		BG_BLACK);
-	init_heap();
-	
-	show_menu();
-	
-	return;
+	return true;
 }
