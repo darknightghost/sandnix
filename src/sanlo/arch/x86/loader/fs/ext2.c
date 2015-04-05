@@ -49,8 +49,6 @@ bool ext2_open(pfile fp, char* path)
 	u32 inode_block_num;
 	pext2_inode p_inode;
 	bool directory_flag;
-	char buf[64];
-	
 	//Get super block
 	super_block_lba = fp->partition_lba + 2;
 	p_super_block = malloc(EXT2_SUPER_BLOCK_SIZE);
@@ -76,7 +74,7 @@ bool ext2_open(pfile fp, char* path)
 		free(p_super_block);
 		return false;
 	}
-	
+
 	memset(p_file_info, sizeof(ext2_file_info), 0);
 	//Compute block size
 	p_file_info->block_size = 1 << (p_super_block->s_log_block_size + 10);
@@ -87,12 +85,11 @@ bool ext2_open(pfile fp, char* path)
 		free(p_file_info);
 		return false;
 	}
-	
+
 	//Read GDT of block 0
 	group_num = (p_super_block->s_blocks_count - p_super_block->s_first_data_block - 1)
 				/ p_super_block->s_blocks_per_group + 1;
 	group_desc_size = sizeof(ext2_group_desc) * group_num;
-
 	p_group_desc = malloc((group_desc_size / p_file_info->block_size + 1)
 						  * p_file_info->block_size);
 
@@ -102,7 +99,6 @@ bool ext2_open(pfile fp, char* path)
 		free(block_buf);
 		return false;
 	}
-	
 
 	if(!hdd_read(fp->disk_info,
 				 fp->partition_lba + p_file_info->block_size / HDD_SECTOR_SIZE,
@@ -115,10 +111,10 @@ bool ext2_open(pfile fp, char* path)
 		free(block_buf);
 		return false;
 	}
-	
+
 	p_file_info->p_group_desc = p_group_desc;
 	//Get Root inode
-	get_inode_offset(p_super_block, p_group_desc, p_file_info->block_size, 2, &block, &offset);
+	get_inode_offset(p_super_block, p_group_desc, p_file_info->block_size, 1, &block, &offset);
 
 	if(!hdd_read(fp->disk_info,
 				 fp->partition_lba + block * p_file_info->block_size / HDD_SECTOR_SIZE,
@@ -142,7 +138,7 @@ bool ext2_open(pfile fp, char* path)
 
 	directory_flag = true;
 	fp->extended_info = p_file_info;
-	
+
 	while(*p != '\0') {
 		//Get next inode
 		strcut(file_name, p, '/');
@@ -186,11 +182,6 @@ bool ext2_open(pfile fp, char* path)
 			free(block_buf);
 			return false;
 		}
-	//___________________________________________
-	print_string(
-		GET_REAL_ADDR("\nOpened\n"),
-		FG_BRIGHT_WHITE | BG_BLACK,
-		BG_BLACK);
 	}
 
 	memcpy(&(p_file_info->inode), p_inode, sizeof(ext2_file_info));
@@ -344,10 +335,7 @@ u32 get_file_inode(pfile fp, pext2_inode p_parent_inode, u32 block_size, bool* i
 		free(block_buf);
 		return 0;
 	}
-	print_string(
-		GET_REAL_ADDR("\na\n"),
-		FG_BRIGHT_WHITE | BG_BLACK,
-		BG_BLACK);
+
 	while(read_len < p_parent_inode->i_size) {
 		//Get dir entry
 		if(block_size - (p - block_buf) < EXT2_DIR_ENTRY_BASIC_SIZE) {
@@ -398,11 +386,7 @@ u32 get_file_inode(pfile fp, pext2_inode p_parent_inode, u32 block_size, bool* i
 			memcpy(p_dir_entry->name, p, p_dir_entry->rec_len - EXT2_DIR_ENTRY_BASIC_SIZE);
 			p += p_dir_entry->rec_len - EXT2_DIR_ENTRY_BASIC_SIZE;
 		}
-		//___________________________________________
-		print_string(
-			p_dir_entry->name,
-			FG_BRIGHT_WHITE | BG_BLACK,
-			BG_BLACK);
+
 		//Compare dir name
 		if(strcmp(p_dir_entry->name, name) == 0) {
 			ret = p_dir_entry->inode;
