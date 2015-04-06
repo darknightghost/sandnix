@@ -92,6 +92,7 @@ void show_menu()
 			}
 		}
 	}
+
 	panic(EXCEPTION_NO_CONFIG_FILE);
 	//Analyse config file
 _ANALYSE_CFG:
