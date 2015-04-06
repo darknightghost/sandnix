@@ -72,6 +72,8 @@ void print_string(char* str, u8 color, u8 bg_color)
 			set_cursor_pos(
 				GET_REAL_VARIABLE(current_cursor_line),
 				GET_REAL_VARIABLE(current_cursor_row));
+		} else if(*p == '\t') {
+			print_string(GET_REAL_ADDR("    "), color, bg_color);
 		} else {
 			//Print character
 			character = (u16)color * 0x100 + *p;

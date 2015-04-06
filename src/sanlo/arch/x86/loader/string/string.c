@@ -104,6 +104,14 @@ int strcmp(char* dest, char* src)
 		*p1 != '\0' && *p2 != '\0';
 		p1++, p2++) {
 		ret = *p1 - *p2;
+
+		if(ret != 0) {
+			break;
+		}
+	}
+
+	if(*p1 != '\0' || *p2 != '\0') {
+		ret = *p1 - *p2;
 	}
 
 	return ret;
