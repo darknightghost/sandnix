@@ -18,7 +18,7 @@
 #include "string.h"
 #include "../io/stdout.h"
 
-void memset(void* addr, size_t size, u8 value)
+void memset(void* addr, u8 value, size_t size)
 {
 	__asm__ __volatile__(
 		"cld\n\t"

@@ -24,7 +24,7 @@ char*		strcut(char* dest, char* src, char end_str);
 size_t		strlen(char* str);
 int			strcmp(char* dest, char* src);
 char*		strcpy(char* dest, char* src);
-void		memset(void* addr, size_t size, u8 value);
+void		memset(void* addr, u8 value, size_t size);
 void		memcpy(void* dest, void* src, size_t len);
 char*		dectostr(u32 num, char* buf);
 char*		hextostr(u32 num, char* buf);

@@ -104,7 +104,7 @@ void setup_idt()
 {
 	idt_reg idt_value;
 
-	memset((void*)IDT_BASE_ADDR, INTERRUPT_MAX_NUM * sizeof(idt), 0);
+	memset((void*)IDT_BASE_ADDR, 0, INTERRUPT_MAX_NUM * sizeof(idt));
 	SET_IDT(0x00, int_00, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1);
 	SET_IDT(0x01, int_01, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1);
 	SET_IDT(0x02, int_02, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1);
