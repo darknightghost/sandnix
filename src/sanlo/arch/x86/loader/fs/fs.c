@@ -19,7 +19,6 @@
 #include "ext2.h"
 #include "../memory/memory.h"
 #include "../string/string.h"
-#include "../io/stdout.h"
 
 pfile open(char* path)
 {
@@ -32,24 +31,25 @@ pfile open(char* path)
 	u8 fs_type;
 	u32 start_lba;
 	u32 sector_count;
-	
+
 	//Get disk
 	p = path;
 
 	if(*p == '(' && *(p + 1) == 'h' && *(p + 2) == 'd') {
 		p += 3;
+
 	} else {
 		return 0;
 	}
-	
+
 	disk = 0;
-	
+
 	while(*p >= '0' && *p <= '9') {
 		disk = (*p - '0') + disk * 10;
 		p++;
 	}
 
-	diskinfo = get_hdd_info(disk);
+	diskinfo = get_hdd_info((u8)disk);
 
 	if(diskinfo & DEVICE_NOT_EXISTS) {
 		return NULL;
@@ -74,8 +74,8 @@ pfile open(char* path)
 		return NULL;
 	}
 
-	partition_type = get_partition_info(disk, partition,
-										&start_lba, &sector_count, &fs_type);
+	partition_type = get_partition_info((u8)disk, (u8)partition,
+	                                    &start_lba, &sector_count, &fs_type);
 
 	if(partition_type & PARTITION_NOT_FOUND
 	   || partition_type & PARTITION_EXTENDED) {
@@ -95,6 +95,7 @@ pfile open(char* path)
 			free(ret);
 			return NULL;
 		}
+
 	} else {
 		free(ret);
 		return NULL;
@@ -129,35 +130,41 @@ s32 seek(pfile fp, s32 offset, u8 start_pos)
 			return 0;
 		}
 
-		if(fp->size < offset) {
+		if((s32)fp->size < offset) {
 			fp->pos = fp->size;
 			return fp->size;
+
 		} else {
 			fp->pos = (u32)offset;
 			return offset;
 		}
+
 	} else if(start_pos == FILE_POS_END) {
 		if(offset > 0) {
 			fp->pos = fp->size;
 			return 0;
 		}
 
-		if(fp->size < -offset) {
+		if((s32)fp->size < -offset) {
 			fp->pos = 0;
-			return -fp->size;
+			return -(s32)(fp->size);
+
 		} else {
 			fp->pos = (size_t)(fp->size + offset);
 			return offset;
 		}
+
 	} else if(start_pos == FILE_POS_CURRENT) {
 		if(fp->pos + offset > fp->size) {
 			ret = fp->size - fp->pos;
 			fp->pos = fp->size;
 			return ret;
+
 		} else if(fp->pos + offset < 0) {
-			ret = -fp->pos;
+			ret = -(s32)fp->pos;
 			fp->pos = 0;
 			return ret;
+
 		} else {
 			fp->pos = (size_t)(fp->pos + offset);
 			return offset;
