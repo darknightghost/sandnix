@@ -18,6 +18,8 @@
 #ifndef	TYPES_H_INCLUDE
 #define	TYPES_H_INCLUDE
 
+#include "version.h"
+
 #define	LOADER_OFFSET			0x00030000
 
 #define	GET_REAL_ADDR(p)		(((char*)(p)) + LOADER_OFFSET)

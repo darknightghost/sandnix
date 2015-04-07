@@ -31,23 +31,16 @@
 #define	FG_BRIGHT_RED		0x0C
 #define	FG_BRIGHT_WHITE		0x0F
 
-//Clear screen
 void		cls(u8 color);
-
-//Print string
 void		print_string(char* str, u8 color, u8 bg_color);
-
-//Set cursor position
 void		set_cursor_pos(u16 line, u16 row);
-
-//Write video buffer
+void		get_cursor_pos(u16* line, u16* row);
 void		write_video_buf(
 	u16* p_data,				//Data to write
 	size_t size,				//How mant bytes to write
 	//start position
 	u16 line,
 	u16 row);
-
 void		scroll_down(u16 line, u16 color);
 
 

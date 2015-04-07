@@ -21,7 +21,7 @@ $(TARGET) : $(BINARYS)
 	mkdir -p $(TARGET_DIR)
 	cp $(IMG) $(TARGET)
 	dd if=$(BOOT_SECTOR) of=$(TARGET) bs=512 count=1 conv=notrunc
-	dd if=$(KERNEL_LOADER) of=$(TARGET) bs=512 seek=1 count=32 conv=notrunc
+	dd if=$(KERNEL_LOADER) of=$(TARGET) bs=512 seek=1 count=64 conv=notrunc
 $(BINARYS):
 	$(MAKE) -C boot all
 	$(MAKE) -C loader all

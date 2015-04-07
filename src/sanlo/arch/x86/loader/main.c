@@ -15,17 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "segment.h"
-#include "io/io.h"
 #include "io/stdout.h"
 #include "interrupt/interrupt.h"
-#include "exception/exception.h"
 #include "memory/memory.h"
-#include "io/keyboard.h"
-#include "hdd/hdd.h"
-#include "hdd/partition.h"
 #include "menu/menu.h"
-
 
 void loader_main()
 {

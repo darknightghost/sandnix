@@ -20,6 +20,20 @@
 
 #include "../types.h"
 
+typedef	struct	_menu_item {
+	struct	_menu_item*	p_prev;
+	struct	_menu_item*	p_next;
+	char*				name;
+	char*				kernel_path;
+	char*				paramter;
+} menu_item, *pmenu_item, *menu_item_list;
+
+typedef	struct	_menu {
+	u32				selected_item;
+	u32				item_num;
+	menu_item_list	menu_list;
+} menu, *pmenu;
+
 void	show_menu();
 
 #endif	//!	MENU_H_INCLUDE

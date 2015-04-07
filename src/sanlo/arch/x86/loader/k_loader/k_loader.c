@@ -20,7 +20,7 @@
 #include "../io/stdout.h"
 #include "../string/string.h"
 
-bool load_os_kernel(char* path, char* paramters)
+bool load_os_kernel(char* path, char* paramter)
 {
-	return true;
+	return false;
 }

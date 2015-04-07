@@ -131,6 +131,13 @@ void set_cursor_pos(u16 line, u16 row)
 	return;
 }
 
+void get_cursor_pos(u16* line, u16* row)
+{
+	*line=current_cursor_line;
+	*row=current_cursor_row;
+	return;
+}
+
 void write_video_buf(
 	u16* p_data,
 	size_t size,

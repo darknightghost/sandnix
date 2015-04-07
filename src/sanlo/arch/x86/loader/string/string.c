@@ -17,6 +17,7 @@
 
 #include "string.h"
 #include "../io/stdout.h"
+#include "../fs/fs.h"
 
 void memset(void* addr, u8 value, size_t size)
 {
