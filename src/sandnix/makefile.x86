@@ -1,0 +1,59 @@
+AS = as
+CC = gcc
+ASFLAGS = --32
+CCFLAGS = -std=c99 -m32 -nostdlib -fno-builtin -DVERSION=0x0000000001 -c
+
+root_path = ../..
+
+TARGET_DIR = $(root_path)/bin/sandnix/x86
+TARGET = $(TARGET_DIR)/sandnix
+MAP = $(TARGET_DIR)/sandnix.map
+
+SOURCES += setup/arch/x86/setup.s
+
+OBJS_DIR = $(root_path)/obj/sandnix/x86
+
+OBJS = $(foreach filename,\
+		$(SOURCES),\
+		$(OBJS_DIR)/$(basename $(filename)).o)
+		
+.PHONY : all clean delete rebuild
+
+all : $(TARGET)
+
+$(TARGET) : $(OBJS) $(TARGET_DIR)
+	echo ${SOURCES}
+	ld -m elf_i386 -Ttext 0xC0100000 -Map $(MAP) -o $(TARGET) $(OBJS)
+
+$(OBJS) : $(SOURCES) $(OBJS_DIR)
+	$(foreach filename,$(SOURCES),\
+		$(if $(filter .c,$(suffix $(filename))),\
+			$(shell \
+			$(CC) $(CCFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(filename))\
+		)\
+		$(if $(filter .s,$(suffix $(filename))),\
+			$(shell \
+			$(AS) $(ASFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(filename))\
+		)\
+		$(if $(filter .S,$(suffix $(filename))),\
+			$(shell \
+			$(AS) $(ASFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(filename))\
+		)\
+	)
+$(TARGET_DIR) :
+	mkdir -p $(TARGET_DIR)
+	
+$(OBJS_DIR) :
+	$(foreach filename,\
+		$(OBJS),\
+		$(shell mkdir -p $(dir $(filename))))
+
+clean :
+	-rm $(OBJS)
+	
+delete :
+	-rm $(OBJS)
+	-rm $(TARGET)
+	
+rebuild : delete all
+
