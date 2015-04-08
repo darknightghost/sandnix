@@ -32,7 +32,7 @@ OBJS = $(foreach filename,\
 		$(SOURCES),\
 		$(OBJS_DIR)/$(basename $(filename)).o)
 		
-.PHONY : all clean delete
+.PHONY : all clean delete rebuild
 
 all : $(TARGET)
 
@@ -69,3 +69,5 @@ clean :
 delete :
 	-rm $(OBJS)
 	-rm $(TARGET)
+	
+rebuild : delete all

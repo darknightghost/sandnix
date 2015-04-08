@@ -13,7 +13,7 @@ BINARYS = $(BOOT_SECTOR) \
 
 IMG = floppy.img
 
-.PHONY : all clean delete
+.PHONY : all clean delete rebuild
 
 all : $(TARGET)
 
@@ -35,3 +35,5 @@ delete :
 	$(MAKE) -C boot delete
 	$(MAKE) -C loader delete
 	-rm $(TARGET)
+
+rebuild : delete all
