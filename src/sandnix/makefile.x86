@@ -1,7 +1,9 @@
 AS = as
 CC = gcc
+LINKER = ld
 ASFLAGS = --32
 CCFLAGS = -std=c99 -m32 -nostdlib -fno-builtin -DX86 -DVERSION=0x0000000001 -c
+LDFLAGS = -m elf_i386 --gc-sections -Ttext 0xC0100400 -e _start
 
 root_path = ../..
 
@@ -22,8 +24,7 @@ OBJS = $(foreach filename,\
 all : $(TARGET)
 
 $(TARGET) : $(OBJS) $(TARGET_DIR)
-	echo ${SOURCES}
-	ld -m elf_i386 -Ttext 0xC0100000 -Map $(MAP) -o $(TARGET) $(OBJS)
+	$(LINKER) $(LDFLAGS) -Map $(MAP) -o $(TARGET) $(OBJS)
 
 $(OBJS) : $(SOURCES) $(OBJS_DIR)
 	$(foreach filename,$(SOURCES),\

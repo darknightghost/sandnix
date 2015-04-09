@@ -1,5 +1,5 @@
 
-export SOURCES = main.c
+export SOURCES = init/main.c
 
 x86_build :
 		$(MAKE) -f makefile.x86 all

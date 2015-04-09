@@ -20,4 +20,6 @@
 
 #include "types.h"
 
+#define	KERNEL_PARAMTER		((char*)0xC0100000)
+
 #endif	//!	PARAMTER_H_INCLUDE

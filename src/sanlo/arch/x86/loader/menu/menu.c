@@ -279,12 +279,12 @@ bool analyse_cfg_file(pfile fp, pmenu p_boot_menu)
 {
 	char* buf;
 	pmenu_item p_item;
-	buf = malloc(2048);
+	buf = malloc(1024);
 	memset(p_boot_menu, 0, sizeof(menu));
 
 	while(1) {
 		jmp_space(fp);
-		get_word(fp, buf, 2048);
+		get_word(fp, buf, 1024);
 
 		if(strcmp(buf, GET_REAL_ADDR("")) == 0) {
 			break;
@@ -297,24 +297,24 @@ bool analyse_cfg_file(pfile fp, pmenu p_boot_menu)
 		jmp_space(fp);
 		p_item = malloc(sizeof(menu_item));
 		//Get name
-		get_word(fp, buf, 2048);
+		get_word(fp, buf, 1024);
 		p_item->name = malloc(strlen(buf) + 1);
 		strcpy(p_item->name, buf);
 		//Get kernel path
 		jmp_space(fp);
-		get_word(fp, buf, 2048);
+		get_word(fp, buf, 1024);
 
 		if(strcmp(buf, GET_REAL_ADDR("kernel")) != 0) {
 			return false;
 		}
 
 		jmp_space(fp);
-		get_word(fp, buf, 2048);
+		get_word(fp, buf, 1024);
 		p_item->kernel_path = malloc(strlen(buf) + 1);
 		strcpy(p_item->kernel_path, buf);
 		//Get paramters
 		jmp_space(fp);
-		get_line(fp, buf, 2048);
+		get_line(fp, buf, 1024);
 		p_item->paramter = malloc(strlen(buf) + 1);
 		strcpy(p_item->paramter, buf);
 

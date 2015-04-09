@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-.section	.text 
+.section	.text
 .global		_start
 
 
@@ -25,5 +25,4 @@ _start:
 		nop
 		nop
 		nop
-		nop
-		call		kernel_main
+		jmp		kernel_main
