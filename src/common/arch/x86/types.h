@@ -18,14 +18,29 @@
 #ifndef	TYPES_H_INCLUDE
 #define	TYPES_H_INCLUDE
 
-#include "version.h"
+#define	NULL				((void*)0)
 
-#define	LOADER_OFFSET			0x00030000
+typedef	unsigned int		size_t;
 
-#define	GET_REAL_ADDR(p)		(((char*)(p)) + LOADER_OFFSET)
-#define	GET_REAL_VARIABLE(p)	(*((char*)(&p) + LOADER_OFFSET))
+typedef unsigned char		u8;
+typedef unsigned short		u16;
+typedef unsigned long		u32;
+typedef	unsigned long long	u64;
 
-#undef	TYPES_H_INCLUDE
-#include "../../../../common/arch/x86/types.h"
+typedef signed char			s8;
+typedef short				s16;
+typedef long				s32;
+typedef	long long			s64;
+
+typedef unsigned char		le8;
+typedef unsigned short		le16;
+typedef unsigned long		le32;
+typedef	unsigned long long	le64;
+
+#ifndef	__cplusplus
+	typedef	int					bool;
+	#define	true				1
+	#define	false				0
+#endif	//!	__cplusplus
 
 #endif	//! TYPES_H_INCLUDE

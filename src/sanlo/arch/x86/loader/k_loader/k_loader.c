@@ -20,18 +20,26 @@
 #include "../io/stdout.h"
 #include "../string/string.h"
 #include "../exception/exception.h"
+#include "../../../../../common/arch/x86/elf_x86.h"
+#include "../../../../../common/arch/x86/paramter.h"
 
-static	load_elf(u32 base_addr,pfile fp);
+static	bool		load_sector(u32 base_addr,pfile fp);
 
 bool load_os_kernel(char* path, char* paramter)
 {
 	pfile fp;
-	
-	//Open kernel
+	Elf32_Shdr elf_header;
+
+	//Open kernel file
 	fp=open(path);
-	
+
 	if(fp==NULL){
 		panic(EXCEPTION_NO_KERNEL);
 	}
 	return false;
+}
+
+bool load_sector(u32 base_addr,pfile fp)
+{
+	return true;
 }
