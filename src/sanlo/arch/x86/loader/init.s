@@ -16,7 +16,7 @@
 */
 
 .include	"../common_defs.inc"
-.include	"./segment.inc"
+.include	"../../../../common/arch/x86/segment.inc"
 .section	.text 
 
 .global		_start

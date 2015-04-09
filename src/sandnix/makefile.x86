@@ -1,7 +1,7 @@
 AS = as
 CC = gcc
 ASFLAGS = --32
-CCFLAGS = -std=c99 -m32 -nostdlib -fno-builtin -DVERSION=0x0000000001 -c
+CCFLAGS = -std=c99 -m32 -nostdlib -fno-builtin -DX86 -DVERSION=0x0000000001 -c
 
 root_path = ../..
 

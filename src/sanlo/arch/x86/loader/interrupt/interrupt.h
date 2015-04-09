@@ -19,7 +19,7 @@
 #define	INTERRUPT_H_INCLUDE
 
 #include "../types.h"
-#include "../segment.h"
+#include "../../../../../common/arch/x86/segment.h"
 
 #pragma	pack(1)
 

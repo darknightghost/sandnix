@@ -19,8 +19,19 @@
 #include "../fs/fs.h"
 #include "../io/stdout.h"
 #include "../string/string.h"
+#include "../exception/exception.h"
+
+static	load_elf(u32 base_addr,pfile fp);
 
 bool load_os_kernel(char* path, char* paramter)
 {
+	pfile fp;
+	
+	//Open kernel
+	fp=open(path);
+	
+	if(fp==NULL){
+		panic(EXCEPTION_NO_KERNEL);
+	}
 	return false;
 }

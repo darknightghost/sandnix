@@ -17,7 +17,7 @@
 
 #include "stdout.h"
 #include "io.h"
-#include "../segment.h"
+#include "../../../../../common/arch/x86/segment.h"
 #include "../string/string.h"
 
 #define	CRTC_ADDR_REG		0x03D4
