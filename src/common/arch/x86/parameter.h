@@ -15,12 +15,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	PARAMTER_H_INCLUDE
-#define	PARAMTER_H_INCLUDE
+#ifndef	PARAMETER_H_INCLUDE
+#define	PARAMETER_H_INCLUDE
 
 #include "types.h"
 
-#define	KERNEL_PARAMTER_PHYSICAL	((char*)0x00100000)
-#define	KERNEL_PARAMTER				((char*)0xC0100000)
+#define	KERNEL_PARAMETER_PHYSICAL		((char*)0x00100000)
+#define	KERNEL_PARAMETER				((char*)0xC0100000)
+#define	KERNEL_PARAMETER_MAX_LEN		1024
 
 #endif	//!	PARAMTER_H_INCLUDE

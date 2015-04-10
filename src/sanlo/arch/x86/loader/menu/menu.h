@@ -25,7 +25,7 @@ typedef	struct	_menu_item {
 	struct	_menu_item*	p_next;
 	char*				name;
 	char*				kernel_path;
-	char*				paramter;
+	char*				parameter;
 } menu_item, *pmenu_item, *menu_item_list;
 
 typedef	struct	_menu {
