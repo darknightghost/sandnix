@@ -25,7 +25,7 @@
 
 #define	VIRTUAL_ADDR_OFFSET			0xC0100000
 
-static	bool		load_section(Elf32_Phdr* p_pheader, pfile fp);
+static	bool		load_segment(Elf32_Phdr* p_pheader, pfile fp);
 
 bool load_os_kernel(char* path, char* parameters)
 {
@@ -35,28 +35,26 @@ bool load_os_kernel(char* path, char* parameters)
 	Elf32_Phdr* pheader_buf;
 	Elf32_Phdr* p_pheader;
 	u32 cnt;
-	
 	//Open kernel file
 	fp = open(path);
 
 	if(fp == NULL) {
 		return false;
 	}
-	
+
 	//Check parameters length
-	if(strlen(parameters)+1>KERNEL_PARAMETER_MAX_LEN){
+	if(strlen(parameters) + 1 > KERNEL_PARAMETER_MAX_LEN) {
 		panic(EXCEPTION_KERNEL_PARAMETER_TOO_LONG);
 	}
 
 	//Read elf header
-	if(read(fp, &elf_header, sizeof(Elf32_Ehdr)) != sizeof(Elf32_Ehdr)) {
+	if(read(fp, (u8*)&elf_header, sizeof(Elf32_Ehdr)) != sizeof(Elf32_Ehdr)) {
 		panic(EXCEPTION_UNKNOW_KERNEL_FORMAT);
 	}
 
 	entry_address = (void*)(elf_header.e_entry) - VIRTUAL_ADDR_OFFSET;
-	
 	//Read program header table
-	pheader_buf = malloc(elf_header.phnum * elf_header.e_phentsize);
+	pheader_buf = malloc(elf_header.e_phnum * elf_header.e_phentsize);
 
 	if(pheader_buf == NULL) {
 		panic(EXCEPTION_NOT_ENOUGH_MEMORY);
@@ -64,51 +62,47 @@ bool load_os_kernel(char* path, char* parameters)
 
 	seek(fp, elf_header.e_phoff, FILE_POS_BEGIN);
 
-	if(read(fp, pheader_buf, elf_header.phnum * elf_header.e_phentsize)
-	   != elf_header.phnum * elf_header.e_phentsize) {
+	if(read(fp, (u8*)pheader_buf, elf_header.e_phnum * elf_header.e_phentsize)
+	   != elf_header.e_phnum * elf_header.e_phentsize) {
 		panic(EXCEPTION_UNKNOW_KERNEL_FORMAT);
 	}
-	
+
 	//Load segments
-	for(p_pheader=pheader_buf,cnt=0;
-		cnt<elf_header.phnum;
-		cnt++,p_pheader=(Elf32_Phdr*)((char*)p_pheader+elf_header.e_phentsize)){
-		if(!load_section(p_pheader,fp)){
+	for(p_pheader = pheader_buf, cnt = 0;
+		cnt < elf_header.e_phnum;
+		cnt++, p_pheader = (Elf32_Phdr*)((char*)p_pheader + elf_header.e_phentsize)) {
+		if(!load_segment(p_pheader, fp)) {
 			panic(EXCEPTION_UNKNOW_KERNEL_FORMAT);
 		}
 	}
-	
+
 	//Copy parameters
-	strcpy(KERNEL_PARAMETER_PHYSICAL,parameters);
-	
+	strcpy(KERNEL_PARAMETER_PHYSICAL, parameters);
 	__asm__ __volatile__(
-	"cli\n\t"
-	"movl		%0,%%eax\n\t"
-	"jmpl		%%eax\n\t"
-	::"m"(entry_address));
-	
+		"cli\n\t"
+		"movl		%0,%%eax\n\t"
+		"jmpl		*%%eax\n\t"
+		::"m"(entry_address));
 	//Err...In fact,this function will never return true
 	return true;
 }
 
-bool load_section(Elf32_Phdr* p_pheader, pfile fp)
+bool load_segment(Elf32_Phdr* p_pheader, pfile fp)
 {
 	u32 size_in_mem;
-	
-	size_in_mem=(p_pheader.p_memsz%p_pheader.p_align?1:0
-					+p_pheader.p_memsz/p_pheader.p_align)
-					*p_pheader.p_align;
-	seek(fp, p_pheader.p_offset, FILE_POS_BEGIN);
-	
-	//Read segment
-	if(read(fp,(u8*)(p_pheader.p_vaddr-VIRTUAL_ADDR_OFFSET),p_pheader.p_filesz)
-		!=p_pheader.p_filesz){
-		return false;	
-	}
-	
-	memset((u8*)(p_pheader.p_vaddr-VIRTUAL_ADDR_OFFSET+p_pheader.p_filesz),
-			0,
-			size_in_mem-p_pheader.p_filesz);
+	size_in_mem = (p_pheader->p_memsz % p_pheader->p_align ? 1 : 0
+				   + p_pheader->p_memsz / p_pheader->p_align)
+				  * p_pheader->p_align;
+	seek(fp, p_pheader->p_offset, FILE_POS_BEGIN);
 
+	//Read segment
+	if(read(fp, (u8*)(p_pheader->p_vaddr - VIRTUAL_ADDR_OFFSET), p_pheader->p_filesz)
+	   != p_pheader->p_filesz) {
+		return false;
+	}
+
+	memset((u8*)(p_pheader->p_vaddr - VIRTUAL_ADDR_OFFSET + p_pheader->p_filesz),
+		   0,
+		   size_in_mem - p_pheader->p_filesz);
 	return true;
 }

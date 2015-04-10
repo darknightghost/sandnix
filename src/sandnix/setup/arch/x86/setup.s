@@ -22,7 +22,8 @@
 .code32
 
 _start:
-		nop
+		xorl	%eax,%eax
+		movl	%eax,%gs:0
 		nop
 		nop
 		jmp		kernel_main
