@@ -79,7 +79,7 @@ void show_menu()
 				p_menu_item = p_menu_item->p_next;
 			}
 
-			if(!load_os_kernel(p_menu_item->kernel_path, p_menu_item->parameter)) {
+			if(!load_os_kernel(p_menu_item->kernel_path, p_menu_item->paramter)) {
 				panic(EXCEPTION_NO_KERNEL);
 			}
 		} else if(pressed_key == KEY_UP_PRESSED) {
@@ -312,11 +312,11 @@ bool analyse_cfg_file(pfile fp, pmenu p_boot_menu)
 		get_word(fp, buf, 1024);
 		p_item->kernel_path = malloc(strlen(buf) + 1);
 		strcpy(p_item->kernel_path, buf);
-		//Get parameters
+		//Get paramters
 		jmp_space(fp);
 		get_line(fp, buf, 1024);
-		p_item->parameter = malloc(strlen(buf) + 1);
-		strcpy(p_item->parameter, buf);
+		p_item->paramter = malloc(strlen(buf) + 1);
+		strcpy(p_item->paramter, buf);
 
 		if(p_boot_menu->menu_list == NULL) {
 			p_item->p_prev = p_item;
