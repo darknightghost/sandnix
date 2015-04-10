@@ -15,25 +15,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	MENU_H_INCLUDE
-#define	MENU_H_INCLUDE
+#ifndef	PARAMETER_H_INCLUDE
+#define	PARAMETER_H_INCLUDE
 
-#include "../types.h"
+#include "types.h"
 
-typedef	struct	_menu_item {
-	struct	_menu_item*	p_prev;
-	struct	_menu_item*	p_next;
-	char*				name;
-	char*				kernel_path;
-	char*				parameter;
-} menu_item, *pmenu_item, *menu_item_list;
+#define	KERNEL_PARAMETER_PHYSICAL		((char*)0x00100000)
+#define	KERNEL_PARAMETER				((char*)0xC0100000)
+#define	KERNEL_PARAMETER_MAX_LEN		1024
 
-typedef	struct	_menu {
-	u32				selected_item;
-	u32				item_num;
-	menu_item_list	menu_list;
-} menu, *pmenu;
-
-void	show_menu();
-
-#endif	//!	MENU_H_INCLUDE
+#endif	//!	PARAMTER_H_INCLUDE

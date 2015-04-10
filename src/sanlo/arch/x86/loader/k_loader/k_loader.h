@@ -21,6 +21,6 @@
 #include "../types.h"
 #include "../memory/memory.h"
 
-bool	load_os_kernel(char* path, char* paramter);
+bool	load_os_kernel(char* path, char* parameters);
 
 #endif	//!	K_LOADER_H_INCLUDE
