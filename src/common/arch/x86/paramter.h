@@ -20,6 +20,7 @@
 
 #include "types.h"
 
-#define	KERNEL_PARAMTER		((char*)0xC0100000)
+#define	KERNEL_PARAMTER_PHYSICAL	((char*)0x00100000)
+#define	KERNEL_PARAMTER				((char*)0xC0100000)
 
 #endif	//!	PARAMTER_H_INCLUDE

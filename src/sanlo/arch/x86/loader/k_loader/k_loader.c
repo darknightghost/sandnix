@@ -23,23 +23,55 @@
 #include "../../../../../common/arch/x86/elf_x86.h"
 #include "../../../../../common/arch/x86/paramter.h"
 
-static	bool		load_sector(u32 base_addr,pfile fp);
+#define	VIRTUAL_ADDR_OFFSET			0xC0100000
+
+static	bool		load_section(u32 base_addr, pfile fp);
 
 bool load_os_kernel(char* path, char* paramter)
 {
 	pfile fp;
-	Elf32_Shdr elf_header;
-
+	Elf32_Ehdr elf_header;
+	void* entry_address;
+	Elf32_Phdr* pheader_buf;
+	Elf32_Phdr* p_pheader;
+	u32 cnt;
+	
 	//Open kernel file
-	fp=open(path);
+	fp = open(path);
 
-	if(fp==NULL){
-		panic(EXCEPTION_NO_KERNEL);
+	if(fp == NULL) {
+		return false;
+	}
+
+	//Read elf header
+	if(read(fp, &elf_header, sizeof(Elf32_Ehdr)) != sizeof(Elf32_Ehdr)) {
+		panic(EXCEPTION_UNKNOW_KERNEL_FORMAT);
+	}
+
+	entry_address = (void*)(elf_header.e_entry) - VIRTUAL_ADDR_OFFSET;
+	//Read program headers
+	pheader_buf = malloc(elf_header.phnum * elf_header.e_phentsize);
+
+	if(pheader_buf == NULL) {
+		panic(EXCEPTION_NOT_ENOUGH_MEMORY);
+	}
+
+	seek(fp, elf_header.e_phoff, FILE_POS_BEGIN);
+
+	if(read(fp, pheader_buf, elf_header.phnum * elf_header.e_phentsize)
+	   != elf_header.phnum * elf_header.e_phentsize) {
+		panic(EXCEPTION_UNKNOW_KERNEL_FORMAT);
+	}
+	
+	p_pheader=pheader_buf;
+	
+	for(cnt=0;cnt<elf_header.phnum;cnt++){
+	
 	}
 	return false;
 }
 
-bool load_sector(u32 base_addr,pfile fp)
+bool load_section(void* base_addr, u32 size, u32 offset, pfile fp)
 {
 	return true;
 }
