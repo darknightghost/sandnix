@@ -15,11 +15,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-.section	.text
-.global		_start
+#ifndef	KERNEL_IMAGE_H_INCLUDE
+#define	KERNEL_IMAGE_H_INCLUDE
 
+#include "types.h"
 
-.code32
+#define	KERNEL_BASE						((void*)0xC0100400)
+#define	KERNEL_PARAMETER_PHYSICAL		((char*)0x00100000)
+#define	KERNEL_PARAMETER				((char*)0xC0100000)
+#define	KERNEL_PARAMETER_MAX_LEN		1024
+#define	VIRTUAL_ADDR_OFFSET				0xC0100000
 
-_start:
-		jmp		kernel_main
+#endif	//!	KERNEL_IMAGE_H_INCLUDE

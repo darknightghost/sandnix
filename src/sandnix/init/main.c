@@ -15,6 +15,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifdef	X86
+
+#include "../../common/arch/x86/types.h"
+#include "../../common/arch/x86/parameter.h"
+
+#endif	//X86
+
 void kernel_main()
 {
 	while(1);

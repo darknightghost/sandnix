@@ -15,13 +15,5 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	PARAMETER_H_INCLUDE
-#define	PARAMETER_H_INCLUDE
-
-#include "types.h"
-
-#define	KERNEL_PARAMETER_PHYSICAL		((char*)0x00100000)
-#define	KERNEL_PARAMETER				((char*)0xC0100000)
-#define	KERNEL_PARAMETER_MAX_LEN		1024
-
-#endif	//!	PARAMTER_H_INCLUDE
+#include "../../../../common/arch/x86/types.h"
+#include "../../../../common/arch/x86/kernel_image.h"

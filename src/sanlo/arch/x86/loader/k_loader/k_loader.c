@@ -21,9 +21,7 @@
 #include "../string/string.h"
 #include "../exception/exception.h"
 #include "../../../../../common/arch/x86/elf_x86.h"
-#include "../../../../../common/arch/x86/parameter.h"
-
-#define	VIRTUAL_ADDR_OFFSET			0xC0100000
+#include "../../../../../common/arch/x86/kernel_image.h"
 
 static	bool		load_segment(Elf32_Phdr* p_pheader, pfile fp);
 
