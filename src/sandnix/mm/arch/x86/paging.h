@@ -15,15 +15,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	SEGMENT_H_INCLUDE
-#define	SEGMENT_H_INCLUDE
+#ifndef	PAGING_H_INCLUDE
+#define	PAGING_H_INCLUDE
 
-#define	DESCRIPTOR_SIZE			8
-#define	SELECTOR_K_DATA			(DESCRIPTOR_SIZE)
-#define	SELECTOR_K_CODE			(DESCRIPTOR_SIZE * 2)
-#define	SELECTOR_U_DATA			(DESCRIPTOR_SIZE * 3 | 3)
-#define	SELECTOR_U_CODE			(DESCRIPTOR_SIZE * 4 | 3)
-#define	SELECTOR_BASIC_VIDEO	(DESCRIPTOR_SIZE * 5)
-#define	BASIC_VIDEO_BASE_ADDR	((void*)0x000B8000)
+#include "../../../../common/arch/x86/types.h"
 
-#endif	//! SEGMENT_H_INCLUDE
+#endif	//!	PAGING_H_INCLUDE

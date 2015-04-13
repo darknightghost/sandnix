@@ -15,12 +15,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-//------------------------------Selectors---------------------------------------
+#ifndef	SEGMENT_H_INCLUDE
+#define	SEGMENT_H_INCLUDE
 
-.equ		DESCRIPTOR_SIZE,8
-.equ		SELECTOR_K_DATA,(1 * DESCRIPTOR_SIZE)
-.equ		SELECTOR_K_CODE,(2 * DESCRIPTOR_SIZE)
-.equ		SELECTOR_U_DATA,(3 * DESCRIPTOR_SIZE | 3)
-.equ		SELECTOR_U_CODE,(4 * DESCRIPTOR_SIZE | 3)
-.equ		SELECTOR_BASIC_VIDEO,(5 * DESCRIPTOR_SIZE)
-.equ		BASIC_VIDEO_BASE_ADDR,0x000B8000
+#define	DESCRIPTOR_SIZE			8
+#define	SELECTOR_K_DATA			(DESCRIPTOR_SIZE)
+#define	SELECTOR_K_CODE			(DESCRIPTOR_SIZE * 2)
+#define	SELECTOR_BASIC_VIDEO	(DESCRIPTOR_SIZE * 3)
+#define	BASIC_VIDEO_BASE_ADDR	((void*)0x000B8000)
+
+#endif	//! SEGMENT_H_INCLUDE

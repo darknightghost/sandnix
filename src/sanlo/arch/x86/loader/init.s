@@ -16,7 +16,7 @@
 */
 
 .include	"../common_defs.inc"
-.include	"../../../../common/arch/x86/segment.inc"
+.include	"segment.inc"
 .section	.text 
 
 .global		_start
@@ -79,10 +79,6 @@ descriptor_kernel_data:
 SEGMENT_DESCRIPTOR	0,				0xFFFFF,			DA_DRW | DA_DPL0 | DA_32
 descriptor_kernel_code:
 SEGMENT_DESCRIPTOR	0,				0xFFFFF,			DA_CR | DA_DPL0 | DA_32
-descriptor_user_data:
-SEGMENT_DESCRIPTOR	0,				0xFFFFF,			DA_DRW | DA_DPL3 | DA_32
-descriptor_user_code:
-SEGMENT_DESCRIPTOR	0,				0xFFFFF,			DA_CR | DA_DPL3 | DA_32
 descriptor_basic_video:
 SEGMENT_DESCRIPTOR	0x0B8000,		0xFFFFF,			DA_DRW | DA_DPL0 | DA_32
 gdt_end:
