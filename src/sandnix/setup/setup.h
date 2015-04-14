@@ -14,3 +14,22 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+#ifndef	SETUP_H_INCLUDE
+#define	SETUP_H_INCLUDE
+
+#include "../../../mm/mm.h"
+
+#ifdef	X86
+#include "../../../../common/arch/x86/types.h"
+#include "../../../../common/arch/x86/kernel_image.h"
+
+#define	TMP_PAGE_TABLE_BASE		((KERNEL_MAX_SIZE+(KERNEL_BASE-VIRTUAL_ADDR_OFFSET))/4096\
+									+(KERNEL_MAX_SIZE+(KERNEL_BASE-VIRTUAL_ADDR_OFFSET))%4096?1:0)\
+									*4096
+#define	TMP_PAGE_SIZE			(TMP_PAGE_SIZE/1023)
+#define	TMP_PAGE_NUM			
+
+#endif	//X86
+
+#endif	//!	SETUP_H_INCLUDE

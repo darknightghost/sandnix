@@ -15,3 +15,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef	MM_H_INCLUDE
+#define	MM_H_INCLUDE
+
+#ifdef	X86
+#include "arch/x86/page_table.h"
+#endif	//X86
+
+#endif	//!	MM_H_INCLUDE
+

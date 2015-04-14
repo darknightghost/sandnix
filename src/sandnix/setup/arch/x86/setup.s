@@ -18,8 +18,8 @@
 .section	.text
 .global		_start
 
-
 .code32
 
 _start:
+		call	start_paging
 		jmp		kernel_main
