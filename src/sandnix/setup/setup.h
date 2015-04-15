@@ -40,11 +40,14 @@
 
 //Segment selectors
 #define	DESCRIPTOR_SIZE			8
+//Kernel segmends
 #define	SELECTOR_K_DATA			(DESCRIPTOR_SIZE * 1)
 #define	SELECTOR_K_CODE			(DESCRIPTOR_SIZE * 2)
+//User segment
 #define	SELECTOR_U_DATA			(DESCRIPTOR_SIZE * 3 | 3)
 #define	SELECTOR_U_CODE			(DESCRIPTOR_SIZE * 4 | 3)
 #define	SELECTOR_BASIC_VIDEO	(DESCRIPTOR_SIZE * 5)
+//Video segment
 #define	BASIC_VIDEO_BASE_ADDR	((void*)0xC00B8000)
 
 #endif	//X86

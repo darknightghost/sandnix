@@ -89,25 +89,22 @@ gdtr_value:
 	.word		(gdt_end - gdt - 1)
 	.long		gdt
 //------------------------------Functions---------------------------------------
-
+.global _aaa
 _start:
 		call	start_paging
+_aaa:
 		movl	$_kernel_mem_entry,%eax
 //Jmp to kernel memory
 		jmpl	*%eax
-.global _kernel_mem_entry
 _kernel_mem_entry:
 //Prepare for new GDT
 		lgdt	gdtr_value
 //Jmp to kernel_main
-		movw	SELECTOR_K_DATA,%ax
+		movw	$SELECTOR_K_DATA,%ax
 		movw	%ax,%ds
 		movw	%ax,%es
 		movw	%ax,%ss
 		movw	%ax,%fs
-		movw	$SELECTOR_K_CODE,%ax
-		movw	%ax,%cs
 		movw	$SELECTOR_BASIC_VIDEO,%ax
 		movw	%ax,%gs
-		movl	$kernel_main,%eax
-		jmpl	*%eax
+		ljmpl	$SELECTOR_K_CODE,$kernel_main

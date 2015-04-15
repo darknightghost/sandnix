@@ -19,12 +19,11 @@
 
 void start_paging()
 {
-	u32 i,t;
+	u32 i;
 	u32 mapped_size;
 	ppde p_pde;
 	ppte p_pte;
 
-	t=0;
 	//Initialize PTE
 	//These pages should be mapped
 	for(mapped_size = 0, p_pte = (ppte)TMP_PAGE_TABLE_BASE;
@@ -69,7 +68,6 @@ void start_paging()
 		} else if(i * 4096 * 1024 < TMP_PAGED_MEM_SIZE + KERNEL_MEM_BASE
 				  && i * 4096 * 1024 >= KERNEL_MEM_BASE) {
 			p_pde->present = PG_P;
-			t=i;
 			p_pde->page_table_base_addr = ((i - KERNEL_MEM_BASE / 4096 / 1024)
 										   * 4096 + TMP_PAGE_TABLE_BASE) >> 12;
 		} else {
@@ -99,9 +97,6 @@ void start_paging()
 		//Set CR0.PG & CR0.WP
 		"orl	$0x80010000,%%eax\n\t"
 		"movl	%%eax,%%cr0\n\t"
-		".global _a\n\t"
-		"_a:"
-		"movl	%1,%%eax\n\t"
-		::"i"(TMP_PDT_BASE),"m"(t));
+		::"i"(TMP_PDT_BASE));
 	return;
 }
