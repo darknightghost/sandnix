@@ -11,7 +11,8 @@ TARGET_DIR = $(root_path)/bin/sandnix/x86
 TARGET = $(TARGET_DIR)/sandnix
 MAP = $(TARGET_DIR)/sandnix.map
 
-SOURCES += setup/arch/x86/setup.s
+SOURCES += setup/arch/x86/setup.s \
+			setup/arch/x86/start_paging.c
 
 OBJS_DIR = $(root_path)/obj/sandnix/x86
 

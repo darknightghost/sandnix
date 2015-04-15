@@ -75,7 +75,7 @@ bool load_os_kernel(char* path, char* parameters)
 	}
 
 	//Copy parameters
-	strcpy(KERNEL_PARAMETER_PHYSICAL, parameters);
+	strcpy((char*)KERNEL_PARAMETER_PHYSICAL, parameters);
 	__asm__ __volatile__(
 		"cli\n\t"
 		"movl		%0,%%eax\n\t"

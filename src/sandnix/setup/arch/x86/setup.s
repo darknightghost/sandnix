@@ -22,4 +22,9 @@
 
 _start:
 		call	start_paging
-		jmp		kernel_main
+		movl	$_kernel_mem_entry,%eax
+		jmpl	*%eax
+_kernel_mem_entry:
+		xorl	%eax,%eax
+		movl	%eax,%gs:0
+		jmpl	*kernel_main

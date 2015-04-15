@@ -25,8 +25,9 @@ void start_paging()
 	ppte p_pte;
 
 	//Initialize PTE
-	for(mapped_size = 0, p_pte = (p_pte)TMP_PAGE_TABLE_BASE;
-		mapped_size < KERNEL_MAX_SIZE;
+	//These pages should be mapped
+	for(mapped_size = 0, p_pte = (ppte)TMP_PAGE_TABLE_BASE;
+		mapped_size < TMP_PAGED_MEM_SIZE;
 		mapped_size += 4 * 1024, p_pte++) {
 		p_pte->present = PG_P;
 		p_pte->read_write = PG_RW;
@@ -38,10 +39,11 @@ void start_paging()
 		p_pte->page_table_attr_index = 0;
 		p_pte->global_page = 0;
 		p_pte->avail = PG_NORMAL;
-		p_pte->page_base_addr = mapped_size / (4 * 1024);
+		p_pte->page_base_addr = mapped_size / (4096);
 	}
 
-	while(p_pte < tmp_page_table + TMP_PAGE_NUM / 4) {
+	//These pages should not mapped
+	while(p_pte < (ppte)(TMP_PAGE_TABLE_BASE + TMP_PAGE_SIZE)) {
 		p_pte->present = PG_NP;
 		p_pte->read_write = PG_RW;
 		p_pte->user_supervisor = PG_SUPERVISOR;
@@ -57,5 +59,44 @@ void start_paging()
 	}
 
 	//Initialize PDE
+	for(i = 0, p_pde = (ppde)TMP_PDT_BASE;
+		i < 1024;
+		i++, p_pde++) {
+		if(i * 4096 * 1024 < TMP_PAGED_MEM_SIZE) {
+			//Map 0-
+			p_pde->present = PG_P;
+			p_pde->page_table_base_addr = i * 4096 + TMP_PAGE_TABLE_BASE;
+		} else if(i * 4096 * 1024 < TMP_PAGED_MEM_SIZE + VIRTUAL_ADDR_OFFSET) {
+			p_pde->present = PG_P;
+			p_pde->page_table_base_addr = (i - KERNEL_MEM_BASE / 4096 / 1024)
+										  * 4096 + TMP_PAGE_TABLE_BASE;
+		} else {
+			p_pde->present = PG_NP;
+			p_pde->page_table_base_addr = 0;
+		}
+
+		p_pde->read_write = PG_RW;
+		p_pde->user_supervisor = PG_SUPERVISOR;
+		p_pde->write_through = PG_WRITE_THROUGH;
+		p_pde->cache_disabled = PG_ENCACHE;
+		p_pde->accessed = 0;
+		p_pde->reserved = 0;
+		p_pde->page_size = PG_SIZE_4K;
+		p_pde->global_page = 0;
+		p_pde->avail = PG_NORMAL;
+	}
+
+	__asm__ __volatile__(
+		//Prepare for CR3
+		"movl	%0,%%eax\n\t"
+		"andl	$0xFFFFF000,%%eax\n\t"
+		"orl	$0x008,%%eax\n\t"
+		"movl	%%eax,%%cr3\n\t"
+		//Start paging
+		"movl	%%cr0,%%eax\n\t"
+		//Set CR0.PG & CR0.WP
+		"orl	$0x80010000,%%eax\n\t"
+		"movl	%%eax,%%cr0\n\t"
+		::"i"(TMP_PDT_BASE));
 	return;
 }

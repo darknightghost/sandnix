@@ -18,17 +18,28 @@
 #ifndef	SETUP_H_INCLUDE
 #define	SETUP_H_INCLUDE
 
-#include "../../../mm/mm.h"
+#include "../mm/mm.h"
 
 #ifdef	X86
-#include "../../../../common/arch/x86/types.h"
-#include "../../../../common/arch/x86/kernel_image.h"
+#include "../../common/arch/x86/types.h"
+#include "../../common/arch/x86/kernel_image.h"
 
-#define	TMP_PAGE_TABLE_BASE		((KERNEL_MAX_SIZE+(KERNEL_BASE-VIRTUAL_ADDR_OFFSET))/4096\
-									+(KERNEL_MAX_SIZE+(KERNEL_BASE-VIRTUAL_ADDR_OFFSET))%4096?1:0)\
-									*4096
-#define	TMP_PAGE_SIZE			(TMP_PAGE_SIZE/1023)
-#define	TMP_PAGE_NUM			
+#define	TMP_PAGE_MEM_BASE		(((KERNEL_MAX_SIZE+(KERNEL_BASE-VIRTUAL_ADDR_OFFSET))/4096\
+								  +(KERNEL_MAX_SIZE+(KERNEL_BASE-VIRTUAL_ADDR_OFFSET))%4096?1:0)\
+								 *4096)
+//A temporary marcos used to compute TMP_PAGE_SIZE
+#define	TMP_SIZE_MID1			(TMP_PAGE_MEM_BASE/4096*4+TMP_PAGE_TABLE_BASE+4096)
+#define	TMP_SIZE_MID2			((TMP_SIZE_MID1/4096+TMP_SIZE_MID1%4096?1:0)*4+TMP_SIZE_MID1)
+
+#define	TMP_PAGE_SIZE			((TMP_SIZE_MID2/4096+1)*4096)
+#define	TMP_PAGE_NUM			(TMP_PAGE_SIZE/4096)
+
+#define	TMP_PAGE_TABLE_BASE		(TMP_PAGE_MEM_BASE+4096)
+#define	TMP_PAGED_MEM_SIZE		(TMP_PAGE_SIZE+TMP_PAGE_TABLE_BASE)
+#define	TMP_PDT_BASE			(TMP_PAGE_MEM_BASE)
+
+//#undef	TMP_SIZE_MID1
+//#undef	TMP_SIZE_MID2
 
 #endif	//X86
 
