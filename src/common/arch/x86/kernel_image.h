@@ -20,12 +20,12 @@
 
 #include "types.h"
 
-#define	KERNEL_MEM_BASE					0xC0100000
+#define	KERNEL_MEM_BASE					0xC0000000
 #define	KERNEL_BASE						0xC0100400
 #define	KERNEL_PARAMETER_PHYSICAL		0x00100000
 #define	KERNEL_PARAMETER				0xC0100000
 #define	KERNEL_PARAMETER_MAX_LEN		1024
 #define	VIRTUAL_ADDR_OFFSET				KERNEL_MEM_BASE
-#define	KERNEL_MAX_SIZE					(4096*1024)		//The maximum size of kernel in memory
+#define	KERNEL_MAX_SIZE					(1024*8)		//The maximum size of kernel in memory
 
 #endif	//!	KERNEL_IMAGE_H_INCLUDE

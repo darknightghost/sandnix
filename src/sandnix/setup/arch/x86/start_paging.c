@@ -19,11 +19,12 @@
 
 void start_paging()
 {
-	u32 i;
+	u32 i,t;
 	u32 mapped_size;
 	ppde p_pde;
 	ppte p_pte;
 
+	t=0;
 	//Initialize PTE
 	//These pages should be mapped
 	for(mapped_size = 0, p_pte = (ppte)TMP_PAGE_TABLE_BASE;
@@ -39,7 +40,7 @@ void start_paging()
 		p_pte->page_table_attr_index = 0;
 		p_pte->global_page = 0;
 		p_pte->avail = PG_NORMAL;
-		p_pte->page_base_addr = mapped_size / (4096);
+		p_pte->page_base_addr = mapped_size >> 12;
 	}
 
 	//These pages should not mapped
@@ -63,13 +64,14 @@ void start_paging()
 		i < 1024;
 		i++, p_pde++) {
 		if(i * 4096 * 1024 < TMP_PAGED_MEM_SIZE) {
-			//Map 0-
 			p_pde->present = PG_P;
-			p_pde->page_table_base_addr = i * 4096 + TMP_PAGE_TABLE_BASE;
-		} else if(i * 4096 * 1024 < TMP_PAGED_MEM_SIZE + VIRTUAL_ADDR_OFFSET) {
+			p_pde->page_table_base_addr = (i * 4096 + TMP_PAGE_TABLE_BASE) >> 12;
+		} else if(i * 4096 * 1024 < TMP_PAGED_MEM_SIZE + KERNEL_MEM_BASE
+				  && i * 4096 * 1024 >= KERNEL_MEM_BASE) {
 			p_pde->present = PG_P;
-			p_pde->page_table_base_addr = (i - KERNEL_MEM_BASE / 4096 / 1024)
-										  * 4096 + TMP_PAGE_TABLE_BASE;
+			t=i;
+			p_pde->page_table_base_addr = ((i - KERNEL_MEM_BASE / 4096 / 1024)
+										   * 4096 + TMP_PAGE_TABLE_BASE) >> 12;
 		} else {
 			p_pde->present = PG_NP;
 			p_pde->page_table_base_addr = 0;
@@ -97,6 +99,9 @@ void start_paging()
 		//Set CR0.PG & CR0.WP
 		"orl	$0x80010000,%%eax\n\t"
 		"movl	%%eax,%%cr0\n\t"
-		::"i"(TMP_PDT_BASE));
+		".global _a\n\t"
+		"_a:"
+		"movl	%1,%%eax\n\t"
+		::"i"(TMP_PDT_BASE),"m"(t));
 	return;
 }
