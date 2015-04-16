@@ -15,9 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	PAGING_H_INCLUDE
-#define	PAGING_H_INCLUDE
+#include "paging.h"
+#include "../../../../../common/arch/x86/types.h"
 
-#include "../../../../common/arch/x86/types.h"
 
-#endif	//!	PAGING_H_INCLUDE

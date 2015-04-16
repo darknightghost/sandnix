@@ -18,7 +18,7 @@
 #ifndef	PAGE_TABLE_H_INCLUDE
 #define	PAGE_TABLE_H_INCLUDE
 
-#include "../../../../common/arch/x86/types.h"
+#include "../../../../../common/arch/x86/types.h"
 
 #pragma pack(1)
 

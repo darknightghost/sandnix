@@ -19,7 +19,7 @@
 #define	MM_H_INCLUDE
 
 #ifdef	X86
-#include "arch/x86/page_table.h"
+#include "paging/arch/x86/page_table.h"
 #endif	//X86
 
 #endif	//!	MM_H_INCLUDE
