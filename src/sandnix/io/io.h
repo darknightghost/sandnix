@@ -25,8 +25,19 @@
 
 #endif	//X86
 
-//Init
+//Interrupt level
+#define		INT_LEVEL_HIGHEST		0xFF
+#define		INT_LEVEL_LOWEST		0x00
 
+#define		INT_LEVEL_EXCEPTION		0xE0
+#define		INT_LEVEL_IO			0xD0
+#define		INT_LEVEL_CLOCK			0xB0
+#define		INT_LEVEL_PAGING		0xA0
+#define		INT_LEVEL_DISPATCH		0x40	//Dispatch message and signals,the task will not switch.
+#define		INT_LEVEL_TASK			0x20
+#define		INT_LEVEL_MORMAL		0x00
+
+//Init
 void		init_io();
 
 //Ports
@@ -51,6 +62,7 @@ void		io_write_port_dword(u32 data,u32 ports);
 void		io_delay();
 
 //Interrupts
+//These two functions can only be called when Interrupt level <= INT_LEVEL_DISPATCH
 bool		io_reg_int_hndlr(u32 num,void* entry);
 void		io_unreg_int_hndlr(u32 num);
 

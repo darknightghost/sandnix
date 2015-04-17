@@ -19,10 +19,15 @@
 #define	INT_H_INCLUDE
 
 #include "../../io.h"
+#include "../../../setup/setup.h"
 
+typedef	struct {
+	u32		level;
+	void*	func;
+}int_hndlr_info,*pint_hndlr_info;
 #pragma	pack(1)
 
-typedef struct idt_reg {
+typedef struct {
 	u16		limit;
 	u32		base;
 } idt_reg, *pidt_reg;
@@ -46,19 +51,19 @@ typedef	struct	_idt {
 #define		TYPE_INTERRUPT		0x0E
 
 #define		INTERRUPT_MAX_NUM		256
-#define		GET_IDT(base,num)			((pidt)((base)+(num)*sizeof(idt)))
 #define		SET_IDT(base,num,func,cs_selector,d_type,d_s,d_dpl,s_p) {\
-		GET_IDT((base),(num))->offset1=(u32)GET_REAL_ADDR((func))&0x0000FFFF;\
-		GET_IDT((base),(num))->offset2=(((u32)GET_REAL_ADDR((func))&0xFFFF0000)>>16);\
-		GET_IDT((base),(num))->selector=(cs_selector);\
-		GET_IDT((base),(num))->attr.reserved=0;\
-		GET_IDT((base),(num))->attr.zero=0;\
-		GET_IDT((base),(num))->attr.type=d_type;\
-		GET_IDT((base),(num))->attr.s=d_s;\
-		GET_IDT((base),(num))->attr.dpl=d_dpl;\
-		GET_IDT((base),(num))->attr.p=s_p;\
+		(base)[(num)].offset1=(u32)GET_REAL_ADDR((func))&0x0000FFFF;\
+		(base)[(num)].offset2=(((u32)GET_REAL_ADDR((func))&0xFFFF0000)>>16);\
+		(base)[(num)].selector=(cs_selector);\
+		(base)[(num)].attr.reserved=0;\
+		(base)[(num)].attr.zero=0;\
+		(base)[(num)].attr.type=d_type;\
+		(base)[(num)].attr.s=d_s;\
+		(base)[(num)].attr.dpl=d_dpl;\
+		(base)[(num)].attr.p=s_p;\
 	}
 
+//Interrupt number
 #define	INT_DE			0x00
 #define	INT_DB			0x01
 #define	INT_NMI			0x02

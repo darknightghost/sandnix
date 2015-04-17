@@ -20,7 +20,7 @@
 
 void	de_int_handler();
 void	db_int_handler();
-void	imr_int_handler();
+void	nmi_int_handler();
 void	bp_int_handler();
 void	of_int_handler();
 void	br_int_handler();
@@ -33,7 +33,6 @@ void	np_int_handler();
 void	ss_int_handler();
 void	gp_int_handler();
 void	pf_int_handler();
-void	reserved_int_handler();
 void	mf_int_handler();
 void	ac_int_handler();
 void	mc_int_handler();

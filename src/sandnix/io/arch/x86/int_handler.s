@@ -17,7 +17,7 @@
 
 .global	de_int_handler
 .global	db_int_handler
-.global	imr_int_handler
+.global	nmi_int_handler
 .global	bp_int_handler
 .global	of_int_handler
 .global	br_int_handler
@@ -30,7 +30,6 @@
 .global	ss_int_handler
 .global	gp_int_handler
 .global	pf_int_handler
-.global	reserved_int_handler
 .global	mf_int_handler
 .global	ac_int_handler
 .global	mc_int_handler
@@ -44,7 +43,7 @@ de_int_handler:
 
 db_int_handler:
 
-imr_int_handler:
+nmi_int_handler:
 
 bp_int_handler:
 
@@ -69,8 +68,6 @@ ss_int_handler:
 gp_int_handler:
 
 pf_int_handler:
-
-reserved_int_handler:
 
 mf_int_handler:
 
