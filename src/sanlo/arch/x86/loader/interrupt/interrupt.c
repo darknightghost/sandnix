@@ -84,7 +84,7 @@ void setup_8259A()
 	out_byte(0xFF, 0x21);
 	io_delay();
 	//Slave OCW1
-	out_byte(0xFF, 0x21);
+	out_byte(0xFF, 0xA1);
 	io_delay();
 	return;
 }

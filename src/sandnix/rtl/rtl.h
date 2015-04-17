@@ -35,7 +35,7 @@ typedef	char*			va_list;
 #endif	//!	X86
 
 void*		rtl_memcpy(void* dest, void* src, size_t len);
-void*		rtl_memset(void* dest, char val, size_t len);
+void*		rtl_memset(void* dest, u8 val, size_t len);
 void*		rtl_memmove(void* dest, void* src, size_t len);
 char*		rtl_strcpy_s(char* dest, size_t buf_size, char* src);
 u32			rtl_strlen(char* str);

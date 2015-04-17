@@ -40,17 +40,19 @@ void		io_read_port_dwords(u32 port, u32* buf, u32 num);
 void		io_write_port_dwords(u32 port, u32* buf, u32 num);
 
 u8			io_read_port_byte(u32 port);
-void		io_write_port_byte(u32 port, u8 data);
+void		io_write_port_byte(u8 data,u32 port);
 
 u16			io_read_port_word(u32 port);
-void		io_write_port_word(u32 port, u16 data);
+void		io_write_port_word(u16 data,u32 port);
 
 u32			io_read_port_dword(u32 port);
-void		io_write_port_dword(u32 port, u32 data);
+void		io_write_port_dword(u32 data,u32 ports);
+
+void		io_delay();
 
 //Interrupts
-bool		io_reg_int_hndlr();
-void		io_unreg_int_hndlr();
+bool		io_reg_int_hndlr(u32 num,void* entry);
+void		io_unreg_int_hndlr(u32 num);
 
 
 void		io_set_int_lvl(u32 level);

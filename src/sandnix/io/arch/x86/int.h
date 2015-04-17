@@ -35,7 +35,7 @@ typedef	struct	_idt {
 		u16		zero: 3;		//Zero
 		u16		type: 4;		//Interrupt or trap
 		u16		s: 1;			//Zero
-		u16		dpl: 2;			//Dpl
+		u16		dpl: 2;			//DPL
 		u16		p: 1;			//Segment present flag
 	} attr;
 	u16		offset2;			//16-32 bits of offset
@@ -58,6 +58,43 @@ typedef	struct	_idt {
 		GET_IDT((base),(num))->attr.dpl=d_dpl;\
 		GET_IDT((base),(num))->attr.p=s_p;\
 	}
+
+#define	INT_DE			0x00
+#define	INT_DB			0x01
+#define	INT_NMI			0x02
+#define	INT_BP			0x03
+#define	INT_OF			0x04
+#define	INT_BR			0x05
+#define	INT_UD			0x06
+#define	INT_NM			0x07
+#define	INT_DF			0x08
+#define	INT_FPU			0x09
+#define	INT_TS			0x0A
+#define	INT_NP			0x0B
+#define	INT_SS			0x0C
+#define	INT_GP			0x0D
+#define	INT_PF			0x0E
+#define	INT_RESERVED	0x0F
+#define	INT_MF			0x10
+#define	INT_AC			0x11
+#define	INT_MC			0x12
+#define	INT_XF			0x13
+
+#define	IRQ0			0x20
+#define	IRQ1			0x21
+#define	IRQ3			0x23
+#define	IRQ4			0x24
+#define	IRQ5			0x25
+#define	IRQ6			0x26
+#define	IRQ7			0x27
+#define	IRQ8			0x28
+#define	IRQ9			0x29
+#define	IRQ10			0x2A
+#define	IRQ11			0x2B
+#define	IRQ12			0x2C
+#define	IRQ13			0x2D
+#define	IRQ14			0x2E
+#define	IRQ15			0x2F
 
 void		init_idt();
 #endif	//!	INT_H_INCLUDE

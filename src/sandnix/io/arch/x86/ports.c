@@ -16,3 +16,148 @@
 */
 
 #include "../../io.h"
+
+void io_read_port_bytes(u32 port, u8* buf, u32 num)
+{
+	__asm__ __volatile__(
+		"cld\n\t"
+		"movl		%0,%%edx\n\t"
+		"movl		%1,%%edi\n\t"
+		"movl		%2,%%ecx\n\t"
+		"rep		insb\n\t"
+		::"m"(port),"m"(buf),"m"(num));
+	return;
+}
+
+void io_write_port_bytes(u32 port, u8* buf, u32 num)
+{
+	__asm__ __volatile__(
+		"cld\n\t"
+		"movl		%0,%%edx\n\t"
+		"movl		%1,%%esi\n\t"
+		"movl		%2,%%ecx\n\t"
+		"rep		outsb\n\t"
+		::"m"(port),"m"(buf),"m"(num));
+	return;
+}
+
+void io_read_port_words(u32 port, u16* buf, u32 num)
+{
+	__asm__ __volatile__(
+		"cld\n\t"
+		"movl		%0,%%edx\n\t"
+		"movl		%1,%%edi\n\t"
+		"movl		%2,%%ecx\n\t"
+		"rep		insw\n\t"
+		::"m"(port),"m"(buf),"m"(num));
+	return;
+}
+void io_write_port_words(u32 port, u16* buf, u32 num)
+{
+	__asm__ __volatile__(
+		"cld\n\t"
+		"movl		%0,%%edx\n\t"
+		"movl		%1,%%esi\n\t"
+		"movl		%2,%%ecx\n\t"
+		"rep		outsw\n\t"
+		::"m"(port),"m"(buf),"m"(num));
+	return;
+}
+
+void io_read_port_dwords(u32 port, u32* buf, u32 num)
+{
+	__asm__ __volatile__(
+		"cld\n\t"
+		"movl		%0,%%edx\n\t"
+		"movl		%1,%%edi\n\t"
+		"movl		%2,%%ecx\n\t"
+		"rep		insl\n\t"
+		::"m"(port),"m"(buf),"m"(num));
+	return;
+}
+
+void io_write_port_dwords(u32 port, u32* buf, u32 num)
+{
+	__asm__ __volatile__(
+		"cld\n\t"
+		"movl		%0,%%edx\n\t"
+		"movl		%1,%%esi\n\t"
+		"movl		%2,%%ecx\n\t"
+		"rep		outsl\n\t"
+		::"m"(port),"m"(buf),"m"(num));
+	return;
+}
+
+u8 io_read_port_byte(u32 port)
+{
+	u8 data;
+	__asm__ __volatile__(
+		"movw		%1,%%dx\n\t"
+		"inb		%%dx,%%al\n\t"
+		:"=%%al"(data)
+		:"m"(port));
+	return data;
+}
+
+void io_write_port_byte(u8 data,u32 port)
+{
+	__asm__ __volatile__(
+		"movw		%1,%%dx\n\t"
+		"movb		%0,%%al\n\t"
+		"outb		%%al,%%dx\n\t"
+		::"m"(data), "m"(port));
+	return;
+}
+
+u16 io_read_port_word(u32 port)
+{
+	u16 data;
+	__asm__ __volatile__(
+		"movw		%1,%%dx\n\t"
+		"inw		%%dx,%%ax\n\t"
+		:"=%%ax"(data)
+		:"m"(port));
+	return data;
+}
+
+void io_write_port_word(u16 data,u32 port)
+{
+	__asm__ __volatile__(
+		"movw		%1,%%dx\n\t"
+		"movw		%0,%%ax\n\t"
+		"outw		%%ax,%%dx\n\t"
+		::"m"(data), "m"(port));
+	return;
+}
+
+u32 io_read_port_dword(u32 port)
+{
+	u32 data;
+	__asm__ __volatile__(
+		"movw		%1,%%dx\n\t"
+		"inl		%%dx,%%eax\n\t"
+		:"=%%eax"(data)
+		:"m"(port));
+	return data;
+}
+
+void io_write_port_dword(u32 data,u32 port)
+{
+	__asm__ __volatile__(
+		"movw		%1,%%dx\n\t"
+		"movw		%0,%%eax\n\t"
+		"outl		%%eax,%%dx\n\t"
+		::"m"(data), "m"(port));
+	return;
+}
+
+void io_delay()
+{
+	__asm__ __volatile__(
+		"nop\n\t"
+		"nop\n\t"
+		"nop\n\t"
+		"nop\n\t"
+		);
+	return;
+}
