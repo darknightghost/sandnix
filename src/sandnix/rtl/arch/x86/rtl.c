@@ -241,14 +241,19 @@ s32 rtl_atoi(char* str, int num_sys)
 		}
 	}
 
-	u32 get_flag(char** p_p_fmt) {
-		u32 ret = 0;
-	}
-	u32 get_width(char** p_p_fmt) {
-	}
-	u32 get_prec(char** p_p_fmt) {
-	}
-	u32 get_type(char** p_p_fmt) {
-	}
 	return ret;
+}
+
+u32 get_flag(char** p_p_fmt)
+{
+	u32 ret = 0;
+}
+u32 get_width(char** p_p_fmt)
+{
+}
+u32 get_prec(char** p_p_fmt)
+{
+}
+u32 get_type(char** p_p_fmt)
+{
 }
