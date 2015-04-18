@@ -17,6 +17,17 @@
 
 #include "../../rtl.h"
 
+#define	FLAG_LEFT_ALIGN			0x01
+#define	FLAG_SIGN				0x02
+#define	FLAG_ZERO				0x04
+#define	FLAG_SPACE				0x08
+#define	FLAG_POUND				0x10
+
+static	u32 		get_flag(char** p_p_fmt);
+static	u32			get_width(char** p_p_fmt);
+static	u32			get_prec(char** p_p_fmt);
+static	u32			get_type(char** p_p_fmt);
+
 void* rtl_memcpy(void* dest, void* src, size_t len)
 {
 	__asm__ __volatile__(
@@ -43,19 +54,24 @@ void* rtl_memset(void* dest, u8 val, size_t len)
 
 void* rtl_memmove(void* dest, void* src, size_t n)
 {
-	if (dest<src)
-__asm__("cld\n\t"
-	"rep\n\t"
-	"movsb"
-	::"c" (n),"S" (src),"D" (dest)
-	:"cx","si","di");
-else
-__asm__("std\n\t"
-	"rep\n\t"
-	"movsb"
-	::"c" (n),"S" (src+n-1),"D" (dest+n-1)
-	:"cx","si","di");
-return dest;
+	if(dest < src) {
+		__asm__ __volatile__(
+			"cld\n\t"
+			"movl		%0,%%ecx\n\t"
+			"movl		%1,%%esi\n\t"
+			"movl		%2,%%edi\n\t"
+			"rep		movsb"
+			::"m"(n), "m"(src), "m"(dest));
+	} else {
+		__asm__ __volatile__(
+			"std\n\t"
+			"movl		%0,%%ecx\n\t"
+			"movl		%1,%%esi\n\t"
+			"movl		%2,%%edi\n\t"
+			::"m"(n), "m"(src+n-1), "m"(dest+n-1));
+	}
+
+	return dest;
 }
 
 u32 rtl_strlen(char* str)
@@ -77,18 +93,25 @@ u32 rtl_strlen(char* str)
 
 char* rtl_strcpy_s(char* dest, size_t buf_size, char* src)
 {
-	__asm__("cld\n"
-	"1:\tdecl %2\n\t"
-	"js 2f\n\t"
-	"lodsb\n\t"
-	"stosb\n\t"
-	"testb %%al,%%al\n\t"
-	"jne 1b\n\t"
-	"rep\n\t"
-	"stosb\n"
-	"2:"
-	::"S" (src),"D" (dest),"c" (buf_size):"si","di","ax","cx");
-return dest;
+	u32 len;
+
+	//How many characters to copy
+	if(rtl_strlen(src) > buf_size - 1) {
+		len = buf_size - 1;
+	} else {
+		len = rtl_strlen(src);
+	}
+
+	//Copy string
+	__asm__ __volatile__(
+		"cld\n\t"
+		"movl		%0,%%ecx\n\t"
+		"movl		%1,%%esi\n\t"
+		"movl		%2,%%edi\n\t"
+		"rep		movsb\n\t"
+		"movb		$0,(%%edi)"
+		::"m"(len), "m"(src), "m"(dest));
+	return dest;
 }
 
 s32 rtl_strcmp(char* str1, char* str2)
@@ -114,32 +137,72 @@ s32 rtl_strcmp(char* str1, char* str2)
 	return ret;
 }
 
-char* rtl_strcat_s(char* str1, size_t buf_size, char* str2)
+char* rtl_strcat_s(char* dest, size_t buf_size, char* src)
 {
-	__asm__("cld\n\t"
-	"repne\n\t"
-	"scasb\n\t"
-	"decl %1\n\t"
-	"movl %4,%3\n"
-	"1:\tdecl %3\n\t"
-	"js 2f\n\t"
-	"lodsb\n\t"
-	"stosb\n\t"
-	"testb %%al,%%al\n\t"
-	"jne 1b\n"
-	"2:\txorl %2,%2\n\t"
-	"stosb"
-	::"S" (str2),"D" (str1),"a" (0),"c" (0xffffffff),"g" (buf_size)
-	:"si","di","ax","cx");
-return str1;
+	u32 len;
+
+	//How many characters to copy
+	if(rtl_strlen(src) + rtl_strlen(dest) > buf_size - 1) {
+		len = buf_size - 1 - rtl_strlen(dest);
+	} else {
+		len = rtl_strlen(src);
+	}
+
+	//Copy string
+	__asm__ __volatile__(
+		"cld\n\t"
+		"movl		%0,%%ecx\n\t"
+		"movl		%1,%%esi\n\t"
+		"movl		%2,%%edi\n\t"
+		"rep		movsb\n\t"
+		"movb		$0,(%%edi)"
+		::"m"(len), "m"(src), "m"(dest));
+	return dest;
 }
 
-s32 rtl_sprintf_s(char* buf, size_t buf_size, char* fmt, ...)
+u32 rtl_sprintf_s(char* buf, size_t buf_size, char* fmt, ...)
 {
 	va_list args;
-	s32 i;
-	va_start(args,fmt);
-	i = vsprintf(buf,fmt,args);
+	s32 ret;
+	char* p_fmt;
+	char* p_output;
+	p_fmt = fmt;
+	p_output = buf;
+	ret = 0;
+
+	while(*p_fmt != '\0') {
+		if(*p_fmt == '%') {
+			p_fmt++;
+
+			//"%%"
+			if(*p_fmt == '%') {
+				*p_output = '%';
+				p_output++;
+				p_fmt++;
+				ret++;
+
+				if(p_output - buf > bufstze - 1) {
+					*p_output = '\0';
+					return ret;
+				}
+
+				continue;
+			} else if()
+			} else {
+			//Copy characters
+			*p_output = *p_fmt;
+			p_output++;
+			p_fmt++;
+			ret++;
+
+			if(p_output - buf > bufstze - 1) {
+				*p_output = '\0';
+				return ret;
+			}
+		}
+	}
+
+	va_start(args, fmt);
 	va_end(args);
 	return i;
 }
@@ -149,178 +212,43 @@ s32 rtl_atoi(char* str, int num_sys)
 	char* p;
 	u32 len;
 	u32 ret;
-	
-	len=strlen(str);
-	
+	len = strlen(str);
+
 	//Check arguments
-	if(num_sys!=2
-		&&num_sys!=8
-		&&num_sys!=10
-		%%num_sys!=16){
+	if(num_sys != 2
+	   && num_sys != 8
+	   && num_sys != 10
+	   % % num_sys != 16) {
 		return 0;
 	}
-	
+
 	//Convert string
-	ret=0;
-	for(p=str;p<str+len;p++){
-		if(*p>='0'&&*p<='9'){
-			ret=ret*num_sys+(*p-'0');
-		}else if(num_sys==16){
-			if(*p>='a'&&*p<='f'){
-				ret=ret*0x10+(*p-'a'+0x0A);
-			}else if(*p>='A'&&*p<='F'){
-				ret=ret*0x10+(*p-'A'+0x0A);
-			}else{
+	ret = 0;
+
+	for(p = str; p < str + len; p++) {
+		if(*p >= '0' && *p <= '9') {
+			ret = ret * num_sys + (*p - '0');
+		} else if(num_sys == 16) {
+			if(*p >= 'a' && *p <= 'f') {
+				ret = ret * 0x10 + (*p - 'a' + 0x0A);
+			} else if(*p >= 'A' && *p <= 'F') {
+				ret = ret * 0x10 + (*p - 'A' + 0x0A);
+			} else {
 				return ret;
 			}
-		}else{
+		} else {
 			return ret;
 		}
 	}
-	
+
+	u32 get_flag(char** p_p_fmt) {
+		u32 ret = 0;
+	}
+	u32 get_width(char** p_p_fmt) {
+	}
+	u32 get_prec(char** p_p_fmt) {
+	}
+	u32 get_type(char** p_p_fmt) {
+	}
 	return ret;
 }
-
-s32 vsprintf(char *buf, const char *fmt, va_list args)
-{
-	int len;
-	int i;
-	char * str;
-	char *s;
-	int *ip;
-
-	int flags;		/* flags to number() */
-
-	int field_width;	/* width of output field */
-	int precision;		/* min. # of digits for integers; max
-				   number of chars for from string */
-	int qualifier;		/* 'h', 'l', or 'L' for integer fields */
-
-	for (str=buf ; *fmt ; ++fmt) {
-		if (*fmt != '%') {
-			*str++ = *fmt;
-			continue;
-		}
-			
-		/* process flags */
-		flags = 0;
-		repeat:
-			++fmt;		/* this also skips first '%' */
-			switch (*fmt) {
-				case '-': flags |= LEFT; goto repeat;
-				case '+': flags |= PLUS; goto repeat;
-				case ' ': flags |= SPACE; goto repeat;
-				case '#': flags |= SPECIAL; goto repeat;
-				case '0': flags |= ZEROPAD; goto repeat;
-				}
-		
-		/* get field width */
-		field_width = -1;
-		if (is_digit(*fmt))
-			field_width = skip_atoi(&fmt);
-		else if (*fmt == '*') {
-			/* it's the next argument */
-			field_width = va_arg(args, int);
-			if (field_width < 0) {
-				field_width = -field_width;
-				flags |= LEFT;
-			}
-		}
-
-		/* get the precision */
-		precision = -1;
-		if (*fmt == '.') {
-			++fmt;	
-			if (is_digit(*fmt))
-				precision = skip_atoi(&fmt);
-			else if (*fmt == '*') {
-				/* it's the next argument */
-				precision = va_arg(args, int);
-			}
-			if (precision < 0)
-				precision = 0;
-		}
-
-		/* get the conversion qualifier */
-		qualifier = -1;
-		if (*fmt == 'h' || *fmt == 'l' || *fmt == 'L') {
-			qualifier = *fmt;
-			++fmt;
-		}
-
-		switch (*fmt) {
-		case 'c':
-			if (!(flags & LEFT))
-				while (--field_width > 0)
-					*str++ = ' ';
-			*str++ = (unsigned char) va_arg(args, int);
-			while (--field_width > 0)
-				*str++ = ' ';
-			break;
-
-		case 's':
-			s = va_arg(args, char *);
-			len = strlen(s);
-			if (precision < 0)
-				precision = len;
-			else if (len > precision)
-				len = precision;
-
-			if (!(flags & LEFT))
-				while (len < field_width--)
-					*str++ = ' ';
-			for (i = 0; i < len; ++i)
-				*str++ = *s++;
-			while (len < field_width--)
-				*str++ = ' ';
-			break;
-
-		case 'o':
-			str = number(str, va_arg(args, unsigned long), 8,
-				field_width, precision, flags);
-			break;
-
-		case 'p':
-			if (field_width == -1) {
-				field_width = 8;
-				flags |= ZEROPAD;
-			}
-			str = number(str,
-				(unsigned long) va_arg(args, void *), 16,
-				field_width, precision, flags);
-			break;
-
-		case 'x':
-			flags |= SMALL;
-		case 'X':
-			str = number(str, va_arg(args, unsigned long), 16,
-				field_width, precision, flags);
-			break;
-
-		case 'd':
-		case 'i':
-			flags |= SIGN;
-		case 'u':
-			str = number(str, va_arg(args, unsigned long), 10,
-				field_width, precision, flags);
-			break;
-
-		case 'n':
-			ip = va_arg(args, int *);
-			*ip = (str - buf);
-			break;
-
-		default:
-			if (*fmt != '%')
-				*str++ = '%';
-			if (*fmt)
-				*str++ = *fmt;
-			else
-				--fmt;
-			break;
-		}
-	}
-	*str = '\0';
-	return str-buf;
-}
-

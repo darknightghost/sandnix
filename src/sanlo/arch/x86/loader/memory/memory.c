@@ -86,6 +86,7 @@ void* malloc(size_t size)
 			p_head = p_head->p_next;
 		}
 	}
+
 	print_string(
 		GET_REAL_ADDR(
 			"\nNOT ENOUGH MEMORY!!!.\n"),

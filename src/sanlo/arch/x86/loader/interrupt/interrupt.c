@@ -103,7 +103,6 @@ void io_delay()
 void setup_idt()
 {
 	idt_reg idt_value;
-
 	memset((void*)IDT_BASE_ADDR, 0, INTERRUPT_MAX_NUM * sizeof(idt));
 	SET_IDT(0x00, int_00, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1);
 	SET_IDT(0x01, int_01, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1);
@@ -123,7 +122,6 @@ void setup_idt()
 	SET_IDT(0x11, int_11, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1);
 	SET_IDT(0x12, int_12, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1);
 	SET_IDT(0x13, int_13, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1);
-
 	idt_value.base = IDT_BASE_ADDR;
 	idt_value.limit = INTERRUPT_MAX_NUM * sizeof(idt) - 1;
 	__asm__ __volatile__(

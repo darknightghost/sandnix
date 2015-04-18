@@ -40,8 +40,8 @@ void*		rtl_memmove(void* dest, void* src, size_t len);
 char*		rtl_strcpy_s(char* dest, size_t buf_size, char* src);
 u32			rtl_strlen(char* str);
 s32			rtl_strcmp(char* str1, char* str2);
-char*		rtl_strcat_s(char* str1, size_t buf_size, char* str2);
-s32			rtl_sprintf_s(char* buf, size_t buf_size, char* fmt, ...);
+char*		rtl_strcat_s(char* dest, size_t buf_size, char* src);
+u32			rtl_sprintf_s(char* buf, size_t buf_size, char* fmt, ...);
 s32			rtl_atoi(char* str, int num_sys);
 
 #endif	//!	RTL_H_INCLUDE
