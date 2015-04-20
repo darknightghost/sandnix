@@ -42,6 +42,11 @@ u32			rtl_strlen(char* str);
 s32			rtl_strcmp(char* str1, char* str2);
 char*		rtl_strcat_s(char* dest, size_t buf_size, char* src);
 u32			rtl_sprintf_s(char* buf, size_t buf_size, char* fmt, ...);
+u32			rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args);
 s32			rtl_atoi(char* str, int num_sys);
+char*		rtl_itoa(char* buf, u64 num);
+char*		rtl_htoa(char* buf, u64 num, bool capital_flag);
+char*		rtl_otoa(char* buf, u64 num);
+//char*		rtl_ftoa(char* buf, u64 num);
 
 #endif	//!	RTL_H_INCLUDE
