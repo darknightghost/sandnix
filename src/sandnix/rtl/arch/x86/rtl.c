@@ -59,6 +59,7 @@
 
 #define	TYPE_POINTER			0x60
 
+//Not realized.
 #define	TYPE_NUM				0x70
 
 
@@ -787,6 +788,905 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 								for(i = 0; i < width - num_len; i++) {
 									num_buf[i] = ' ';
 								}
+							}
+						}
+					}
+
+					write_buf(buf, buf_size, &p_output, num_buf);
+
+					if(p_output - buf > buf_size - 2) {
+						*p_output = '\0';
+						return p_output - buf;
+					}
+
+					break;
+
+				//%ho
+				case TYPE_OCTAL_16:
+					rtl_otoa(num_buf, va_arg(args, u16));
+					num_len = rtl_strlen(num_buf);
+
+					//Prec
+					if(num_len < prec) {
+						rtl_memmove(
+							num_buf + (prec - num_len),
+							num_buf,
+							num_len + 1);
+					}
+
+					for(i = 0; i < prec - num_len; i++) {
+						num_buf[i] = '0';
+					}
+
+					num_len = prec;
+
+					//Width
+					if(num_len < width) {
+						if(flag & FLAG_LEFT_ALIGN) {
+							if(flag & FLAG_POUND) {
+								//#
+								rtl_memmove(
+									num_buf + 1),
+											num_buf,
+											num_len + 1);
+								num_buf[0] = '0';
+
+								for(i = num_len + 1; i < width; i++) {
+								num_buf[i] = ' ';
+								}
+
+								num_buf[i] = '\0';
+							} else {
+								for(i = num_len; i < width; i++) {
+									num_buf[i] = ' ';
+								}
+
+								num_buf[i] = '\0';
+							}
+						} else {
+							rtl_memmove(
+								num_buf + (width - num_len),
+								num_buf,
+								num_len + 1);
+
+							if(flag & FLAG_ZERO) {
+								for(i = 0; i < width - num_len; i++) {
+									num_buf[i] = '0';
+								}
+							} else {
+								for(i = 0; i < width - num_len; i++) {
+									num_buf[i] = ' ';
+								}
+
+								num_buf[i - 1] = '0';
+							}
+						}
+					} else {
+						//#
+						rtl_memmove(
+							num_buf + 1),
+									num_buf,
+									num_len + 1);
+						num_buf[0] = '0';
+					}
+
+					write_buf(buf, buf_size, &p_output, num_buf);
+
+					if(p_output - buf > buf_size - 2) {
+						*p_output = '\0';
+						return p_output - buf;
+					}
+
+					break;
+
+				//%lo
+				case TYPE_OCTAL_32:
+					rtl_otoa(num_buf, va_arg(args, u32));
+					num_len = rtl_strlen(num_buf);
+
+					//Prec
+					if(num_len < prec) {
+						rtl_memmove(
+							num_buf + (prec - num_len),
+							num_buf,
+							num_len + 1);
+					}
+
+					for(i = 0; i < prec - num_len; i++) {
+						num_buf[i] = '0';
+					}
+
+					num_len = prec;
+
+					//Width
+					if(num_len < width) {
+						if(flag & FLAG_LEFT_ALIGN) {
+							if(flag & FLAG_POUND) {
+								//#
+								rtl_memmove(
+									num_buf + 1),
+											num_buf,
+											num_len + 1);
+								num_buf[0] = '0';
+
+								for(i = num_len + 1; i < width; i++) {
+								num_buf[i] = ' ';
+								}
+
+								num_buf[i] = '\0';
+							} else {
+								for(i = num_len; i < width; i++) {
+									num_buf[i] = ' ';
+								}
+
+								num_buf[i] = '\0';
+							}
+						} else {
+							rtl_memmove(
+								num_buf + (width - num_len),
+								num_buf,
+								num_len + 1);
+
+							if(flag & FLAG_ZERO) {
+								for(i = 0; i < width - num_len; i++) {
+									num_buf[i] = '0';
+								}
+							} else {
+								for(i = 0; i < width - num_len; i++) {
+									num_buf[i] = ' ';
+								}
+
+								num_buf[i - 1] = '0';
+							}
+						}
+					} else {
+						//#
+						rtl_memmove(
+							num_buf + 1),
+									num_buf,
+									num_len + 1);
+						num_buf[0] = '0';
+					}
+
+					write_buf(buf, buf_size, &p_output, num_buf);
+
+					if(p_output - buf > buf_size - 2) {
+						*p_output = '\0';
+						return p_output - buf;
+					}
+
+					break;
+
+				//%llo
+				case TYPE_OCTAL_64:
+					rtl_otoa(num_buf, va_arg(args, u64));
+					num_len = rtl_strlen(num_buf);
+
+					//Prec
+					if(num_len < prec) {
+						rtl_memmove(
+							num_buf + (prec - num_len),
+							num_buf,
+							num_len + 1);
+					}
+
+					for(i = 0; i < prec - num_len; i++) {
+						num_buf[i] = '0';
+					}
+
+					num_len = prec;
+
+					//Width
+					if(num_len < width) {
+						if(flag & FLAG_LEFT_ALIGN) {
+							if(flag & FLAG_POUND) {
+								//#
+								rtl_memmove(
+									num_buf + 1),
+											num_buf,
+											num_len + 1);
+								num_buf[0] = '0';
+
+								for(i = num_len + 1; i < width; i++) {
+								num_buf[i] = ' ';
+								}
+
+								num_buf[i] = '\0';
+							} else {
+								for(i = num_len; i < width; i++) {
+									num_buf[i] = ' ';
+								}
+
+								num_buf[i] = '\0';
+							}
+						} else {
+							rtl_memmove(
+								num_buf + (width - num_len),
+								num_buf,
+								num_len + 1);
+
+							if(flag & FLAG_ZERO) {
+								for(i = 0; i < width - num_len; i++) {
+									num_buf[i] = '0';
+								}
+							} else {
+								for(i = 0; i < width - num_len; i++) {
+									num_buf[i] = ' ';
+								}
+
+								num_buf[i - 1] = '0';
+							}
+						}
+					} else {
+						//#
+						rtl_memmove(
+							num_buf + 1),
+									num_buf,
+									num_len + 1);
+						num_buf[0] = '0';
+					}
+
+					write_buf(buf, buf_size, &p_output, num_buf);
+
+					if(p_output - buf > buf_size - 2) {
+						*p_output = '\0';
+						return p_output - buf;
+					}
+
+					break;
+
+				//%hx
+				case TYPE_HEX_16_L:
+					rtl_htoa(num_buf, va_arg(args, u16), false);
+					num_len = rtl_strlen(num_buf);
+
+					//Prec
+					if(num_len < prec) {
+						rtl_memmove(
+							num_buf + (prec - num_len),
+							num_buf,
+							num_len + 1);
+					}
+
+					for(i = 0; i < prec - num_len; i++) {
+						num_buf[i] = '0';
+					}
+
+					num_len = prec;
+
+					//Width
+					if(num_len < width) {
+						if(flag & FLAG_LEFT_ALIGN) {
+							if(flag & FLAG_POUND) {
+								//#
+								rtl_memmove(
+									num_buf + 2,
+									num_buf,
+									num_len + 1);
+								num_buf[0] = '0';
+								num_buf[1] = 'x';
+
+								for(i = num_len + 2; i < width; i++) {
+									num_buf[i] = ' ';
+								}
+
+								num_buf[i] = '\0';
+							} else {
+								for(i = num_len; i < width; i++) {
+									num_buf[i] = ' ';
+								}
+
+								num_buf[i] = '\0';
+							}
+						} else {
+							if(width - num_len >= 2
+							   || !(flag & FLAG_POUND)) {
+								rtl_memmove(
+									num_buf + (width - num_len),
+									num_buf,
+									num_len + 1);
+
+								if(flag & FLAG_ZERO) {
+									for(i = 0; i < width - num_len; i++) {
+										num_buf[i] = '0';
+									}
+
+									if(flag & FLAG_POUND) {
+										num_buf[0] = '0';
+										num_buf[1] = 'x';
+									}
+								} else {
+									for(i = 0; i < width - num_len; i++) {
+										num_buf[i] = ' ';
+									}
+
+									if(flag & FLAG_POUND) {
+										num_buf[i - 2] = '0';
+										num_buf[i - 1] = 'x';
+									}
+								}
+							} else {
+								rtl_memmove(
+									num_buf + 2,
+									num_buf,
+									num_len + 1);
+								num_buf[i - 2] = '0';
+								num_buf[i - 1] = 'x';
+							}
+						}
+					} else {
+						//#
+						rtl_memmove(
+							num_buf + 2),
+									num_buf,
+									num_len + 1);
+						num_buf[0] = '0';
+						num_buf[1] = 'x';
+					}
+
+					write_buf(buf, buf_size, &p_output, num_buf);
+
+					if(p_output - buf > buf_size - 2) {
+						*p_output = '\0';
+						return p_output - buf;
+					}
+
+					break;
+
+				//%lx
+				case TYPE_HEX_32_L:
+					rtl_htoa(num_buf, va_arg(args, u32), false);
+					num_len = rtl_strlen(num_buf);
+
+					//Prec
+					if(num_len < prec) {
+						rtl_memmove(
+							num_buf + (prec - num_len),
+							num_buf,
+							num_len + 1);
+					}
+
+					for(i = 0; i < prec - num_len; i++) {
+						num_buf[i] = '0';
+					}
+
+					num_len = prec;
+
+					//Width
+					if(num_len < width) {
+						if(flag & FLAG_LEFT_ALIGN) {
+							if(flag & FLAG_POUND) {
+								//#
+								rtl_memmove(
+									num_buf + 2,
+									num_buf,
+									num_len + 1);
+								num_buf[0] = '0';
+								num_buf[1] = 'x';
+
+								for(i = num_len + 2; i < width; i++) {
+									num_buf[i] = ' ';
+								}
+
+								num_buf[i] = '\0';
+							} else {
+								for(i = num_len; i < width; i++) {
+									num_buf[i] = ' ';
+								}
+
+								num_buf[i] = '\0';
+							}
+						} else {
+							if(width - num_len >= 2
+							   || !(flag & FLAG_POUND)) {
+								rtl_memmove(
+									num_buf + (width - num_len),
+									num_buf,
+									num_len + 1);
+
+								if(flag & FLAG_ZERO) {
+									for(i = 0; i < width - num_len; i++) {
+										num_buf[i] = '0';
+									}
+
+									if(flag & FLAG_POUND) {
+										num_buf[0] = '0';
+										num_buf[1] = 'x';
+									}
+								} else {
+									for(i = 0; i < width - num_len; i++) {
+										num_buf[i] = ' ';
+									}
+
+									if(flag & FLAG_POUND) {
+										num_buf[i - 2] = '0';
+										num_buf[i - 1] = 'x';
+									}
+								}
+							} else {
+								rtl_memmove(
+									num_buf + 2,
+									num_buf,
+									num_len + 1);
+								num_buf[i - 2] = '0';
+								num_buf[i - 1] = 'x';
+							}
+						}
+					} else {
+						//#
+						rtl_memmove(
+							num_buf + 2),
+									num_buf,
+									num_len + 1);
+						num_buf[0] = '0';
+						num_buf[1] = 'x';
+					}
+
+					write_buf(buf, buf_size, &p_output, num_buf);
+
+					if(p_output - buf > buf_size - 2) {
+						*p_output = '\0';
+						return p_output - buf;
+					}
+
+					break;
+
+				//%llx
+				case TYPE_HEX_64_L:
+					rtl_htoa(num_buf, va_arg(args, u64), false);
+					num_len = rtl_strlen(num_buf);
+
+					//Prec
+					if(num_len < prec) {
+						rtl_memmove(
+							num_buf + (prec - num_len),
+							num_buf,
+							num_len + 1);
+					}
+
+					for(i = 0; i < prec - num_len; i++) {
+						num_buf[i] = '0';
+					}
+
+					num_len = prec;
+
+					//Width
+					if(num_len < width) {
+						if(flag & FLAG_LEFT_ALIGN) {
+							if(flag & FLAG_POUND) {
+								//#
+								rtl_memmove(
+									num_buf + 2,
+									num_buf,
+									num_len + 1);
+								num_buf[0] = '0';
+								num_buf[1] = 'x';
+
+								for(i = num_len + 2; i < width; i++) {
+									num_buf[i] = ' ';
+								}
+
+								num_buf[i] = '\0';
+							} else {
+								for(i = num_len; i < width; i++) {
+									num_buf[i] = ' ';
+								}
+
+								num_buf[i] = '\0';
+							}
+						} else {
+							if(width - num_len >= 2
+							   || !(flag & FLAG_POUND)) {
+								rtl_memmove(
+									num_buf + (width - num_len),
+									num_buf,
+									num_len + 1);
+
+								if(flag & FLAG_ZERO) {
+									for(i = 0; i < width - num_len; i++) {
+										num_buf[i] = '0';
+									}
+
+									if(flag & FLAG_POUND) {
+										num_buf[0] = '0';
+										num_buf[1] = 'x';
+									}
+								} else {
+									for(i = 0; i < width - num_len; i++) {
+										num_buf[i] = ' ';
+									}
+
+									if(flag & FLAG_POUND) {
+										num_buf[i - 2] = '0';
+										num_buf[i - 1] = 'x';
+									}
+								}
+							} else {
+								rtl_memmove(
+									num_buf + 2,
+									num_buf,
+									num_len + 1);
+								num_buf[i - 2] = '0';
+								num_buf[i - 1] = 'x';
+							}
+						}
+					} else {
+						//#
+						rtl_memmove(
+							num_buf + 2),
+									num_buf,
+									num_len + 1);
+						num_buf[0] = '0';
+						num_buf[1] = 'x';
+					}
+
+					write_buf(buf, buf_size, &p_output, num_buf);
+
+					if(p_output - buf > buf_size - 2) {
+						*p_output = '\0';
+						return p_output - buf;
+					}
+
+					break;
+
+				//%hX
+				case TYPE_HEX_16_C:
+					rtl_htoa(num_buf, va_arg(args, u16), true);
+					num_len = rtl_strlen(num_buf);
+
+					//Prec
+					if(num_len < prec) {
+						rtl_memmove(
+							num_buf + (prec - num_len),
+							num_buf,
+							num_len + 1);
+					}
+
+					for(i = 0; i < prec - num_len; i++) {
+						num_buf[i] = '0';
+					}
+
+					num_len = prec;
+
+					//Width
+					if(num_len < width) {
+						if(flag & FLAG_LEFT_ALIGN) {
+							if(flag & FLAG_POUND) {
+								//#
+								rtl_memmove(
+									num_buf + 2,
+									num_buf,
+									num_len + 1);
+								num_buf[0] = '0';
+								num_buf[1] = 'x';
+
+								for(i = num_len + 2; i < width; i++) {
+									num_buf[i] = ' ';
+								}
+
+								num_buf[i] = '\0';
+							} else {
+								for(i = num_len; i < width; i++) {
+									num_buf[i] = ' ';
+								}
+
+								num_buf[i] = '\0';
+							}
+						} else {
+							if(width - num_len >= 2
+							   || !(flag & FLAG_POUND)) {
+								rtl_memmove(
+									num_buf + (width - num_len),
+									num_buf,
+									num_len + 1);
+
+								if(flag & FLAG_ZERO) {
+									for(i = 0; i < width - num_len; i++) {
+										num_buf[i] = '0';
+									}
+
+									if(flag & FLAG_POUND) {
+										num_buf[0] = '0';
+										num_buf[1] = 'x';
+									}
+								} else {
+									for(i = 0; i < width - num_len; i++) {
+										num_buf[i] = ' ';
+									}
+
+									if(flag & FLAG_POUND) {
+										num_buf[i - 2] = '0';
+										num_buf[i - 1] = 'x';
+									}
+								}
+							} else {
+								rtl_memmove(
+									num_buf + 2,
+									num_buf,
+									num_len + 1);
+								num_buf[i - 2] = '0';
+								num_buf[i - 1] = 'x';
+							}
+						}
+					} else {
+						//#
+						rtl_memmove(
+							num_buf + 2),
+									num_buf,
+									num_len + 1);
+						num_buf[0] = '0';
+						num_buf[1] = 'x';
+					}
+
+					write_buf(buf, buf_size, &p_output, num_buf);
+
+					if(p_output - buf > buf_size - 2) {
+						*p_output = '\0';
+						return p_output - buf;
+					}
+
+					break;
+
+				//%lX
+				case TYPE_HEX_32_C:
+					rtl_htoa(num_buf, va_arg(args, u32), true);
+					num_len = rtl_strlen(num_buf);
+
+					//Prec
+					if(num_len < prec) {
+						rtl_memmove(
+							num_buf + (prec - num_len),
+							num_buf,
+							num_len + 1);
+					}
+
+					for(i = 0; i < prec - num_len; i++) {
+						num_buf[i] = '0';
+					}
+
+					num_len = prec;
+
+					//Width
+					if(num_len < width) {
+						if(flag & FLAG_LEFT_ALIGN) {
+							if(flag & FLAG_POUND) {
+								//#
+								rtl_memmove(
+									num_buf + 2,
+									num_buf,
+									num_len + 1);
+								num_buf[0] = '0';
+								num_buf[1] = 'x';
+
+								for(i = num_len + 2; i < width; i++) {
+									num_buf[i] = ' ';
+								}
+
+								num_buf[i] = '\0';
+							} else {
+								for(i = num_len; i < width; i++) {
+									num_buf[i] = ' ';
+								}
+
+								num_buf[i] = '\0';
+							}
+						} else {
+							if(width - num_len >= 2
+							   || !(flag & FLAG_POUND)) {
+								rtl_memmove(
+									num_buf + (width - num_len),
+									num_buf,
+									num_len + 1);
+
+								if(flag & FLAG_ZERO) {
+									for(i = 0; i < width - num_len; i++) {
+										num_buf[i] = '0';
+									}
+
+									if(flag & FLAG_POUND) {
+										num_buf[0] = '0';
+										num_buf[1] = 'x';
+									}
+								} else {
+									for(i = 0; i < width - num_len; i++) {
+										num_buf[i] = ' ';
+									}
+
+									if(flag & FLAG_POUND) {
+										num_buf[i - 2] = '0';
+										num_buf[i - 1] = 'x';
+									}
+								}
+							} else {
+								rtl_memmove(
+									num_buf + 2,
+									num_buf,
+									num_len + 1);
+								num_buf[i - 2] = '0';
+								num_buf[i - 1] = 'x';
+							}
+						}
+					} else {
+						//#
+						rtl_memmove(
+							num_buf + 2),
+									num_buf,
+									num_len + 1);
+						num_buf[0] = '0';
+						num_buf[1] = 'x';
+					}
+
+					write_buf(buf, buf_size, &p_output, num_buf);
+
+					if(p_output - buf > buf_size - 2) {
+						*p_output = '\0';
+						return p_output - buf;
+					}
+
+					break;
+
+				//%llX
+				case TYPE_HEX_64_C:
+					rtl_htoa(num_buf, va_arg(args, u64), true);
+					num_len = rtl_strlen(num_buf);
+
+					//Prec
+					if(num_len < prec) {
+						rtl_memmove(
+							num_buf + (prec - num_len),
+							num_buf,
+							num_len + 1);
+					}
+
+					for(i = 0; i < prec - num_len; i++) {
+						num_buf[i] = '0';
+					}
+
+					num_len = prec;
+
+					//Width
+					if(num_len < width) {
+						if(flag & FLAG_LEFT_ALIGN) {
+							if(flag & FLAG_POUND) {
+								//#
+								rtl_memmove(
+									num_buf + 2,
+									num_buf,
+									num_len + 1);
+								num_buf[0] = '0';
+								num_buf[1] = 'x';
+
+								for(i = num_len + 2; i < width; i++) {
+									num_buf[i] = ' ';
+								}
+
+								num_buf[i] = '\0';
+							} else {
+								for(i = num_len; i < width; i++) {
+									num_buf[i] = ' ';
+								}
+
+								num_buf[i] = '\0';
+							}
+						} else {
+							if(width - num_len >= 2
+							   || !(flag & FLAG_POUND)) {
+								rtl_memmove(
+									num_buf + (width - num_len),
+									num_buf,
+									num_len + 1);
+
+								if(flag & FLAG_ZERO) {
+									for(i = 0; i < width - num_len; i++) {
+										num_buf[i] = '0';
+									}
+
+									if(flag & FLAG_POUND) {
+										num_buf[0] = '0';
+										num_buf[1] = 'x';
+									}
+								} else {
+									for(i = 0; i < width - num_len; i++) {
+										num_buf[i] = ' ';
+									}
+
+									if(flag & FLAG_POUND) {
+										num_buf[i - 2] = '0';
+										num_buf[i - 1] = 'x';
+									}
+								}
+							} else {
+								rtl_memmove(
+									num_buf + 2,
+									num_buf,
+									num_len + 1);
+								num_buf[i - 2] = '0';
+								num_buf[i - 1] = 'x';
+							}
+						}
+					} else {
+						//#
+						rtl_memmove(
+							num_buf + 2),
+									num_buf,
+									num_len + 1);
+						num_buf[0] = '0';
+						num_buf[1] = 'x';
+					}
+
+					write_buf(buf, buf_size, &p_output, num_buf);
+
+					if(p_output - buf > buf_size - 2) {
+						*p_output = '\0';
+						return p_output - buf;
+					}
+
+					break;
+
+				//%s
+				case TYPE_STRING:
+					data_str = va_arg(args, char*);
+					num_len = rtl_strlen(data_str);
+
+					if(num_len < width) {
+						for(i = 0; i < num_len - width; i++) {
+							num_buf[i] = ' ';
+						}
+
+						if(flag & FLAG_LEFT_ALIGN) {
+							write_buf(buf, buf_size, &p_output, data_str);
+							write_buf(buf, buf_size, &p_output, num_buf);
+						} else {
+							write_buf(buf, buf_size, &p_output, num_buf);
+							write_buf(buf, buf_size, &p_output, data_str);
+						}
+					} else {
+						write_buf(buf, buf_size, &p_output, data_str);
+					}
+
+					if(p_output - buf > buf_size - 2) {
+						*p_output = '\0';
+						return p_output - buf;
+					}
+
+					break;
+
+				//%p
+				case TYPE_POINTER:
+					rtl_htoa(num_buf, va_arg(args, u32), true);
+					num_len = rtl_strlen(num_buf);
+
+					if(num_len < 10) {
+						rtl_memmove(
+							num_buf + (10 - num_len),
+							num_buf,
+							num_len + 1);
+					}
+
+					for(i = 2; i < 10 - num_len; i++) {
+						num_buf[i] = '0';
+					}
+
+					num_buf[0] = '0';
+					num_buf[1] = 'x';
+					num_len = 10;
+
+					//Width
+					if(num_len < width) {
+						if(flag & FLAG_LEFT_ALIGN) {
+							for(i = num_len; i < width; i++) {
+								num_buf[i] = ' ';
+							}
+
+							num_buf[i] = '\0';
+						} else {
+							rtl_memmove(
+								num_buf + (width - num_len),
+								num_buf,
+								num_len + 1);
+
+							for(i = 0; i < width - num_len; i++) {
+								num_buf[i] = ' ';
 							}
 						}
 					}
