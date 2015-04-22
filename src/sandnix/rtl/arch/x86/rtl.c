@@ -242,12 +242,13 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 				p_output++;
 				p_fmt++;
 
-				if(p_output - buf > bufstze - 2) {
+				if((u32)(p_output - buf) > buf_size - 2) {
 					*p_output = '\0';
 					return p_output - buf;
 				}
 
 				continue;
+
 			} else {
 				flag = get_flag(&p_fmt);
 				width = get_width(&p_fmt);
@@ -262,6 +263,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 					if(width <= 1) {
 						num_buf[0] = va_arg(args, char);
 						num_buf[1] = '\0';
+
 					} else if(flag & FLAG_LEFT_ALIGN) {
 						num_buf[0] = va_arg(args, char);
 
@@ -270,6 +272,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 						}
 
 						num_buf[i] = '\0';
+
 					} else {
 						width = width - 1;
 
@@ -284,7 +287,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 					write_buf(buf, buf_size, &p_output, num_buf);
 
-					if(p_output - buf > buf_size - 2) {
+					if((u32)(p_output - buf) > buf_size - 2) {
 						*p_output = '\0';
 						return p_output - buf;
 					}
@@ -297,26 +300,27 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 					if(data_s16 > 0) {
 						sign = 1;
+
 					} else {
 						sign = -1;
 					}
 
-					rtl_itoa(num_buf, data_s16 * sign);
+					rtl_itoa(num_buf, data_s32 * sign);
 					num_len = rtl_strlen(num_buf);
 
 					//Prec
 					if(num_len < prec) {
 						rtl_memmove(
-							num_buf + (prec - num_len),
-							num_buf,
-							num_len + 1);
-					}
+						    num_buf + (prec - num_len),
+						    num_buf,
+						    num_len + 1);
 
-					for(i = 0; i < prec - num_len; i++) {
-						num_buf[i] = '0';
-					}
+						for(i = 0; i < prec - num_len; i++) {
+							num_buf[i] = '0';
+						}
 
-					num_len = prec;
+						num_len = prec;
+					}
 
 					//Width
 					if(num_len < width) {
@@ -324,22 +328,24 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 						if(flag & FLAG_LEFT_ALIGN) {
 							if(flag & FLAG_SIGN) {
 								rtl_memmove(
-									num_buf + 1,
-									num_buf,
-									num_len + 1);
+								    num_buf + 1,
+								    num_buf,
+								    num_len + 1);
 
 								if(sign > 0) {
 									num_buf[0] = '+';
+
 								} else {
 									num_buf[0] = '-';
 								}
 
 								num_len++;
+
 							} else if(sign < 0) {
 								rtl_memmove(
-									num_buf + 1,
-									num_buf,
-									num_len + 1);
+								    num_buf + 1,
+								    num_buf,
+								    num_len + 1);
 								num_buf[0] = '-';
 								num_len++;
 							}
@@ -349,16 +355,18 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 							}
 
 							num_buf[i] = '\0';
+
 						} else {
 							rtl_memmove(
-								num_buf + (width - num_len),
-								num_buf,
-								num_len + 1);
+							    num_buf + (width - num_len),
+							    num_buf,
+							    num_len + 1);
 
 							if(flag & FLAG_ZERO) {
 								for(i = 0; i < width - num_len; i++) {
 									num_buf[i] = '0';
 								}
+
 							} else {
 								for(i = 0; i < width - num_len; i++) {
 									num_buf[i] = ' ';
@@ -369,38 +377,43 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 							if(flag & FLAG_SIGN) {
 								if(sign > 0) {
 									num_buf[0] = '+';
+
 								} else {
 									num_buf[0] = '-';
 								}
+
 							} else if(sign < 0) {
 								num_buf[0] = '-';
 							}
 						}
+
 					} else {
 						//Sign
 						if(flag & FLAG_SIGN) {
 							rtl_memmove(
-								num_buf + 1,
-								num_buf,
-								num_len + 1);
+							    num_buf + 1,
+							    num_buf,
+							    num_len + 1);
 
 							if(sign > 0) {
 								num_buf[0] = '+';
+
 							} else {
 								num_buf[0] = '-';
 							}
+
 						} else if(sign < 0) {
 							rtl_memmove(
-								num_buf + 1,
-								num_buf,
-								num_len + 1);
+							    num_buf + 1,
+							    num_buf,
+							    num_len + 1);
 							num_buf[0] = '-';
 						}
 					}
 
 					write_buf(buf, buf_size, &p_output, num_buf);
 
-					if(p_output - buf > buf_size - 2) {
+					if((u32)(p_output - buf) > buf_size - 2) {
 						*p_output = '\0';
 						return p_output - buf;
 					}
@@ -413,6 +426,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 					if(data_s32 > 0) {
 						sign = 1;
+
 					} else {
 						sign = -1;
 					}
@@ -423,16 +437,16 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 					//Prec
 					if(num_len < prec) {
 						rtl_memmove(
-							num_buf + (prec - num_len),
-							num_buf,
-							num_len + 1);
-					}
+						    num_buf + (prec - num_len),
+						    num_buf,
+						    num_len + 1);
 
-					for(i = 0; i < prec - num_len; i++) {
-						num_buf[i] = '0';
-					}
+						for(i = 0; i < prec - num_len; i++) {
+							num_buf[i] = '0';
+						}
 
-					num_len = prec;
+						num_len = prec;
+					}
 
 					//Width
 					if(num_len < width) {
@@ -440,22 +454,24 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 						if(flag & FLAG_LEFT_ALIGN) {
 							if(flag & FLAG_SIGN) {
 								rtl_memmove(
-									num_buf + 1,
-									num_buf,
-									num_len + 1);
+								    num_buf + 1,
+								    num_buf,
+								    num_len + 1);
 
 								if(sign > 0) {
 									num_buf[0] = '+';
+
 								} else {
 									num_buf[0] = '-';
 								}
 
 								num_len++;
+
 							} else if(sign < 0) {
 								rtl_memmove(
-									num_buf + 1,
-									num_buf,
-									num_len + 1);
+								    num_buf + 1,
+								    num_buf,
+								    num_len + 1);
 								num_buf[0] = '-';
 								num_len++;
 							}
@@ -465,16 +481,18 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 							}
 
 							num_buf[i] = '\0';
+
 						} else {
 							rtl_memmove(
-								num_buf + (width - num_len),
-								num_buf,
-								num_len + 1);
+							    num_buf + (width - num_len),
+							    num_buf,
+							    num_len + 1);
 
 							if(flag & FLAG_ZERO) {
 								for(i = 0; i < width - num_len; i++) {
 									num_buf[i] = '0';
 								}
+
 							} else {
 								for(i = 0; i < width - num_len; i++) {
 									num_buf[i] = ' ';
@@ -485,38 +503,43 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 							if(flag & FLAG_SIGN) {
 								if(sign > 0) {
 									num_buf[0] = '+';
+
 								} else {
 									num_buf[0] = '-';
 								}
+
 							} else if(sign < 0) {
 								num_buf[0] = '-';
 							}
 						}
+
 					} else {
 						//Sign
 						if(flag & FLAG_SIGN) {
 							rtl_memmove(
-								num_buf + 1,
-								num_buf,
-								num_len + 1);
+							    num_buf + 1,
+							    num_buf,
+							    num_len + 1);
 
 							if(sign > 0) {
 								num_buf[0] = '+';
+
 							} else {
 								num_buf[0] = '-';
 							}
+
 						} else if(sign < 0) {
 							rtl_memmove(
-								num_buf + 1,
-								num_buf,
-								num_len + 1);
+							    num_buf + 1,
+							    num_buf,
+							    num_len + 1);
 							num_buf[0] = '-';
 						}
 					}
 
 					write_buf(buf, buf_size, &p_output, num_buf);
 
-					if(p_output - buf > buf_size - 2) {
+					if((u32)(p_output - buf) > buf_size - 2) {
 						*p_output = '\0';
 						return p_output - buf;
 					}
@@ -525,30 +548,31 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 				//lld
 				case TYPE_INT_64:
-					data_s16 = va_arg(args, s64);
+					data_s64 = va_arg(args, s64);
 
 					if(data_s64 > 0) {
 						sign = 1;
+
 					} else {
 						sign = -1;
 					}
 
-					rtl_itoa(num_buf, data_s64 * sign);
+					rtl_itoa(num_buf, data_s32 * sign);
 					num_len = rtl_strlen(num_buf);
 
 					//Prec
 					if(num_len < prec) {
 						rtl_memmove(
-							num_buf + (prec - num_len),
-							num_buf,
-							num_len + 1);
-					}
+						    num_buf + (prec - num_len),
+						    num_buf,
+						    num_len + 1);
 
-					for(i = 0; i < prec - num_len; i++) {
-						num_buf[i] = '0';
-					}
+						for(i = 0; i < prec - num_len; i++) {
+							num_buf[i] = '0';
+						}
 
-					num_len = prec;
+						num_len = prec;
+					}
 
 					//Width
 					if(num_len < width) {
@@ -556,22 +580,24 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 						if(flag & FLAG_LEFT_ALIGN) {
 							if(flag & FLAG_SIGN) {
 								rtl_memmove(
-									num_buf + 1,
-									num_buf,
-									num_len + 1);
+								    num_buf + 1,
+								    num_buf,
+								    num_len + 1);
 
 								if(sign > 0) {
 									num_buf[0] = '+';
+
 								} else {
 									num_buf[0] = '-';
 								}
 
 								num_len++;
+
 							} else if(sign < 0) {
 								rtl_memmove(
-									num_buf + 1,
-									num_buf,
-									num_len + 1);
+								    num_buf + 1,
+								    num_buf,
+								    num_len + 1);
 								num_buf[0] = '-';
 								num_len++;
 							}
@@ -581,16 +607,18 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 							}
 
 							num_buf[i] = '\0';
+
 						} else {
 							rtl_memmove(
-								num_buf + (width - num_len),
-								num_buf,
-								num_len + 1);
+							    num_buf + (width - num_len),
+							    num_buf,
+							    num_len + 1);
 
 							if(flag & FLAG_ZERO) {
 								for(i = 0; i < width - num_len; i++) {
 									num_buf[i] = '0';
 								}
+
 							} else {
 								for(i = 0; i < width - num_len; i++) {
 									num_buf[i] = ' ';
@@ -601,38 +629,43 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 							if(flag & FLAG_SIGN) {
 								if(sign > 0) {
 									num_buf[0] = '+';
+
 								} else {
 									num_buf[0] = '-';
 								}
+
 							} else if(sign < 0) {
 								num_buf[0] = '-';
 							}
 						}
+
 					} else {
 						//Sign
 						if(flag & FLAG_SIGN) {
 							rtl_memmove(
-								num_buf + 1,
-								num_buf,
-								num_len + 1);
+							    num_buf + 1,
+							    num_buf,
+							    num_len + 1);
 
 							if(sign > 0) {
 								num_buf[0] = '+';
+
 							} else {
 								num_buf[0] = '-';
 							}
+
 						} else if(sign < 0) {
 							rtl_memmove(
-								num_buf + 1,
-								num_buf,
-								num_len + 1);
+							    num_buf + 1,
+							    num_buf,
+							    num_len + 1);
 							num_buf[0] = '-';
 						}
 					}
 
 					write_buf(buf, buf_size, &p_output, num_buf);
 
-					if(p_output - buf > buf_size - 2) {
+					if((u32)(p_output - buf) > buf_size - 2) {
 						*p_output = '\0';
 						return p_output - buf;
 					}
@@ -647,16 +680,16 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 					//Prec
 					if(num_len < prec) {
 						rtl_memmove(
-							num_buf + (prec - num_len),
-							num_buf,
-							num_len + 1);
-					}
+						    num_buf + (prec - num_len),
+						    num_buf,
+						    num_len + 1);
 
-					for(i = 0; i < prec - num_len; i++) {
-						num_buf[i] = '0';
-					}
+						for(i = 0; i < prec - num_len; i++) {
+							num_buf[i] = '0';
+						}
 
-					num_len = prec;
+						num_len = prec;
+					}
 
 					//Width
 					if(num_len < width) {
@@ -666,16 +699,18 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 							}
 
 							num_buf[i] = '\0';
+
 						} else {
 							rtl_memmove(
-								num_buf + (width - num_len),
-								num_buf,
-								num_len + 1);
+							    num_buf + (width - num_len),
+							    num_buf,
+							    num_len + 1);
 
 							if(flag & FLAG_ZERO) {
 								for(i = 0; i < width - num_len; i++) {
 									num_buf[i] = '0';
 								}
+
 							} else {
 								for(i = 0; i < width - num_len; i++) {
 									num_buf[i] = ' ';
@@ -686,7 +721,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 					write_buf(buf, buf_size, &p_output, num_buf);
 
-					if(p_output - buf > buf_size - 2) {
+					if((u32)(p_output - buf) > buf_size - 2) {
 						*p_output = '\0';
 						return p_output - buf;
 					}
@@ -701,16 +736,16 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 					//Prec
 					if(num_len < prec) {
 						rtl_memmove(
-							num_buf + (prec - num_len),
-							num_buf,
-							num_len + 1);
-					}
+						    num_buf + (prec - num_len),
+						    num_buf,
+						    num_len + 1);
 
-					for(i = 0; i < prec - num_len; i++) {
-						num_buf[i] = '0';
-					}
+						for(i = 0; i < prec - num_len; i++) {
+							num_buf[i] = '0';
+						}
 
-					num_len = prec;
+						num_len = prec;
+					}
 
 					//Width
 					if(num_len < width) {
@@ -720,16 +755,18 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 							}
 
 							num_buf[i] = '\0';
+
 						} else {
 							rtl_memmove(
-								num_buf + (width - num_len),
-								num_buf,
-								num_len + 1);
+							    num_buf + (width - num_len),
+							    num_buf,
+							    num_len + 1);
 
 							if(flag & FLAG_ZERO) {
 								for(i = 0; i < width - num_len; i++) {
 									num_buf[i] = '0';
 								}
+
 							} else {
 								for(i = 0; i < width - num_len; i++) {
 									num_buf[i] = ' ';
@@ -740,7 +777,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 					write_buf(buf, buf_size, &p_output, num_buf);
 
-					if(p_output - buf > buf_size - 2) {
+					if((u32)(p_output - buf) > buf_size - 2) {
 						*p_output = '\0';
 						return p_output - buf;
 					}
@@ -755,16 +792,16 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 					//Prec
 					if(num_len < prec) {
 						rtl_memmove(
-							num_buf + (prec - num_len),
-							num_buf,
-							num_len + 1);
-					}
+						    num_buf + (prec - num_len),
+						    num_buf,
+						    num_len + 1);
 
-					for(i = 0; i < prec - num_len; i++) {
-						num_buf[i] = '0';
-					}
+						for(i = 0; i < prec - num_len; i++) {
+							num_buf[i] = '0';
+						}
 
-					num_len = prec;
+						num_len = prec;
+					}
 
 					//Width
 					if(num_len < width) {
@@ -774,16 +811,18 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 							}
 
 							num_buf[i] = '\0';
+
 						} else {
 							rtl_memmove(
-								num_buf + (width - num_len),
-								num_buf,
-								num_len + 1);
+							    num_buf + (width - num_len),
+							    num_buf,
+							    num_len + 1);
 
 							if(flag & FLAG_ZERO) {
 								for(i = 0; i < width - num_len; i++) {
 									num_buf[i] = '0';
 								}
+
 							} else {
 								for(i = 0; i < width - num_len; i++) {
 									num_buf[i] = ' ';
@@ -794,7 +833,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 					write_buf(buf, buf_size, &p_output, num_buf);
 
-					if(p_output - buf > buf_size - 2) {
+					if((u32)(p_output - buf) > buf_size - 2) {
 						*p_output = '\0';
 						return p_output - buf;
 					}
@@ -809,16 +848,16 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 					//Prec
 					if(num_len < prec) {
 						rtl_memmove(
-							num_buf + (prec - num_len),
-							num_buf,
-							num_len + 1);
-					}
+						    num_buf + (prec - num_len),
+						    num_buf,
+						    num_len + 1);
 
-					for(i = 0; i < prec - num_len; i++) {
-						num_buf[i] = '0';
-					}
+						for(i = 0; i < prec - num_len; i++) {
+							num_buf[i] = '0';
+						}
 
-					num_len = prec;
+						num_len = prec;
+					}
 
 					//Width
 					if(num_len < width) {
@@ -826,16 +865,17 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 							if(flag & FLAG_POUND) {
 								//#
 								rtl_memmove(
-									num_buf + 1),
-											num_buf,
-											num_len + 1);
+								    num_buf + 1,
+								    num_buf,
+								    num_len + 1);
 								num_buf[0] = '0';
 
 								for(i = num_len + 1; i < width; i++) {
-								num_buf[i] = ' ';
+									num_buf[i] = ' ';
 								}
 
 								num_buf[i] = '\0';
+
 							} else {
 								for(i = num_len; i < width; i++) {
 									num_buf[i] = ' ';
@@ -843,16 +883,18 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 								num_buf[i] = '\0';
 							}
+
 						} else {
 							rtl_memmove(
-								num_buf + (width - num_len),
-								num_buf,
-								num_len + 1);
+							    num_buf + (width - num_len),
+							    num_buf,
+							    num_len + 1);
 
 							if(flag & FLAG_ZERO) {
 								for(i = 0; i < width - num_len; i++) {
 									num_buf[i] = '0';
 								}
+
 							} else {
 								for(i = 0; i < width - num_len; i++) {
 									num_buf[i] = ' ';
@@ -861,18 +903,19 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 								num_buf[i - 1] = '0';
 							}
 						}
-					} else {
+
+					} else if(flag & FLAG_POUND) {
 						//#
 						rtl_memmove(
-							num_buf + 1),
-									num_buf,
-									num_len + 1);
+						    num_buf + 1,
+						    num_buf,
+						    num_len + 1);
 						num_buf[0] = '0';
 					}
 
 					write_buf(buf, buf_size, &p_output, num_buf);
 
-					if(p_output - buf > buf_size - 2) {
+					if((u32)(p_output - buf) > buf_size - 2) {
 						*p_output = '\0';
 						return p_output - buf;
 					}
@@ -887,16 +930,16 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 					//Prec
 					if(num_len < prec) {
 						rtl_memmove(
-							num_buf + (prec - num_len),
-							num_buf,
-							num_len + 1);
-					}
+						    num_buf + (prec - num_len),
+						    num_buf,
+						    num_len + 1);
 
-					for(i = 0; i < prec - num_len; i++) {
-						num_buf[i] = '0';
-					}
+						for(i = 0; i < prec - num_len; i++) {
+							num_buf[i] = '0';
+						}
 
-					num_len = prec;
+						num_len = prec;
+					}
 
 					//Width
 					if(num_len < width) {
@@ -904,16 +947,17 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 							if(flag & FLAG_POUND) {
 								//#
 								rtl_memmove(
-									num_buf + 1),
-											num_buf,
-											num_len + 1);
+								    num_buf + 1,
+								    num_buf,
+								    num_len + 1);
 								num_buf[0] = '0';
 
 								for(i = num_len + 1; i < width; i++) {
-								num_buf[i] = ' ';
+									num_buf[i] = ' ';
 								}
 
 								num_buf[i] = '\0';
+
 							} else {
 								for(i = num_len; i < width; i++) {
 									num_buf[i] = ' ';
@@ -921,16 +965,18 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 								num_buf[i] = '\0';
 							}
+
 						} else {
 							rtl_memmove(
-								num_buf + (width - num_len),
-								num_buf,
-								num_len + 1);
+							    num_buf + (width - num_len),
+							    num_buf,
+							    num_len + 1);
 
 							if(flag & FLAG_ZERO) {
 								for(i = 0; i < width - num_len; i++) {
 									num_buf[i] = '0';
 								}
+
 							} else {
 								for(i = 0; i < width - num_len; i++) {
 									num_buf[i] = ' ';
@@ -939,18 +985,19 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 								num_buf[i - 1] = '0';
 							}
 						}
-					} else {
+
+					} else if(flag & FLAG_POUND) {
 						//#
 						rtl_memmove(
-							num_buf + 1),
-									num_buf,
-									num_len + 1);
+						    num_buf + 1,
+						    num_buf,
+						    num_len + 1);
 						num_buf[0] = '0';
 					}
 
 					write_buf(buf, buf_size, &p_output, num_buf);
 
-					if(p_output - buf > buf_size - 2) {
+					if((u32)(p_output - buf) > buf_size - 2) {
 						*p_output = '\0';
 						return p_output - buf;
 					}
@@ -965,16 +1012,16 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 					//Prec
 					if(num_len < prec) {
 						rtl_memmove(
-							num_buf + (prec - num_len),
-							num_buf,
-							num_len + 1);
-					}
+						    num_buf + (prec - num_len),
+						    num_buf,
+						    num_len + 1);
 
-					for(i = 0; i < prec - num_len; i++) {
-						num_buf[i] = '0';
-					}
+						for(i = 0; i < prec - num_len; i++) {
+							num_buf[i] = '0';
+						}
 
-					num_len = prec;
+						num_len = prec;
+					}
 
 					//Width
 					if(num_len < width) {
@@ -982,16 +1029,17 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 							if(flag & FLAG_POUND) {
 								//#
 								rtl_memmove(
-									num_buf + 1),
-											num_buf,
-											num_len + 1);
+								    num_buf + 1,
+								    num_buf,
+								    num_len + 1);
 								num_buf[0] = '0';
 
 								for(i = num_len + 1; i < width; i++) {
-								num_buf[i] = ' ';
+									num_buf[i] = ' ';
 								}
 
 								num_buf[i] = '\0';
+
 							} else {
 								for(i = num_len; i < width; i++) {
 									num_buf[i] = ' ';
@@ -999,16 +1047,18 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 								num_buf[i] = '\0';
 							}
+
 						} else {
 							rtl_memmove(
-								num_buf + (width - num_len),
-								num_buf,
-								num_len + 1);
+							    num_buf + (width - num_len),
+							    num_buf,
+							    num_len + 1);
 
 							if(flag & FLAG_ZERO) {
 								for(i = 0; i < width - num_len; i++) {
 									num_buf[i] = '0';
 								}
+
 							} else {
 								for(i = 0; i < width - num_len; i++) {
 									num_buf[i] = ' ';
@@ -1017,18 +1067,19 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 								num_buf[i - 1] = '0';
 							}
 						}
-					} else {
+
+					} else if(flag & FLAG_POUND) {
 						//#
 						rtl_memmove(
-							num_buf + 1),
-									num_buf,
-									num_len + 1);
+						    num_buf + 1,
+						    num_buf,
+						    num_len + 1);
 						num_buf[0] = '0';
 					}
 
 					write_buf(buf, buf_size, &p_output, num_buf);
 
-					if(p_output - buf > buf_size - 2) {
+					if((u32)(p_output - buf) > buf_size - 2) {
 						*p_output = '\0';
 						return p_output - buf;
 					}
@@ -1043,16 +1094,16 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 					//Prec
 					if(num_len < prec) {
 						rtl_memmove(
-							num_buf + (prec - num_len),
-							num_buf,
-							num_len + 1);
-					}
+						    num_buf + (prec - num_len),
+						    num_buf,
+						    num_len + 1);
 
-					for(i = 0; i < prec - num_len; i++) {
-						num_buf[i] = '0';
-					}
+						for(i = 0; i < prec - num_len; i++) {
+							num_buf[i] = '0';
+						}
 
-					num_len = prec;
+						num_len = prec;
+					}
 
 					//Width
 					if(num_len < width) {
@@ -1060,9 +1111,9 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 							if(flag & FLAG_POUND) {
 								//#
 								rtl_memmove(
-									num_buf + 2,
-									num_buf,
-									num_len + 1);
+								    num_buf + 2,
+								    num_buf,
+								    num_len + 1);
 								num_buf[0] = '0';
 								num_buf[1] = 'x';
 
@@ -1071,6 +1122,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 								}
 
 								num_buf[i] = '\0';
+
 							} else {
 								for(i = num_len; i < width; i++) {
 									num_buf[i] = ' ';
@@ -1078,13 +1130,14 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 								num_buf[i] = '\0';
 							}
+
 						} else {
 							if(width - num_len >= 2
 							   || !(flag & FLAG_POUND)) {
 								rtl_memmove(
-									num_buf + (width - num_len),
-									num_buf,
-									num_len + 1);
+								    num_buf + (width - num_len),
+								    num_buf,
+								    num_len + 1);
 
 								if(flag & FLAG_ZERO) {
 									for(i = 0; i < width - num_len; i++) {
@@ -1095,6 +1148,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 										num_buf[0] = '0';
 										num_buf[1] = 'x';
 									}
+
 								} else {
 									for(i = 0; i < width - num_len; i++) {
 										num_buf[i] = ' ';
@@ -1105,28 +1159,30 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 										num_buf[i - 1] = 'x';
 									}
 								}
+
 							} else {
 								rtl_memmove(
-									num_buf + 2,
-									num_buf,
-									num_len + 1);
+								    num_buf + 2,
+								    num_buf,
+								    num_len + 1);
 								num_buf[i - 2] = '0';
 								num_buf[i - 1] = 'x';
 							}
 						}
-					} else {
+
+					} else if(flag & FLAG_POUND) {
 						//#
 						rtl_memmove(
-							num_buf + 2),
-									num_buf,
-									num_len + 1);
+						    num_buf + 2,
+						    num_buf,
+						    num_len + 1);
 						num_buf[0] = '0';
 						num_buf[1] = 'x';
 					}
 
 					write_buf(buf, buf_size, &p_output, num_buf);
 
-					if(p_output - buf > buf_size - 2) {
+					if((u32)(p_output - buf) > buf_size - 2) {
 						*p_output = '\0';
 						return p_output - buf;
 					}
@@ -1141,16 +1197,16 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 					//Prec
 					if(num_len < prec) {
 						rtl_memmove(
-							num_buf + (prec - num_len),
-							num_buf,
-							num_len + 1);
-					}
+						    num_buf + (prec - num_len),
+						    num_buf,
+						    num_len + 1);
 
-					for(i = 0; i < prec - num_len; i++) {
-						num_buf[i] = '0';
-					}
+						for(i = 0; i < prec - num_len; i++) {
+							num_buf[i] = '0';
+						}
 
-					num_len = prec;
+						num_len = prec;
+					}
 
 					//Width
 					if(num_len < width) {
@@ -1158,9 +1214,9 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 							if(flag & FLAG_POUND) {
 								//#
 								rtl_memmove(
-									num_buf + 2,
-									num_buf,
-									num_len + 1);
+								    num_buf + 2,
+								    num_buf,
+								    num_len + 1);
 								num_buf[0] = '0';
 								num_buf[1] = 'x';
 
@@ -1169,6 +1225,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 								}
 
 								num_buf[i] = '\0';
+
 							} else {
 								for(i = num_len; i < width; i++) {
 									num_buf[i] = ' ';
@@ -1176,13 +1233,14 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 								num_buf[i] = '\0';
 							}
+
 						} else {
 							if(width - num_len >= 2
 							   || !(flag & FLAG_POUND)) {
 								rtl_memmove(
-									num_buf + (width - num_len),
-									num_buf,
-									num_len + 1);
+								    num_buf + (width - num_len),
+								    num_buf,
+								    num_len + 1);
 
 								if(flag & FLAG_ZERO) {
 									for(i = 0; i < width - num_len; i++) {
@@ -1193,6 +1251,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 										num_buf[0] = '0';
 										num_buf[1] = 'x';
 									}
+
 								} else {
 									for(i = 0; i < width - num_len; i++) {
 										num_buf[i] = ' ';
@@ -1203,28 +1262,30 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 										num_buf[i - 1] = 'x';
 									}
 								}
+
 							} else {
 								rtl_memmove(
-									num_buf + 2,
-									num_buf,
-									num_len + 1);
+								    num_buf + 2,
+								    num_buf,
+								    num_len + 1);
 								num_buf[i - 2] = '0';
 								num_buf[i - 1] = 'x';
 							}
 						}
-					} else {
+
+					} else if(flag & FLAG_POUND) {
 						//#
 						rtl_memmove(
-							num_buf + 2),
-									num_buf,
-									num_len + 1);
+						    num_buf + 2,
+						    num_buf,
+						    num_len + 1);
 						num_buf[0] = '0';
 						num_buf[1] = 'x';
 					}
 
 					write_buf(buf, buf_size, &p_output, num_buf);
 
-					if(p_output - buf > buf_size - 2) {
+					if((u32)(p_output - buf) > buf_size - 2) {
 						*p_output = '\0';
 						return p_output - buf;
 					}
@@ -1239,16 +1300,16 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 					//Prec
 					if(num_len < prec) {
 						rtl_memmove(
-							num_buf + (prec - num_len),
-							num_buf,
-							num_len + 1);
-					}
+						    num_buf + (prec - num_len),
+						    num_buf,
+						    num_len + 1);
 
-					for(i = 0; i < prec - num_len; i++) {
-						num_buf[i] = '0';
-					}
+						for(i = 0; i < prec - num_len; i++) {
+							num_buf[i] = '0';
+						}
 
-					num_len = prec;
+						num_len = prec;
+					}
 
 					//Width
 					if(num_len < width) {
@@ -1256,9 +1317,9 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 							if(flag & FLAG_POUND) {
 								//#
 								rtl_memmove(
-									num_buf + 2,
-									num_buf,
-									num_len + 1);
+								    num_buf + 2,
+								    num_buf,
+								    num_len + 1);
 								num_buf[0] = '0';
 								num_buf[1] = 'x';
 
@@ -1267,6 +1328,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 								}
 
 								num_buf[i] = '\0';
+
 							} else {
 								for(i = num_len; i < width; i++) {
 									num_buf[i] = ' ';
@@ -1274,13 +1336,14 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 								num_buf[i] = '\0';
 							}
+
 						} else {
 							if(width - num_len >= 2
 							   || !(flag & FLAG_POUND)) {
 								rtl_memmove(
-									num_buf + (width - num_len),
-									num_buf,
-									num_len + 1);
+								    num_buf + (width - num_len),
+								    num_buf,
+								    num_len + 1);
 
 								if(flag & FLAG_ZERO) {
 									for(i = 0; i < width - num_len; i++) {
@@ -1291,6 +1354,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 										num_buf[0] = '0';
 										num_buf[1] = 'x';
 									}
+
 								} else {
 									for(i = 0; i < width - num_len; i++) {
 										num_buf[i] = ' ';
@@ -1301,28 +1365,30 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 										num_buf[i - 1] = 'x';
 									}
 								}
+
 							} else {
 								rtl_memmove(
-									num_buf + 2,
-									num_buf,
-									num_len + 1);
+								    num_buf + 2,
+								    num_buf,
+								    num_len + 1);
 								num_buf[i - 2] = '0';
 								num_buf[i - 1] = 'x';
 							}
 						}
-					} else {
+
+					} else if(flag & FLAG_POUND) {
 						//#
 						rtl_memmove(
-							num_buf + 2),
-									num_buf,
-									num_len + 1);
+						    num_buf + 2,
+						    num_buf,
+						    num_len + 1);
 						num_buf[0] = '0';
 						num_buf[1] = 'x';
 					}
 
 					write_buf(buf, buf_size, &p_output, num_buf);
 
-					if(p_output - buf > buf_size - 2) {
+					if((u32)(p_output - buf) > buf_size - 2) {
 						*p_output = '\0';
 						return p_output - buf;
 					}
@@ -1337,16 +1403,16 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 					//Prec
 					if(num_len < prec) {
 						rtl_memmove(
-							num_buf + (prec - num_len),
-							num_buf,
-							num_len + 1);
-					}
+						    num_buf + (prec - num_len),
+						    num_buf,
+						    num_len + 1);
 
-					for(i = 0; i < prec - num_len; i++) {
-						num_buf[i] = '0';
-					}
+						for(i = 0; i < prec - num_len; i++) {
+							num_buf[i] = '0';
+						}
 
-					num_len = prec;
+						num_len = prec;
+					}
 
 					//Width
 					if(num_len < width) {
@@ -1354,9 +1420,9 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 							if(flag & FLAG_POUND) {
 								//#
 								rtl_memmove(
-									num_buf + 2,
-									num_buf,
-									num_len + 1);
+								    num_buf + 2,
+								    num_buf,
+								    num_len + 1);
 								num_buf[0] = '0';
 								num_buf[1] = 'x';
 
@@ -1365,6 +1431,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 								}
 
 								num_buf[i] = '\0';
+
 							} else {
 								for(i = num_len; i < width; i++) {
 									num_buf[i] = ' ';
@@ -1372,13 +1439,14 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 								num_buf[i] = '\0';
 							}
+
 						} else {
 							if(width - num_len >= 2
 							   || !(flag & FLAG_POUND)) {
 								rtl_memmove(
-									num_buf + (width - num_len),
-									num_buf,
-									num_len + 1);
+								    num_buf + (width - num_len),
+								    num_buf,
+								    num_len + 1);
 
 								if(flag & FLAG_ZERO) {
 									for(i = 0; i < width - num_len; i++) {
@@ -1389,6 +1457,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 										num_buf[0] = '0';
 										num_buf[1] = 'x';
 									}
+
 								} else {
 									for(i = 0; i < width - num_len; i++) {
 										num_buf[i] = ' ';
@@ -1399,28 +1468,30 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 										num_buf[i - 1] = 'x';
 									}
 								}
+
 							} else {
 								rtl_memmove(
-									num_buf + 2,
-									num_buf,
-									num_len + 1);
+								    num_buf + 2,
+								    num_buf,
+								    num_len + 1);
 								num_buf[i - 2] = '0';
 								num_buf[i - 1] = 'x';
 							}
 						}
-					} else {
+
+					} else if(flag & FLAG_POUND) {
 						//#
 						rtl_memmove(
-							num_buf + 2),
-									num_buf,
-									num_len + 1);
+						    num_buf + 2,
+						    num_buf,
+						    num_len + 1);
 						num_buf[0] = '0';
 						num_buf[1] = 'x';
 					}
 
 					write_buf(buf, buf_size, &p_output, num_buf);
 
-					if(p_output - buf > buf_size - 2) {
+					if((u32)(p_output - buf) > buf_size - 2) {
 						*p_output = '\0';
 						return p_output - buf;
 					}
@@ -1435,16 +1506,16 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 					//Prec
 					if(num_len < prec) {
 						rtl_memmove(
-							num_buf + (prec - num_len),
-							num_buf,
-							num_len + 1);
-					}
+						    num_buf + (prec - num_len),
+						    num_buf,
+						    num_len + 1);
 
-					for(i = 0; i < prec - num_len; i++) {
-						num_buf[i] = '0';
-					}
+						for(i = 0; i < prec - num_len; i++) {
+							num_buf[i] = '0';
+						}
 
-					num_len = prec;
+						num_len = prec;
+					}
 
 					//Width
 					if(num_len < width) {
@@ -1452,9 +1523,9 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 							if(flag & FLAG_POUND) {
 								//#
 								rtl_memmove(
-									num_buf + 2,
-									num_buf,
-									num_len + 1);
+								    num_buf + 2,
+								    num_buf,
+								    num_len + 1);
 								num_buf[0] = '0';
 								num_buf[1] = 'x';
 
@@ -1463,6 +1534,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 								}
 
 								num_buf[i] = '\0';
+
 							} else {
 								for(i = num_len; i < width; i++) {
 									num_buf[i] = ' ';
@@ -1470,13 +1542,14 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 								num_buf[i] = '\0';
 							}
+
 						} else {
 							if(width - num_len >= 2
 							   || !(flag & FLAG_POUND)) {
 								rtl_memmove(
-									num_buf + (width - num_len),
-									num_buf,
-									num_len + 1);
+								    num_buf + (width - num_len),
+								    num_buf,
+								    num_len + 1);
 
 								if(flag & FLAG_ZERO) {
 									for(i = 0; i < width - num_len; i++) {
@@ -1487,6 +1560,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 										num_buf[0] = '0';
 										num_buf[1] = 'x';
 									}
+
 								} else {
 									for(i = 0; i < width - num_len; i++) {
 										num_buf[i] = ' ';
@@ -1497,28 +1571,30 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 										num_buf[i - 1] = 'x';
 									}
 								}
+
 							} else {
 								rtl_memmove(
-									num_buf + 2,
-									num_buf,
-									num_len + 1);
+								    num_buf + 2,
+								    num_buf,
+								    num_len + 1);
 								num_buf[i - 2] = '0';
 								num_buf[i - 1] = 'x';
 							}
 						}
-					} else {
+
+					} else if(flag & FLAG_POUND) {
 						//#
 						rtl_memmove(
-							num_buf + 2),
-									num_buf,
-									num_len + 1);
+						    num_buf + 2,
+						    num_buf,
+						    num_len + 1);
 						num_buf[0] = '0';
 						num_buf[1] = 'x';
 					}
 
 					write_buf(buf, buf_size, &p_output, num_buf);
 
-					if(p_output - buf > buf_size - 2) {
+					if((u32)(p_output - buf) > buf_size - 2) {
 						*p_output = '\0';
 						return p_output - buf;
 					}
@@ -1533,16 +1609,16 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 					//Prec
 					if(num_len < prec) {
 						rtl_memmove(
-							num_buf + (prec - num_len),
-							num_buf,
-							num_len + 1);
-					}
+						    num_buf + (prec - num_len),
+						    num_buf,
+						    num_len + 1);
 
-					for(i = 0; i < prec - num_len; i++) {
-						num_buf[i] = '0';
-					}
+						for(i = 0; i < prec - num_len; i++) {
+							num_buf[i] = '0';
+						}
 
-					num_len = prec;
+						num_len = prec;
+					}
 
 					//Width
 					if(num_len < width) {
@@ -1550,9 +1626,9 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 							if(flag & FLAG_POUND) {
 								//#
 								rtl_memmove(
-									num_buf + 2,
-									num_buf,
-									num_len + 1);
+								    num_buf + 2,
+								    num_buf,
+								    num_len + 1);
 								num_buf[0] = '0';
 								num_buf[1] = 'x';
 
@@ -1561,6 +1637,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 								}
 
 								num_buf[i] = '\0';
+
 							} else {
 								for(i = num_len; i < width; i++) {
 									num_buf[i] = ' ';
@@ -1568,13 +1645,14 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 								num_buf[i] = '\0';
 							}
+
 						} else {
 							if(width - num_len >= 2
 							   || !(flag & FLAG_POUND)) {
 								rtl_memmove(
-									num_buf + (width - num_len),
-									num_buf,
-									num_len + 1);
+								    num_buf + (width - num_len),
+								    num_buf,
+								    num_len + 1);
 
 								if(flag & FLAG_ZERO) {
 									for(i = 0; i < width - num_len; i++) {
@@ -1585,6 +1663,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 										num_buf[0] = '0';
 										num_buf[1] = 'x';
 									}
+
 								} else {
 									for(i = 0; i < width - num_len; i++) {
 										num_buf[i] = ' ';
@@ -1595,28 +1674,30 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 										num_buf[i - 1] = 'x';
 									}
 								}
+
 							} else {
 								rtl_memmove(
-									num_buf + 2,
-									num_buf,
-									num_len + 1);
+								    num_buf + 2,
+								    num_buf,
+								    num_len + 1);
 								num_buf[i - 2] = '0';
 								num_buf[i - 1] = 'x';
 							}
 						}
-					} else {
+
+					} else if(flag & FLAG_POUND) {
 						//#
 						rtl_memmove(
-							num_buf + 2),
-									num_buf,
-									num_len + 1);
+						    num_buf + 2,
+						    num_buf,
+						    num_len + 1);
 						num_buf[0] = '0';
 						num_buf[1] = 'x';
 					}
 
 					write_buf(buf, buf_size, &p_output, num_buf);
 
-					if(p_output - buf > buf_size - 2) {
+					if((u32)(p_output - buf) > buf_size - 2) {
 						*p_output = '\0';
 						return p_output - buf;
 					}
@@ -1629,22 +1710,26 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 					num_len = rtl_strlen(data_str);
 
 					if(num_len < width) {
-						for(i = 0; i < num_len - width; i++) {
+						for(i = 0; i < width - num_len; i++) {
 							num_buf[i] = ' ';
 						}
+
+						num_buf[i] = '\0';
 
 						if(flag & FLAG_LEFT_ALIGN) {
 							write_buf(buf, buf_size, &p_output, data_str);
 							write_buf(buf, buf_size, &p_output, num_buf);
+
 						} else {
 							write_buf(buf, buf_size, &p_output, num_buf);
 							write_buf(buf, buf_size, &p_output, data_str);
 						}
+
 					} else {
 						write_buf(buf, buf_size, &p_output, data_str);
 					}
 
-					if(p_output - buf > buf_size - 2) {
+					if((u32)(p_output - buf) > buf_size - 2) {
 						*p_output = '\0';
 						return p_output - buf;
 					}
@@ -1658,9 +1743,9 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 					if(num_len < 10) {
 						rtl_memmove(
-							num_buf + (10 - num_len),
-							num_buf,
-							num_len + 1);
+						    num_buf + (10 - num_len),
+						    num_buf,
+						    num_len + 1);
 					}
 
 					for(i = 2; i < 10 - num_len; i++) {
@@ -1679,11 +1764,12 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 							}
 
 							num_buf[i] = '\0';
+
 						} else {
 							rtl_memmove(
-								num_buf + (width - num_len),
-								num_buf,
-								num_len + 1);
+							    num_buf + (width - num_len),
+							    num_buf,
+							    num_len + 1);
 
 							for(i = 0; i < width - num_len; i++) {
 								num_buf[i] = ' ';
@@ -1693,7 +1779,7 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 					write_buf(buf, buf_size, &p_output, num_buf);
 
-					if(p_output - buf > buf_size - 2) {
+					if((u32)(p_output - buf) > buf_size - 2) {
 						*p_output = '\0';
 						return p_output - buf;
 					}
@@ -1704,18 +1790,22 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 					continue;
 				}
 			}
+
 		} else {
 			//Copy characters
 			*p_output = *p_fmt;
 			p_output++;
 			p_fmt++;
 
-			if(p_output - buf > bufstze - 2) {
+			if((u32)(p_output - buf) > buf_size - 2) {
 				*p_output = '\0';
 				return p_output - buf;
 			}
 		}
 	}
+
+	*p_output = '\0';
+	return p_output - buf;
 }
 
 s32 rtl_atoi(char* str, int num_sys)
@@ -1729,7 +1819,7 @@ s32 rtl_atoi(char* str, int num_sys)
 	if(num_sys != 2
 	   && num_sys != 8
 	   && num_sys != 10
-	   % % num_sys != 16) {
+	   && num_sys != 16) {
 		return 0;
 	}
 
@@ -1739,14 +1829,18 @@ s32 rtl_atoi(char* str, int num_sys)
 	for(p = str; p < str + len; p++) {
 		if(*p >= '0' && *p <= '9') {
 			ret = ret * num_sys + (*p - '0');
+
 		} else if(num_sys == 16) {
 			if(*p >= 'a' && *p <= 'f') {
 				ret = ret * 0x10 + (*p - 'a' + 0x0A);
+
 			} else if(*p >= 'A' && *p <= 'F') {
 				ret = ret * 0x10 + (*p - 'A' + 0x0A);
+
 			} else {
 				return ret;
 			}
+
 		} else {
 			return ret;
 		}
@@ -1761,15 +1855,20 @@ u32 get_flag(char** p_p_fmt)
 
 	while(1) {
 		if(**p_p_fmt == '-') {
-			ret &= FLAG_LEFT_ALIGN;
+			ret |= FLAG_LEFT_ALIGN;
+
 		} else if(**p_p_fmt == '+') {
-			ret &= FLAG_SIGN;
+			ret |= FLAG_SIGN;
+
 		} else if(**p_p_fmt == '0') {
-			ret &= FLAG_ZERO;
+			ret |= FLAG_ZERO;
+
 		} else if(**p_p_fmt == ' ') {
-			ret &= FLAG_SPACE;
+			ret |= FLAG_SPACE;
+
 		} else if(**p_p_fmt == '#') {
-			ret &= FLAG_POUND;
+			ret |= FLAG_POUND;
+
 		} else {
 			return ret;
 		}
@@ -1782,7 +1881,7 @@ u32 get_width(char** p_p_fmt)
 {
 	u32 ret;
 
-	if(**p_p_fmt < '0' ||**p_p_fmt > '9') {
+	if(**p_p_fmt < '0' || **p_p_fmt > '9') {
 		return 0;
 	}
 
@@ -1830,9 +1929,11 @@ u32 get_type(char** p_p_fmt)
 		if(**p_p_fmt == 'l') {
 			(*p_p_fmt)++;
 			ll_flag = true;
+
 		} else {
 			l_flag = true;
 		}
+
 	} else if(**p_p_fmt == 'h') {
 		(*p_p_fmt)++;
 		h_flag = true;
@@ -1843,8 +1944,10 @@ u32 get_type(char** p_p_fmt)
 	case 'd':
 		if(h_flag) {
 			ret = TYPE_INT_16;
+
 		} else if(ll_flag) {
 			ret = TYPE_INT_64;
+
 		} else {
 			ret = TYPE_INT_32;
 		}
@@ -1854,8 +1957,10 @@ u32 get_type(char** p_p_fmt)
 	case 'o':
 		if(h_flag) {
 			ret = TYPE_OCTAL_16;
+
 		} else if(ll_flag) {
 			ret = TYPE_OCTAL_64;
+
 		} else {
 			ret = TYPE_OCTAL_32;
 		}
@@ -1865,8 +1970,10 @@ u32 get_type(char** p_p_fmt)
 	case 'u':
 		if(h_flag) {
 			ret = TYPE_UINT_16;
+
 		} else if(ll_flag) {
 			ret = TYPE_UINT_64;
+
 		} else {
 			ret = TYPE_UINT_32;
 		}
@@ -1876,8 +1983,10 @@ u32 get_type(char** p_p_fmt)
 	case 'x':
 		if(h_flag) {
 			ret = TYPE_HEX_16_L;
+
 		} else if(ll_flag) {
 			ret = TYPE_HEX_64_L;
+
 		} else {
 			ret = TYPE_HEX_32_L;
 		}
@@ -1887,8 +1996,10 @@ u32 get_type(char** p_p_fmt)
 	case 'X':
 		if(h_flag) {
 			ret = TYPE_HEX_16_C;
+
 		} else if(ll_flag) {
 			ret = TYPE_HEX_64_C;
+
 		} else {
 			ret = TYPE_HEX_32_C;
 		}
@@ -1898,8 +2009,10 @@ u32 get_type(char** p_p_fmt)
 	case 'e':
 		if(h_flag) {
 			ret = TYPE_E_FLOAT_32_L;
+
 		} else if(ll_flag) {
 			ret = TYPE_UNKNOW;
+
 		} else {
 			ret = TYPE_E_FLOAT_64_L;
 		}
@@ -1909,8 +2022,10 @@ u32 get_type(char** p_p_fmt)
 	case 'E':
 		if(h_flag) {
 			ret = TYPE_E_FLOAT_32_C;
+
 		} else if(ll_flag) {
 			ret = TYPE_UNKNOW;
+
 		} else {
 			ret = TYPE_E_FLOAT_64_C;
 		}
@@ -1920,8 +2035,10 @@ u32 get_type(char** p_p_fmt)
 	case 'f':
 		if(h_flag) {
 			ret = TYPE_FLOAT_32;
+
 		} else if(ll_flag) {
 			ret = TYPE_UNKNOW;
+
 		} else {
 			ret = TYPE_FLOAT_64;
 		}
@@ -1931,8 +2048,10 @@ u32 get_type(char** p_p_fmt)
 	case 'g':
 		if(h_flag) {
 			ret = TYPE_G_FLOAT_32_L;
+
 		} else if(ll_flag) {
 			ret = TYPE_UNKNOW;
+
 		} else {
 			ret = TYPE_G_FLOAT_64_L;
 		}
@@ -1942,8 +2061,10 @@ u32 get_type(char** p_p_fmt)
 	case 'G':
 		if(h_flag) {
 			ret = TYPE_G_FLOAT_32_C;
+
 		} else if(ll_flag) {
 			ret = TYPE_UNKNOW;
+
 		} else {
 			ret = TYPE_G_FLOAT_64_C;
 		}
@@ -1963,8 +2084,8 @@ u32 get_type(char** p_p_fmt)
 		break;
 
 	case 'n':
-		ret = TYPE_NUM
-			  break;
+		ret = TYPE_NUM;
+		break;
 
 	default:
 		ret = TYPE_UNKNOW;
@@ -1980,7 +2101,7 @@ u32 write_buf(char* dest, size_t size, char** p_p_output, char* src)
 	len = strlen(src);
 
 	if(len + (*p_p_output - dest) > size - 2) {
-		len = size - 2 - (p_p_output - dest);
+		len = size - 2 - (*p_p_output - dest);
 	}
 
 	rtl_memcpy(*p_p_output, src, len);
@@ -1992,11 +2113,23 @@ char* rtl_itoa(char* buf, u64 num)
 {
 	char* p;
 	u64 n;
+	char* p1;
+	char* p2;
+	char t;
 
 	for(n = num, p = buf;
-		n != 0;
-		n = n / 10, p++) {
+	    n != 0;
+	    n = n / 10, p++) {
 		*p = n % 10 + '0';
+	}
+
+	for(p1 = buf, p2 = p - 1;
+	    p2 > p1;
+	    p1++, p2--) {
+		t = *p1;
+		*p1 = *p2;
+		*p2 = t;
+
 	}
 
 	*p = '\0';
@@ -2008,21 +2141,34 @@ char* rtl_htoa(char* buf, u64 num, bool capital_flag)
 	char* p;
 	u64 n;
 	u8 t;
+	char* p1;
+	char* p2;
 
 	for(n = num, p = buf;
-		n != 0;
-		n = n / 0x10, p++) {
+	    n != 0;
+	    n = n / 0x10, p++) {
 		t = n % 0x10;
 
 		if(t < 0x0A) {
 			*p = t + '0';
+
 		} else {
 			if(capital_flag) {
-				*p = t + 'A';
+				*p = t - 0x0A + 'A';
+
 			} else {
-				*p = t + 'a';
+				*p = t - 0x0A + 'a';
 			}
 		}
+	}
+
+	for(p1 = buf, p2 = p - 1;
+	    p2 > p1;
+	    p1++, p2--) {
+		t = *p1;
+		*p1 = *p2;
+		*p2 = t;
+
 	}
 
 	*p = '\0';
@@ -2032,12 +2178,24 @@ char* rtl_htoa(char* buf, u64 num, bool capital_flag)
 char* rtl_otoa(char* buf, u64 num)
 {
 	char* p;
+	char* p1;
+	char* p2;
+	char t;
 	u64 n;
 
 	for(n = num, p = buf;
-		n != 0;
-		n = n / 010, p++) {
+	    n != 0;
+	    n = n / 010, p++) {
 		*p = n % 010 + '0';
+	}
+
+	for(p1 = buf, p2 = p - 1;
+	    p2 > p1;
+	    p1++, p2--) {
+		t = *p1;
+		*p1 = *p2;
+		*p2 = t;
+
 	}
 
 	*p = '\0';
