@@ -12,7 +12,11 @@ TARGET = $(TARGET_DIR)/sandnix
 MAP = $(TARGET_DIR)/sandnix.map
 
 SOURCES += setup/arch/x86/setup.s \
-			setup/arch/x86/start_paging.c
+			setup/arch/x86/start_paging.c \
+			io/io.c \
+			io/arch/x86/int.c \
+			io/arch/x86/ports.c \
+			io/arch/x86/int_handler.s
 
 OBJS_DIR = $(root_path)/obj/sandnix/x86
 
@@ -25,7 +29,7 @@ OBJS = $(foreach filename,\
 all : $(TARGET)
 
 $(TARGET) : $(OBJS) $(TARGET_DIR)
-	$(LINKER) $(LDFLAGS) -Map $(MAP) -o $(TARGET) $(OBJS)
+	$(LINKER) $(LDFLAGS) -o $(TARGET) $(OBJS) -Map $(MAP)
 
 $(OBJS) : $(SOURCES) $(OBJS_DIR)
 	$(foreach filename,$(SOURCES),\

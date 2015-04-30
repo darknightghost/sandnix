@@ -15,9 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	EXCEPTIONS_H_INCLUDE
-#define	EXCEPTIONS_H_INCLUDE
+#ifndef	ERR_H_INCLUDE
+#define	ERR_H_INCLUDE
 
-#include "err.h"
-
-#endif	//EXCEPTIONS_H_INCLUDE
+#endif	//ERR_H_INCLUDE

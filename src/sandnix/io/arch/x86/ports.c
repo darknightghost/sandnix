@@ -145,7 +145,7 @@ void io_write_port_dword(u32 data,u32 port)
 {
 	__asm__ __volatile__(
 		"movw		%1,%%dx\n\t"
-		"movw		%0,%%eax\n\t"
+		"movl		%0,%%eax\n\t"
 		"outl		%%eax,%%dx\n\t"
 		::"m"(data), "m"(port));
 	return;

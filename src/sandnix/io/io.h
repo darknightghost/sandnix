@@ -29,11 +29,10 @@
 #define		INT_LEVEL_HIGHEST		0xFF
 #define		INT_LEVEL_LOWEST		0x00
 
-#define		INT_LEVEL_EXCEPTION		0xE0
+#define		INT_LEVEL_EXCEPTION		0xFF
 #define		INT_LEVEL_IO			0xD0
 #define		INT_LEVEL_CLOCK			0xB0
-#define		INT_LEVEL_PAGING		0xA0
-#define		INT_LEVEL_DISPATCH		0x40	//Dispatch message and signals,the task will not switch.
+#define		INT_LEVEL_DISPATCH		0x40	//Dispatch messages and signals,the task will not switch.
 #define		INT_LEVEL_TASK			0x20
 #define		INT_LEVEL_MORMAL		0x00
 
@@ -51,21 +50,23 @@ void		io_read_port_dwords(u32 port, u32* buf, u32 num);
 void		io_write_port_dwords(u32 port, u32* buf, u32 num);
 
 u8			io_read_port_byte(u32 port);
-void		io_write_port_byte(u8 data,u32 port);
+void		io_write_port_byte(u8 data, u32 port);
 
 u16			io_read_port_word(u32 port);
-void		io_write_port_word(u16 data,u32 port);
+void		io_write_port_word(u16 data, u32 port);
 
 u32			io_read_port_dword(u32 port);
-void		io_write_port_dword(u32 data,u32 ports);
+void		io_write_port_dword(u32 data, u32 ports);
 
 void		io_delay();
 
 //Interrupts
 //These two functions can only be called when Interrupt level <= INT_LEVEL_DISPATCH
-bool		io_reg_int_hndlr(u32 num,void* entry);
-void		io_unreg_int_hndlr(u32 num);
+bool		io_reg_int_hndlr(u32 num, pint_hndlr_info p_info);
+void		io_unreg_int_hndlr(pint_hndlr_info p_info);
 
+u32			io_get_int_level(u32 num);
+void		io_set_int_level(u32 num, u32 level);
 
 void		io_set_int_lvl(u32 level);
 u32			io_get_int_lvl();

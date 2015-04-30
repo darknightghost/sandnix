@@ -89,10 +89,8 @@ gdtr_value:
 	.word		(gdt_end - gdt - 1)
 	.long		gdt
 //------------------------------Functions---------------------------------------
-.global _aaa
 _start:
 		call	start_paging
-_aaa:
 		movl	$_kernel_mem_entry,%eax
 //Jmp to kernel memory
 		jmpl	*%eax
