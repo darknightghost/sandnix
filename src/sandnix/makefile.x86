@@ -16,7 +16,8 @@ SOURCES += setup/arch/x86/setup.s \
 			io/io.c \
 			io/arch/x86/int.c \
 			io/arch/x86/ports.c \
-			io/arch/x86/int_handler.s
+			io/arch/x86/int_handler.s \
+			exceptions/arch/x86/exceptions.c
 
 OBJS_DIR = $(root_path)/obj/sandnix/x86
 

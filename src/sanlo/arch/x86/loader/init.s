@@ -69,6 +69,8 @@ _start:
 //------------------------------Variables---------------------------------------
 msg_kernel_loader_loaded:
     .asciz  "Kernel loader loaded."
+msg_test_mem:
+    .asciz  "Testing memory..."
 msg_entering_protect_mode:
     .asciz  "Entering protect mode..."
 
@@ -242,8 +244,16 @@ _code_start:
 		pushw	$0x0F
 		pushw	$0
 		pushw	$1
+		pushw	$msg_test_mem
+		call	print_at_pos
+		addw	$0x08,%sp
+		call	memtest
+		pushw	$0x0F
+		pushw	$0
+		pushw	$2
 		pushw	$msg_entering_protect_mode
 		call	print_at_pos
+		addw	$0x08,%sp
 		//Enter protect mode
 		//Enable A20 gate
 		call	enable_a20

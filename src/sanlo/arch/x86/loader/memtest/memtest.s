@@ -15,12 +15,53 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	EXCEPTIONS_H_INCLUDE
-#define	EXCEPTIONS_H_INCLUDE
+.global		memtest
+.global		mem_info
+.code16
 
-#include "err.h"
+mem_info:
+.long		0
+.org		20*128+4,0
 
-void	excpt_init();
-void	excpt_panic(u32 reason);
+msg_mem_error:
+	.asciz "Memory test Failed!"
 
-#endif	//EXCEPTIONS_H_INCLUDE
+memtest:
+	pushw	%bp
+	movw	%sp,%bp
+	pushw	%bx
+	pushw	%cx
+	pushw	%dx
+	pushw	%di
+	xorl	%ebx,%ebx
+	movw	$(mem_info+4),%di
+	_DO_1:
+	#do{
+		movl	$0xE820,%eax
+		movl	$20,%ecx
+		movl	$0x534d4150,%edx
+		int		$0x15
+		jnc		SUCCEED
+		pushw	$0x0F
+		pushw	$0
+		pushw	$2
+		pushw	$msg_mem_error
+		call	print_at_pos
+		addw	$0x08,%sp
+		A:
+		jmp		A
+		SUCCEED:
+		addw	$20,%di
+		movl	mem_info,%eax
+		incl	%eax
+		movw	%eax,mem_info
+		cmpl	$0,%ebx
+		jne		_DO_1
+	#}while(ebx!=0)
+	popw	%di
+	popw	%dx
+	popw	%cx
+	popw	%bx
+	movw	%bp,%sp
+	popw	%bp
+	ret

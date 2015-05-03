@@ -22,6 +22,7 @@
 #include "../exception/exception.h"
 #include "../../../../../common/arch/x86/elf_x86.h"
 #include "../../../../../common/arch/x86/kernel_image.h"
+#include "../memtest/memtest.h"
 
 static	bool		load_segment(Elf32_Phdr* p_pheader, pfile fp);
 
@@ -38,11 +39,6 @@ bool load_os_kernel(char* path, char* parameters)
 
 	if(fp == NULL) {
 		return false;
-	}
-
-	//Check parameters length
-	if(strlen(parameters) + 1 > KERNEL_PARAMETER_MAX_LEN) {
-		panic(EXCEPTION_KERNEL_PARAMETER_TOO_LONG);
 	}
 
 	//Read elf header
@@ -74,13 +70,17 @@ bool load_os_kernel(char* path, char* parameters)
 		}
 	}
 
-	//Copy parameters
-	strcpy((char*)KERNEL_PARAMETER_PHYSICAL, parameters);
+	//Copy parameters address
+	*(char**)KERNEL_PARAMETER_PHYSICAL=parameters;
+
+	//Copy memory info address
+	*(void**)KERNEL_MEM_INFO_PHYSICAL=mem_info;
 	__asm__ __volatile__(
 		"cli\n\t"
 		"movl		%0,%%eax\n\t"
 		"jmpl		*%%eax\n\t"
 		::"m"(entry_address));
+
 	//Err...In fact,this function will never return true
 	return true;
 }

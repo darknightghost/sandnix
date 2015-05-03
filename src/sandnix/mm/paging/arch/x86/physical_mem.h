@@ -15,12 +15,28 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	EXCEPTIONS_H_INCLUDE
-#define	EXCEPTIONS_H_INCLUDE
+#ifndef	PHYSICAL_MEM_H_INCLUDE
+#define	PHYSICAL_MEM_H_INCLUDE
 
-#include "err.h"
+#include "../../../../../common/arch/x86/types.h"
 
-void	excpt_init();
-void	excpt_panic(u32 reason);
+#define	PHYSICAL_PAGE_SIZE		(4*1024)
 
-#endif	//EXCEPTIONS_H_INCLUDE
+#define	PHY_PAGE_RESERVED		0x01
+#define	PHY_PAGE_USABLE			0x02
+#define	PHY_PAGE_UNUSABLE			0x03
+#define	PHY_PAGE_SYSTEM			0x04
+#define	PHY_PAGE_ALLOCATED		0x10
+
+#pragma pack(1)
+typedef struct _e820_table {
+	u32		base_addr;
+	u32		len;
+	u32		type;
+} e820_table, *pe820_table;
+#pragma pack()
+
+void		setup_e820();
+void*		get_empty_physical_address
+
+#endif	//!	PHYSICAL_MEM_H_INCLUDE

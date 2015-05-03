@@ -34,7 +34,8 @@
 #define		INT_LEVEL_CLOCK			0xB0
 #define		INT_LEVEL_DISPATCH		0x40	//Dispatch messages and signals,the task will not switch.
 #define		INT_LEVEL_TASK			0x20
-#define		INT_LEVEL_MORMAL		0x00
+#define		INT_LEVEL_USR_HIGHEST	0x0F
+#define		INT_LEVEL_IDLE			0x00
 
 //Init
 void		init_io();
@@ -63,12 +64,17 @@ void		io_delay();
 //Interrupts
 //These two functions can only be called when Interrupt level <= INT_LEVEL_DISPATCH
 bool		io_reg_int_hndlr(u32 num, pint_hndlr_info p_info);
-void		io_unreg_int_hndlr(pint_hndlr_info p_info);
+void		io_unreg_int_hndlr(u32 num, pint_hndlr_info p_info);
 
 u32			io_get_int_level(u32 num);
 void		io_set_int_level(u32 num, u32 level);
 
-void		io_set_int_lvl(u32 level);
-u32			io_get_int_lvl();
+void		io_set_crrnt_int_level(u32 level);
+u32			io_get_crrnt_int_level();
+
+u32			io_get_tick_count();
+
+void		io_enable_interrupt();
+void		io_disable_interrupt();
 
 #endif	//!	IO_H_INCLUDE

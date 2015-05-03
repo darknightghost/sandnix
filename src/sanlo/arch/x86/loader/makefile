@@ -24,7 +24,8 @@ SOURCES = init.s \
 			fs/fs.c \
 			fs/ext2.c \
 			menu/menu.c \
-			k_loader/k_loader.c
+			k_loader/k_loader.c \
+			memtest/memtest.s
 
 OBJS_DIR = $(root_path)/obj/sanlo/x86/loader
 

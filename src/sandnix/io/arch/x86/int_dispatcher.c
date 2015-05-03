@@ -15,12 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	EXCEPTIONS_H_INCLUDE
-#define	EXCEPTIONS_H_INCLUDE
-
-#include "err.h"
-
-void	excpt_init();
-void	excpt_panic(u32 reason);
-
-#endif	//EXCEPTIONS_H_INCLUDE
+#include "../../io.h"
+#include "../../../rtl/rtl.h"
+#include "int_handler.h"
+#include "../../../exceptions/exceptions.h"

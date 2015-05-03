@@ -18,6 +18,7 @@
 #include "../../io.h"
 #include "../../../rtl/rtl.h"
 #include "int_handler.h"
+#include "../../../exceptions/exceptions.h"
 
 static	idt			idt_table[256];
 int_hndlr_entry		int_hndlr_tbl[256];
@@ -31,6 +32,7 @@ void init_idt()
 	u32 i;
 	idt_reg idt;
 	setup_8259A();
+	tick_count = 0;
 	rtl_memset(int_hndlr_tbl, 0, 256 * sizeof(int_hndlr_entry));
 
 	//Initialize IDT
@@ -299,9 +301,13 @@ void init_idt()
 		"lidt		%0\n\t"
 		::"m"(idt));
 
-	//Enable interrupt
+	//Set IOPL
 	__asm__ __volatile__(
-		"sti\n\t"
+		"pushfl\n\t"
+		"movl	(%%esp),%%eax\n\t"
+		"andl	$0xFFFFCFFF,%%eax\n\t"
+		"movl	%%eax,(%%esp)\n\t"
+		"popfl\n\t"
 	);
 }
 
@@ -359,30 +365,30 @@ bool io_reg_int_hndlr(u32 num, pint_hndlr_info p_info)
 	}
 
 	//Raise int level
-	current_lvl = io_get_int_lvl();
+	current_lvl = io_get_crrnt_int_level();
 
 	if(current_lvl > INT_LEVEL_DISPATCH) {
 		return false;
 	}
 
-	io_set_int_lvl(INT_LEVEL_DISPATCH);
+	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
 
 	//Regist interrupt handler
 	if(num <= 0xFF) {
 		p_info->p_next = int_hndlr_tbl[num].entry;
 		int_hndlr_tbl[num].entry = p_info;
 	} else {
-		io_set_int_lvl(current_lvl);
+		io_set_crrnt_int_level(current_lvl);
 		return false;
 	}
 
 	//Low int level
-	io_set_int_lvl(current_lvl);
+	io_set_crrnt_int_level(current_lvl);
 
 	return true;
 }
 
-void io_unreg_int_hndlr(pint_hndlr_info p_info)
+void io_unreg_int_hndlr(u32 num, pint_hndlr_info p_info)
 {
 	u32	current_lvl;
 	pint_hndlr_info p_reged_info;
@@ -392,13 +398,13 @@ void io_unreg_int_hndlr(pint_hndlr_info p_info)
 	}
 
 	//Raise int level
-	current_lvl = io_get_int_lvl();
+	current_lvl = io_get_crrnt_int_level();
 
 	if(current_lvl > INT_LEVEL_DISPATCH) {
-		return false;
+		return;
 	}
 
-	io_set_int_lvl(INT_LEVEL_DISPATCH);
+	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
 
 	//Unregist interrupt handler
 	if(num <= 0xFF) {
@@ -414,22 +420,21 @@ void io_unreg_int_hndlr(pint_hndlr_info p_info)
 			}
 		}
 	} else {
-		io_set_int_lvl(current_lvl);
-		return;
+
 	}
 
 	//Low int level
-	io_set_int_lvl(current_lvl);
+	io_set_crrnt_int_level(current_lvl);
 	return;
 }
 
-void io_set_int_lvl(u32 level)
+void io_set_crrnt_int_level(u32 level)
 {
 	current_int_level = level;
 	return;
 }
 
-u32 io_get_int_lvl()
+u32 io_get_crrnt_int_level()
 {
 	return current_int_level;
 }
@@ -442,5 +447,26 @@ u32 io_get_int_level(u32 num)
 void io_set_int_level(u32 num, u32 level)
 {
 	int_hndlr_tbl[num].level = level;
+	return;
+}
+
+u32 io_get_tick_count()
+{
+	return tick_count;
+}
+
+void io_enable_interrupt()
+{
+	__asm__ __volatile__(
+		"sti\n\t"
+	);
+	return;
+}
+
+void io_disable_interrupt()
+{
+	__asm__ __volatile__(
+		"cli\n\t"
+	);
 	return;
 }
