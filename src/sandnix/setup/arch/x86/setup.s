@@ -105,4 +105,6 @@ _kernel_mem_entry:
 		movw	%ax,%fs
 		movw	$SELECTOR_BASIC_VIDEO,%ax
 		movw	%ax,%gs
+		movl	$init_stack,%esp
+		movl	%esp,%ebp
 		ljmpl	$SELECTOR_K_CODE,$kernel_main

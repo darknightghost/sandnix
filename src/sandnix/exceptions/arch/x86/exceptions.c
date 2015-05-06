@@ -43,7 +43,7 @@ static	char*		excpt_tbl[] = {
 };
 
 
-void	excpt_panic(u32 reason)
+void	excpt_panic(u32 reason, char* fmt, ...)
 {
 	//Disable interrupt
 	__asm__ __volatile__(

@@ -17,7 +17,8 @@ SOURCES += setup/arch/x86/setup.s \
 			io/arch/x86/int.c \
 			io/arch/x86/ports.c \
 			io/arch/x86/int_handler.s \
-			exceptions/arch/x86/exceptions.c
+			exceptions/arch/x86/exceptions.c \
+			debug/arch/x86/debug.c
 
 OBJS_DIR = $(root_path)/obj/sandnix/x86
 
@@ -56,11 +57,11 @@ $(OBJS_DIR) :
 		$(shell mkdir -p $(dir $(filename))))
 
 clean :
-	-rm $(OBJS)
+	-rm -r $(OBJS_DIR)
 	
 delete :
-	-rm $(OBJS)
-	-rm $(TARGET)
+	-rm -r $(OBJS_DIR)
+	-rm -r $(TARGET_DIR)
 	
 rebuild : delete all
 

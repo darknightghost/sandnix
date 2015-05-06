@@ -28,15 +28,22 @@
 #define	PHY_PAGE_SYSTEM			0x04
 #define	PHY_PAGE_ALLOCATED		0x10
 
+#define	E820_USABLE				0x01
+#define	E820_RESERVED
+#define	E820_ACPI
+#define	E820_NVS
+#define	E820_BAD
+
 #pragma pack(1)
 typedef struct _e820_table {
-	u32		base_addr;
-	u32		len;
+	u64		base_addr;
+	u64		len;
 	u32		type;
 } e820_table, *pe820_table;
 #pragma pack()
 
 void		setup_e820();
-void*		get_empty_physical_address
+void*		get_empty_physical_address();
+void*		get_device_address();
 
 #endif	//!	PHYSICAL_MEM_H_INCLUDE

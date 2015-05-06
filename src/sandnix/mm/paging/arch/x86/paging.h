@@ -20,4 +20,7 @@
 
 #include "../../../../../common/arch/x86/types.h"
 
+void*	mm_virt_alloc();
+void*	mm_virt_free();
+
 #endif	//!	PAGING_H_INCLUDE

@@ -18,9 +18,10 @@
 #ifndef	EXCEPTIONS_H_INCLUDE
 #define	EXCEPTIONS_H_INCLUDE
 
+#include "../../common/arch/x86/types.h"
 #include "err.h"
 
 void	excpt_init();
-void	excpt_panic(u32 reason);
+void	excpt_panic(u32 reason, char* fmt, ...);
 
 #endif	//EXCEPTIONS_H_INCLUDE

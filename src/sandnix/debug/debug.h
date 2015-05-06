@@ -15,28 +15,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "physical_mem.h"
-#include "../../../../../common/arch/x86/kernel_image.h"
+#ifndef	DEBUG_H_INCLUDE
+#define	DEBUG_H_INCLUDE
 
-static	u32		phy_mem_info[1024 * 1024];
+#include "../../common/arch/x86/types.h"
+#define	K_TTY_BUF_SIZE		4096
 
-void setup_e820()
-{
-	u32 num;
-	u32 i;
-	pe820_table p_table;
+void	dbg_print(char* fmt, ...);
 
-	//Get e820 addr
-	num = **(u32**)KERNEL_MEM_INFO;
-	p_table = (pe820_table)(*(u32**)KERNEL_MEM_INFO + 1);
-
-	//Anlyse e820
-	for(i = 0; i < 1024 * 1024; i++) {
-		if(PHYSICAL_PAGE_SIZE * i <0xA0000){
-			phy_mem_info[i]=0x02;
-		}
-		if(PHYSICAL_PAGE_SIZE * i > p_table->base_addr + p_table->len) {
-
-		}
-	}
-}
+#endif	//!	DEBUG_H_INCLUDE

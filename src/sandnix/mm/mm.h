@@ -19,7 +19,9 @@
 #define	MM_H_INCLUDE
 
 #ifdef	X86
+#include "../../common/arch/x86/types.h"
 #include "paging/arch/x86/page_table.h"
+#include "heap/heap.h"
 #endif	//X86
 
 #endif	//!	MM_H_INCLUDE

@@ -17,6 +17,8 @@
 
 #include "../../setup.h"
 
+char	init_stack[4096];
+
 void start_paging()
 {
 	u32 i;

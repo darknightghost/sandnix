@@ -16,6 +16,7 @@
 */
 
 #include "../../rtl.h"
+#include "../../../mm/mm.h"
 
 #define	FLAG_LEFT_ALIGN			0x01
 #define	FLAG_SIGN				0x02
