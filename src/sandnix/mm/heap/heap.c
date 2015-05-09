@@ -54,6 +54,7 @@ void* mm_heap_alloc(size_t size, void* heap_addr)
 
 			default_heap_init_flag = true;
 		}
+
 	} else {
 		heap_base = heap_addr;
 	}
@@ -68,9 +69,11 @@ void* mm_heap_alloc(size_t size, void* heap_addr)
 				p_head = p_head->p_next;
 				p_block = p_head->p_first_empty_block;
 				continue;
+
 			} else if((p_head->attr)&HEAP_EXTENDABLE) {
 				//Allocate one page and initialize it
 				return NULL;
+
 			} else {
 				return NULL;
 			}
@@ -78,8 +81,8 @@ void* mm_heap_alloc(size_t size, void* heap_addr)
 
 		if(p_block->magic != HEAP_INTACT_MAGIC) {
 			excpt_panic(EXCEPTION_BUF_OVERFLOW,
-						"The address of memory block is %p.",
-						p_block);
+			            "The address of memory block is %p.",
+			            p_block);
 		}
 
 		if(p_block->size >= size) {
@@ -116,6 +119,7 @@ void* mm_heap_alloc(size_t size, void* heap_addr)
 
 			if(p_block->p_prev_empty_block != NULL) {
 				p_block->p_prev_empty_block->p_next_empty_block = p_block->p_next_empty_block;
+
 			} else {
 				p_head->p_first_empty_block = p_block->p_next_empty_block;
 			}

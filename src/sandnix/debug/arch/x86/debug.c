@@ -45,9 +45,9 @@ void dbg_print(char* fmt, ...)
 
 	if(K_TTY_BUF_SIZE - (p_tty_buf - k_dbg_tty_buf) < len) {
 		rtl_memmove(
-			k_dbg_tty_buf,
-			k_dbg_tty_buf + len - (K_TTY_BUF_SIZE - (p_tty_buf - k_dbg_tty_buf)),
-			len - (K_TTY_BUF_SIZE - (p_tty_buf - k_dbg_tty_buf)));
+		    k_dbg_tty_buf,
+		    k_dbg_tty_buf + len - (K_TTY_BUF_SIZE - (p_tty_buf - k_dbg_tty_buf)),
+		    len - (K_TTY_BUF_SIZE - (p_tty_buf - k_dbg_tty_buf)));
 		p_tty_buf = p_tty_buf - (len - (K_TTY_BUF_SIZE - (p_tty_buf - k_dbg_tty_buf)));
 	}
 

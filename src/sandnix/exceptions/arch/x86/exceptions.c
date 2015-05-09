@@ -47,7 +47,7 @@ void	excpt_panic(u32 reason, char* fmt, ...)
 {
 	//Disable interrupt
 	__asm__ __volatile__(
-		"cli\n\t"
+	    "cli\n\t"
 	);
 
 	//Reset video card to text mode

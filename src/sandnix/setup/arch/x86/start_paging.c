@@ -29,8 +29,8 @@ void start_paging()
 	//Initialize PTE
 	//These pages should be mapped
 	for(mapped_size = 0, p_pte = (ppte)TMP_PAGE_TABLE_BASE;
-		mapped_size < TMP_PAGED_MEM_SIZE;
-		mapped_size += 4 * 1024, p_pte++) {
+	    mapped_size < TMP_PAGED_MEM_SIZE;
+	    mapped_size += 4 * 1024, p_pte++) {
 		p_pte->present = PG_P;
 		p_pte->read_write = PG_RW;
 		p_pte->user_supervisor = PG_SUPERVISOR;
@@ -62,16 +62,18 @@ void start_paging()
 
 	//Initialize PDE
 	for(i = 0, p_pde = (ppde)TMP_PDT_BASE;
-		i < 1024;
-		i++, p_pde++) {
+	    i < 1024;
+	    i++, p_pde++) {
 		if(i * 4096 * 1024 < TMP_PAGED_MEM_SIZE) {
 			p_pde->present = PG_P;
 			p_pde->page_table_base_addr = (i * 4096 + TMP_PAGE_TABLE_BASE) >> 12;
+
 		} else if(i * 4096 * 1024 < TMP_PAGED_MEM_SIZE + KERNEL_MEM_BASE
-				  && i * 4096 * 1024 >= KERNEL_MEM_BASE) {
+		          && i * 4096 * 1024 >= KERNEL_MEM_BASE) {
 			p_pde->present = PG_P;
 			p_pde->page_table_base_addr = ((i - KERNEL_MEM_BASE / 4096 / 1024)
-										   * 4096 + TMP_PAGE_TABLE_BASE) >> 12;
+			                               * 4096 + TMP_PAGE_TABLE_BASE) >> 12;
+
 		} else {
 			p_pde->present = PG_NP;
 			p_pde->page_table_base_addr = 0;
@@ -89,16 +91,16 @@ void start_paging()
 	}
 
 	__asm__ __volatile__(
-		//Prepare for CR3
-		"movl	%0,%%eax\n\t"
-		"andl	$0xFFFFF000,%%eax\n\t"
-		"orl	$0x008,%%eax\n\t"
-		"movl	%%eax,%%cr3\n\t"
-		//Start paging
-		"movl	%%cr0,%%eax\n\t"
-		//Set CR0.PG & CR0.WP
-		"orl	$0x80010000,%%eax\n\t"
-		"movl	%%eax,%%cr0\n\t"
-		::"i"(TMP_PDT_BASE));
+	    //Prepare for CR3
+	    "movl	%0,%%eax\n\t"
+	    "andl	$0xFFFFF000,%%eax\n\t"
+	    "orl	$0x008,%%eax\n\t"
+	    "movl	%%eax,%%cr3\n\t"
+	    //Start paging
+	    "movl	%%cr0,%%eax\n\t"
+	    //Set CR0.PG & CR0.WP
+	    "orl	$0x80010000,%%eax\n\t"
+	    "movl	%%eax,%%cr0\n\t"
+	    ::"i"(TMP_PDT_BASE));
 	return;
 }

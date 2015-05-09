@@ -17,8 +17,8 @@
 
 #ifdef	X86
 
-#include "../../common/arch/x86/types.h"
-#include "../../common/arch/x86/kernel_image.h"
+	#include "../../common/arch/x86/types.h"
+	#include "../../common/arch/x86/kernel_image.h"
 
 #endif	//X86
 

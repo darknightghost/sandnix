@@ -63,23 +63,23 @@ bool load_os_kernel(char* path, char* parameters)
 
 	//Load segments
 	for(p_pheader = pheader_buf, cnt = 0;
-		cnt < elf_header.e_phnum;
-		cnt++, p_pheader = (Elf32_Phdr*)((char*)p_pheader + elf_header.e_phentsize)) {
+	    cnt < elf_header.e_phnum;
+	    cnt++, p_pheader = (Elf32_Phdr*)((char*)p_pheader + elf_header.e_phentsize)) {
 		if(!load_segment(p_pheader, fp)) {
 			panic(EXCEPTION_UNKNOW_KERNEL_FORMAT);
 		}
 	}
 
 	//Copy parameters address
-	*(char**)KERNEL_PARAMETER_PHYSICAL=parameters;
+	*(char**)KERNEL_PARAMETER_PHYSICAL = parameters;
 
 	//Copy memory info address
-	*(void**)KERNEL_MEM_INFO_PHYSICAL=mem_info;
+	*(void**)KERNEL_MEM_INFO_PHYSICAL = mem_info;
 	__asm__ __volatile__(
-		"cli\n\t"
-		"movl		%0,%%eax\n\t"
-		"jmpl		*%%eax\n\t"
-		::"m"(entry_address));
+	    "cli\n\t"
+	    "movl		%0,%%eax\n\t"
+	    "jmpl		*%%eax\n\t"
+	    ::"m"(entry_address));
 
 	//Err...In fact,this function will never return true
 	return true;
@@ -89,8 +89,8 @@ bool load_segment(Elf32_Phdr* p_pheader, pfile fp)
 {
 	u32 size_in_mem;
 	size_in_mem = (p_pheader->p_memsz % p_pheader->p_align ? 1 : 0
-				   + p_pheader->p_memsz / p_pheader->p_align)
-				  * p_pheader->p_align;
+	               + p_pheader->p_memsz / p_pheader->p_align)
+	              * p_pheader->p_align;
 	seek(fp, p_pheader->p_offset, FILE_POS_BEGIN);
 
 	//Read segment
@@ -100,7 +100,7 @@ bool load_segment(Elf32_Phdr* p_pheader, pfile fp)
 	}
 
 	memset((u8*)(p_pheader->p_vaddr - VIRTUAL_ADDR_OFFSET + p_pheader->p_filesz),
-		   0,
-		   size_in_mem - p_pheader->p_filesz);
+	       0,
+	       size_in_mem - p_pheader->p_filesz);
 	return true;
 }

@@ -75,24 +75,24 @@ static	u32			write_buf(char* dest, size_t size, char** p_p_output, char* src);
 void* rtl_memcpy(void* dest, void* src, size_t len)
 {
 	__asm__ __volatile__(
-		"cld\n\t"
-		"movl		%0,%%edi\n\t"
-		"movl		%1,%%esi\n\t"
-		"movl		%2,%%ecx\n\t"
-		"rep		movsb"
-		::"m"(dest), "m"(src), "m"(len));
+	    "cld\n\t"
+	    "movl		%0,%%edi\n\t"
+	    "movl		%1,%%esi\n\t"
+	    "movl		%2,%%ecx\n\t"
+	    "rep		movsb"
+	    ::"m"(dest), "m"(src), "m"(len));
 	return;
 }
 
 void* rtl_memset(void* dest, u8 val, size_t len)
 {
 	__asm__ __volatile__(
-		"cld\n\t"
-		"movl		%0,%%edi\n\t"
-		"movl		%1,%%ecx\n\t"
-		"movb		%2,%%al\n\t"
-		"rep		stosb\n\t"
-		::"m"(dest), "m"(len), "m"(val));
+	    "cld\n\t"
+	    "movl		%0,%%edi\n\t"
+	    "movl		%1,%%ecx\n\t"
+	    "movb		%2,%%al\n\t"
+	    "rep		stosb\n\t"
+	    ::"m"(dest), "m"(len), "m"(val));
 	return;
 }
 
@@ -100,19 +100,20 @@ void* rtl_memmove(void* dest, void* src, size_t n)
 {
 	if(dest < src) {
 		__asm__ __volatile__(
-			"cld\n\t"
-			"movl		%0,%%ecx\n\t"
-			"movl		%1,%%esi\n\t"
-			"movl		%2,%%edi\n\t"
-			"rep		movsb"
-			::"m"(n), "m"(src), "m"(dest));
+		    "cld\n\t"
+		    "movl		%0,%%ecx\n\t"
+		    "movl		%1,%%esi\n\t"
+		    "movl		%2,%%edi\n\t"
+		    "rep		movsb"
+		    ::"m"(n), "m"(src), "m"(dest));
+
 	} else {
 		__asm__ __volatile__(
-			"std\n\t"
-			"movl		%0,%%ecx\n\t"
-			"movl		%1,%%esi\n\t"
-			"movl		%2,%%edi\n\t"
-			::"m"(n), "m"(src+n-1), "m"(dest+n-1));
+		    "std\n\t"
+		    "movl		%0,%%ecx\n\t"
+		    "movl		%1,%%esi\n\t"
+		    "movl		%2,%%edi\n\t"
+		    ::"m"(n), "m"(src+n-1), "m"(dest+n-1));
 	}
 
 	return dest;
@@ -122,16 +123,16 @@ u32 rtl_strlen(char* str)
 {
 	u32 ret;
 	__asm__ __volatile__(
-		"cld\n\t"
-		"movl		$0xFFFFFFFF,%%ecx\n\t"
-		"movl		%1,%%edi\n\t"
-		"xorl		%%eax,%%eax\n\t"
-		"repnz		scasb\n\t"
-		"movl		$0xFFFFFFFF,%%eax\n\t"
-		"subl		%%ecx,%%eax\n\t"
-		"decl		%%eax\n\t"
-		:"=%%eax"(ret)
-		:"m"(str));
+	    "cld\n\t"
+	    "movl		$0xFFFFFFFF,%%ecx\n\t"
+	    "movl		%1,%%edi\n\t"
+	    "xorl		%%eax,%%eax\n\t"
+	    "repnz		scasb\n\t"
+	    "movl		$0xFFFFFFFF,%%eax\n\t"
+	    "subl		%%ecx,%%eax\n\t"
+	    "decl		%%eax\n\t"
+	    :"=%%eax"(ret)
+	    :"m"(str));
 	return ret;
 }
 
@@ -142,19 +143,20 @@ char* rtl_strcpy_s(char* dest, size_t buf_size, char* src)
 	//How many characters to copy
 	if(rtl_strlen(src) > buf_size - 1) {
 		len = buf_size - 1;
+
 	} else {
 		len = rtl_strlen(src);
 	}
 
 	//Copy string
 	__asm__ __volatile__(
-		"cld\n\t"
-		"movl		%0,%%ecx\n\t"
-		"movl		%1,%%esi\n\t"
-		"movl		%2,%%edi\n\t"
-		"rep		movsb\n\t"
-		"movb		$0,(%%edi)"
-		::"m"(len), "m"(src), "m"(dest));
+	    "cld\n\t"
+	    "movl		%0,%%ecx\n\t"
+	    "movl		%1,%%esi\n\t"
+	    "movl		%2,%%edi\n\t"
+	    "rep		movsb\n\t"
+	    "movb		$0,(%%edi)"
+	    ::"m"(len), "m"(src), "m"(dest));
 	return dest;
 }
 
@@ -165,8 +167,8 @@ s32 rtl_strcmp(char* str1, char* str2)
 	char* p2;
 
 	for(p1 = str1, p2 = str2;
-		*p1 != '\0' && *p2 != '\0';
-		p1++, p2++) {
+	    *p1 != '\0' && *p2 != '\0';
+	    p1++, p2++) {
 		ret = *p1 - *p2;
 
 		if(ret != 0) {
@@ -188,19 +190,20 @@ char* rtl_strcat_s(char* dest, size_t buf_size, char* src)
 	//How many characters to copy
 	if(rtl_strlen(src) + rtl_strlen(dest) > buf_size - 1) {
 		len = buf_size - 1 - rtl_strlen(dest);
+
 	} else {
 		len = rtl_strlen(src);
 	}
 
 	//Copy string
 	__asm__ __volatile__(
-		"cld\n\t"
-		"movl		%0,%%ecx\n\t"
-		"movl		%1,%%esi\n\t"
-		"movl		%2,%%edi\n\t"
-		"rep		movsb\n\t"
-		"movb		$0,(%%edi)"
-		::"m"(len), "m"(src), "m"(dest));
+	    "cld\n\t"
+	    "movl		%0,%%ecx\n\t"
+	    "movl		%1,%%esi\n\t"
+	    "movl		%2,%%edi\n\t"
+	    "rep		movsb\n\t"
+	    "movb		$0,(%%edi)"
+	    ::"m"(len), "m"(src), "m"(dest));
 	return dest;
 }
 

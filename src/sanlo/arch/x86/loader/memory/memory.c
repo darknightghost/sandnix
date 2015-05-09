@@ -45,10 +45,10 @@ void* malloc(size_t size)
 		if(p_head < (pmem_block_head)HEAP_BASE
 		   || p_head > (pmem_block_head)(HEAP_BASE + HEAP_SIZE)
 		   || (p_head->p_prev != NULL && (p_head->p_prev < (pmem_block_head)HEAP_BASE
-										  || p_head->p_prev > (pmem_block_head)(HEAP_BASE + HEAP_SIZE)))
+		                                  || p_head->p_prev > (pmem_block_head)(HEAP_BASE + HEAP_SIZE)))
 		   || (p_head->p_next != NULL && (p_head->p_next < (pmem_block_head)HEAP_BASE
-										  || p_head->p_next > (pmem_block_head)(HEAP_BASE + HEAP_SIZE))
-			  )) {
+		                                  || p_head->p_next > (pmem_block_head)(HEAP_BASE + HEAP_SIZE))
+		      )) {
 			panic(EXCEPTION_HEAP_CORRUPTION);
 		}
 
@@ -80,6 +80,7 @@ void* malloc(size_t size)
 			}
 
 			return p_head->start_addr;
+
 		} else {
 			//Get next memory block
 			p_prevhead = p_head;
@@ -88,10 +89,10 @@ void* malloc(size_t size)
 	}
 
 	print_string(
-		GET_REAL_ADDR(
-			"\nNOT ENOUGH MEMORY!!!.\n"),
-		BG_BLACK | FG_BRIGHT_RED,
-		BG_BLACK);
+	    GET_REAL_ADDR(
+	        "\nNOT ENOUGH MEMORY!!!.\n"),
+	    BG_BLACK | FG_BRIGHT_RED,
+	    BG_BLACK);
 	return NULL;
 }
 
@@ -105,10 +106,10 @@ void free(void* addr)
 	if(p_head < (pmem_block_head)HEAP_BASE
 	   || p_head > (pmem_block_head)(HEAP_BASE + HEAP_SIZE)
 	   || (p_head->p_prev != NULL && (p_head->p_prev < (pmem_block_head)HEAP_BASE
-									  || p_head->p_prev > (pmem_block_head)(HEAP_BASE + HEAP_SIZE)))
+	                                  || p_head->p_prev > (pmem_block_head)(HEAP_BASE + HEAP_SIZE)))
 	   || (p_head->p_next != NULL && (p_head->p_next < (pmem_block_head)HEAP_BASE
-									  || p_head->p_next > (pmem_block_head)(HEAP_BASE + HEAP_SIZE))
-		  )) {
+	                                  || p_head->p_next > (pmem_block_head)(HEAP_BASE + HEAP_SIZE))
+	      )) {
 		panic(EXCEPTION_HEAP_CORRUPTION);
 	}
 

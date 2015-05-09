@@ -32,7 +32,7 @@ void panic(u32 reason)
 {
 	char* exception_str;
 	__asm__ __volatile__(
-		"cli\n\t"
+	    "cli\n\t"
 	);
 	SET_EXCEPTION_STR(EXCEPTION_UNKNOW_EXCEPTION	, "EXCEPTION_UNKNOW_EXCEPTION");
 	SET_EXCEPTION_STR(EXCEPTION_HEAP_CORRUPTION		, "EXCEPTION_HEAP_CORRUPTION");
@@ -65,29 +65,29 @@ void panic(u32 reason)
 print_err:
 	cls(BG_BLACK | FG_BRIGHT_RED);
 	print_string(
-		GET_REAL_ADDR("Function panic() has been called.\n\n"),
-		BG_BLACK | FG_BRIGHT_RED,
-		BG_BLACK);
+	    GET_REAL_ADDR("Function panic() has been called.\n\n"),
+	    BG_BLACK | FG_BRIGHT_RED,
+	    BG_BLACK);
 	print_string(
-		exception_str,
-		BG_BLACK | FG_BRIGHT_RED,
-		BG_BLACK);
+	    exception_str,
+	    BG_BLACK | FG_BRIGHT_RED,
+	    BG_BLACK);
 	print_string(
-		GET_REAL_ADDR(
-			"\n\nThis function is called when an unhandled exception has been occured.\n"),
-		BG_BLACK | FG_BRIGHT_RED,
-		BG_BLACK);
+	    GET_REAL_ADDR(
+	        "\n\nThis function is called when an unhandled exception has been occured.\n"),
+	    BG_BLACK | FG_BRIGHT_RED,
+	    BG_BLACK);
 	print_string(
-		GET_REAL_ADDR(
-			"The Sandnix loader cannot continue running,Press <ESC> to restart your computer."),
-		BG_BLACK | FG_BRIGHT_RED,
-		BG_BLACK);
+	    GET_REAL_ADDR(
+	        "The Sandnix loader cannot continue running,Press <ESC> to restart your computer."),
+	    BG_BLACK | FG_BRIGHT_RED,
+	    BG_BLACK);
 
 	while(get_keyboard_input() != KEY_ESC_PRESSED);
 
 	__asm__ __volatile__(
-		"movb	$0xFE,%al\n\t"
-		"outb	%al,$0x64\n\t");
+	    "movb	$0xFE,%al\n\t"
+	    "outb	%al,$0x64\n\t");
 	return;
 }
 #pragma GCC pop_options

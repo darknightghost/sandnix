@@ -22,24 +22,24 @@
 void memset(void* addr, u8 value, size_t size)
 {
 	__asm__ __volatile__(
-		"cld\n\t"
-		"movl		%0,%%edi\n\t"
-		"movl		%1,%%ecx\n\t"
-		"movb		%2,%%al\n\t"
-		"rep		stosb\n\t"
-		::"m"(addr), "m"(size), "m"(value));
+	    "cld\n\t"
+	    "movl		%0,%%edi\n\t"
+	    "movl		%1,%%ecx\n\t"
+	    "movb		%2,%%al\n\t"
+	    "rep		stosb\n\t"
+	    ::"m"(addr), "m"(size), "m"(value));
 	return;
 }
 
 void memcpy(void* dest, void* src, size_t len)
 {
 	__asm__ __volatile__(
-		"cld\n\t"
-		"movl		%0,%%edi\n\t"
-		"movl		%1,%%esi\n\t"
-		"movl		%2,%%ecx\n\t"
-		"rep		movsb"
-		::"m"(dest), "m"(src), "m"(len));
+	    "cld\n\t"
+	    "movl		%0,%%edi\n\t"
+	    "movl		%1,%%esi\n\t"
+	    "movl		%2,%%ecx\n\t"
+	    "rep		movsb"
+	    ::"m"(dest), "m"(src), "m"(len));
 	return;
 }
 
@@ -57,8 +57,8 @@ char* strcut(char* dest, char* src, char end_str)
 	char* p_src;
 
 	for(p_dest = dest, p_src = src;
-		*p_src != '\0' && *p_src != end_str;
-		p_dest++, p_src++) {
+	    *p_src != '\0' && *p_src != end_str;
+	    p_dest++, p_src++) {
 		*p_dest = *p_src;
 	}
 
@@ -69,16 +69,16 @@ size_t strlen(char* str)
 {
 	size_t ret;
 	__asm__ __volatile__(
-		"cld\n\t"
-		"movl		$0xFFFFFFFF,%%ecx\n\t"
-		"movl		%1,%%edi\n\t"
-		"xorl		%%eax,%%eax\n\t"
-		"repnz		scasb\n\t"
-		"movl		$0xFFFFFFFF,%%eax\n\t"
-		"subl		%%ecx,%%eax\n\t"
-		"decl		%%eax\n\t"
-		:"=%%eax"(ret)
-		:"m"(str));
+	    "cld\n\t"
+	    "movl		$0xFFFFFFFF,%%ecx\n\t"
+	    "movl		%1,%%edi\n\t"
+	    "xorl		%%eax,%%eax\n\t"
+	    "repnz		scasb\n\t"
+	    "movl		$0xFFFFFFFF,%%eax\n\t"
+	    "subl		%%ecx,%%eax\n\t"
+	    "decl		%%eax\n\t"
+	    :"=%%eax"(ret)
+	    :"m"(str));
 	return ret;
 }
 char* strcpy(char* dest, char* src)
@@ -86,13 +86,13 @@ char* strcpy(char* dest, char* src)
 	size_t len;
 	len = strlen(src) + 1;
 	__asm__ __volatile__(
-		"cld\n\t"
-		"xorl		%%eax,%%eax\n\t"
-		"movl		%2,%%ecx\n\t"
-		"movl		%0,%%esi\n\t"
-		"movl		%1,%%edi\n\t"
-		"repnz		movsb\n\t"
-		::"m"(src), "m"(dest), "m"(len));
+	    "cld\n\t"
+	    "xorl		%%eax,%%eax\n\t"
+	    "movl		%2,%%ecx\n\t"
+	    "movl		%0,%%esi\n\t"
+	    "movl		%1,%%edi\n\t"
+	    "repnz		movsb\n\t"
+	    ::"m"(src), "m"(dest), "m"(len));
 	return dest;
 }
 int strcmp(char* dest, char* src)
@@ -102,8 +102,8 @@ int strcmp(char* dest, char* src)
 	char* p2;
 
 	for(p1 = dest, p2 = src;
-		*p1 != '\0' && *p2 != '\0';
-		p1++, p2++) {
+	    *p1 != '\0' && *p2 != '\0';
+	    p1++, p2++) {
 		ret = *p1 - *p2;
 
 		if(ret != 0) {
@@ -139,8 +139,8 @@ char* dectostr(u32 num, char* buf)
 	*p1 = '\0';
 
 	for(p2 = p1 - 1, p1 = buf;
-		p2 > p1;
-		p1++, p2--) {
+	    p2 > p1;
+	    p1++, p2--) {
 		t = *p1;
 		*p1 = *p2;
 		*p2 = t;
@@ -160,6 +160,7 @@ char* hextostr(u32 num, char* buf)
 	while(1) {
 		if(n % 0x10 < 10) {
 			*p1 = '0' + n % 0x10;
+
 		} else {
 			*p1 = 'A' + n % 0x10 - 0x0A;
 		}
@@ -175,8 +176,8 @@ char* hextostr(u32 num, char* buf)
 	*p1 = '\0';
 
 	for(p2 = p1 - 1, p1 = buf;
-		p2 > p1;
-		p1++, p2--) {
+	    p2 > p1;
+	    p1++, p2--) {
 		t = *p1;
 		*p1 = *p2;
 		*p2 = t;
