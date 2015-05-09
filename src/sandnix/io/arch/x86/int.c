@@ -298,17 +298,17 @@ void init_idt()
 	idt.base = (u32)idt_table;
 	idt.limit = 256 * sizeof(idt) - 1;
 	__asm__ __volatile__(
-		"lidt		%0\n\t"
-		::"m"(idt));
+	    "lidt		%0\n\t"
+	    ::"m"(idt));
 
 	//Set IOPL
 	__asm__ __volatile__(
-		"pushfl\n\t"
-		"movl	(%%esp),%%eax\n\t"
-		"andl	$0xFFFFCFFF,%%eax\n\t"
-		"movl	%%eax,(%%esp)\n\t"
-		"popfl\n\t"
-	::);
+	    "pushfl\n\t"
+	    "movl	(%%esp),%%eax\n\t"
+	    "andl	$0xFFFFCFFF,%%eax\n\t"
+	    "movl	%%eax,(%%esp)\n\t"
+	    "popfl\n\t"
+	    ::);
 }
 
 void setup_8259A()
@@ -377,6 +377,7 @@ bool io_reg_int_hndlr(u32 num, pint_hndlr_info p_info)
 	if(num <= 0xFF) {
 		p_info->p_next = int_hndlr_tbl[num].entry;
 		int_hndlr_tbl[num].entry = p_info;
+
 	} else {
 		io_set_crrnt_int_level(current_lvl);
 		return false;
@@ -410,15 +411,17 @@ void io_unreg_int_hndlr(u32 num, pint_hndlr_info p_info)
 	if(num <= 0xFF) {
 		if(int_hndlr_tbl[num].entry == p_info) {
 			int_hndlr_tbl[num].entry = p_info->p_next;
+
 		} else {
 			for(p_reged_info = int_hndlr_tbl[num].entry;
-				p_reged_info != NULL;
-				p_reged_info = p_reged_info->p_next) {
+			    p_reged_info != NULL;
+			    p_reged_info = p_reged_info->p_next) {
 				if(p_reged_info->p_next == p_info) {
 					p_reged_info->p_next = p_info->p_next;
 				}
 			}
 		}
+
 	} else {
 
 	}
@@ -458,7 +461,7 @@ u32 io_get_tick_count()
 void io_enable_interrupt()
 {
 	__asm__ __volatile__(
-		"sti\n\t"
+	    "sti\n\t"
 	);
 	return;
 }
@@ -466,7 +469,7 @@ void io_enable_interrupt()
 void io_disable_interrupt()
 {
 	__asm__ __volatile__(
-		"cli\n\t"
+	    "cli\n\t"
 	);
 	return;
 }

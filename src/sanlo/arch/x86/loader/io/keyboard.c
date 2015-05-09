@@ -30,16 +30,20 @@ u32 get_keyboard_input()
 		//Analyze scan code
 		if(scan_code == 0x1C) {
 			pressed_key = KEY_ENTER_PRESSED;
+
 		} else if(scan_code == 0x01) {
 			pressed_key = KEY_ESC_PRESSED;
+
 		} else if(scan_code == 0xE0) {
 			scan_code = in_byte(0x60);
 
 			if(scan_code == 0x48) {
 				pressed_key = KEY_UP_PRESSED;
+
 			} else if(scan_code == 0x50) {
 				pressed_key = KEY_DOWN_PRESSED;
 			}
+
 		} else {
 			pressed_key = 0;
 		}

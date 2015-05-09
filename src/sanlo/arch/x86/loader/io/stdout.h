@@ -36,11 +36,11 @@ void		print_string(char* str, u8 color, u8 bg_color);
 void		set_cursor_pos(u16 line, u16 row);
 void		get_cursor_pos(u16* line, u16* row);
 void		write_video_buf(
-	u16* p_data,				//Data to write
-	size_t size,				//How mant bytes to write
-	//start position
-	u16 line,
-	u16 row);
+    u16* p_data,				//Data to write
+    size_t size,				//How mant bytes to write
+    //start position
+    u16 line,
+    u16 row);
 void		scroll_down(u16 line, u16 color);
 
 

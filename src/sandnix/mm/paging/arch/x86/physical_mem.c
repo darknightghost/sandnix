@@ -32,9 +32,10 @@ void setup_e820()
 
 	//Anlyse e820
 	for(i = 0; i < 1024 * 1024; i++) {
-		if(PHYSICAL_PAGE_SIZE * i <0xA0000){
-			phy_mem_info[i]=0x02;
+		if(PHYSICAL_PAGE_SIZE * i < 0xA0000) {
+			phy_mem_info[i] = 0x02;
 		}
+
 		if(PHYSICAL_PAGE_SIZE * i > p_table->base_addr + p_table->len) {
 
 		}

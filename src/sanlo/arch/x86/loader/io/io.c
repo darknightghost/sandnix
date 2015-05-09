@@ -22,10 +22,10 @@ u8 in_byte(u16 port)
 {
 	u8 data;
 	__asm__ __volatile__(
-		"movw		%1,%%dx\n\t"
-		"inb		%%dx,%%al\n\t"
-		:"=%%al"(data)
-		:"m"(port));
+	    "movw		%1,%%dx\n\t"
+	    "inb		%%dx,%%al\n\t"
+	    :"=%%al"(data)
+	    :"m"(port));
 	return data;
 }
 
@@ -33,34 +33,34 @@ u16 in_word(u16 port)
 {
 	u16 data;
 	__asm__ __volatile__(
-		"movw		%1,%%dx\n\t"
-		"inw		%%dx,%%ax\n\t"
-		:"=%%ax"(data)
-		:"m"(port));
+	    "movw		%1,%%dx\n\t"
+	    "inw		%%dx,%%ax\n\t"
+	    :"=%%ax"(data)
+	    :"m"(port));
 	return data;
 }
 
 void in_bytes(u16 port, u32 times, void* buf)
 {
 	__asm__ __volatile__(
-		"cld\n\t"
-		"movzwl		%0,%%edx\n\t"
-		"movl		%2,%%edi\n\t"
-		"movl		%1,%%ecx\n\t"
-		"rep		insb\n\t"
-		::"m"(port), "m"(times), "m"(buf));
+	    "cld\n\t"
+	    "movzwl		%0,%%edx\n\t"
+	    "movl		%2,%%edi\n\t"
+	    "movl		%1,%%ecx\n\t"
+	    "rep		insb\n\t"
+	    ::"m"(port), "m"(times), "m"(buf));
 	return;
 }
 
 void in_words(u16 port, u32 times, void* buf)
 {
 	__asm__ __volatile__(
-		"cld\n\t"
-		"movzwl		%0,%%edx\n\t"
-		"movl		%2,%%edi\n\t"
-		"movl		%1,%%ecx\n\t"
-		"rep		insw\n\t"
-		::"m"(port), "m"(times), "m"(buf));
+	    "cld\n\t"
+	    "movzwl		%0,%%edx\n\t"
+	    "movl		%2,%%edi\n\t"
+	    "movl		%1,%%ecx\n\t"
+	    "rep		insw\n\t"
+	    ::"m"(port), "m"(times), "m"(buf));
 	return;
 }
 
@@ -68,42 +68,42 @@ void in_words(u16 port, u32 times, void* buf)
 void out_byte(u8 data, u16 port)
 {
 	__asm__ __volatile__(
-		"movw		%1,%%dx\n\t"
-		"movb		%0,%%al\n\t"
-		"outb		%%al,%%dx\n\t"
-		::"m"(data), "m"(port));
+	    "movw		%1,%%dx\n\t"
+	    "movb		%0,%%al\n\t"
+	    "outb		%%al,%%dx\n\t"
+	    ::"m"(data), "m"(port));
 	return;
 }
 
 void out_word(u16 data, u16 port)
 {
 	__asm__ __volatile__(
-		"movw		%1,%%dx\n\t"
-		"movw		%0,%%ax\n\t"
-		"outw		%%ax,%%dx\n\t"
-		::"m"(data), "m"(port));
+	    "movw		%1,%%dx\n\t"
+	    "movw		%0,%%ax\n\t"
+	    "outw		%%ax,%%dx\n\t"
+	    ::"m"(data), "m"(port));
 	return;
 }
 
 void out_bytes(void* data, u16 port, u32 times)
 {
 	__asm__ __volatile__(
-		"cld\n\t"
-		"movl		%0,%%esi\n\t"
-		"movzwl		%1,%%edx\n\t"
-		"movl		%2,%%ecx\n\t"
-		"rep		outsb\n\t"
-		::"m"(data), "m"(port), "m"(times));
+	    "cld\n\t"
+	    "movl		%0,%%esi\n\t"
+	    "movzwl		%1,%%edx\n\t"
+	    "movl		%2,%%ecx\n\t"
+	    "rep		outsb\n\t"
+	    ::"m"(data), "m"(port), "m"(times));
 	return;
 }
 void out_words(void* data, u16 port, u32 times)
 {
 	__asm__ __volatile__(
-		"cld\n\t"
-		"movl		%0,%%esi\n\t"
-		"movzwl		%1,%%edx\n\t"
-		"movl		%2,%%ecx\n\t"
-		"rep		outsw\n\t"
-		::"m"(data), "m"(port), "m"(times));
+	    "cld\n\t"
+	    "movl		%0,%%esi\n\t"
+	    "movzwl		%1,%%edx\n\t"
+	    "movl		%2,%%ecx\n\t"
+	    "rep		outsw\n\t"
+	    ::"m"(data), "m"(port), "m"(times));
 	return;
 }

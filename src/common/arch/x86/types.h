@@ -59,9 +59,9 @@ typedef	unsigned long long		le64;
 #define	__le64					le64
 
 #ifndef	__cplusplus
-typedef	int					bool;
-#define	true				1
-#define	false				0
+	typedef	int					bool;
+	#define	true				1
+	#define	false				0
 #endif	//!	__cplusplus
 
 #endif	//! TYPES_H_INCLUDE
