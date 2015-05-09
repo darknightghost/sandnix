@@ -20,6 +20,7 @@
 
 #ifdef	X86
 #include "../../common/arch/x86/types.h"
+#include "list/list.h"
 
 //Variable Arguments
 typedef	char*			va_list;

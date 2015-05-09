@@ -126,10 +126,12 @@ void* mm_heap_alloc(size_t size, void* heap_addr)
 			if(p_head->attr & HEAP_EXTENDABLE) {
 				//Allocate more pages
 				if(p_head->attr & HEAP_SWAPPABLE) {
-					p_new_head = VirtualAlloc(NULL, p_head->scale, MEM_COMMIT, PAGE_READWRITE);
+					//p_new_head = VirtualAlloc(NULL, p_head->scale, MEM_COMMIT, PAGE_READWRITE);
+					__asm__ __volatile__("ud2");
 
 				} else {
-					p_new_head = VirtualAlloc(NULL, p_head->scale, MEM_COMMIT, PAGE_READWRITE);
+					//p_new_head = VirtualAlloc(NULL, p_head->scale, MEM_COMMIT, PAGE_READWRITE);
+					__asm__ __volatile__("ud2");
 				}
 
 				init_heap_head(p_new_head, p_head->scale, p_head->attr, p_head);
@@ -204,7 +206,8 @@ void mm_heap_free(void* addr, void* heap_addr)
 		}
 
 		p_head->p_prev->p_next = p_head->p_next;
-		VirtualFree(p_head, 0, MEM_RELEASE);
+		//VirtualFree(p_head, 0, MEM_RELEASE);
+		__asm__ __volatile__("ud2");
 	}
 
 	return;
