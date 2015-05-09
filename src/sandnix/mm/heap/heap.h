@@ -20,21 +20,20 @@
 
 #include "../mm.h"
 
-#define	HEAP_INTACT_MAGIC	(*((u32*)"HEAP"))
+#define	HEAP_INTACT_MAGIC			(*((u32*)"HEAP"))
+#define	KERNEL_DEFAULT_HEAP_SIZE	4096
 
-#define	HEAP_EXTENDABLE			0x01
-#define	HEAP_SWAPPABLE			0x02
-#define	HEAP_MULTITHREAD		0x04
-#define	HEAP_DESTROY			0x08
+#define	HEAP_EXTENDABLE				0x01
+#define	HEAP_SWAPPABLE				0x02
+#define	HEAP_MULTITHREAD			0x04
+#define	HEAP_DESTROY				0x08
 
 #pragma pack(4)
 typedef	struct _mem_block_head {
 	u32							magic;
-	struct _mem_block_head*		p_prev;
-	struct _mem_block_head*		p_next;
 	struct _mem_block_head*		p_prev_empty_block;
 	struct _mem_block_head*		p_next_empty_block;
-	void*						start_addr;
+	u8*							start_addr;
 	int							allocated_flag;
 	size_t						size;
 } mem_block_head, *pmem_block_head;
@@ -43,6 +42,7 @@ typedef	struct _heap_head {
 	struct _heap_head*			p_prev;
 	struct _heap_head*			p_next;
 	pmem_block_head				p_first_empty_block;
+	size_t						scale;
 	u32							attr;
 } heap_head, *pheap_head;
 
@@ -51,6 +51,7 @@ typedef	struct _heap_head {
 void		mm_heap_create();
 void		mm_heap_destroy();
 void*		mm_heap_alloc(size_t size, void* heap_addr);
+bool		mm_heap_chk(void* heap_addr);
 void		mm_heap_free(void* addr, void* heap_addr);
 
 #endif	//!	HEAP_H_INCLUDE
