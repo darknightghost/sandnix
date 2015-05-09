@@ -27,9 +27,9 @@ typedef	char*			va_list;
 #define	va_start(ap,v)	((ap) = (va_list)&(v) + 4)
 
 #define	va_arg(ap,t)	(ap += 4 ,(\
-								   sizeof(t) <= 4\
-								   ? *((t*)(ap-4))\
-								   : **((t**)(ap-4))))
+                                   sizeof(t) <= 4\
+                                   ? *((t*)(ap-4))\
+                                   : **((t**)(ap-4))))
 
 #define	va_end(ap)		(ap = (va_list)0)
 #endif	//!	X86

@@ -20,8 +20,8 @@
 
 #ifdef	X86
 
-#include "../../common/arch/x86/types.h"
-#include "arch/x86/int.h"
+	#include "../../common/arch/x86/types.h"
+	#include "arch/x86/int.h"
 
 #endif	//X86
 

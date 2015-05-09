@@ -25,7 +25,7 @@ void loader_main()
 	setup_interrupt();
 	cls(BG_BLACK | FG_BRIGHT_WHITE);
 	print_string(
-GET_REAL_ADDR("Protect mode entered.\n"),
+	    GET_REAL_ADDR("Protect mode entered.\n"),
 	    FG_BRIGHT_WHITE | BG_BLACK,
 	    BG_BLACK);
 	init_heap();

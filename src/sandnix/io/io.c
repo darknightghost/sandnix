@@ -19,8 +19,8 @@
 
 void init_io()
 {
-#ifdef	X86
+	#ifdef	X86
 	init_idt();
-#endif	//X86
+	#endif	//X86
 	return;
 }

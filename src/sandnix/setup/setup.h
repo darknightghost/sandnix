@@ -25,8 +25,8 @@
 #include "../../common/arch/x86/kernel_image.h"
 
 #define	TMP_PAGE_MEM_BASE		(((KERNEL_MAX_SIZE+(KERNEL_BASE-VIRTUAL_ADDR_OFFSET))/4096\
-								  +((KERNEL_MAX_SIZE+(KERNEL_BASE-VIRTUAL_ADDR_OFFSET))%4096?1:0))\
-								 *4096)
+                                  +((KERNEL_MAX_SIZE+(KERNEL_BASE-VIRTUAL_ADDR_OFFSET))%4096?1:0))\
+                                 *4096)
 //A temporary marcos used to compute TMP_PAGE_SIZE
 #define	TMP_SIZE_MID1			(TMP_PAGE_MEM_BASE/4096*4+TMP_PAGE_TABLE_BASE+4096)
 #define	TMP_SIZE_MID2			((TMP_SIZE_MID1/4096+(TMP_SIZE_MID1%4096?1:0))*4+TMP_SIZE_MID1)
