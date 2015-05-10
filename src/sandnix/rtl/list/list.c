@@ -18,34 +18,91 @@
 #include "list.h"
 #include "../../mm/mm.h"
 
-bool rtl_list_insert(list* p_list, s32 index, void* p_item, void* heap)
+bool rtl_list_insert_before(list* p_list, plist_node position, void* p_item, void* heap)
 {
 	plist_node p_node, p_new_node;
-	s32 i;
 
-	if(*p_list == NULL
-	   && (index == 0
-	       || index == -1)) {
-		//If the list is empty
-		p_new_node = mm_heap_alloc(sizeof(list_node), heap);
+	//Allocate memory
+	p_new_node = mm_heap_alloc(sizeof(list_node), heap);
 
-		if(p_new_node == NULL) {
-			return false;
-		}
+	if(p_new_node == NULL) {
+		return false;
+	}
 
+	p_new_node->p_item = p_item;
+
+	if(*p_list == NULL) {
+		//Insert the new item as the first item
 		p_new_node->p_prev = p_new_node;
 		p_new_node->p_next = p_new_node;
-		p_new_node->p_item = p_item;
 		*p_list = p_new_node;
-		return true;
+
+	} else if(position == NULL) {
+		//Insert the new item as the first item
+		p_node = *p_list;
+		p_new_node->p_prev = p_node->p_prev;
+		p_new_node->p_next = p_node;
+		p_node->p_prev->p_next = p_new_node;
+		p_node->p_prev = p_new_node;
+		*p_list = p_new_node;
+
+	} else {
+		//Insert the new item before position
+		p_node = position;
+		p_new_node->p_prev = p_node->p_prev;
+		p_new_node->p_next = p_node;
+		p_node->p_prev->p_next = p_new_node;
+		p_node->p_prev = p_new_node;
+
 	}
 
-	if(index > 0) {
-		p_node = *p_list;
+	return true;
+}
+
+bool rtl_list_insert_after(list* p_list, plist_node position, void* p_item, void* heap)
+{
+	plist_node p_node, p_new_node;
+
+	//Allocate memory
+	p_new_node = mm_heap_alloc(sizeof(list_node), heap);
+
+	if(p_new_node == NULL) {
+		return false;
 	}
+
+	p_new_node->p_item = p_item;
+
+	if(*p_list == NULL) {
+		//Insert the new item as the first item
+		p_new_node->p_prev = p_new_node;
+		p_new_node->p_next = p_new_node;
+		*p_list = p_new_node;
+
+	} else {
+		if(position == NULL) {
+			p_node = (*p_list)->p_prev;
+
+		} else {
+			p_node = position;
+		}
+
+		//Insert p_new_node after p_node
+		p_new_node->p_next = p_node->p_next;
+		p_new_node->p_prev = p_node;
+		p_node->p_next->p_prev = p_new_node;
+		p_node->p_next = p_new_node;
+
+	}
+
+	return true;
 }
 
 void rtl_list_remove(list* p_list, s32 index, void* heap)
+{
+
+}
+
+plist_node rtl_list_get_node_by_item(list lst, void* p_item)
 {
 
 }
