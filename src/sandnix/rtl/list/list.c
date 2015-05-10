@@ -129,7 +129,7 @@ plist_node rtl_list_get_node_by_item(list lst, void* p_item)
 		return NULL;
 	}
 
-	p_node = list;
+	p_node = lst;
 
 	do {
 		if(p_node->p_item == p_item) {
