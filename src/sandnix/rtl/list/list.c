@@ -97,17 +97,57 @@ bool rtl_list_insert_after(list* p_list, plist_node position, void* p_item, void
 	return true;
 }
 
-void rtl_list_remove(list* p_list, s32 index, void* heap)
+void rtl_list_remove(list* p_list, plist_node p_node, void* heap)
 {
+	if(*p_list == NULL) {
+		return;
+	}
+
+	if(*p_list == p_node) {
+		if(p_node->p_prev = p_node) {
+			mm_heap_free(p_node, heap);
+			*p_list == NULL;
+			return;
+
+		} else {
+			*p_list = p_node->p_next;
+		}
+	}
+
+	p_node->p_prev->p_next = p_node->p_next;
+	p_node->p_next->p_prev = p_node->p_prev;
+	mm_heap_free(p_node, heap);
+	return;
 
 }
 
 plist_node rtl_list_get_node_by_item(list lst, void* p_item)
 {
+	plist_node p_node;
 
+	if(lst == NULL) {
+		return NULL;
+	}
+
+	p_node = list;
+
+	do {
+		if(p_node->p_item == p_item) {
+			return p_node;
+		}
+
+		p_node = p_node->p_next;
+	} while(p_node != lst);
+
+	return NULL;
 }
 
-void rtl_list_destroy(list* p_list, item_destroyer_callback callback)
+void rtl_list_destroy(list* p_list, void* heap, item_destroyer_callback callback)
 {
+	while(*p_list != NULL) {
+		callback((*p_list)->p_item);
+		rtl_list_remove(p_list, *p_list, heap);
+	}
 
+	return;
 }
