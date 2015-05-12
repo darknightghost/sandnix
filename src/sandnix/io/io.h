@@ -57,7 +57,7 @@ u16			io_read_port_word(u32 port);
 void		io_write_port_word(u16 data, u32 port);
 
 u32			io_read_port_dword(u32 port);
-void		io_write_port_dword(u32 data, u32 ports);
+void		io_write_port_dword(u32 data, u32 port);
 
 void		io_delay();
 

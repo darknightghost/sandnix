@@ -134,6 +134,8 @@ void* mm_heap_alloc(size_t size, void* heap_addr)
 					__asm__ __volatile__("ud2");
 				}
 
+				//!
+				p_new_head = NULL;
 				init_heap_head(p_new_head, p_head->scale, p_head->attr, p_head);
 				p_head->p_next = p_new_head;
 

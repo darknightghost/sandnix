@@ -20,8 +20,6 @@
 
 #ifdef	X86
 #include "../../common/arch/x86/types.h"
-#include "list/list.h"
-
 //Variable Arguments
 typedef	char*			va_list;
 
@@ -35,19 +33,8 @@ typedef	char*			va_list;
 #define	va_end(ap)		(ap = (va_list)0)
 #endif	//!	X86
 
-void*		rtl_memcpy(void* dest, void* src, size_t len);
-void*		rtl_memset(void* dest, u8 val, size_t len);
-void*		rtl_memmove(void* dest, void* src, size_t len);
-char*		rtl_strcpy_s(char* dest, size_t buf_size, char* src);
-u32			rtl_strlen(char* str);
-s32			rtl_strcmp(char* str1, char* str2);
-char*		rtl_strcat_s(char* dest, size_t buf_size, char* src);
-u32			rtl_sprintf_s(char* buf, size_t buf_size, char* fmt, ...);
-u32			rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args);
-s32			rtl_atoi(char* str, int num_sys);
-char*		rtl_itoa(char* buf, u64 num);
-char*		rtl_htoa(char* buf, u64 num, bool capital_flag);
-char*		rtl_otoa(char* buf, u64 num);
-//char*		rtl_ftoa(char* buf, u64 num);
+#include "list/list.h"
+#include "string/string.h"
+#include "math/math.h"
 
 #endif	//!	RTL_H_INCLUDE

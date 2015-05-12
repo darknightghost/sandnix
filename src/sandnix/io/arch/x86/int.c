@@ -29,7 +29,6 @@ u32					current_int_level;
 
 void init_idt()
 {
-	u32 i;
 	idt_reg idt;
 	setup_8259A();
 	tick_count = 0;

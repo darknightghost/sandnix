@@ -15,13 +15,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	DEBUG_H_INCLUDE
-#define	DEBUG_H_INCLUDE
+#ifndef	MATH_H_INCLUDE
+#define	MATH_H_INCLUDE
 
-#include "../../common/arch/x86/types.h"
-#define	K_TTY_BUF_SIZE		4096
+#include "../rtl.h"
 
-void	dbg_cls();
-void	dbg_print(char* fmt, ...);
+u64		div64(u64 dividend, u32 divisor);
+u64		mod64(u64 dividend, u32 divisor);
 
-#endif	//!	DEBUG_H_INCLUDE
+#endif	//!	MATH_H_INCLUDE

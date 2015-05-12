@@ -22,8 +22,13 @@
 
 #endif	//X86
 
+#include "../debug/debug.h"
+
 void kernel_main()
 {
+	dbg_cls();
+	dbg_print("%s", "Sandnix 0.0.1 kernel loaded.\nInitializing...\n");
+
 	while(1);
 
 	return;

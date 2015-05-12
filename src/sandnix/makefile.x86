@@ -2,7 +2,7 @@ AS = as
 CC = gcc
 LINKER = ld
 ASFLAGS = --32
-CCFLAGS = -std=c99 -m32 -nostdlib -fno-builtin -DX86 -DVERSION=0x0000000001 -c
+CCFLAGS = -Wall -Werror-implicit-function-declaration -std=c99 -m32 -nostdlib -fno-builtin -DX86 -DVERSION=0x0000000001 -c
 LDFLAGS = -m elf_i386 --gc-sections -Ttext 0xC0100400 -e _start
 
 root_path = ../..
@@ -18,7 +18,10 @@ SOURCES += setup/arch/x86/setup.s \
 			io/arch/x86/ports.c \
 			io/arch/x86/int_handler.s \
 			exceptions/arch/x86/exceptions.c \
-			debug/arch/x86/debug.c
+			debug/arch/x86/debug.c \
+			pm/arch/x86/schedule.c \
+			rtl/string/arch/x86/string.c \
+			rtl/math/arch/x86/math.c
 
 OBJS_DIR = $(root_path)/obj/sandnix/x86
 

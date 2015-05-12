@@ -15,8 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../../rtl.h"
-#include "../../../mm/mm.h"
+#include "../../string.h"
+#include "../../../../mm/mm.h"
 
 #define	FLAG_LEFT_ALIGN			0x01
 #define	FLAG_SIGN				0x02
@@ -81,7 +81,7 @@ void* rtl_memcpy(void* dest, void* src, size_t len)
 	    "movl		%2,%%ecx\n\t"
 	    "rep		movsb"
 	    ::"m"(dest), "m"(src), "m"(len));
-	return;
+	return dest;
 }
 
 void* rtl_memset(void* dest, u8 val, size_t len)
@@ -93,7 +93,7 @@ void* rtl_memset(void* dest, u8 val, size_t len)
 	    "movb		%2,%%al\n\t"
 	    "rep		stosb\n\t"
 	    ::"m"(dest), "m"(len), "m"(val));
-	return;
+	return dest;
 }
 
 void* rtl_memmove(void* dest, void* src, size_t n)
@@ -108,12 +108,14 @@ void* rtl_memmove(void* dest, void* src, size_t n)
 		    ::"m"(n), "m"(src), "m"(dest));
 
 	} else {
+		src = src + n - 1;
+		dest = dest + n - 1;
 		__asm__ __volatile__(
 		    "std\n\t"
 		    "movl		%0,%%ecx\n\t"
 		    "movl		%1,%%esi\n\t"
 		    "movl		%2,%%edi\n\t"
-		    ::"m"(n), "m"(src+n-1), "m"(dest+n-1));
+		    ::"m"(n), "m"(src), "m"(dest));
 	}
 
 	return dest;
@@ -1817,7 +1819,7 @@ s32 rtl_atoi(char* str, int num_sys)
 	char* p;
 	u32 len;
 	u32 ret;
-	len = strlen(str);
+	len = rtl_strlen(str);
 
 	//Check arguments
 	if(num_sys != 2
@@ -1919,11 +1921,9 @@ u32 get_prec(char** p_p_fmt)
 u32 get_type(char** p_p_fmt)
 {
 	bool ll_flag;
-	bool l_flag;
 	bool h_flag;
 	u32 ret;
 	ll_flag = false;
-	l_flag = false;
 	h_flag = false;
 
 	//Get length
@@ -1934,8 +1934,6 @@ u32 get_type(char** p_p_fmt)
 			(*p_p_fmt)++;
 			ll_flag = true;
 
-		} else {
-			l_flag = true;
 		}
 
 	} else if(**p_p_fmt == 'h') {
@@ -2102,7 +2100,7 @@ u32 get_type(char** p_p_fmt)
 u32 write_buf(char* dest, size_t size, char** p_p_output, char* src)
 {
 	u32 len;
-	len = strlen(src);
+	len = rtl_strlen(src);
 
 	if(len + (*p_p_output - dest) > size - 2) {
 		len = size - 2 - (*p_p_output - dest);
@@ -2123,8 +2121,8 @@ char* rtl_itoa(char* buf, u64 num)
 
 	for(n = num, p = buf;
 	    n != 0;
-	    n = n / 10, p++) {
-		*p = n % 10 + '0';
+	    n = div64(n, 10), p++) {
+		*p = mod64(n, 10) + '0';
 	}
 
 	for(p1 = buf, p2 = p - 1;
@@ -2150,8 +2148,8 @@ char* rtl_htoa(char* buf, u64 num, bool capital_flag)
 
 	for(n = num, p = buf;
 	    n != 0;
-	    n = n / 0x10, p++) {
-		t = n % 0x10;
+	    n = div64(n, 0x10), p++) {
+		t = mod64(n, 0x10);
 
 		if(t < 0x0A) {
 			*p = t + '0';
@@ -2189,8 +2187,8 @@ char* rtl_otoa(char* buf, u64 num)
 
 	for(n = num, p = buf;
 	    n != 0;
-	    n = n / 010, p++) {
-		*p = n % 010 + '0';
+	    n = div64(n, 010), p++) {
+		*p = mod64(n, 010) + '0';
 	}
 
 	for(p1 = buf, p2 = p - 1;

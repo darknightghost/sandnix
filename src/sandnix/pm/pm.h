@@ -15,13 +15,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	DEBUG_H_INCLUDE
-#define	DEBUG_H_INCLUDE
+#ifndef	PM_H_INCLUDE
+#define	PM_H_INCLUDE
 
-#include "../../common/arch/x86/types.h"
-#define	K_TTY_BUF_SIZE		4096
+#ifdef	X86
+	#include "../../common/arch/x86/types.h"
+#endif	//X86
 
-void	dbg_cls();
-void	dbg_print(char* fmt, ...);
+#endif	//!	PM_H_INCLUDE
 
-#endif	//!	DEBUG_H_INCLUDE

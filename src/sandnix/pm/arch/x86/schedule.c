@@ -15,13 +15,21 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	DEBUG_H_INCLUDE
-#define	DEBUG_H_INCLUDE
+#include "../../pm.h"
+#include "../../../rtl/rtl.h"
+#include "schedule.h"
 
-#include "../../common/arch/x86/types.h"
-#define	K_TTY_BUF_SIZE		4096
+tss		sys_tss;
 
-void	dbg_cls();
-void	dbg_print(char* fmt, ...);
+context		tmp;
 
-#endif	//!	DEBUG_H_INCLUDE
+void pm_schedule()
+{
+
+}
+
+void pm_save_context(pcontext p_context)
+{
+	rtl_memcpy(&tmp, p_context, sizeof(context));
+	return;
+}
