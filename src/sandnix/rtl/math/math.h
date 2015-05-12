@@ -20,75 +20,7 @@
 
 #include "../rtl.h"
 
-u64 div64(u64 dividend, u32 divisor)
-{
-	u64 ret;
-	u8 i;
-
-#pragma pack(1)
-	union {
-		u64	value;
-		struct {
-			u32 low;
-			u32 high;
-		} part;
-	} tmp;
-#pragma pack()
-
-	if((dividend >> 32) == 0) {
-		return (u32)dividend / divisor;
-	}
-
-	ret = 0;
-	tmp.value = dividend;
-
-	for(i = 0; i < 32; i++) {
-		ret += tmp.part.high / divisor;
-		tmp.part.high = tmp.part.high % divisor;
-		ret = ret << 1;
-		tmp.part.high = tmp.part.high << 1;
-	}
-
-	ret += tmp.part.high / divisor;
-	tmp.part.high = tmp.part.high % divisor;
-
-	return ret;
-}
-
-
-u64 mod64(u64 dividend, u32 divisor)
-{
-	u64 ret;
-	u8 i;
-
-#pragma pack(1)
-	union {
-		u64	value;
-		struct {
-			u32 low;
-			u32 high;
-		} part;
-	} tmp;
-#pragma pack()
-
-	if((dividend >> 32) == 0) {
-		return (u32)dividend % divisor;
-	}
-
-	ret = 0;
-	tmp.value = dividend;
-
-	for(i = 0; i < 32; i++) {
-		ret += tmp.part.high / divisor;
-		tmp.part.high = tmp.part.high % divisor;
-		ret = ret << 1;
-		tmp.part.high = tmp.part.high << 1;
-	}
-
-	ret += tmp.part.high / divisor;
-	tmp.part.high = tmp.part.high % divisor;
-
-	return tmp.part.high;
-}
+u64		rtl_div64(u64 dividend, u32 divisor);
+u64		rtl_mod64(u64 dividend, u32 divisor);
 
 #endif	//!	MATH_H_INCLUDE
