@@ -26,6 +26,8 @@
 
 static	bool		load_segment(Elf32_Phdr* p_pheader, pfile fp);
 
+char num_buf[64];
+
 bool load_os_kernel(char* path, char* parameters)
 {
 	pfile fp;
@@ -41,12 +43,38 @@ bool load_os_kernel(char* path, char* parameters)
 		return false;
 	}
 
+	print_string(
+	    GET_REAL_ADDR("Kernel file	 : "),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    path,
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    GET_REAL_ADDR("\n\n"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+
 	//Read elf header
 	if(read(fp, (u8*)&elf_header, sizeof(Elf32_Ehdr)) != sizeof(Elf32_Ehdr)) {
 		panic(EXCEPTION_UNKNOW_KERNEL_FORMAT);
 	}
 
 	entry_address = (void*)(elf_header.e_entry) - VIRTUAL_ADDR_OFFSET;
+	print_string(
+	    GET_REAL_ADDR("entry		   : 0x"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    hextostr(entry_address,
+	             GET_REAL_ADDR(num_buf)),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    GET_REAL_ADDR("\n\n"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
 	//Read program header table
 	pheader_buf = malloc(elf_header.e_phnum * elf_header.e_phentsize);
 
@@ -69,6 +97,11 @@ bool load_os_kernel(char* path, char* parameters)
 			panic(EXCEPTION_UNKNOW_KERNEL_FORMAT);
 		}
 	}
+
+	print_string(
+	    GET_REAL_ADDR("Copying parameters...\n"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
 
 	//Copy parameters address
 	*(char**)KERNEL_PARAMETER_PHYSICAL = parameters;
@@ -93,14 +126,52 @@ bool load_segment(Elf32_Phdr* p_pheader, pfile fp)
 	              * p_pheader->p_align;
 	seek(fp, p_pheader->p_offset, FILE_POS_BEGIN);
 
+	print_string(
+	    GET_REAL_ADDR("Segment:\naddr			: 0x"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    hextostr((p_pheader->p_vaddr - VIRTUAL_ADDR_OFFSET),
+	             GET_REAL_ADDR(num_buf)),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    GET_REAL_ADDR("\nalign		   : 0x"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    hextostr(p_pheader->p_align,
+	             GET_REAL_ADDR(num_buf)),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    GET_REAL_ADDR("\nsize			: 0x"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    hextostr(p_pheader->p_filesz,
+	             GET_REAL_ADDR(num_buf)),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    GET_REAL_ADDR("\nsize in memory  : 0x"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    hextostr(size_in_mem,
+	             GET_REAL_ADDR(num_buf)),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    GET_REAL_ADDR("\n\n"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+
 	//Read segment
 	if(read(fp, (u8*)(p_pheader->p_vaddr - VIRTUAL_ADDR_OFFSET), p_pheader->p_filesz)
 	   != p_pheader->p_filesz) {
 		return false;
 	}
 
-	memset((u8*)(p_pheader->p_vaddr - VIRTUAL_ADDR_OFFSET + p_pheader->p_filesz),
-	       0,
-	       size_in_mem - p_pheader->p_filesz);
 	return true;
 }

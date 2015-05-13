@@ -103,9 +103,9 @@ void rtl_list_remove(list* p_list, plist_node p_node, void* heap)
 		return;
 
 	} else if(*p_list == p_node) {
-		if(p_node->p_prev = p_node) {
+		if(p_node->p_prev == p_node) {
 			mm_heap_free(p_node, heap);
-			*p_list == NULL;
+			*p_list = NULL;
 			return;
 
 		} else {

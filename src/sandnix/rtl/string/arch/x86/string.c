@@ -18,6 +18,7 @@
 #include "../../string.h"
 #include "../../../../mm/mm.h"
 
+
 #define	FLAG_LEFT_ALIGN			0x01
 #define	FLAG_SIGN				0x02
 #define	FLAG_ZERO				0x04
@@ -2121,8 +2122,8 @@ char* rtl_itoa(char* buf, u64 num)
 
 	for(n = num, p = buf;
 	    n != 0;
-	    n = div64(n, 10), p++) {
-		*p = mod64(n, 10) + '0';
+	    n = rtl_div64(n, 10), p++) {
+		*p = rtl_mod64(n, 10) + '0';
 	}
 
 	for(p1 = buf, p2 = p - 1;
@@ -2148,8 +2149,8 @@ char* rtl_htoa(char* buf, u64 num, bool capital_flag)
 
 	for(n = num, p = buf;
 	    n != 0;
-	    n = div64(n, 0x10), p++) {
-		t = mod64(n, 0x10);
+	    n = rtl_div64(n, 0x10), p++) {
+		t = rtl_mod64(n, 0x10);
 
 		if(t < 0x0A) {
 			*p = t + '0';
@@ -2187,8 +2188,8 @@ char* rtl_otoa(char* buf, u64 num)
 
 	for(n = num, p = buf;
 	    n != 0;
-	    n = div64(n, 010), p++) {
-		*p = mod64(n, 010) + '0';
+	    n = rtl_div64(n, 010), p++) {
+		*p = rtl_mod64(n, 010) + '0';
 	}
 
 	for(p1 = buf, p2 = p - 1;
