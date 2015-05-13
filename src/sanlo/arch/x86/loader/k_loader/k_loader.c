@@ -121,9 +121,7 @@ bool load_os_kernel(char* path, char* parameters)
 bool load_segment(Elf32_Phdr* p_pheader, pfile fp)
 {
 	u32 size_in_mem;
-	size_in_mem = (p_pheader->p_memsz % p_pheader->p_align ? 1 : 0
-	               + p_pheader->p_memsz / p_pheader->p_align)
-	              * p_pheader->p_align;
+
 	seek(fp, p_pheader->p_offset, FILE_POS_BEGIN);
 
 	print_string(
@@ -154,11 +152,11 @@ bool load_segment(Elf32_Phdr* p_pheader, pfile fp)
 	    FG_BRIGHT_WHITE | BG_BLACK,
 	    BG_BLACK);
 	print_string(
-	    GET_REAL_ADDR("\nsize in memory  : 0x"),
+	    GET_REAL_ADDR("\nfile offset  : 0x"),
 	    FG_BRIGHT_WHITE | BG_BLACK,
 	    BG_BLACK);
 	print_string(
-	    hextostr(size_in_mem,
+	    hextostr(p_pheader->p_offset,
 	             GET_REAL_ADDR(num_buf)),
 	    FG_BRIGHT_WHITE | BG_BLACK,
 	    BG_BLACK);
