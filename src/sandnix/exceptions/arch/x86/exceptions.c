@@ -17,7 +17,7 @@
 
 #include "../../exceptions.h"
 
-static	char*		excpt_tbl[] = {
+static	const	char*		excpt_tbl[] = {
 	"EXCEPTION_UNKNOW",
 	"EXCEPTION_UNHANDLED_DE",
 	"EXCEPTION_UNHANDLED_DB",
@@ -41,7 +41,8 @@ static	char*		excpt_tbl[] = {
 	"EXCEPTION_IMT_NUM_TOO_LARGE",
 	"EXCEPTION_BUF_OVERFLOW",
 	"EXCEPTION_HEAP_CORRUPTION"
-	"EXCEPTION_ILLEGAL_HEAP_ADDR"
+	"EXCEPTION_ILLEGAL_HEAP_ADDR",
+	"EXCEPTION_UNSPECIFIED_ROOT_PARTITION"
 };
 
 

@@ -44,7 +44,7 @@ bool load_os_kernel(char* path, char* parameters)
 	}
 
 	print_string(
-	    GET_REAL_ADDR("Kernel file	 : "),
+	    GET_REAL_ADDR("Kernel file	: "),
 	    FG_BRIGHT_WHITE | BG_BLACK,
 	    BG_BLACK);
 	print_string(
@@ -63,7 +63,7 @@ bool load_os_kernel(char* path, char* parameters)
 
 	entry_address = (void*)(elf_header.e_entry) - VIRTUAL_ADDR_OFFSET;
 	print_string(
-	    GET_REAL_ADDR("entry		   : 0x"),
+	    GET_REAL_ADDR("entry		: 0x"),
 	    FG_BRIGHT_WHITE | BG_BLACK,
 	    BG_BLACK);
 	print_string(
@@ -125,7 +125,7 @@ bool load_segment(Elf32_Phdr* p_pheader, pfile fp)
 	seek(fp, p_pheader->p_offset, FILE_POS_BEGIN);
 
 	print_string(
-	    GET_REAL_ADDR("Segment:\naddr			: 0x"),
+	    GET_REAL_ADDR("Segment:\naddr		: 0x"),
 	    FG_BRIGHT_WHITE | BG_BLACK,
 	    BG_BLACK);
 	print_string(
@@ -134,7 +134,7 @@ bool load_segment(Elf32_Phdr* p_pheader, pfile fp)
 	    FG_BRIGHT_WHITE | BG_BLACK,
 	    BG_BLACK);
 	print_string(
-	    GET_REAL_ADDR("\nalign		   : 0x"),
+	    GET_REAL_ADDR("\nalign		: 0x"),
 	    FG_BRIGHT_WHITE | BG_BLACK,
 	    BG_BLACK);
 	print_string(
@@ -143,7 +143,7 @@ bool load_segment(Elf32_Phdr* p_pheader, pfile fp)
 	    FG_BRIGHT_WHITE | BG_BLACK,
 	    BG_BLACK);
 	print_string(
-	    GET_REAL_ADDR("\nsize			: 0x"),
+	    GET_REAL_ADDR("\nsize		: 0x"),
 	    FG_BRIGHT_WHITE | BG_BLACK,
 	    BG_BLACK);
 	print_string(
@@ -152,7 +152,7 @@ bool load_segment(Elf32_Phdr* p_pheader, pfile fp)
 	    FG_BRIGHT_WHITE | BG_BLACK,
 	    BG_BLACK);
 	print_string(
-	    GET_REAL_ADDR("\nfile offset  : 0x"),
+	    GET_REAL_ADDR("\nfile offset	: 0x"),
 	    FG_BRIGHT_WHITE | BG_BLACK,
 	    BG_BLACK);
 	print_string(

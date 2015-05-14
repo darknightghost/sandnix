@@ -2,6 +2,7 @@
 export SOURCES = init/main.c \
 					mm/heap/heap.c \
 					rtl/list/list.c \
+					init/parameters/parameters.c
 
 x86_build :
 		$(MAKE) -f makefile.x86 all

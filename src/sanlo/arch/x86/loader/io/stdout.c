@@ -74,7 +74,13 @@ void print_string(char* str, u8 color, u8 bg_color)
 			    GET_REAL_VARIABLE(current_cursor_row));
 
 		} else if(*p == '\t') {
-			print_string(GET_REAL_ADDR("    "), color, bg_color);
+			if(GET_REAL_VARIABLE(current_cursor_row) % 4 == 0) {
+				print_string(GET_REAL_ADDR(" "), color, bg_color);
+			}
+
+			while(GET_REAL_VARIABLE(current_cursor_row) % 4 != 0) {
+				print_string(GET_REAL_ADDR(" "), color, bg_color);
+			}
 
 		} else {
 			//Print character

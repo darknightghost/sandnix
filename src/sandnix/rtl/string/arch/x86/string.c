@@ -1714,6 +1714,11 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 				//%s
 				case TYPE_STRING:
 					data_str = va_arg(args, char*);
+
+					if(data_str == NULL) {
+						data_str = "<NULL>";
+					}
+
 					num_len = rtl_strlen(data_str);
 
 					if(num_len < width) {
