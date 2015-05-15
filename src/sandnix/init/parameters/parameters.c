@@ -23,45 +23,42 @@
 
 static	bool	get_parameter_name(char* buf, char** p);
 static	bool	get_parameter_value(char* buf, char** p);
-static	void	check_parameters();
+static	void	check_kernel_param();
 
-param_info		parameters;
+param_info		kernel_param;
 
 
-void get_parameters()
+void get_kernel_param()
 {
 	char* p_param;
 	char* buf;
 
-	rtl_memset(&parameters, 0, sizeof(param_info));
+	rtl_memset(&kernel_param, 0, sizeof(param_info));
 	p_param = *(char**)(KERNEL_PARAMETER);
 	buf = mm_heap_alloc(512, NULL);
 
-	dbg_print("Analysing parameters...\n");
+	dbg_print("\nAnalysing kernel_param...\n");
 
 	while(get_parameter_name(buf, &p_param)) {
 		if(rtl_strcmp(buf, "root") == 0) {
 			//Root partition
 			if(get_parameter_value(buf, &p_param)) {
-				dbg_print("%s,%d\n", buf, rtl_strlen(buf));
-				parameters.root_partition = mm_heap_alloc(rtl_strlen(buf) + 1, NULL);
-				rtl_strcpy_s(parameters.root_partition, rtl_strlen(buf) + 1, buf);
+				kernel_param.root_partition = mm_heap_alloc(rtl_strlen(buf) + 1, NULL);
+				rtl_strcpy_s(kernel_param.root_partition, rtl_strlen(buf) + 1, buf);
 			}
 
 		} else if(rtl_strcmp(buf, "driver_init") == 0) {
 			//Driver_init
 			if(get_parameter_value(buf, &p_param)) {
-				dbg_print("%s,%d\n", buf, rtl_strlen(buf));
-				parameters.driver_init = mm_heap_alloc(rtl_strlen(buf) + 1, NULL);
-				rtl_strcpy_s(parameters.driver_init, rtl_strlen(buf) + 1, buf);
+				kernel_param.driver_init = mm_heap_alloc(rtl_strlen(buf) + 1, NULL);
+				rtl_strcpy_s(kernel_param.driver_init, rtl_strlen(buf) + 1, buf);
 			}
 
 		} else if(rtl_strcmp(buf, "init") == 0) {
 			//Init
 			if(get_parameter_value(buf, &p_param)) {
-				dbg_print("%s,%d\n", buf, rtl_strlen(buf));
-				parameters.init = mm_heap_alloc(rtl_strlen(buf) + 1, NULL);
-				rtl_strcpy_s(parameters.init, rtl_strlen(buf) + 1, buf);
+				kernel_param.init = mm_heap_alloc(rtl_strlen(buf) + 1, NULL);
+				rtl_strcpy_s(kernel_param.init, rtl_strlen(buf) + 1, buf);
 			}
 
 		} else {
@@ -71,7 +68,7 @@ void get_parameters()
 	}
 
 	mm_heap_free(buf, NULL);
-	check_parameters();
+	check_kernel_param();
 	return;
 }
 
@@ -83,7 +80,7 @@ bool get_parameter_name(char* buf, char** p_p_param)
 	p = *p_p_param;
 
 	if(*p == '\0') {
-		//No more parameters
+		//No more kernel_param
 		*buf = '\0';
 		return false;
 	}
@@ -131,7 +128,7 @@ bool get_parameter_value(char* buf, char** p_p_param)
 	}
 
 	if(*p != '=') {
-		//No more parameters
+		//No more kernel_param
 		return false;
 	}
 
@@ -182,22 +179,22 @@ bool get_parameter_value(char* buf, char** p_p_param)
 	return true;
 }
 
-void check_parameters()
+void check_kernel_param()
 {
-	/*if(parameters.root_partition == NULL) {
+	if(kernel_param.root_partition == NULL) {
 		excpt_panic(EXCEPTION_UNSPECIFIED_ROOT_PARTITION,
 		            "%s\n", "You should use root=(hdm,n) to specify a root partition.");
 
-	} else if(parameters.driver_init == NULL) {
-		parameters.driver_init = "/driver/init";
+	} else if(kernel_param.driver_init == NULL) {
+		kernel_param.driver_init = "/driver/init";
 
-	} else if(parameters.init == NULL) {
-		parameters.init = "/sbin/init";
-	}*/
+	} else if(kernel_param.init == NULL) {
+		kernel_param.init = "/sbin/init";
+	}
 
-	dbg_print("root partition=%s\n", parameters.root_partition);
-	dbg_print("driver init=%s\n", parameters.driver_init);
-	dbg_print("init=%s\n", parameters.init);
+	dbg_print("root partition=%s\n", kernel_param.root_partition);
+	dbg_print("driver init=%s\n", kernel_param.driver_init);
+	dbg_print("init=%s\n", kernel_param.init);
 
 	return;
 }

@@ -27,8 +27,8 @@ typedef	struct _param_info {
 	char*	init;
 } param_info, *pparam_info;
 
-extern	param_info		parameters;
+extern	param_info		kernel_param;
 
-void	get_parameters();
+void	get_kernel_param();
 
 #endif	//!	PARAMETERS_H_INCLUDE

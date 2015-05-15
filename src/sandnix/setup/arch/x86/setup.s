@@ -15,6 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+.section	.data
+
+init_stack:
+
 .section	.text
 .global		_start
 
@@ -117,6 +121,8 @@ _kernel_mem_entry:
 		ltr		%ax
 		movw	$SELECTOR_BASIC_VIDEO,%ax
 		movw	%ax,%gs
-		movl	$init_stack,%esp
+		movl	$init_stack,%eax
+		addl	$0x1000,%eax
+		movl	%eax,%esp
 		movl	%esp,%ebp
 		ljmpl	$SELECTOR_K_CODE,$kernel_main

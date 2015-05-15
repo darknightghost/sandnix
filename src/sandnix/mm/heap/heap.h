@@ -21,7 +21,7 @@
 #include "../mm.h"
 
 #define	HEAP_INTACT_MAGIC			(*((u32*)"HEAP"))
-#define	KERNEL_DEFAULT_HEAP_SIZE	(4096*2)
+#define	KERNEL_DEFAULT_HEAP_SIZE	(4096*4)
 
 #define	HEAP_EXTENDABLE				0x01
 #define	HEAP_SWAPPABLE				0x02
