@@ -15,10 +15,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-.section	.data
-
-init_stack:
-
 .section	.text
 .global		_start
 
