@@ -37,7 +37,7 @@ void get_kernel_param()
 	p_param = *(char**)(KERNEL_PARAMETER);
 	buf = mm_heap_alloc(512, NULL);
 
-	dbg_print("\nAnalysing kernel_param...\n");
+	dbg_print("\nAnalysing kernel parameters...\n");
 
 	while(get_parameter_name(buf, &p_param)) {
 		if(rtl_strcmp(buf, "root") == 0) {
@@ -183,7 +183,7 @@ void check_kernel_param()
 {
 	if(kernel_param.root_partition == NULL) {
 		excpt_panic(EXCEPTION_UNSPECIFIED_ROOT_PARTITION,
-		            "%s\n", "You should use root=(hdm,n) to specify a root partition.");
+		            "%s\n", "You should use root=(hdm,n) to specify a root partition in \"sanlo.cfg\".");
 
 	} else if(kernel_param.driver_init == NULL) {
 		kernel_param.driver_init = "/driver/init";

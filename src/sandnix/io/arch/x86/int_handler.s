@@ -39,9 +39,43 @@
 .global	xf_int_handler
 .global	default_int_handler
 
+fmt_df:
+    .asciz  "Exception eip = %P"
+
 .macro		NORMAL_INT_HNDLR num
 	.global		int_\num
 	int_\num :
+		pushl	\num
+		jmp		default_int_handler
+.endm
+
+.macro		BP_INT_HNDLR
+		iret
+		#pushl	\num
+		#jmp		default_int_handler
+.endm
+
+.macro		EXCEPTION_INT_HNDLR num has_err_code
+		pushal
+		pushfl
+		movb	exception_handling_flag,%al
+		#if(exception_handling_flag)
+		cmpb	$0,%al
+		je		checked_\num
+			addl	$(4+4*8),%esp
+			movl	\has_err_code,%eax
+			imull	$4,%eax
+			addl	%eax,%esp
+			#excpt_panic(EXCEPTION_DOUBLE_FAULT,fmt_df,%esp)
+			pushl	%esp
+			pushl	$fmt_df
+			pushl	$0x00000019
+			call	excpt_panic
+	checked_\num:
+		movb	$1,%al
+		movb	%al,exception_handling_flag
+		popfl
+		popal
 		pushl	\num
 		jmp		default_int_handler
 .endm
@@ -50,45 +84,45 @@
 .code32
 
 de_int_handler:
-	NORMAL_INT_HNDLR	0x00
+	EXCEPTION_INT_HNDLR	0x00,0
 db_int_handler:
-	NORMAL_INT_HNDLR	0x01
+	EXCEPTION_INT_HNDLR	0x01,0
 nmi_int_handler:
-	NORMAL_INT_HNDLR	0x02
+	EXCEPTION_INT_HNDLR	0x02,0
 bp_int_handler:
-	NORMAL_INT_HNDLR	0x03
+	BP_INT_HNDLR
 of_int_handler:
-	NORMAL_INT_HNDLR	0x04
+	EXCEPTION_INT_HNDLR	0x04,0
 br_int_handler:
-	NORMAL_INT_HNDLR	0x05
+	EXCEPTION_INT_HNDLR	0x05,0
 ud_int_handler:
-	NORMAL_INT_HNDLR	0x06
+	EXCEPTION_INT_HNDLR	0x06,0
 nm_int_handler:
-	NORMAL_INT_HNDLR	0x07
+	EXCEPTION_INT_HNDLR	0x07,0
 df_int_handler:
-	NORMAL_INT_HNDLR	0x08
+	EXCEPTION_INT_HNDLR	0x08,1
 fpu_int_handler:
-	NORMAL_INT_HNDLR	0x09
+	EXCEPTION_INT_HNDLR	0x09,0
 ts_int_handler:
-	NORMAL_INT_HNDLR	0x0A
+	EXCEPTION_INT_HNDLR	0x0A,1
 np_int_handler:
-	NORMAL_INT_HNDLR	0x0B
+	EXCEPTION_INT_HNDLR	0x0B,1
 ss_int_handler:
-	NORMAL_INT_HNDLR	0x0C
+	EXCEPTION_INT_HNDLR	0x0C,1
 gp_int_handler:
-	NORMAL_INT_HNDLR	0x0D
+	EXCEPTION_INT_HNDLR	0x0D,1
 pf_int_handler:
-	NORMAL_INT_HNDLR	0x0E
+	EXCEPTION_INT_HNDLR	0x0E,1
 reserved_int_handler:
-	NORMAL_INT_HNDLR	0x0F
+	EXCEPTION_INT_HNDLR	0x0F,0
 mf_int_handler:
-	NORMAL_INT_HNDLR	0x10
+	EXCEPTION_INT_HNDLR	0x10,0
 ac_int_handler:
-	NORMAL_INT_HNDLR	0x11
+	EXCEPTION_INT_HNDLR	0x11,1
 mc_int_handler:
-	NORMAL_INT_HNDLR	0x12
+	EXCEPTION_INT_HNDLR	0x12,0
 xf_int_handler:
-	NORMAL_INT_HNDLR	0x13
+	EXCEPTION_INT_HNDLR	0x13,0
 NORMAL_INT_HNDLR	0x14
 NORMAL_INT_HNDLR	0x15
 NORMAL_INT_HNDLR	0x16

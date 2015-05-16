@@ -33,8 +33,9 @@ typedef	char*			va_list;
 #define	va_end(ap)		(ap = (va_list)0)
 #endif	//!	X86
 
-#include "list/list.h"
 #include "string/string.h"
 #include "math/math.h"
+#include "list/list.h"
+#include "stack/stack.h"
 
 #endif	//!	RTL_H_INCLUDE

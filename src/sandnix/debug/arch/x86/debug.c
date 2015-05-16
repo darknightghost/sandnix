@@ -140,7 +140,7 @@ void print_string(char* str, u8 color, u8 bg_color)
 
 		} else {
 			//Print character
-			character = (u16)color * 0x100 + *p;
+			character = (u16)(color | bg_color) * 0x100 + *p;
 			offset =
 			    (current_cursor_line * DEFAULT_STDOUT_WIDTH
 			     + current_cursor_row)

@@ -16,11 +16,14 @@
 */
 
 #include "io.h"
+#include "../debug/debug.h"
 
 void init_io()
 {
+	dbg_print("%s", "\nInitializing io module...\n");
 	#ifdef	X86
 	init_idt();
-	#endif	//X86
+	#endif	//X86.
+	init_int_dispatcher();
 	return;
 }

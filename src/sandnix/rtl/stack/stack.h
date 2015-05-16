@@ -15,27 +15,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef	X86
+#ifndef	STACK_H_INCLUDE
+#define	STACK_H_INCLUDE
 
-	#include "../../common/arch/x86/types.h"
-	#include "../../common/arch/x86/kernel_image.h"
+#include "../list/list.h"
 
-#endif	//X86
+typedef	struct _list_node	*stack;
 
-#include "../debug/debug.h"
-#include "parameters/parameters.h"
-#include "../exceptions/exceptions.h"
-#include "../io/io.h"
+bool	rtl_stack_push(stack* p_s, void* p_item, void* heap);
+void*	rtl_stack_pop(stack* p_s, void* heap);
 
-void kernel_main()
-{
-	dbg_cls();
-	dbg_print("%s", "Sandnix 0.0.1 kernel loaded.\n");
-
-	get_kernel_param();
-	init_io();
-
-	while(1);
-
-	return;
-}
+#endif	//!	STACK_H_INCLUDE

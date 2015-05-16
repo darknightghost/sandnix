@@ -27,7 +27,7 @@ typedef	struct _int_hndlr_info {
 } int_hndlr_info, *pint_hndlr_info;
 
 typedef	struct {
-	u32		level;
+	u8		level;
 	pint_hndlr_info entry;
 } int_hndlr_entry, *pint_hndlr_entry;
 

@@ -23,4 +23,6 @@
 #include "int_handler.h"
 #include "../../../exceptions/exceptions.h"
 
+void		init_int_dispatcher();
+
 #endif	//!	INT_DISPATCHER_H_INCLUDE

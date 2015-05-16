@@ -19,22 +19,25 @@
 #include "../../../rtl/rtl.h"
 #include "int_handler.h"
 #include "../../../exceptions/exceptions.h"
+#include "../../../debug/debug.h"
 
 static	idt			idt_table[256];
-int_hndlr_entry		int_hndlr_tbl[256];
-
 static	void		setup_8259A();
-u32					tick_count;
-u32					current_int_level;
+static	void		setup_clock();
+extern	u32			tick_count;
 
 void init_idt()
 {
 	idt_reg idt;
+
+	dbg_print("%s", "Setting up 8259A...\n");
 	setup_8259A();
-	tick_count = 0;
-	rtl_memset(int_hndlr_tbl, 0, 256 * sizeof(int_hndlr_entry));
+
+	dbg_print("%s", "Setting up clock...\n");
+	setup_clock();
 
 	//Initialize IDT
+	dbg_print("%s", "Initializing IDT...\n");
 	SET_IDT(idt_table, INT_DE, de_int_handler, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1);
 	SET_IDT(idt_table, INT_DB, db_int_handler, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1);
 	SET_IDT(idt_table, INT_NMI, nmi_int_handler, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1);
@@ -324,10 +327,12 @@ void setup_8259A()
 	//The interrupt number of IRQ starts from 0x20
 	io_write_port_byte(0x20, 0x21);
 	io_delay();
+	dbg_print("%s", "IRQ0	=>	INT 0x20\n");
 
 	//Slave ICW2
 	io_write_port_byte(0x28, 0xA1);
 	io_delay();
+	dbg_print("%s", "IRQ8	=>	INT 0x28\n");
 
 	//Master ICW3
 	io_write_port_byte(0x04, 0x21);
@@ -355,106 +360,20 @@ void setup_8259A()
 	return;
 }
 
-bool io_reg_int_hndlr(u32 num, pint_hndlr_info p_info)
+void setup_clock()
 {
-	u32	current_lvl;
+	u16	count0;
 
-	if(p_info == NULL) {
-		return false;
-	}
+	tick_count = 0;
 
-	//Raise int level
-	current_lvl = io_get_crrnt_int_level();
+	count0 = 1193180 / (1000 / SYS_TICK);
 
-	if(current_lvl > INT_LEVEL_DISPATCH) {
-		return false;
-	}
+	io_write_port_byte(0x34, 0x43);
 
-	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
+	io_write_port_byte(count0 & 0xFF, 0x40);
+	io_write_port_byte((count0 >> 8) & 0xFF, 0x40);
 
-	//Regist interrupt handler
-	if(num <= 0xFF) {
-		p_info->p_next = int_hndlr_tbl[num].entry;
-		int_hndlr_tbl[num].entry = p_info;
-
-	} else {
-		io_set_crrnt_int_level(current_lvl);
-		return false;
-	}
-
-	//Low int level
-	io_set_crrnt_int_level(current_lvl);
-
-	return true;
-}
-
-void io_unreg_int_hndlr(u32 num, pint_hndlr_info p_info)
-{
-	u32	current_lvl;
-	pint_hndlr_info p_reged_info;
-
-	if(p_info == NULL) {
-		return;
-	}
-
-	//Raise int level
-	current_lvl = io_get_crrnt_int_level();
-
-	if(current_lvl > INT_LEVEL_DISPATCH) {
-		return;
-	}
-
-	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
-
-	//Unregist interrupt handler
-	if(num <= 0xFF) {
-		if(int_hndlr_tbl[num].entry == p_info) {
-			int_hndlr_tbl[num].entry = p_info->p_next;
-
-		} else {
-			for(p_reged_info = int_hndlr_tbl[num].entry;
-			    p_reged_info != NULL;
-			    p_reged_info = p_reged_info->p_next) {
-				if(p_reged_info->p_next == p_info) {
-					p_reged_info->p_next = p_info->p_next;
-				}
-			}
-		}
-
-	} else {
-
-	}
-
-	//Low int level
-	io_set_crrnt_int_level(current_lvl);
 	return;
-}
-
-void io_set_crrnt_int_level(u32 level)
-{
-	current_int_level = level;
-	return;
-}
-
-u32 io_get_crrnt_int_level()
-{
-	return current_int_level;
-}
-
-u32 io_get_int_level(u32 num)
-{
-	return int_hndlr_tbl[num].level;
-}
-
-void io_set_int_level(u32 num, u32 level)
-{
-	int_hndlr_tbl[num].level = level;
-	return;
-}
-
-u32 io_get_tick_count()
-{
-	return tick_count;
 }
 
 void io_enable_interrupt()

@@ -22,6 +22,7 @@
 
 	#include "../../common/arch/x86/types.h"
 	#include "arch/x86/int.h"
+	#include "arch/x86/int_dispatcher.h"
 
 #endif	//X86
 
@@ -36,6 +37,9 @@
 #define		INT_LEVEL_TASK			0x20
 #define		INT_LEVEL_USR_HIGHEST	0x0F
 #define		INT_LEVEL_IDLE			0x00
+
+//System time
+#define		SYS_TICK				10
 
 //Init
 void		init_io();
@@ -63,14 +67,14 @@ void		io_delay();
 
 //Interrupts
 //These two functions can only be called when Interrupt level <= INT_LEVEL_DISPATCH
-bool		io_reg_int_hndlr(u32 num, pint_hndlr_info p_info);
-void		io_unreg_int_hndlr(u32 num, pint_hndlr_info p_info);
+bool		io_reg_int_hndlr(u8 num, pint_hndlr_info p_info);
+void		io_unreg_int_hndlr(u8 num, pint_hndlr_info p_info);
 
-u32			io_get_int_level(u32 num);
-void		io_set_int_level(u32 num, u32 level);
+u8			io_get_int_level(u8 num);
+void		io_set_int_level(u8 num, u8 level);
 
-void		io_set_crrnt_int_level(u32 level);
-u32			io_get_crrnt_int_level();
+void		io_set_crrnt_int_level(u8 level);
+u8			io_get_crrnt_int_level();
 
 u32			io_get_tick_count();
 

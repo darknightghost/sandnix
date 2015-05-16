@@ -15,27 +15,28 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef	X86
+#include "stack.h"
 
-	#include "../../common/arch/x86/types.h"
-	#include "../../common/arch/x86/kernel_image.h"
-
-#endif	//X86
-
-#include "../debug/debug.h"
-#include "parameters/parameters.h"
-#include "../exceptions/exceptions.h"
-#include "../io/io.h"
-
-void kernel_main()
+bool rtl_stack_push(stack* p_s, void* p_item, void* heap)
 {
-	dbg_cls();
-	dbg_print("%s", "Sandnix 0.0.1 kernel loaded.\n");
+	return rtl_list_insert_after(
+	           p_s,
+	           NULL,
+	           p_item,
+	           heap);
+}
 
-	get_kernel_param();
-	init_io();
 
-	while(1);
+void*	rtl_stack_pop(stack* p_s, void* heap)
+{
+	void* p_ret;
 
-	return;
+	if(*p_s == NULL) {
+		return NULL;
+	}
+
+	p_ret = (*p_s)->p_prev->p_item;
+	rtl_list_remove(p_s, (*p_s)->p_prev, heap);
+
+	return p_ret;
 }
