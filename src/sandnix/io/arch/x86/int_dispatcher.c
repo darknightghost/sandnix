@@ -20,6 +20,15 @@
 #include "int_handler.h"
 #include "../../../exceptions/exceptions.h"
 
+#define	HAS_ERR_CODE(num)	((num) == INT_DF)\
+	|| (num) == INT_TS\
+	|| (num) == INT_NP\
+	|| (num) == INT_SS\
+	|| (num) == INT_GP\
+	|| (num) == INT_PF\
+	|| (num) == INT_AC)
+
+list				int_waiting_list = NULL;
 int_hndlr_entry		int_hndlr_tbl[256];
 bool				exception_handling_flag = false;
 u32					int_reentry_count = 0;
@@ -29,6 +38,37 @@ u8					current_int_level;
 void init_int_dispatcher()
 {
 	rtl_memset(int_hndlr_tbl, 0, 256 * sizeof(int_hndlr_entry));
+	return;
+}
+
+void int_excpt_dispatcher(u32 num, pret_regs p_regs)
+{
+	//Save thread context or interrupted interrupt service context
+	if()
+
+		//Increase reentry count
+		int_reentry_count++;
+
+	int_reentry_count--;
+	__asm__ __volatitle__(
+	    "sti\n\t"
+	    ::);
+	return;
+}
+
+void int_normal_dispatcher(u32 num, pret_regs p_regs)
+{
+	//Save thread context or interrupted interrupt service context
+	//Increase reentry count
+	int_reentry_count++;
+	__asm__ __volatitle__(
+	    "sti\n\t"
+	    ::);
+	return;
+}
+
+void int_bp_dispatcher(pret_regs p_regs)
+{
 	return;
 }
 

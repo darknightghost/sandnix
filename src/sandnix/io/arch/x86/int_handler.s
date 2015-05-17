@@ -45,19 +45,23 @@ fmt_df:
 .macro		NORMAL_INT_HNDLR num
 	.global		int_\num
 	int_\num :
+		pushfl
+		pushal
+		pushl	%esp
 		pushl	\num
-		jmp		default_int_handler
+		call	int_normal_dispatcher
 .endm
 
 .macro		BP_INT_HNDLR
-		iret
-		#pushl	\num
-		#jmp		default_int_handler
+		pushfl
+		pushal
+		pushl	%esp
+		call	int_bp_dispatcher
 .endm
 
 .macro		EXCEPTION_INT_HNDLR num has_err_code
-		pushal
 		pushfl
+		pushal
 		movb	exception_handling_flag,%al
 		#if(exception_handling_flag)
 		cmpb	$0,%al
@@ -74,10 +78,9 @@ fmt_df:
 	checked_\num:
 		movb	$1,%al
 		movb	%al,exception_handling_flag
-		popfl
-		popal
+		pushl	%esp
 		pushl	\num
-		jmp		default_int_handler
+		call	int_excpt_dispatcher
 .endm
 
 .section	.text
@@ -374,5 +377,3 @@ NORMAL_INT_HNDLR	0xFD
 NORMAL_INT_HNDLR	0xFE
 NORMAL_INT_HNDLR	0xFF
 
-default_int_handler:
-			iret

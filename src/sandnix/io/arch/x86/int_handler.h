@@ -292,6 +292,4 @@ INT_HNDLR(0xFD);
 INT_HNDLR(0xFE);
 INT_HNDLR(0xFF);
 
-void	default_int_handler();
-
 #endif	//!	INT_HANDLER_H_INCLUDE

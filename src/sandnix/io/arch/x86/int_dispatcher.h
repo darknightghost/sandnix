@@ -23,6 +23,38 @@
 #include "int_handler.h"
 #include "../../../exceptions/exceptions.h"
 
+#pragma pack(1)
+typedef	struct _waiting_int {
+	u32	level;
+	struct {
+		u32		edi;
+		u32		esi;
+		u32		ebp;
+		u32		esp;
+		u32		ebx;
+		u32		edx;
+		u32		ecx;
+		u32		eax;
+		u32		eflags;
+	} regs;
+} waiting_int, *pwaiting_int;
+
+typedef	struct {
+	u32		edi;
+	u32		esi;
+	u32		ebp;
+	u32		esp;
+	u32		ebx;
+	u32		edx;
+	u32		ecx;
+	u32		eax;
+	u32		eflags
+} ret_regs, *pret_regs;
+#pragma pack()
+
 void		init_int_dispatcher();
+void		int_excpt_dispatcher(u32 num, pret_regs p_regs);
+void		int_normal_dispatcher(u32 num, pret_regs p_regs);
+void		int_bp_dispatcher(pret_regs p_regs);
 
 #endif	//!	INT_DISPATCHER_H_INCLUDE
