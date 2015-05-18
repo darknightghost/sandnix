@@ -52,6 +52,19 @@ fmt_df:
 		call	int_normal_dispatcher
 .endm
 
+.macro		CLOCK_INT_HNDLR num
+	.global		int_\num
+	int_\num :
+		pushfl
+		pushal
+		pushl	%esp
+		pushl	\num
+		movl	tick_count,%eax
+		incl	%eax
+		movl	%eax,tick_count
+		call	int_normal_dispatcher
+.endm
+
 .macro		BP_INT_HNDLR
 		pushfl
 		pushal
@@ -139,7 +152,7 @@ NORMAL_INT_HNDLR	0x1D
 NORMAL_INT_HNDLR	0x1E
 NORMAL_INT_HNDLR	0x1F
 
-NORMAL_INT_HNDLR	0x20
+CLOCK_INT_HNDLR		0x20
 NORMAL_INT_HNDLR	0x21
 NORMAL_INT_HNDLR	0x22
 NORMAL_INT_HNDLR	0x23

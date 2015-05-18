@@ -32,7 +32,6 @@
 
 #define		INT_LEVEL_EXCEPTION		0xFF
 #define		INT_LEVEL_IO			0xD0
-#define		INT_LEVEL_CLOCK			0xB0
 #define		INT_LEVEL_DISPATCH		0x40	//Dispatch messages and signals,the task will not switch.
 #define		INT_LEVEL_TASK			0x20
 #define		INT_LEVEL_USR_HIGHEST	0x0F
@@ -80,5 +79,7 @@ u32			io_get_tick_count();
 
 void		io_enable_interrupt();
 void		io_disable_interrupt();
+
+void		io_int_dispatcher_thread();
 
 #endif	//!	IO_H_INCLUDE

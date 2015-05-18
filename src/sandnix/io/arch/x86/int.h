@@ -21,17 +21,6 @@
 #include "../../io.h"
 #include "../../../setup/setup.h"
 
-typedef	struct _int_hndlr_info {
-	struct _int_hndlr_info* p_next;
-	void*	func;
-} int_hndlr_info, *pint_hndlr_info;
-
-typedef	struct {
-	u8		level;
-	pint_hndlr_info entry;
-} int_hndlr_entry, *pint_hndlr_entry;
-
-
 #pragma	pack(1)
 
 typedef struct {
@@ -109,6 +98,8 @@ typedef	struct	_idt {
 #define	IRQ13			0x2D
 #define	IRQ14			0x2E
 #define	IRQ15			0x2F
+
+#define	INT_CLOCK		IRQ0
 
 void		init_idt();
 #endif	//!	INT_H_INCLUDE

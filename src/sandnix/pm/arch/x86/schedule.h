@@ -72,6 +72,8 @@ typedef	struct _context {
 	u32		edx;
 	u32		esi;
 	u32		edi;
+	u32		esp;
+	u32		ebp;
 	u32		eflags;
 	u32		eip;
 	u16		es;
@@ -82,9 +84,23 @@ typedef	struct _context {
 	u16		gs;
 } context, *pcontext;
 
+typedef	struct _thread_info {
+	u32			process_id;
+	u8			level;
+	u32			ebp0;
+	u32			esp0;
+	u32			ebp3;
+	u32			esp3;
+} thread_info, *pthread_info;
+
 
 void		pm_schedule();
-void		pm_save_context(pcontext p_context);
+u32			pm_create_thrd();
+void		pm_terminate_thrd(u32 thread_id);
+void		pm_suspend_thrd(u32 thread_id);
+void		pm_resume_thrd(u32 thread_id);
+void		pm_sleep(u32 ms);
+u32			pm_get_crrnt_thrd_id();
 
 #endif	//!	SCHEDULE_H_INCLUDE
 

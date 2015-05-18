@@ -23,21 +23,20 @@
 #include "int_handler.h"
 #include "../../../exceptions/exceptions.h"
 
+typedef	struct _int_hndlr_info {
+	struct _int_hndlr_info* p_next;
+	void*	func;
+} int_hndlr_info, *pint_hndlr_info;
+
+typedef	struct {
+	u8		level;
+	bool	called_flag;
+	u32		err_code;
+	u32		thread_id;
+	pint_hndlr_info entry;
+} int_hndlr_entry, *pint_hndlr_entry;
+
 #pragma pack(1)
-typedef	struct _waiting_int {
-	u32	level;
-	struct {
-		u32		edi;
-		u32		esi;
-		u32		ebp;
-		u32		esp;
-		u32		ebx;
-		u32		edx;
-		u32		ecx;
-		u32		eax;
-		u32		eflags;
-	} regs;
-} waiting_int, *pwaiting_int;
 
 typedef	struct {
 	u32		edi;

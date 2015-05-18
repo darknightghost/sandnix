@@ -28,48 +28,92 @@
 	|| (num) == INT_PF\
 	|| (num) == INT_AC)
 
-list				int_waiting_list = NULL;
 int_hndlr_entry		int_hndlr_tbl[256];
 bool				exception_handling_flag = false;
-u32					int_reentry_count = 0;
 u32					tick_count;
 u8					current_int_level;
 
 void init_int_dispatcher()
 {
+	u32 i;
+
 	rtl_memset(int_hndlr_tbl, 0, 256 * sizeof(int_hndlr_entry));
+
+	//Initialize int levels
+	for(i = 0; i < 256; i++) {
+		//Exceptions ,breakpoints and clocks
+		//will be INT_LEVEL_EXCEPTION or INT_LEVEL_TASK.
+		//Others will be INT_LEVEL_IO
+		io_set_int_level(i, INT_LEVEL_IO);
+	}
+
 	return;
 }
 
 void int_excpt_dispatcher(u32 num, pret_regs p_regs)
 {
-	//Save thread context or interrupted interrupt service context
-	if()
+	//Set interrupt status
+	int_hndlr_tbl[num].called_flag = true;
+	int_hndlr_tbl[num].thread_id = pm_get_crrnt_thrd_id();
 
-		//Increase reentry count
-		int_reentry_count++;
+	if(HAS_ERR_CODE(num)) {
+		//Get error code
+		int_hndlr_tbl[num].err_code = (u32*)(p_regs + 1);
 
-	int_reentry_count--;
+		//Move saved registers
+		rtl_memmove(((u8*)(p_regs) + 4), p_regs, sizeof(ret_regs));
+	}
+
+	//Resume interrupt dispatcher thread
+	pm_resume_thrd(0);
+
+	//Schedule
 	__asm__ __volatitle__(
-	    "sti\n\t"
+	    "leave\n\t"
+	    "call		pm_schedule\n\t"
 	    ::);
 	return;
 }
 
 void int_normal_dispatcher(u32 num, pret_regs p_regs)
 {
-	//Save thread context or interrupted interrupt service context
-	//Increase reentry count
-	int_reentry_count++;
+	//Set interrupt status
+	int_hndlr_tbl[num].called_flag = true;
+	int_hndlr_tbl[num].thread_id = pm_get_crrnt_thrd_id();
+
+	//Resume interrupt dispatcher thread
+	pm_resume_thrd(0);
+
+	//Schedule
 	__asm__ __volatitle__(
 	    "sti\n\t"
+	    "leave\n\t"
+	    "call		pm_schedule\n\t"
 	    ::);
 	return;
 }
 
 void int_bp_dispatcher(pret_regs p_regs)
 {
+	//Set interrupt status
+	int_hndlr_tbl[num].called_flag = true;
+	int_hndlr_tbl[num].thread_id = pm_get_crrnt_thrd_id();
+
+	//Resume interrupt dispatcher thread
+	pm_resume_thrd(0);
+
+	//Schedule
+	__asm__ __volatitle__(
+	    "sti\n\t"
+	    "leave\n\t"
+	    "call		pm_schedule\n\t"
+	    ::);
 	return;
+}
+
+void io_int_dispatcher_thread()
+{
+	//Dispatch interrupts
 }
 
 bool io_reg_int_hndlr(u8 num, pint_hndlr_info p_info)
@@ -162,6 +206,9 @@ void io_set_int_level(u8 num, u8 level)
 {
 	if(num <= INT_XF) {
 		int_hndlr_tbl[num].level = INT_LEVEL_EXCEPTION;
+
+	} else if(num == INT_CLOCK) {
+		int_hndlr_tbl[num].level = INT_LEVEL_TASK;
 
 	} else {
 		int_hndlr_tbl[num].level = level;
