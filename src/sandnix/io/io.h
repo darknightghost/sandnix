@@ -80,6 +80,6 @@ u32			io_get_tick_count();
 void		io_enable_interrupt();
 void		io_disable_interrupt();
 
-void		io_int_dispatcher_thread();
+void		io_dispatch_int();
 
 #endif	//!	IO_H_INCLUDE

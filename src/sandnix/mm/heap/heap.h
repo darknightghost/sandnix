@@ -48,10 +48,4 @@ typedef	struct _heap_head {
 
 #pragma pack()
 
-void		mm_heap_create();
-void		mm_heap_destroy();
-void*		mm_heap_alloc(size_t size, void* heap_addr);
-bool		mm_heap_chk(void* heap_addr);
-void		mm_heap_free(void* addr, void* heap_addr);
-
 #endif	//!	HEAP_H_INCLUDE

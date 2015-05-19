@@ -37,5 +37,7 @@ void kernel_main()
 
 	while(1);
 
+	io_dispatch_int();
+
 	return;
 }

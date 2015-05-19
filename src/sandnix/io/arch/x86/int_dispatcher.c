@@ -16,22 +16,28 @@
 */
 
 #include "../../io.h"
+#include "../../../exceptions/exceptions.h"
 #include "../../../rtl/rtl.h"
+#include "int.h"
 #include "int_handler.h"
 #include "../../../exceptions/exceptions.h"
+#include "../../../pm/pm.h"
 
-#define	HAS_ERR_CODE(num)	((num) == INT_DF)\
-	|| (num) == INT_TS\
-	|| (num) == INT_NP\
-	|| (num) == INT_SS\
-	|| (num) == INT_GP\
-	|| (num) == INT_PF\
-	|| (num) == INT_AC)
+#define	HAS_ERR_CODE(num)	((num) == INT_DF\
+                             || (num) == INT_TS\
+                             || (num) == INT_NP\
+                             || (num) == INT_SS\
+                             || (num) == INT_GP\
+                             || (num) == INT_PF\
+                             || (num) == INT_AC)
 
 int_hndlr_entry		int_hndlr_tbl[256];
 bool				exception_handling_flag = false;
 u32					tick_count;
 u8					current_int_level;
+bool				new_int_flag = false;
+
+static	void		call_hndlr(u32 i);
 
 void init_int_dispatcher()
 {
@@ -58,7 +64,7 @@ void int_excpt_dispatcher(u32 num, pret_regs p_regs)
 
 	if(HAS_ERR_CODE(num)) {
 		//Get error code
-		int_hndlr_tbl[num].err_code = (u32*)(p_regs + 1);
+		int_hndlr_tbl[num].err_code = *(u32*)(p_regs + 1);
 
 		//Move saved registers
 		rtl_memmove(((u8*)(p_regs) + 4), p_regs, sizeof(ret_regs));
@@ -67,10 +73,12 @@ void int_excpt_dispatcher(u32 num, pret_regs p_regs)
 	//Resume interrupt dispatcher thread
 	pm_resume_thrd(0);
 
+	new_int_flag = true;
+
 	//Schedule
-	__asm__ __volatitle__(
+	__asm__ __volatile__(
 	    "leave\n\t"
-	    "call		pm_schedule\n\t"
+	    "call		pm_task_schedule\n\t"
 	    ::);
 	return;
 }
@@ -84,11 +92,13 @@ void int_normal_dispatcher(u32 num, pret_regs p_regs)
 	//Resume interrupt dispatcher thread
 	pm_resume_thrd(0);
 
+	new_int_flag = true;
+
 	//Schedule
-	__asm__ __volatitle__(
+	__asm__ __volatile__(
 	    "sti\n\t"
 	    "leave\n\t"
-	    "call		pm_schedule\n\t"
+	    "call		pm_task_schedule\n\t"
 	    ::);
 	return;
 }
@@ -96,24 +106,71 @@ void int_normal_dispatcher(u32 num, pret_regs p_regs)
 void int_bp_dispatcher(pret_regs p_regs)
 {
 	//Set interrupt status
-	int_hndlr_tbl[num].called_flag = true;
-	int_hndlr_tbl[num].thread_id = pm_get_crrnt_thrd_id();
+	int_hndlr_tbl[INT_BP].called_flag = true;
+	int_hndlr_tbl[INT_BP].thread_id = pm_get_crrnt_thrd_id();
 
 	//Resume interrupt dispatcher thread
 	pm_resume_thrd(0);
 
+	new_int_flag = true;
+
 	//Schedule
-	__asm__ __volatitle__(
+	__asm__ __volatile__(
 	    "sti\n\t"
 	    "leave\n\t"
-	    "call		pm_schedule\n\t"
+	    "call		pm_task_schedule\n\t"
 	    ::);
 	return;
 }
 
-void io_int_dispatcher_thread()
+void io_dispatch_int()
 {
-	//Dispatch interrupts
+	u32 i;
+
+	while(1) {
+		new_int_flag = false;
+
+		//Dispatch interrupts
+		for(i = 0; i < 256; i++) {
+			//Exceptions must be handled,if not,call excpt_panic
+			if(int_hndlr_tbl[i].called_flag
+			   && int_hndlr_tbl[i].level == INT_LEVEL_EXCEPTION) {
+				call_hndlr(i);
+				int_hndlr_tbl[i].called_flag = false;
+			}
+		}
+
+		for(i = INT_XF + 1; i < 256; i++) {
+			if(int_hndlr_tbl[i].called_flag) {
+				if(new_int_flag) {
+					continue;
+				}
+
+				if(int_hndlr_tbl[i].level <= INT_LEVEL_DISPATCH) {
+					call_hndlr(i);
+					int_hndlr_tbl[i].called_flag = false;
+				}
+			}
+		}
+
+		for(i = INT_XF + 1; i < 256; i++) {
+			if(int_hndlr_tbl[i].called_flag) {
+				if(new_int_flag) {
+					continue;
+				}
+
+				if(int_hndlr_tbl[i].level >= INT_LEVEL_TASK) {
+					call_hndlr(i);
+					int_hndlr_tbl[i].called_flag = false;
+				}
+			}
+		}
+
+		__asm__ __volatile__(
+		    "sti\n\t"
+		    ::);
+		pm_suspend_thrd(0);
+	}
 }
 
 bool io_reg_int_hndlr(u8 num, pint_hndlr_info p_info)
@@ -220,4 +277,38 @@ void io_set_int_level(u8 num, u8 level)
 u32 io_get_tick_count()
 {
 	return tick_count;
+}
+
+void call_hndlr(u32 i)
+{
+	pint_hndlr_info p_hndlr;
+	u8	current_lvl;
+
+	current_lvl = io_get_crrnt_int_level();
+
+	//Check if handler exists
+	if(int_hndlr_tbl[i].entry == NULL) {
+		return;
+	}
+
+	//Call handlers
+	p_hndlr = int_hndlr_tbl[i].entry;
+
+	io_set_crrnt_int_level(current_lvl);
+
+	do {
+		if(p_hndlr->func(i,
+		                 int_hndlr_tbl[i].thread_id,
+		                 int_hndlr_tbl[i].err_code)) {
+
+			io_set_crrnt_int_level(int_hndlr_tbl[i].level);
+			return;
+		}
+
+		p_hndlr = p_hndlr->p_next;
+	} while(p_hndlr != NULL);
+
+	io_set_crrnt_int_level(current_lvl);
+
+	return;
 }

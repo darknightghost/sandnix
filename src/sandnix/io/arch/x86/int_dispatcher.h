@@ -23,16 +23,20 @@
 #include "int_handler.h"
 #include "../../../exceptions/exceptions.h"
 
+//bool		int_hndlr_func(u32 int_num,u32 thread_id,u32 err_code);
+typedef	bool	(*int_hndl_func)(u32, u32, u32);
+
+
 typedef	struct _int_hndlr_info {
-	struct _int_hndlr_info* p_next;
-	void*	func;
+	struct 			_int_hndlr_info* p_next;
+	int_hndl_func	func;
 } int_hndlr_info, *pint_hndlr_info;
 
 typedef	struct {
-	u8		level;
-	bool	called_flag;
-	u32		err_code;
-	u32		thread_id;
+	u8				level;
+	bool			called_flag;
+	u32				err_code;
+	u32				thread_id;
 	pint_hndlr_info entry;
 } int_hndlr_entry, *pint_hndlr_entry;
 
@@ -47,7 +51,7 @@ typedef	struct {
 	u32		edx;
 	u32		ecx;
 	u32		eax;
-	u32		eflags
+	u32		eflags;
 } ret_regs, *pret_regs;
 #pragma pack()
 

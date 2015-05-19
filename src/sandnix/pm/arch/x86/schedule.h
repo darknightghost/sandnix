@@ -93,14 +93,5 @@ typedef	struct _thread_info {
 	u32			esp3;
 } thread_info, *pthread_info;
 
-
-void		pm_schedule();
-u32			pm_create_thrd();
-void		pm_terminate_thrd(u32 thread_id);
-void		pm_suspend_thrd(u32 thread_id);
-void		pm_resume_thrd(u32 thread_id);
-void		pm_sleep(u32 ms);
-u32			pm_get_crrnt_thrd_id();
-
 #endif	//!	SCHEDULE_H_INCLUDE
 

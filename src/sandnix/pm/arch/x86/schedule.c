@@ -28,8 +28,37 @@ void pm_schedule()
 
 }
 
-void pm_save_context(pcontext p_context)
+u32 pm_create_thrd()
 {
-	rtl_memcpy(&tmp, p_context, sizeof(context));
-	return;
+	return 0;
+}
+
+void pm_terminate_thrd(u32 thread_id)
+{
+
+}
+
+void pm_suspend_thrd(u32 thread_id)
+{
+
+}
+
+void pm_resume_thrd(u32 thread_id)
+{
+
+}
+
+void pm_sleep(u32 ms)
+{
+
+}
+
+u32 pm_get_crrnt_thrd_id()
+{
+	return 0;
+}
+
+void pm_task_schedule()
+{
+
 }

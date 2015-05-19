@@ -22,5 +22,15 @@
 	#include "../../common/arch/x86/types.h"
 #endif	//X86
 
+//schedule.c
+void		pm_schedule();
+u32			pm_create_thrd();
+void		pm_terminate_thrd(u32 thread_id);
+void		pm_suspend_thrd(u32 thread_id);
+void		pm_resume_thrd(u32 thread_id);
+void		pm_sleep(u32 ms);
+u32			pm_get_crrnt_thrd_id();
+void		pm_task_schedule();
+
 #endif	//!	PM_H_INCLUDE
 
