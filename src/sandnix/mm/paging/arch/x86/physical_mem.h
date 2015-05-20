@@ -29,10 +29,7 @@
 #define	PHY_PAGE_ALLOCATED		0x10
 
 #define	E820_USABLE				0x01
-#define	E820_RESERVED
-#define	E820_ACPI
-#define	E820_NVS
-#define	E820_BAD
+#define	E820_RESERVED			0x02
 
 #pragma pack(1)
 typedef struct _e820_table {

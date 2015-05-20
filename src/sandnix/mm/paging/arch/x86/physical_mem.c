@@ -30,6 +30,8 @@ void setup_e820()
 	num = **(u32**)KERNEL_MEM_INFO;
 	p_table = (pe820_table)(*(u32**)KERNEL_MEM_INFO + 1);
 
+	//
+
 	//Anlyse e820
 	for(i = 0; i < 1024 * 1024; i++) {
 		if(PHYSICAL_PAGE_SIZE * i < 0xA0000) {
