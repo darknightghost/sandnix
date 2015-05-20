@@ -2130,10 +2130,16 @@ char* rtl_itoa(char* buf, u64 num)
 	char* p2;
 	char t;
 
+	if(num == 0) {
+		buf[0] = '0';
+		buf[1] = '\0';
+		return buf;
+	}
+
 	for(n = num, p = buf;
 	    n != 0;
 	    n = rtl_div64(n, 10), p++) {
-		*p = rtl_mod64(n, 10) + '0';
+		*p = (u8)rtl_mod64(n, 10) + '0';
 	}
 
 	for(p1 = buf, p2 = p - 1;
@@ -2157,10 +2163,16 @@ char* rtl_htoa(char* buf, u64 num, bool capital_flag)
 	char* p1;
 	char* p2;
 
+	if(num == 0) {
+		buf[0] = '0';
+		buf[1] = '\0';
+		return buf;
+	}
+
 	for(n = num, p = buf;
 	    n != 0;
 	    n = rtl_div64(n, 0x10), p++) {
-		t = rtl_mod64(n, 0x10);
+		t = (u8)rtl_mod64(n, 0x10);
 
 		if(t < 0x0A) {
 			*p = t + '0';
@@ -2196,10 +2208,16 @@ char* rtl_otoa(char* buf, u64 num)
 	char t;
 	u64 n;
 
+	if(num == 0) {
+		buf[0] = '0';
+		buf[1] = '\0';
+		return buf;
+	}
+
 	for(n = num, p = buf;
 	    n != 0;
 	    n = rtl_div64(n, 010), p++) {
-		*p = rtl_mod64(n, 010) + '0';
+		*p = (u8)rtl_mod64(n, 010) + '0';
 	}
 
 	for(p1 = buf, p2 = p - 1;
