@@ -21,6 +21,7 @@
 #ifdef	X86
 	#include "../../common/arch/x86/types.h"
 	#include "paging/arch/x86/page_table.h"
+	#include "paging/arch/x86/physical_mem.h"
 	#include "heap/heap.h"
 #endif	//X86
 
@@ -29,6 +30,8 @@ void		mm_heap_destroy();
 void*		mm_heap_alloc(size_t size, void* heap_addr);
 bool		mm_heap_chk(void* heap_addr);
 void		mm_heap_free(void* addr, void* heap_addr);
+
+void		mm_init();
 
 #endif	//!	MM_H_INCLUDE
 

@@ -555,7 +555,8 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 				//lld
 				case TYPE_INT_64:
-					data_s64 = va_arg(args, s64);
+					data_s64 = *(s64*)args;
+					args += 8;
 
 					if(data_s64 > 0) {
 						sign = 1;
@@ -793,7 +794,8 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 				//%llu
 				case TYPE_UINT_64:
-					rtl_itoa(num_buf, va_arg(args, u64));
+					rtl_itoa(num_buf, *(u64*)args);
+					args += 8;
 					num_len = rtl_strlen(num_buf);
 
 					//Prec
@@ -1013,7 +1015,8 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 				//%llo
 				case TYPE_OCTAL_64:
-					rtl_otoa(num_buf, va_arg(args, u64));
+					rtl_otoa(num_buf, *(u64*)args);
+					args += 8;
 					num_len = rtl_strlen(num_buf);
 
 					//Prec
@@ -1301,7 +1304,8 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 				//%llx
 				case TYPE_HEX_64_L:
-					rtl_htoa(num_buf, va_arg(args, u64), false);
+					rtl_htoa(num_buf, *(u64*)args, false);
+					args += 8;
 					num_len = rtl_strlen(num_buf);
 
 					//Prec
@@ -1610,7 +1614,8 @@ u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args)
 
 				//%llX
 				case TYPE_HEX_64_C:
-					rtl_htoa(num_buf, va_arg(args, u64), true);
+					rtl_htoa(num_buf, *(u64*)args, true);
+					args += 8;
 					num_len = rtl_strlen(num_buf);
 
 					//Prec

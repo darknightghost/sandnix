@@ -15,31 +15,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef	X86
-
-	#include "../../common/arch/x86/types.h"
-	#include "../../common/arch/x86/kernel_image.h"
-
-#endif	//X86
-
+#include "mm.h"
 #include "../debug/debug.h"
-#include "parameters/parameters.h"
-#include "../exceptions/exceptions.h"
-#include "../io/io.h"
 
-void kernel_main()
+void mm_init()
 {
-	dbg_cls();
-	dbg_print("%s", "Sandnix 0.0.1 kernel loaded.\n");
-
-	get_kernel_param();
-	init_io();
-
-	mm_init();
-
-	while(1);
-
-	io_dispatch_int();
-
+	dbg_print("%s", "\nInitializing mm module...\n");
+	#ifdef	X86
+	setup_e820();
+	#endif	//X86
 	return;
 }

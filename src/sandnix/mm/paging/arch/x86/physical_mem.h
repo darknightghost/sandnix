@@ -33,8 +33,10 @@
 
 #pragma pack(1)
 typedef struct _e820_table {
-	u64		base_addr;
-	u64		len;
+	u32		base_addr_l;
+	u32		base_addr_h;
+	u32		len_l;
+	u32		len_h;
 	u32		type;
 } e820_table, *pe820_table;
 #pragma pack()

@@ -67,7 +67,7 @@ bool load_os_kernel(char* path, char* parameters)
 	    FG_BRIGHT_WHITE | BG_BLACK,
 	    BG_BLACK);
 	print_string(
-	    hextostr(entry_address,
+	    hextostr((u32)entry_address,
 	             GET_REAL_ADDR(num_buf)),
 	    FG_BRIGHT_WHITE | BG_BLACK,
 	    BG_BLACK);
@@ -107,7 +107,7 @@ bool load_os_kernel(char* path, char* parameters)
 	*(char**)KERNEL_PARAMETER_PHYSICAL = parameters;
 
 	//Copy memory info address
-	*(void**)KERNEL_MEM_INFO_PHYSICAL = mem_info;
+	*(void**)KERNEL_MEM_INFO_PHYSICAL = GET_REAL_ADDR(mem_info);
 	__asm__ __volatile__(
 	    "cli\n\t"
 	    "movl		%0,%%eax\n\t"

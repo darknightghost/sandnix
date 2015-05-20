@@ -54,7 +54,7 @@ memtest:
 		addw	$20,%di
 		movl	mem_info,%eax
 		incl	%eax
-		movw	%eax,mem_info
+		movl	%eax,mem_info
 		cmpl	$0,%ebx
 		jne		_DO_1
 	#}while(ebx!=0)
