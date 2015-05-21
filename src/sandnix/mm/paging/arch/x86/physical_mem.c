@@ -20,13 +20,15 @@
 #include "../../../../setup/setup.h"
 #include "../../../../debug/debug.h"
 #include "../../../../rtl/rtl.h"
+#include "../../../../pm/pm.h"
 
 #define	PHY_PAGE_INFO(addr)	phy_mem_info[(addr)/4/1024]
 
-static	u8		phy_mem_info[1024 * 1024];
+static	u8			phy_mem_info[1024 * 1024];
+static	spin_lock	mem_info_lock;
 
-static	void	print_phy_mem();
-static	void	print_e820();
+static	void		print_phy_mem();
+static	void		print_e820();
 
 void setup_e820()
 {
@@ -58,7 +60,7 @@ void setup_e820()
 						phy_mem_info[base] = PHY_PAGE_SYSTEM;
 
 					} else {
-						//Free memories
+						//Usable memories
 						phy_mem_info[base] = PHY_PAGE_USABLE;
 					}
 				}
@@ -94,8 +96,145 @@ void setup_e820()
 	}
 
 	print_phy_mem();
+	pm_init_spn_lock(&mem_info_lock);
 
 	return;
+}
+
+void* get_physcl_page(void* base_addr, u32 num)
+{
+	u32 base;
+	u32 next;
+	u32 i;
+
+	if(IS_DMA_MEM(base_addr)) {
+		return NULL;
+	}
+
+	pm_acqr_spn_lock(&mem_info_lock);
+
+	if(base_addr != NULL) {
+		base = (u32)base_addr / 4096;
+
+		for(i = 0, next = base;
+		    i < num;
+		    i++, next++) {
+			//Check if the memory is usable
+			if(phy_mem_info[next] != PHY_PAGE_USABLE) {
+				pm_rls_spn_lock(&mem_info_lock);
+				return NULL;
+			}
+		}
+
+		for(i = 0, next = base;
+		    i < num;
+		    i++, next++) {
+			//Allocate memory
+			phy_mem_info[next] = PHY_PAGE_ALLOCATED;
+		}
+
+		pm_rls_spn_lock(&mem_info_lock);
+		return base_addr;
+	}
+
+	for(base = 1024 * 1024 / 4096;
+	    base < 1024 * 1024;
+	    base++) {
+		if(phy_mem_info[base] == PHY_PAGE_USABLE)	{
+			//Check number of usable pages
+			for(i = 0, next = base;
+			    i < num;
+			    i++, next++) {
+				//Check if the memory is usable
+				if(phy_mem_info[next] != PHY_PAGE_USABLE) {
+					break;
+				}
+			}
+
+			if(i == num) {
+				//Allocate memory
+				for(i = 0, next = base;
+				    i < num;
+				    i++, next++) {
+					phy_mem_info[next] = PHY_PAGE_ALLOCATED;
+				}
+
+				pm_rls_spn_lock(&mem_info_lock);
+
+				return (void*)(base * 4096);
+			}
+		}
+	}
+
+	pm_rls_spn_lock(&mem_info_lock);
+	return NULL;
+}
+
+void* get_dma_physcl_page(void* base_addr, u32 num)
+{
+	u32 base;
+	u32 next;
+	u32 i;
+
+	if(!IS_DMA_MEM(base_addr)) {
+		return NULL;
+	}
+
+	pm_acqr_spn_lock(&mem_info_lock);
+
+	if(base_addr != NULL) {
+		base = (u32)base_addr / 4096;
+
+		for(i = 0, next = base;
+		    i < num;
+		    i++, next++) {
+			//Check if the memory is usable
+			if(phy_mem_info[next] != PHY_PAGE_USABLE) {
+
+				pm_rls_spn_lock(&mem_info_lock);
+				return NULL;
+			}
+		}
+
+		for(i = 0, next = base;
+		    i < num;
+		    i++, next++) {
+			//Allocate memory
+			phy_mem_info[next] = PHY_PAGE_ALLOCATED;
+		}
+	}
+
+	for(base = 0;
+	    base < 1024 * 1024 / 4096;
+	    base++) {
+		if(phy_mem_info[base] == PHY_PAGE_USABLE)	{
+			//Check number of usable pages
+			for(i = 0, next = base;
+			    i < num;
+			    i++, next++) {
+				//Check if the memory is usable
+				if(phy_mem_info[next] != PHY_PAGE_USABLE) {
+					break;
+				}
+			}
+
+			if(i == num) {
+				//Allocate memory
+				for(i = 0, next = base;
+				    i < num;
+				    i++, next++) {
+					phy_mem_info[next] = PHY_PAGE_ALLOCATED;
+				}
+
+				pm_rls_spn_lock(&mem_info_lock);
+
+				return (void*)(base * 4096);
+			}
+		}
+	}
+
+	pm_rls_spn_lock(&mem_info_lock);
+	return NULL;
 }
 
 void print_e820()

@@ -1,3 +1,4 @@
+
 /*
 	Copyright 2015,暗夜幽灵 <darknightghost.cn@gmail.com>
 
@@ -15,28 +16,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	PM_H_INCLUDE
-#define	PM_H_INCLUDE
+#ifndef	SPINLOCK_H_INCLUDE
+#define	SPINLOCK_H_INCLUDE
 
-#ifdef	X86
-	#include "../../common/arch/x86/types.h"
-	#include"
-#endif	//X86
+#include "../../pm.h"
 
-//schedule.c
-void		pm_schedule();
-u32			pm_create_thrd();
-void		pm_terminate_thrd(u32 thread_id);
-void		pm_suspend_thrd(u32 thread_id);
-void		pm_resume_thrd(u32 thread_id);
-void		pm_sleep(u32 ms);
-u32			pm_get_crrnt_thrd_id();
-void		pm_task_schedule();
+typedef	struct {
+	u32		lock;
+	u32		int_level;
+} spin_lock, *pspin_lock;
 
-void		pm_init_spn_lock(pspin_lock p_lock);
-void		pm_acqr_spn_lock(pspin_lock p_lock);
-bool		pm_try_acqr_spn_lock(pspin_lock p_lock);
-void		pm_rls_spn_lock(p_lock);
-
-#endif	//!	PM_H_INCLUDE
-
+#endif	//!	SPINLOCK_H_INCLUDE

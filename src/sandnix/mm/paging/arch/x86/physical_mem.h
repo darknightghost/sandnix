@@ -31,6 +31,8 @@
 #define	E820_USABLE				0x01
 #define	E820_RESERVED			0x02
 
+#define	IS_DMA_MEM(a)			(((u32)(a))<1024*1024)
+
 #pragma pack(1)
 typedef struct _e820_table {
 	u32		base_addr_l;
@@ -42,7 +44,7 @@ typedef struct _e820_table {
 #pragma pack()
 
 void		setup_e820();
-void*		get_physcl_page(void* base, u32 num);
-void*		get_bscl_physcl_page(void* base, u32 num);
+void*		get_physcl_page(void* base_addr, u32 num);
+void*		get_dma_physcl_page(void* base_addr, u32 num);
 
 #endif	//!	PHYSICAL_MEM_H_INCLUDE
