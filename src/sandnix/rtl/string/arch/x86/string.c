@@ -116,6 +116,7 @@ void* rtl_memmove(void* dest, void* src, size_t n)
 		    "movl		%0,%%ecx\n\t"
 		    "movl		%1,%%esi\n\t"
 		    "movl		%2,%%edi\n\t"
+		    "rep		movsb\n\t"
 		    ::"m"(n), "m"(src), "m"(dest));
 	}
 

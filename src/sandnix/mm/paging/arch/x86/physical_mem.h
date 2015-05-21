@@ -42,7 +42,7 @@ typedef struct _e820_table {
 #pragma pack()
 
 void		setup_e820();
-void*		get_empty_physical_address();
-void*		get_device_address();
+void*		get_physcl_page(void* base, u32 num);
+void*		get_bscl_physcl_page(void* base, u32 num);
 
 #endif	//!	PHYSICAL_MEM_H_INCLUDE
