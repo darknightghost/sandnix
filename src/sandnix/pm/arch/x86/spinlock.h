@@ -19,10 +19,9 @@
 #ifndef	SPINLOCK_H_INCLUDE
 #define	SPINLOCK_H_INCLUDE
 
-#include "../../pm.h"
-
 typedef	struct {
-	u32		lock;
+	u32		owner;
+	u32		next;
 	u32		int_level;
 } spin_lock, *pspin_lock;
 

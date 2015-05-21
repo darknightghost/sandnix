@@ -21,6 +21,7 @@ SOURCES += setup/arch/x86/setup.s \
 			exceptions/arch/x86/exceptions.c \
 			debug/arch/x86/debug.c \
 			pm/arch/x86/schedule.c \
+			pm/arch/x86/spinlock.c \
 			mm/paging/arch/x86/physical_mem.c \
 			rtl/string/arch/x86/string.c \
 			rtl/math/arch/x86/math.c

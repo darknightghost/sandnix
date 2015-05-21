@@ -20,8 +20,9 @@
 
 #ifdef	X86
 	#include "../../common/arch/x86/types.h"
-	#include"
 #endif	//X86
+
+#include "arch/x86/spinlock.h"
 
 //schedule.c
 void		pm_schedule();
@@ -36,7 +37,7 @@ void		pm_task_schedule();
 void		pm_init_spn_lock(pspin_lock p_lock);
 void		pm_acqr_spn_lock(pspin_lock p_lock);
 bool		pm_try_acqr_spn_lock(pspin_lock p_lock);
-void		pm_rls_spn_lock(p_lock);
+void		pm_rls_spn_lock(pspin_lock p_lock);
 
 #endif	//!	PM_H_INCLUDE
 
