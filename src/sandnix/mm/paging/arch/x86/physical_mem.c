@@ -29,8 +29,10 @@ static	spin_lock	mem_info_lock;
 
 static	void		print_phy_mem();
 static	void		print_e820();
+static	void		phy_mem_pg_num;
+static	void		phy_mem_pg_usable_num;
 
-void setup_e820()
+void init_phy_mem()
 {
 	u32 num;
 	u32 i, base, end;
@@ -82,8 +84,19 @@ void setup_e820()
 	}
 
 	//Set up memories which e820 didn't refered
+	//and count RAM and usable memory
+	phy_mem_pg_num = 0;
+	phy_mem_pg_usable_num = 0;
+
 	for(base = 0; base < 1024 * 1024; base++) {
-		if(phy_mem_info[base] == 0) {
+		if(phy_mem_info[base] == PHY_PAGE_USABLE) {
+			phy_mem_pg_num++;
+			phy_mem_pg_usable_num++;
+
+		} else if(phy_mem_info[base] == PHY_PAGE_SYSTEM) {
+			phy_mem_pg_num++;
+
+		} else if(phy_mem_info[base] == 0) {
 			if(base <= 1024 * 1024 / 4096) {
 				//Reserved
 				phy_mem_info[base] = PHY_PAGE_RESERVED;
@@ -111,6 +124,10 @@ void* get_physcl_page(void* base_addr, u32 num)
 		return NULL;
 	}
 
+	if(phy_mem_pg_usable_num == 0) {
+		return NULL;
+	}
+
 	pm_acqr_spn_lock(&mem_info_lock);
 
 	if(base_addr != NULL) {
@@ -129,11 +146,13 @@ void* get_physcl_page(void* base_addr, u32 num)
 		for(i = 0, next = base;
 		    i < num;
 		    i++, next++) {
+
 			//Allocate memory
 			phy_mem_info[next] = PHY_PAGE_ALLOCATED;
 		}
 
 		pm_rls_spn_lock(&mem_info_lock);
+		phy_mem_pg_usable_num -= num;
 		return base_addr;
 	}
 
@@ -160,6 +179,7 @@ void* get_physcl_page(void* base_addr, u32 num)
 				}
 
 				pm_rls_spn_lock(&mem_info_lock);
+				phy_mem_pg_usable_num -= num;
 
 				return (void*)(base * 4096);
 			}
@@ -177,6 +197,10 @@ void* get_dma_physcl_page(void* base_addr, u32 num)
 	u32 i;
 
 	if(!IS_DMA_MEM(base_addr)) {
+		return NULL;
+	}
+
+	if(phy_mem_pg_usable_num == 0) {
 		return NULL;
 	}
 
@@ -202,6 +226,9 @@ void* get_dma_physcl_page(void* base_addr, u32 num)
 			//Allocate memory
 			phy_mem_info[next] = PHY_PAGE_ALLOCATED;
 		}
+
+		phy_mem_pg_usable_num -= num;
+		return base_addr;
 	}
 
 	for(base = 0;
@@ -227,6 +254,7 @@ void* get_dma_physcl_page(void* base_addr, u32 num)
 				}
 
 				pm_rls_spn_lock(&mem_info_lock);
+				phy_mem_pg_usable_num -= num;
 
 				return (void*)(base * 4096);
 			}
@@ -235,6 +263,39 @@ void* get_dma_physcl_page(void* base_addr, u32 num)
 
 	pm_rls_spn_lock(&mem_info_lock);
 	return NULL;
+}
+
+
+void free_physcl_page(void* base_addr, u32 num)
+{
+	u32 i;
+	u32 base;
+
+	pm_acqr_spn_lock(&mem_info_lock);
+	base = base_addr / 4096;
+
+	for(i = 0; i < num; i++) {
+		if(phy_mem_info[base] != PHY_PAGE_ALLOCATED) {
+			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+			            "This is because some program tried to free a physical page which cannot be freed.The address of the physical memory is %p.",
+			            base * 4096);
+		}
+
+		phy_mem_info[base] = PHY_PAGE_USABLE;
+	}
+
+	pm_rls_spn_lock(&mem_info_lock);
+	phy_mem_pg_usable_num += num;
+
+	return;
+}
+
+void get_phy_mem_info(u32* phy_mem_num, u32* usable_num)
+{
+	*phy_mem_num = phy_mem_pg_num * 4096;
+	*usable_num = phy_mem_pg_usable_num * 4096;
+
+	return;
 }
 
 void print_e820()

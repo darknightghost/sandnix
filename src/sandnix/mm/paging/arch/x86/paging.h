@@ -19,8 +19,18 @@
 #define	PAGING_H_INCLUDE
 
 #include "../../../../../common/arch/x86/types.h"
+#include "page_table.h"
+#include "../../../mm.h"
 
-void*	mm_virt_alloc();
-void*	mm_virt_free();
+typedef	struct	{
+	u32		phy_mem;
+	u32		phy_mem_usable;
+	u32		swap;
+	u32		swap_usable;
+	u32		pde_table_num;
+	u32		pte_table_num;
+	u32		shared_pages;
+} mem_info, *pmem_info;
 
+void		init_paging();
 #endif	//!	PAGING_H_INCLUDE

@@ -34,6 +34,7 @@ void kernel_main()
 
 	get_kernel_param();
 	init_io();
+	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
 
 	mm_init();
 

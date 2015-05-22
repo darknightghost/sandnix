@@ -21,8 +21,7 @@
 void mm_init()
 {
 	dbg_print("%s", "\nInitializing mm module...\n");
-	#ifdef	X86
-	setup_e820();
-	#endif	//X86
+	init_phy_mem();
+	init_paging();
 	return;
 }

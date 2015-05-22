@@ -127,6 +127,8 @@ void io_dispatch_int()
 {
 	u32 i;
 
+	io_set_crrnt_int_level(INT_LEVEL_EXCEPTION);
+
 	while(1) {
 		new_int_flag = false;
 
@@ -245,7 +247,17 @@ void io_unreg_int_hndlr(u8 num, pint_hndlr_info p_info)
 
 void io_set_crrnt_int_level(u8 level)
 {
+	u32 prev_level;
+
+	prev_level = current_int_level;
+
 	current_int_level = level;
+
+	if(level < INT_LEVEL_TASK
+	   && level < prev_level) {
+		pm_schedule();
+	}
+
 	return;
 }
 

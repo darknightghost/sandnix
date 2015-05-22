@@ -16,6 +16,40 @@
 */
 
 #include "paging.h"
-#include "../../../../../common/arch/x86/types.h"
+#include "../../../../setup/setup.h"
 
 
+void init_paging()
+{
+	return;
+}
+
+void* mm_virt_alloc(void* start_addr, size_t size, u32 options)
+{
+	return NULL;
+}
+
+void* mm_virt_free(void* start_addr, u32 options)
+{
+	return NULL;
+}
+
+u32 mm_pg_tbl_fork(u32 parent)
+{
+	return 0;
+}
+
+void mm_pg_tbl_free(u32 id)
+{
+	return 0;
+}
+
+void mm_pg_tbl_switch(u32 id)
+{
+	return 0;
+}
+
+void mm_get_info(pmem_info p_info)
+{
+	return 0;
+}

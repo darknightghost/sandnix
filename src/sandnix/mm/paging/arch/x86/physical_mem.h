@@ -43,8 +43,10 @@ typedef struct _e820_table {
 } e820_table, *pe820_table;
 #pragma pack()
 
-void		setup_e820();
+void		init_phy_mem();
 void*		get_physcl_page(void* base_addr, u32 num);
 void*		get_dma_physcl_page(void* base_addr, u32 num);
+void		free_physcl_page(void* base_addr, u32 num);
+void		get_phy_mem_info(u32* phy_mem_num, u32* usable_num);
 
 #endif	//!	PHYSICAL_MEM_H_INCLUDE

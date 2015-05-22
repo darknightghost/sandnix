@@ -21,9 +21,22 @@
 #ifdef	X86
 	#include "../../common/arch/x86/types.h"
 	#include "paging/arch/x86/page_table.h"
+	#include "paging/arch/x86/paging.h"
 	#include "paging/arch/x86/physical_mem.h"
 	#include "heap/heap.h"
 #endif	//X86
+
+#define		MEM_USER			0x00000001
+#define		MEM_COMMIT			0x00000002
+#define		MEM_RESERVE			0x00000004
+#define		MEM_RELEASE			0x00000008
+
+void*		mm_virt_alloc(void* start_addr, size_t size, u32 options);
+void*		mm_virt_free(void* start_addr, u32 options);
+u32			mm_pg_tbl_fork(u32 parent);
+void		mm_pg_tbl_free(u32 id);
+void		mm_pg_tbl_switch(u32 id);
+void		mm_get_info(pmem_info p_info);
 
 void		mm_heap_create();
 void		mm_heap_destroy();
