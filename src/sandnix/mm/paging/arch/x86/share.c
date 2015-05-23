@@ -15,16 +15,4 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	PAGING_H_INCLUDE
-#define	PAGING_H_INCLUDE
-
-#include "../../../../../common/arch/x86/types.h"
-#include "page_table.h"
-#include "../../../mm.h"
-
-typedef	struct	_pg_tbl_info {
-	void*		pdt_addr;
-} pg_tbl_info, *ppg_tbl_info;
-
-void		init_paging();
-#endif	//!	PAGING_H_INCLUDE
+#include "share.h"

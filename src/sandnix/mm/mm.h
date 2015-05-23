@@ -26,6 +26,20 @@
 	#include "heap/heap.h"
 #endif	//X86
 
+##ifdef X86
+
+typedef	struct	{
+	u32		phy_mem;
+	u32		phy_mem_usable;
+	u32		swap;
+	u32		swap_usable;
+	u32		pde_table_num;
+	u32		pte_table_num;
+	u32		shared_pages;
+} mem_info, *pmem_info;
+
+#endif	//X86
+
 #define		MEM_USER			0x00000001
 #define		MEM_COMMIT			0x00000002
 #define		MEM_RESERVE			0x00000004
