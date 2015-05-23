@@ -52,6 +52,13 @@ void		mm_pg_tbl_free(u32 id);
 void		mm_pg_tbl_switch(u32 id);
 void		mm_get_info(pmem_info p_info);
 
+//Mapping pages
+//PMO=Page mapping object
+u32			mm_pmo_create(size_t size);
+void		mm_pmo_free(u32	pmo);
+void*		mm_pmo_map(void* address, u32 pmo);
+void		mm_pmo_unmap(address);
+
 void		mm_heap_create();
 void		mm_heap_destroy();
 void*		mm_heap_alloc(size_t size, void* heap_addr);
