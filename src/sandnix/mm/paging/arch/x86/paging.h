@@ -22,9 +22,5 @@
 #include "page_table.h"
 #include "../../../mm.h"
 
-typedef	struct	_pg_tbl_info {
-	void*		pdt_addr;
-} pg_tbl_info, *ppg_tbl_info;
-
 void		init_paging();
 #endif	//!	PAGING_H_INCLUDE

@@ -17,10 +17,20 @@
 
 #include "paging.h"
 #include "../../../../setup/setup.h"
+#include "../../../../rtl/rtl.h"
+#include "../../../../debug/debug.h"
 
+void*		pdt_table[MAX_PROCESS_NUM];
 
-void init_paging()
+void paging_init()
 {
+	dbg_print("Initializing paging...\n");
+
+	//Initialize PDT table
+	rtl_memset(pg_table, 0, MAX_PROCESS_NUM + sizeof(void*));
+	pdt_table[0] = TMP_PDT_BASE;
+
+	//Initialize PDT of process 0
 	return;
 }
 
@@ -29,27 +39,14 @@ void* mm_virt_alloc(void* start_addr, size_t size, u32 options)
 	return NULL;
 }
 
-void* mm_virt_free(void* start_addr, u32 options)
-{
-	return NULL;
-}
+void* mm_virt_free(void* start_addr, size_t size, u32 options);
+void* mm_virt_map(void* virt_addr, void* phy_addr);
 
-u32 mm_pg_tbl_fork(u32 parent)
-{
-	return 0;
-}
+//Page table
+u32 mm_pg_tbl_fork(u32 parent);
+void mm_pg_tbl_free(u32 id);
+void mm_pg_tbl_switch(u32 id);
+void mm_pg_tbl_usr_spc_clear(u32 id);
 
-void mm_pg_tbl_free(u32 id)
-{
-	return 0;
-}
-
-void mm_pg_tbl_switch(u32 id)
-{
-	return 0;
-}
-
-void mm_get_info(pmem_info p_info)
-{
-	return 0;
-}
+//Status
+void mm_get_info(pmem_info p_info);

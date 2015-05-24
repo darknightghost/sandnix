@@ -24,6 +24,8 @@
 
 #include "arch/x86/spinlock.h"
 
+#define		MAX_PROCESS_NUM		65535
+
 //schedule.c
 void		pm_schedule();
 u32			pm_create_thrd();

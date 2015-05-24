@@ -23,10 +23,12 @@
 	#include "paging/arch/x86/page_table.h"
 	#include "paging/arch/x86/paging.h"
 	#include "paging/arch/x86/physical_mem.h"
-	#include "heap/heap.h"
 #endif	//X86
 
 ##ifdef X86
+
+#include "heap/heap.h"
+#include "../pm/pm.h"
 
 typedef	struct	{
 	u32		phy_mem;
@@ -45,27 +47,36 @@ typedef	struct	{
 #define		MEM_RESERVE			0x00000004
 #define		MEM_RELEASE			0x00000008
 
+
+void		mm_init();
+
+//Virtual memory
 void*		mm_virt_alloc(void* start_addr, size_t size, u32 options);
-void*		mm_virt_free(void* start_addr, u32 options);
+void*		mm_virt_free(void* start_addr, size_t size, u32 options);
+void*		mm_virt_map(void* virt_addr, void* phy_addr);
+
+//Page table
 u32			mm_pg_tbl_fork(u32 parent);
 void		mm_pg_tbl_free(u32 id);
 void		mm_pg_tbl_switch(u32 id);
+void		mm_pg_tbl_usr_spc_clear(u32 id);
+
+//Status
 void		mm_get_info(pmem_info p_info);
 
-//Mapping pages
+//Share memories
 //PMO=Page mapping object
-u32			mm_pmo_create(size_t size);
+u32			mm_pmo_create(void* base_addr, size_t size);
 void		mm_pmo_free(u32	pmo);
 void*		mm_pmo_map(void* address, u32 pmo);
 void		mm_pmo_unmap(address);
 
+//Heap
 void		mm_heap_create();
 void		mm_heap_destroy();
 void*		mm_heap_alloc(size_t size, void* heap_addr);
 bool		mm_heap_chk(void* heap_addr);
 void		mm_heap_free(void* addr, void* heap_addr);
-
-void		mm_init();
 
 #endif	//!	MM_H_INCLUDE
 
