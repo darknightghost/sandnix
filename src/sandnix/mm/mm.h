@@ -50,6 +50,9 @@ typedef	struct	{
 
 void		mm_init();
 
+//Physical memory
+u32			mm_phy_mem_state_get(void* addr);
+
 //Virtual memory
 void*		mm_virt_alloc(void* start_addr, size_t size, u32 options);
 void*		mm_virt_free(void* start_addr, size_t size, u32 options);

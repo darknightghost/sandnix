@@ -39,7 +39,7 @@ void start_paging()
 		p_pte->accessed = 0;
 		p_pte->dirty = 0;
 		p_pte->page_table_attr_index = 0;
-		p_pte->global_page = 0;
+		p_pte->global_page = 1;
 		p_pte->avail = PG_NORMAL;
 		p_pte->page_base_addr = mapped_size >> 12;
 	}
@@ -68,10 +68,10 @@ void start_paging()
 			p_pde->present = PG_P;
 			p_pde->page_table_base_addr = (i * 4096 + TMP_PAGE_TABLE_BASE) >> 12;
 
-		} else if(i * 4096 * 1024 < TMP_PAGED_MEM_SIZE + KERNEL_MEM_BASE
-		          && i * 4096 * 1024 >= KERNEL_MEM_BASE) {
+		} else if(i * 4096 * 1024 < TMP_PAGED_MEM_SIZE + VIRTUAL_ADDR_OFFSET
+		          && i * 4096 * 1024 >= VIRTUAL_ADDR_OFFSET`) {
 			p_pde->present = PG_P;
-			p_pde->page_table_base_addr = ((i - KERNEL_MEM_BASE / 4096 / 1024)
+			p_pde->page_table_base_addr = ((i - VIRTUAL_ADDR_OFFSET / 4096 / 1024)
 			                               * 4096 + TMP_PAGE_TABLE_BASE) >> 12;
 
 		} else {

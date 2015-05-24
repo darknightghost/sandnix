@@ -298,6 +298,12 @@ void get_phy_mem_info(u32* phy_mem_num, u32* usable_num)
 	return;
 }
 
+
+u32 mm_phy_mem_state_get(void* addr)
+{
+	return phy_mem_info[addr / 4096];
+}
+
 void print_e820()
 {
 	u32 i;
