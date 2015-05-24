@@ -28,7 +28,7 @@
 
 //schedule.c
 void		pm_schedule();
-u32			pm_create_thrd();
+u32			pm_create_thrd(void* entry);
 void		pm_terminate_thrd(u32 thread_id);
 void		pm_suspend_thrd(u32 thread_id);
 void		pm_resume_thrd(u32 thread_id);
