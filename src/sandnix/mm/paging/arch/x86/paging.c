@@ -24,10 +24,10 @@
 void*			pdt_table[MAX_PROCESS_NUM];
 static	u32		current_pdt;
 
-static	void*	kernel_mem_commit(void* base, u32 num);
-static	void*	usr_mem_commit(void* base, u32 num);
-static	void*	kernel_mem_reserve(void* base, u32 num);
-static	void*	usr_mem_reserve(void* base, u32 num);
+static	void*	kernel_mem_reserve(u32 base, u32 num);
+static	void*	usr_mem_reserve(u32 base, u32 num);
+static	void*	kernel_mem_commit(u32  base, u32 num);
+static	void*	usr_mem_commit(u32 base, u32 num);
 
 void paging_init()
 {
@@ -78,20 +78,27 @@ void paging_init()
 
 void* mm_virt_alloc(void* start_addr, size_t size, u32 options)
 {
+	void* base;
+	u32 num;
+
+	//Compute whitch page to allocate and how many pages to allocate
+	base = (u32)start_addr / 4096;
+	num = size / 4096 + size % 4096 ? 1 : 0;
+
 	if(options & MEM_USER) {
 		if(options & MEM_COMMIT) {
-			usr_mem_commit();
+			return usr_mem_commit(base, num);
 
 		} else if(options & MEM_RESERVE) {
-			usr_mem_reserve();
+			return usr_mem_reserve(base, num);
 		}
 
 	} else {
 		if(options & MEM_COMMIT) {
-			kernel_mem_commit();
+			return kernel_mem_commit(base, num);
 
 		} else if(options & MEM_RESERVE) {
-			kernel_mem_reserve();
+			return kernel_mem_reserve(base, num);
 		}
 	}
 
@@ -129,22 +136,35 @@ void mm_pg_tbl_usr_spc_clear(u32 id);
 void mm_get_info(pmem_info p_info);
 
 
-void* kernel_mem_commit(void* base, u32 num)
+void* kernel_mem_reserve(u32 base, u32 num)
+{
+	//Check arguments
+	if(base != NULL
+	   && base < KERNEL_MEM_BASE) {
+		return NULL;
+	}
+
+	return NULL;
+}
+
+void* usr_mem_reserve(u32 base, u32 num)
+{
+	//Check arguments
+	if(base != NULL
+	   && base < KERNEL_MEM_BASE) {
+		return NULL;
+	}
+
+	return NULL;
+}
+
+void* kernel_mem_commit(u32 base, u32 num)
 {
 	return NULL;
 }
 
-void* usr_mem_commit(void* base, u32 num)
+void* usr_mem_commit(u32 base, u32 num)
 {
 	return NULL;
 }
 
-void* kernel_mem_reserve(void* base, u32 num)
-{
-	return NULL;
-}
-
-void* usr_mem_reserve(void* base, u32 num)
-{
-	return NULL;
-}
