@@ -22,12 +22,13 @@
 #include "page_table.h"
 #include "../../../mm.h"
 
+#define	PAGE_TABLE_VADDR
 #define	REFRESH_TLB	{\
 		__asm__ __volatile__(\
 		                     "movl	%%cr4,%%eax\n\t"\
-		                     "btcl	7,%%eax\n\t"\
-		                     "movl	%%eaxx,%%cr4\n\t"\
-		                     "btsl	7,%%eax\n\t"\
+		                     "btcl	$7,%%eax\n\t"\
+		                     "movl	%%eax,%%cr4\n\t"\
+		                     "btsl	$7,%%eax\n\t"\
 		                     "movl	%%eax,%%cr4\n\t"\
 		                     ::);\
 	}

@@ -20,25 +20,29 @@
 #include "../../../../rtl/rtl.h"
 #include "../../../../debug/debug.h"
 #include "../../../../exceptions/exceptions.h"
+#include "../../../../pm/pm.h"
 
-void*			pdt_table[MAX_PROCESS_NUM];
-static	u32		current_pdt;
+void*				pdt_table[MAX_PROCESS_NUM];
+static	u32			current_pdt;
+static	spin_lock	mem_page_lock;
 
+static	void*	get_mem_page_addr(u32 base, u32 id);
 static	void*	kernel_mem_reserve(u32 base, u32 num);
 static	void*	usr_mem_reserve(u32 base, u32 num);
-static	void*	kernel_mem_commit(u32  base, u32 num);
+static	void*	kernel_mem_commit(u32 base, u32 num);
 static	void*	usr_mem_commit(u32 base, u32 num);
 
 void paging_init()
 {
 	ppde p_pde;
-	ppte p_pte;
+	u32 i;
 
 	dbg_print("Initializing paging...\n");
+	pm_init_spn_lock(&mem_page_lock);
 
 	//Initialize PDT table
-	rtl_memset(pg_table, 0, MAX_PROCESS_NUM + sizeof(void*));
-	pdt_table[0] = TMP_PDT_BASE;
+	rtl_memset(pdt_table, 0, MAX_PROCESS_NUM + sizeof(void*));
+	pdt_table[0] = (void*)TMP_PDT_BASE;
 
 	//Initialize PDT of process 0
 	dbg_print("Initializing  page table of process 0...\n");
@@ -78,7 +82,7 @@ void paging_init()
 
 void* mm_virt_alloc(void* start_addr, size_t size, u32 options)
 {
-	void* base;
+	u32 base;
 	u32 num;
 
 	//Compute whitch page to allocate and how many pages to allocate
@@ -119,6 +123,10 @@ void mm_pg_tbl_switch(u32 id)
 		            id);
 	}
 
+	pm_acqr_spn_lock(&mem_page_lock);
+
+	current_pdt = id;
+
 	//Load CR3
 	__asm__ __volatile__(
 	    "movl	%0,%%eax\n\t"
@@ -126,6 +134,8 @@ void mm_pg_tbl_switch(u32 id)
 	    "orl	$0x008,%%eax\n\t"
 	    "movl	%%eax,%%cr3\n\t"
 	    ::"m"(pdt_table[id]));
+
+	pm_rls_spn_lock(&mem_page_lock);
 
 	return;
 }
@@ -139,21 +149,26 @@ void mm_get_info(pmem_info p_info);
 void* kernel_mem_reserve(u32 base, u32 num)
 {
 	//Check arguments
-	if(base != NULL
+	if(base != 0
 	   && base < KERNEL_MEM_BASE) {
 		return NULL;
 	}
 
+	pm_acqr_spn_lock(&mem_page_lock);
+	pm_rls_spn_lock(&mem_page_lock);
 	return NULL;
 }
 
 void* usr_mem_reserve(u32 base, u32 num)
 {
 	//Check arguments
-	if(base != NULL
+	if(base != 0
 	   && base < KERNEL_MEM_BASE) {
 		return NULL;
 	}
+
+	pm_acqr_spn_lock(&mem_page_lock);
+	pm_rls_spn_lock(&mem_page_lock);
 
 	return NULL;
 }
@@ -168,3 +183,7 @@ void* usr_mem_commit(u32 base, u32 num)
 	return NULL;
 }
 
+void* get_mem_page_addr(u32 base, u32 id)
+{
+	return NULL;
+}

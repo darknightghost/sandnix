@@ -69,7 +69,7 @@ void start_paging()
 			p_pde->page_table_base_addr = (i * 4096 + TMP_PAGE_TABLE_BASE) >> 12;
 
 		} else if(i * 4096 * 1024 < TMP_PAGED_MEM_SIZE + VIRTUAL_ADDR_OFFSET
-		          && i * 4096 * 1024 >= VIRTUAL_ADDR_OFFSET`) {
+		          && i * 4096 * 1024 >= VIRTUAL_ADDR_OFFSET) {
 			p_pde->present = PG_P;
 			p_pde->page_table_base_addr = ((i - VIRTUAL_ADDR_OFFSET / 4096 / 1024)
 			                               * 4096 + TMP_PAGE_TABLE_BASE) >> 12;

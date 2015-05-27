@@ -30,6 +30,7 @@
 void kernel_main()
 {
 	dbg_cls();
+
 	dbg_print("%s", "Sandnix 0.0.1 kernel loaded.\n");
 
 	get_kernel_param();

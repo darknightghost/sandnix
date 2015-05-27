@@ -25,7 +25,7 @@
 	#include "paging/arch/x86/physical_mem.h"
 #endif	//X86
 
-##ifdef X86
+#ifdef X86
 
 #include "heap/heap.h"
 #include "../pm/pm.h"
@@ -72,7 +72,7 @@ void		mm_get_info(pmem_info p_info);
 u32			mm_pmo_create(void* base_addr, size_t size);
 void		mm_pmo_free(u32	pmo);
 void*		mm_pmo_map(void* address, u32 pmo);
-void		mm_pmo_unmap(address);
+void		mm_pmo_unmap(void* address);
 
 //Heap
 void		mm_heap_create();

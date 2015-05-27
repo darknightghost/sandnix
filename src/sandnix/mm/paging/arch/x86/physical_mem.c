@@ -21,6 +21,7 @@
 #include "../../../../debug/debug.h"
 #include "../../../../rtl/rtl.h"
 #include "../../../../pm/pm.h"
+#include "../../../../exceptions/exceptions.h"
 
 #define	PHY_PAGE_INFO(addr)	phy_mem_info[(addr)/4/1024]
 
@@ -29,8 +30,8 @@ static	spin_lock	mem_info_lock;
 
 static	void		print_phy_mem();
 static	void		print_e820();
-static	void		phy_mem_pg_num;
-static	void		phy_mem_pg_usable_num;
+static	u32		phy_mem_pg_num;
+static	u32		phy_mem_pg_usable_num;
 
 void init_phy_mem()
 {
@@ -272,7 +273,7 @@ void free_physcl_page(void* base_addr, u32 num)
 	u32 base;
 
 	pm_acqr_spn_lock(&mem_info_lock);
-	base = base_addr / 4096;
+	base = (u32)base_addr / 4096;
 
 	for(i = 0; i < num; i++) {
 		if(phy_mem_info[base] != PHY_PAGE_ALLOCATED) {
@@ -301,7 +302,7 @@ void get_phy_mem_info(u32* phy_mem_num, u32* usable_num)
 
 u32 mm_phy_mem_state_get(void* addr)
 {
-	return phy_mem_info[addr / 4096];
+	return phy_mem_info[(u32)addr / 4096];
 }
 
 void print_e820()

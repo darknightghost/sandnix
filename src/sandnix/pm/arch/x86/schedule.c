@@ -28,11 +28,6 @@ void pm_schedule()
 
 }
 
-u32 pm_create_thrd()
-{
-	return 0;
-}
-
 void pm_terminate_thrd(u32 thread_id)
 {
 
