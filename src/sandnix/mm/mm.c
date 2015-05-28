@@ -22,6 +22,6 @@ void mm_init()
 {
 	dbg_print("%s", "\nInitializing mm module...\n");
 	init_phy_mem();
-	//init_paging();
+	init_paging();
 	return;
 }

@@ -108,6 +108,17 @@ bool load_os_kernel(char* path, char* parameters)
 
 	//Copy memory info address
 	*(void**)KERNEL_MEM_INFO_PHYSICAL = GET_REAL_ADDR(mem_info);
+
+	print_string(
+	    GET_REAL_ADDR("Loading ramdisk...\n"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+
+	print_string(
+	    GET_REAL_ADDR("Starting kernel...\n"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+
 	__asm__ __volatile__(
 	    "cli\n\t"
 	    "movl		%0,%%eax\n\t"

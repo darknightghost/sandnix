@@ -46,6 +46,10 @@ typedef	struct	{
 #define		MEM_COMMIT			0x00000002
 #define		MEM_RESERVE			0x00000004
 #define		MEM_RELEASE			0x00000008
+#define		MEM_DMA				0x00000010
+
+#define		PAGE_WRITEABLE		0x00000001
+#define		PAGE_EXECUTABLE		0x00000002
 
 
 void		mm_init();
@@ -54,9 +58,10 @@ void		mm_init();
 u32			mm_phy_mem_state_get(void* addr);
 
 //Virtual memory
-void*		mm_virt_alloc(void* start_addr, size_t size, u32 options);
-void*		mm_virt_free(void* start_addr, size_t size, u32 options);
+void*		mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr);
+void		mm_virt_free(void* start_addr, size_t size, u32 options);
 void*		mm_virt_map(void* virt_addr, void* phy_addr);
+void		mm_virt_unmap(void* virt_addr);
 
 //Page table
 u32			mm_pg_tbl_fork(u32 parent);

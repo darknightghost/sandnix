@@ -115,7 +115,7 @@ void init_phy_mem()
 	return;
 }
 
-void* get_physcl_page(void* base_addr, u32 num)
+void* alloc_physcl_page(void* base_addr, u32 num)
 {
 	u32 base;
 	u32 next;
@@ -167,6 +167,7 @@ void* get_physcl_page(void* base_addr, u32 num)
 			    i++, next++) {
 				//Check if the memory is usable
 				if(phy_mem_info[next] != PHY_PAGE_USABLE) {
+					base += i;
 					break;
 				}
 			}
@@ -191,18 +192,18 @@ void* get_physcl_page(void* base_addr, u32 num)
 	return NULL;
 }
 
-void* get_dma_physcl_page(void* base_addr, u32 num)
+bool alloc_dma_physcl_page(void* base_addr, u32 num, void** ret)
 {
 	u32 base;
 	u32 next;
 	u32 i;
 
 	if(!IS_DMA_MEM(base_addr)) {
-		return NULL;
+		return false;
 	}
 
 	if(phy_mem_pg_usable_num == 0) {
-		return NULL;
+		return false;
 	}
 
 	pm_acqr_spn_lock(&mem_info_lock);
@@ -217,7 +218,7 @@ void* get_dma_physcl_page(void* base_addr, u32 num)
 			if(phy_mem_info[next] != PHY_PAGE_USABLE) {
 
 				pm_rls_spn_lock(&mem_info_lock);
-				return NULL;
+				return false;
 			}
 		}
 
@@ -229,7 +230,8 @@ void* get_dma_physcl_page(void* base_addr, u32 num)
 		}
 
 		phy_mem_pg_usable_num -= num;
-		return base_addr;
+		*ret = base_addr;
+		return true;
 	}
 
 	for(base = 0;
@@ -242,6 +244,7 @@ void* get_dma_physcl_page(void* base_addr, u32 num)
 			    i++, next++) {
 				//Check if the memory is usable
 				if(phy_mem_info[next] != PHY_PAGE_USABLE) {
+					base += i;
 					break;
 				}
 			}
@@ -257,13 +260,14 @@ void* get_dma_physcl_page(void* base_addr, u32 num)
 				pm_rls_spn_lock(&mem_info_lock);
 				phy_mem_pg_usable_num -= num;
 
-				return (void*)(base * 4096);
+				*ret = (void*)(base * 4096);
+				return true;
 			}
 		}
 	}
 
 	pm_rls_spn_lock(&mem_info_lock);
-	return NULL;
+	return false;
 }
 
 

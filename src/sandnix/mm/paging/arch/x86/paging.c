@@ -26,13 +26,24 @@ void*				pdt_table[MAX_PROCESS_NUM];
 static	u32			current_pdt;
 static	spin_lock	mem_page_lock;
 
-static	void*	get_mem_page_addr(u32 base, u32 id);
+static	ppte	get_pte(u32 pdt, u32 index);
+static	void	unused_pde_recycle();
+
+static	void	map_phy_addr(void* phy_addr);
+static	void	sync_kernel_pdt();
+
 static	void*	kernel_mem_reserve(u32 base, u32 num);
 static	void*	usr_mem_reserve(u32 base, u32 num);
-static	void*	kernel_mem_commit(u32 base, u32 num);
-static	void*	usr_mem_commit(u32 base, u32 num);
+static	void*	kernel_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr);
+static	void*	usr_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr);
 
-void paging_init()
+static	void	kernel_mem_uncommit(u32 base, u32 num);
+static	void	usr_mem_uncommit(u32 base, u32 num);
+static	void	kernel_mem_unreserve(u32 base, u32 num);
+static	void	usr_mem_unreserve(u32 base, u32 num);
+
+
+void init_paging()
 {
 	ppde p_pde;
 	u32 i;
@@ -50,13 +61,7 @@ void paging_init()
 	for(i = 0, p_pde = (ppde)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET);
 	    i < 1024;
 	    i++, p_pde++) {
-		if(i * 4096 * 1024 < TMP_PAGED_MEM_SIZE + VIRTUAL_ADDR_OFFSET
-		   && i * 4096 * 1024 >= VIRTUAL_ADDR_OFFSET) {
-			p_pde->present = PG_P;
-			p_pde->page_table_base_addr = ((i - KERNEL_MEM_BASE / 4096 / 1024)
-			                               * 4096 + TMP_PAGE_TABLE_BASE) >> 12;
-
-		} else {
+		if(i * 4096 * 1024 < KERNEL_MEM_BASE) {
 			p_pde->present = PG_NP;
 			p_pde->page_table_base_addr = 0;
 		}
@@ -80,43 +85,133 @@ void paging_init()
 	return;
 }
 
-void* mm_virt_alloc(void* start_addr, size_t size, u32 options)
+void* mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr)
+{
+	u32 base;
+	u32 num;
+	void* ret;
+
+	//Compute which kind of page to allocate and how many pages to allocate
+	base = (u32)start_addr / 4096;
+	num = (start_addr + size) / 4096 + ((start_addr + size) % 4096 ? 1 : 0) - base;
+
+	pm_acqr_spn_lock(&mem_page_lock);
+
+	ret = NULL;
+
+	if(options & MEM_USER) {
+		if(options & MEM_RESERVE) {
+			ret = usr_mem_reserve(base, num);
+
+			if(ret == NULL) {
+				unused_pde_recycle();
+				pm_rls_spn_lock(&mem_page_lock);
+				return NULL;
+			}
+		}
+
+		if(options & MEM_COMMIT) {
+			if(ret == NULL) {
+				ret = usr_mem_commit(base,
+				                     num,
+				                     options & MEM_DMA ? true : false,
+				                     attr);
+
+			} else {
+				ret = user_mem_commit(ret,
+				                      num,
+				                      options & MEM_DMA ? true : false,
+				                      attr);
+			}
+		}
+
+		REFRESH_TLB;
+		pm_rls_spn_lock(&mem_page_lock);
+		return ret;
+
+	} else {
+
+		if(options & MEM_RESERVE) {
+			ret = kernel_mem_reserve(base, num);
+
+			if(ret == NULL) {
+				unused_pde_recycle();
+				pm_rls_spn_lock(&mem_page_lock);
+				return NULL;
+			}
+		}
+
+		if(options & MEM_COMMIT) {
+			if(ret == NULL) {
+				ret = kernel_mem_commit(base,
+				                        num,
+				                        options & MEM_DMA ? true : false,
+				                        attr);
+
+			} else {
+				ret = kernel_mem_commit(ret,
+				                        num,
+				                        options & MEM_DMA ? true : false,
+				                        attr);
+			}
+		}
+
+		sync_kernel_pdt();
+		REFRESH_TLB;
+		pm_rls_spn_lock(&mem_page_lock);
+		return ret;
+	}
+
+	pm_rls_spn_lock(&mem_page_lock);
+	return NULL;
+}
+
+void mm_virt_free(void* start_addr, size_t size, u32 options)
 {
 	u32 base;
 	u32 num;
 
-	//Compute whitch page to allocate and how many pages to allocate
+	//Compute which kind of page to free and how many pages to free
 	base = (u32)start_addr / 4096;
-	num = size / 4096 + size % 4096 ? 1 : 0;
+	num = (start_addr + size) / 4096 + ((start_addr + size) % 4096 ? 1 : 0) - base;
+
+	pm_acqr_spn_lock(&mem_page_lock);
 
 	if(options & MEM_USER) {
-		if(options & MEM_COMMIT) {
-			return usr_mem_commit(base, num);
+		user_mem_uncommit(base, num);
 
-		} else if(options & MEM_RESERVE) {
-			return usr_mem_reserve(base, num);
+		if(options & MEM_RELEASE) {
+			//Free the page
+			usr_mem_unreserve(base, num);
 		}
 
 	} else {
-		if(options & MEM_COMMIT) {
-			return kernel_mem_commit(base, num);
+		kernel_mem_uncommit(base, num);
 
-		} else if(options & MEM_RESERVE) {
-			return kernel_mem_reserve(base, num);
+		if(options & MEM_RELEASE) {
+			//Free the page
+			kernel_mem_unreserve(base, num);
 		}
+
+		sync_kernel_pdt();
+
 	}
 
-	return NULL;
+	REFRESH_TLB;
+	pm_rls_spn_lock(&mem_page_lock);
+
+	return;
 }
 
-void* mm_virt_free(void* start_addr, size_t size, u32 options);
 void* mm_virt_map(void* virt_addr, void* phy_addr);
+void mm_virt_unmap(void* virt_addr);
 
 u32 mm_pg_tbl_fork(u32 parent);
 void mm_pg_tbl_free(u32 id);
 
 void mm_pg_tbl_switch(u32 id)
 {
+
 	if(pdt_table[id] == NULL) {
 		excpt_panic(EXCEPTION_ILLEGAL_PDT,
 		            "An illegal id of page directory has been tied to switch to,the id is %p.",
@@ -148,42 +243,403 @@ void mm_get_info(pmem_info p_info);
 
 void* kernel_mem_reserve(u32 base, u32 num)
 {
+	ppte p_pte;
+	u32 i;
+	u32 page_count;
+	bool alloc_flag;
+
+	alloc_flag = false;
+
 	//Check arguments
 	if(base != 0
 	   && base < KERNEL_MEM_BASE) {
 		return NULL;
 	}
 
-	pm_acqr_spn_lock(&mem_page_lock);
-	pm_rls_spn_lock(&mem_page_lock);
+	if(base == 0) {
+
+		//Test if there are enough free pages
+		for(i = 0, p_pte = get_pte(0, base);
+		    i < num;
+		    i++, p_pte = get_pte(0, base + i)) {
+			if(p_next_pte->present != PG_NP
+			   || p_next_pte->avail != PG_NORMAL) {
+				unused_pde_recycle();
+				return NULL;
+			}
+		}
+
+		//Allocate pages
+		for(i = 0, p_pte = get_pte(0, base);
+		    i < num;
+		    i++, p_pte = get_pte(0, base + i)) {
+			p_pte->read_write = PG_RW;
+			p_pte->user_supervisor = PG_SUPERVISOR;
+			p_pte->write_through = PG_WRITE_THROUGH;
+			p_pte->cache_disabled = 0;
+			p_pte->accessed = 0;
+			p_pte->dirty = 0;
+			p_pte->page_table_attr_index = 0;
+			p_pte->global_page = 0;
+			p_pte->avail = PG_RESERVED;
+			p_pte->page_base_addr = 0;
+
+			return base * 4096;
+		}
+
+	} else {
+		page_count = 0;
+
+		for(base = TMP_PAGED_MEM_SIZE / 4096;
+		    base < 1024 * 1024;
+		    base++) {
+
+			//Count free pages
+			if(p_next_pte->present == PG_NP
+			   || p_next_pte->avail == PG_NORMAL) {
+				page_count++;
+
+			} else {
+				page_count = 0;
+			}
+
+			if(page_count >= num) {
+				base -= (page_count - 1);
+
+				//Allocate pages
+				for(i = 0, p_pte = get_pte(0, base);
+				    i < num;
+				    i++, p_pte = get_pte(0, base + i)) {
+					p_pte->read_write = PG_RW;
+					p_pte->user_supervisor = PG_SUPERVISOR;
+					p_pte->write_through = PG_WRITE_THROUGH;
+					p_pte->cache_disabled = 0;
+					p_pte->accessed = 0;
+					p_pte->dirty = 0;
+					p_pte->page_table_attr_index = 0;
+					p_pte->global_page = 0;
+					p_pte->avail = PG_RESERVED;
+					p_pte->page_base_addr = 0;
+
+					return base * 4096;
+				}
+			}
+		}
+	}
+
 	return NULL;
 }
 
 void* usr_mem_reserve(u32 base, u32 num)
 {
+	ppte p_pte;
+	u32 i;
+	u32 page_count;
+	bool alloc_flag;
+
+	alloc_flag = false;
+
 	//Check arguments
 	if(base != 0
-	   && base < KERNEL_MEM_BASE) {
+	   && base >= KERNEL_MEM_BASE) {
 		return NULL;
 	}
 
-	pm_acqr_spn_lock(&mem_page_lock);
-	pm_rls_spn_lock(&mem_page_lock);
+
+	if(base == 0) {
+
+		//Test if there are enough free pages
+		for(i = 0, p_pte = get_pte(current_pdt, base);
+		    i < num;
+		    i++, p_pte = get_pte(0, base + i)) {
+			if(p_next_pte->present != PG_NP
+			   || p_next_pte->avail != PG_NORMAL) {
+				unused_pde_recycle();
+				return NULL;
+			}
+		}
+
+		//Allocate pages
+		for(i = 0, p_pte = get_pte(current_pdt, base);
+		    i < num;
+		    i++, p_pte = get_pte(0, base + i)) {
+			p_pte->read_write = PG_RW;
+			p_pte->user_supervisor = PG_USER;
+			p_pte->write_through = PG_WRITE_THROUGH;
+			p_pte->cache_disabled = 0;
+			p_pte->accessed = 0;
+			p_pte->dirty = 0;
+			p_pte->page_table_attr_index = 0;
+			p_pte->global_page = 0;
+			p_pte->avail = PG_RESERVED;
+			p_pte->page_base_addr = 0;
+
+			return base * 4096;
+		}
+
+	} else {
+		page_count = 0;
+
+		for(base = 1;
+		    base < 1024 * 1024;
+		    base++) {
+
+			//Count free pages
+			if(p_next_pte->present == PG_NP
+			   || p_next_pte->avail == PG_NORMAL) {
+				page_count++;
+
+			} else {
+				page_count = 0;
+			}
+
+			if(page_count >= num) {
+				base -= (page_count - 1);
+
+				//Allocate pages
+				for(i = 0, p_pte = get_pte(current_pdt, base);
+				    i < num;
+				    i++, p_pte = get_pte(0, base + i)) {
+					p_pte->read_write = PG_RW;
+					p_pte->user_supervisor = PG_USER;
+					p_pte->write_through = PG_WRITE_THROUGH;
+					p_pte->cache_disabled = 0;
+					p_pte->accessed = 0;
+					p_pte->dirty = 0;
+					p_pte->page_table_attr_index = 0;
+					p_pte->global_page = 0;
+					p_pte->avail = PG_RESERVED;
+					p_pte->page_base_addr = 0;
+
+					return base * 4096;
+				}
+			}
+		}
+	}
 
 	return NULL;
 }
 
-void* kernel_mem_commit(u32 base, u32 num)
+void* kernel_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr)
 {
-	return NULL;
+	ppte p_pte;
+	u32 i;
+	void* phy_mem_addr;
+
+	//Check arguments
+	if(base < KERNEL_MEM_BASE) {
+		return NULL;
+	}
+
+	//Allocate physical memory
+	if(dma_flag) {
+		if(!alloc_dma_physcl_page(base * 4096, num, &phy_mem_addr)) {
+			return NULL;
+		}
+
+	} else {
+		phy_mem_addr = alloc_physcl_page(base * 4096, num);
+
+		if(phy_mem_addr == NULL) {
+			//Swap
+			//Try again
+			phy_mem_addr = alloc_physcl_page(NULL, 1);
+
+			if(phy_mem_addr == NULL) {
+				return NULL;
+			}
+		}
+	}
+
+	//Commit pages
+	for(i = 0, p_pte = get_pte(0, base);
+	    i < num;
+	    i++, p_pte = get_pte(0, base + i)) {
+		if(p_pte->avail == PG_RESERVED
+		   && p_pte->present == PG_NP) {
+			p_pte->page_base_addr = ((u32)phy_mem_addr + i * 4096) >> 12;
+			p_pte->present = PG_P;
+
+			if(attr & PAGE_WRITEABLE) {
+				p_pte->read_write = PG_RW;
+
+			} else {
+				p_pte->read_write = PG_RDONLY;
+			}
+
+		} else {
+			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+			            "A page whitch is not reserved has been tried to commit.the address of the page is %p.\n",
+			            (base + i) * 4096);
+		}
+	}
+
+	return base * 4096;
 }
 
-void* usr_mem_commit(u32 base, u32 num)
+void* usr_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr)
 {
-	return NULL;
+	ppte p_pte;
+	u32 i;
+	void* phy_mem_addr;
+
+	//Check arguments
+	if(base >= KERNEL_MEM_BASE) {
+		return NULL;
+	}
+
+	//Allocate physical memory
+	if(dma_flag) {
+		if(!alloc_dma_physcl_page(base * 4096, num, &phy_mem_addr)) {
+			return NULL;
+		}
+
+	} else {
+		phy_mem_addr = alloc_physcl_page(base * 4096, num);
+
+		if(phy_mem_addr == NULL) {
+			//Swap
+			//Try again
+			phy_mem_addr = alloc_physcl_page(NULL, 1);
+
+			if(phy_mem_addr == NULL) {
+				return NULL;
+			}
+		}
+	}
+
+	//Commit pages
+	for(i = 0, p_pte = get_pte(current_pdt, base);
+	    i < num;
+	    i++, p_pte = get_pte(current_pdt, base + i)) {
+		if(p_pte->avail == PG_RESERVED
+		   && p_pte->present == PG_NP) {
+			p_pte->page_base_addr = ((u32)phy_mem_addr + i * 4096) >> 12;
+			p_pte->present = PG_P;
+
+			if(attr & PAGE_WRITEABLE) {
+				p_pte->read_write = PG_RW;
+
+			} else {
+				p_pte->read_write = PG_RDONLY;
+			}
+
+		} else {
+			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+			            "A page whitch is not reserved has been tried to commit.the address of the page is %p.\n",
+			            (base + i) * 4096);
+		}
+	}
+
+	return base * 4096;
 }
 
-void* get_mem_page_addr(u32 base, u32 id)
+void map_phy_addr(void* phy_addr)
 {
-	return NULL;
+	ppte p_pte;
+
+	p_pte = (ppte)PT_MAPPING_PAGE;
+	p_pte->present = PG_P;
+	p_pte->read_write = PG_RW;
+	p_pte->user_supervisor = PG_SUPERVISOR;
+	p_pte->write_through = PG_WRITE_THROUGH;
+	p_pte->cache_disabled = 0;
+	p_pte->accessed = 0;
+	p_pte->dirty = 0;
+	p_pte->page_table_attr_index = 0;
+	p_pte->global_page = 0;
+	p_pte->avail = PG_NORMAL;
+	p_pte->page_base_addr = phy_addr >> 12;
+
+	__asm__ __volatile__(
+	    "movl	%%cr3,%%eax\n\t"
+	    "movl	%%eax,%%cr3\n\t"
+	    ::);
+
+	return;
+}
+
+void sync_kernel_pdt()
+{
+	u32 i;
+
+	for(i = 1; i < MAX_PROCESS_NUM; i++) {
+		if(pdt_table[i] != NULL) {
+			rtl_memcpy((void*)PT_MAPPING_ADDR, TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET, 4096);
+		}
+	}
+
+	return;
+}
+
+ppte get_pte(u32 pdt, u32 index)
+{
+	ppde p_pde;
+	ppte p_pte;
+	void* phy_mem_addr;
+
+	if(index >= KERNEL_MEM_BASE / 4096) {
+		p_pde = (ppde)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET);
+
+	} else {
+		map_phy_addr(pdt_table[pdt]);
+		p_pde = (ppde)(PT_MAPPING_ADDR);
+	}
+
+	p_pde += index / 1024;
+
+	if(p_pde->present = PG_NP) {
+		//Allocate physical memory and initialize PDE
+		phy_mem_addr = alloc_physcl_page(NULL, 1);
+
+		if(phy_mem_addr == NULL) {
+			//Swap
+			//Try again
+			phy_mem_addr = alloc_physcl_page(NULL, 1);
+
+			if(phy_mem_addr == NULL) {
+				excpt_panic(EXCEPTION_RESOURCE_DEPLETED,
+				            "Physical memory depleted and no pages can be swapped!\n");
+			}
+		}
+
+		p_pde->page_table_base_addr = phy_mem_addr >> 12;
+		p_pde->present = PG_P;
+		map_phy_addr(p_pde->page_table_base_addr << 12);
+		rtl_memset((void*)PT_MAPPING_ADDR, 0, 4096);
+
+	} else {
+		map_phy_addr(p_pde->page_table_base_addr << 12);
+	}
+
+	p_pte = (ppte)(PT_MAPPING_ADDR);
+	p_pte += index % 1024;
+
+	return p_pte;
+
+}
+
+void unused_pde_recycle()
+{
+
+}
+
+void kernel_mem_uncommit(u32 base, u32 num)
+{
+
+}
+
+void usr_mem_uncommit(u32 base, u32 num)
+{
+
+}
+
+void kernel_mem_unreserve(u32 base, u32 num)
+{
+
+}
+
+void usr_mem_unreserve(u32 base, u32 num)
+{
+
 }
