@@ -37,10 +37,13 @@ static	void*	usr_mem_reserve(u32 base, u32 num);
 static	void*	kernel_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr);
 static	void*	usr_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr);
 
-static	void	kernel_mem_uncommit(u32 base, u32 num);
-static	void	usr_mem_uncommit(u32 base, u32 num);
+static	bool	kernel_mem_uncommit(u32 base, u32 num);
+static	bool	usr_mem_uncommit(u32 base, u32 num);
 static	void	kernel_mem_unreserve(u32 base, u32 num);
 static	void	usr_mem_unreserve(u32 base, u32 num);
+
+static	void	switch_to_0();
+static	void	switch_back();
 
 
 void init_paging()
@@ -97,6 +100,7 @@ void* mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr)
 
 	pm_acqr_spn_lock(&mem_page_lock);
 
+	switch_to_0();
 	ret = NULL;
 
 	if(options & MEM_USER) {
@@ -105,6 +109,7 @@ void* mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr)
 
 			if(ret == NULL) {
 				unused_pde_recycle();
+				switch_back();
 				pm_rls_spn_lock(&mem_page_lock);
 				return NULL;
 			}
@@ -126,6 +131,7 @@ void* mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr)
 		}
 
 		REFRESH_TLB;
+		switch_back();
 		pm_rls_spn_lock(&mem_page_lock);
 		return ret;
 
@@ -136,6 +142,7 @@ void* mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr)
 
 			if(ret == NULL) {
 				unused_pde_recycle();
+				switch_back();
 				pm_rls_spn_lock(&mem_page_lock);
 				return NULL;
 			}
@@ -158,6 +165,7 @@ void* mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr)
 
 		sync_kernel_pdt();
 		REFRESH_TLB;
+		switch_back();
 		pm_rls_spn_lock(&mem_page_lock);
 		return ret;
 	}
@@ -177,37 +185,61 @@ void mm_virt_free(void* start_addr, size_t size, u32 options)
 
 	pm_acqr_spn_lock(&mem_page_lock);
 
-	if(options & MEM_USER) {
-		user_mem_uncommit(base, num);
+	switch_to_0();
 
-		if(options & MEM_RELEASE) {
-			//Free the page
-			usr_mem_unreserve(base, num);
+	if(options & MEM_USER) {
+		if(user_mem_uncommit(base, num)) {
+
+			if(options & MEM_RELEASE) {
+				//Free the page
+				usr_mem_unreserve(base, num);
+				unused_pde_recycle();
+			}
 		}
 
 	} else {
-		kernel_mem_uncommit(base, num);
 
-		if(options & MEM_RELEASE) {
-			//Free the page
-			kernel_mem_unreserve(base, num);
+		if(kernel_mem_uncommit(base, num)) {
+
+			if(options & MEM_RELEASE) {
+				//Free the page
+				kernel_mem_unreserve(base, num);
+				unused_pde_recycle();
+			}
 		}
 
 		sync_kernel_pdt();
-
 	}
 
 	REFRESH_TLB;
+	switch_back();
 	pm_rls_spn_lock(&mem_page_lock);
 
 	return;
 }
 
-void* mm_virt_map(void* virt_addr, void* phy_addr);
-void mm_virt_unmap(void* virt_addr);
+void* mm_virt_map(void* virt_addr, void* phy_addr)
+{
+	//TODO:Map memory
+	return NULL;
+}
 
-u32 mm_pg_tbl_fork(u32 parent);
-void mm_pg_tbl_free(u32 id);
+void mm_virt_unmap(void* virt_addr)
+{
+	//TODO:Unmap memory
+}
+
+u32 mm_pg_tbl_fork(u32 parent)
+{
+	//TODO:Fork page tables
+	return 0;
+}
+
+void mm_pg_tbl_free(u32 id)
+{
+	//TODO:Free page tables
+	return;
+}
 
 void mm_pg_tbl_switch(u32 id)
 {
@@ -235,10 +267,16 @@ void mm_pg_tbl_switch(u32 id)
 	return;
 }
 
-void mm_pg_tbl_usr_spc_clear(u32 id);
+void mm_pg_tbl_usr_spc_clear(u32 id)
+{
+	//TODO:Clear user space
+}
 
 //Status
-void mm_get_info(pmem_info p_info);
+void mm_get_info(pmem_info p_info)
+{
+	//TODO:Return memory info
+}
 
 
 void* kernel_mem_reserve(u32 base, u32 num)
@@ -252,7 +290,7 @@ void* kernel_mem_reserve(u32 base, u32 num)
 
 	//Check arguments
 	if(base != 0
-	   && base < KERNEL_MEM_BASE) {
+	   && base * 4096 < KERNEL_MEM_BASE) {
 		return NULL;
 	}
 
@@ -280,7 +318,7 @@ void* kernel_mem_reserve(u32 base, u32 num)
 			p_pte->accessed = 0;
 			p_pte->dirty = 0;
 			p_pte->page_table_attr_index = 0;
-			p_pte->global_page = 0;
+			p_pte->global_page = 1;
 			p_pte->avail = PG_RESERVED;
 			p_pte->page_base_addr = 0;
 
@@ -341,7 +379,7 @@ void* usr_mem_reserve(u32 base, u32 num)
 
 	//Check arguments
 	if(base != 0
-	   && base >= KERNEL_MEM_BASE) {
+	   && base * 4096 >= KERNEL_MEM_BASE) {
 		return NULL;
 	}
 
@@ -426,19 +464,14 @@ void* kernel_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr)
 	u32 i;
 	void* phy_mem_addr;
 
-	//Check arguments
-	if(base < KERNEL_MEM_BASE) {
-		return NULL;
-	}
-
 	//Allocate physical memory
 	if(dma_flag) {
-		if(!alloc_dma_physcl_page(base * 4096, num, &phy_mem_addr)) {
+		if(!alloc_dma_physcl_page(NULL, num, &phy_mem_addr)) {
 			return NULL;
 		}
 
 	} else {
-		phy_mem_addr = alloc_physcl_page(base * 4096, num);
+		phy_mem_addr = alloc_physcl_page(NULL, num);
 
 		if(phy_mem_addr == NULL) {
 			//Swap
@@ -483,19 +516,14 @@ void* usr_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr)
 	u32 i;
 	void* phy_mem_addr;
 
-	//Check arguments
-	if(base >= KERNEL_MEM_BASE) {
-		return NULL;
-	}
-
 	//Allocate physical memory
 	if(dma_flag) {
-		if(!alloc_dma_physcl_page(base * 4096, num, &phy_mem_addr)) {
+		if(!alloc_dma_physcl_page(NULL , num, &phy_mem_addr)) {
 			return NULL;
 		}
 
 	} else {
-		phy_mem_addr = alloc_physcl_page(base * 4096, num);
+		phy_mem_addr = alloc_physcl_page(NULL, num);
 
 		if(phy_mem_addr == NULL) {
 			//Swap
@@ -621,25 +649,171 @@ ppte get_pte(u32 pdt, u32 index)
 
 void unused_pde_recycle()
 {
-
+	//TODO:Recycle pdt
 }
 
-void kernel_mem_uncommit(u32 base, u32 num)
+bool kernel_mem_uncommit(u32 base, u32 num)
 {
+	ppte p_pte;
+	u32 i;
 
+	//Check arguments
+	if(base * 4096 < KERNEL_MEM_BASE) {
+		return false;
+	}
+
+	for(i = 0, p_pte = get_pte(0, base);
+	    i < num;
+	    i++, p_pte = get_pte(0, base + i)) {
+		//Uncommit the page
+		if(p_pte->present == PG_P
+		   && p_pte->avail == PG_NORMAL) {
+			//The page is in physical memory
+			free_physcl_page(p_pte->page_base_addr << 12, 1);
+			p_pte->present = PG_NP;
+			p_pte->avail = PG_RESERVED;
+			p_pte->global_page = 0;
+
+		} else if(p_pte->present == PG_NP
+		          && p_pte->avail == PG_SWAPPED) {
+			//The page is in swap
+			excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
+			            __FILE__,
+			            __LINE__);
+		}
+	}
+
+	return true;
 }
 
-void usr_mem_uncommit(u32 base, u32 num)
+bool usr_mem_uncommit(u32 base, u32 num)
 {
+	ppte p_pte;
 
+	//Check arguments
+	if(base * 4096 >= KERNEL_MEM_BASE) {
+		return false;
+	}
+
+	for(i = 0, p_pte = get_pte(current_pdt, base);
+	    i < num;
+	    i++, p_pte = get_pte(current_pdt, base + i)) {
+		//Uncommit the page
+		if(p_pte->present == PG_P
+		   && p_pte->avail == PG_NORMAL) {
+			//The page is in physical memory
+			free_physcl_page(p_pte->page_base_addr << 12, 1);
+			p_pte->present = PG_NP;
+			p_pte->avail = PG_RESERVED;
+
+		} else if(p_pte->present == PG_NP
+		          && p_pte->avail == PG_SWAPPED) {
+			//The page is in swap
+			excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
+			            __FILE__,
+			            __LINE__);
+		}
+	}
+
+	return true;
 }
 
 void kernel_mem_unreserve(u32 base, u32 num)
 {
+	ppte p_pte;
+	u32 i;
 
+	//Check arguments
+	if(base * 4096 < KERNEL_MEM_BASE) {
+		return;
+	}
+
+	for(i = 0, p_pte = get_pte(0, base);
+	    i < num;
+	    i++, p_pte = get_pte(0, base + i)) {
+		//Unreserve the page
+		if(p_pte->present == PG_P
+		   && p_pte->avail == PG_RESERVED) {
+			p_pte->read_write = PG_RW;
+			p_pte->user_supervisor = PG_SUPERVISOR;
+			p_pte->write_through = PG_WRITE_THROUGH;
+			p_pte->cache_disabled = 0;
+			p_pte->accessed = 0;
+			p_pte->dirty = 0;
+			p_pte->page_table_attr_index = 0;
+			p_pte->global_page = 0;
+			p_pte->avail = PG_NORMAL;
+			p_pte->page_base_addr = 0;
+
+		} else {
+			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+			            "A page which is not PG_RESERVED has been tried to release.The address is %p.\n",
+			            (base + i) * 1024);
+		}
+	}
+
+	return;
 }
 
 void usr_mem_unreserve(u32 base, u32 num)
 {
+	ppte p_pte;
+	u32 i;
 
+	//Check arguments
+	if(base * 4096 >= KERNEL_MEM_BASE) {
+		return;
+	}
+
+	for(i = 0, p_pte = get_pte(0, base);
+	    i < num;
+	    i++, p_pte = get_pte(0, base + i)) {
+		//Unreserve the page
+		if(p_pte->present == PG_P
+		   && p_pte->avail == PG_RESERVED) {
+			p_pte->read_write = PG_RW;
+			p_pte->user_supervisor = PG_USER;
+			p_pte->write_through = PG_WRITE_THROUGH;
+			p_pte->cache_disabled = 0;
+			p_pte->accessed = 0;
+			p_pte->dirty = 0;
+			p_pte->page_table_attr_index = 0;
+			p_pte->global_page = 0;
+			p_pte->avail = PG_NORMAL;
+			p_pte->page_base_addr = 0;
+
+		} else {
+			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+			            "A page which is not PG_RESERVED has been tried to release.The address is %p.\n",
+			            (base + i) * 1024);
+		}
+	}
+
+	return;
+
+}
+
+void switch_to_0()
+{
+	//Load CR3
+	__asm__ __volatile__(
+	    "movl	%0,%%eax\n\t"
+	    "andl	$0xFFFFF000,%%eax\n\t"
+	    "orl	$0x008,%%eax\n\t"
+	    "movl	%%eax,%%cr3\n\t"
+	    ::"m"(pdt_table[0]));
+	return;
+
+}
+
+void switch_back()
+{
+	//Load CR3
+	__asm__ __volatile__(
+	    "movl	%0,%%eax\n\t"
+	    "andl	$0xFFFFF000,%%eax\n\t"
+	    "orl	$0x008,%%eax\n\t"
+	    "movl	%%eax,%%cr3\n\t"
+	    ::"m"(pdt_table[current_pdt]));
+	return;
 }
