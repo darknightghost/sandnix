@@ -27,7 +27,7 @@ static	u32			current_pdt;
 static	spin_lock	mem_page_lock;
 
 static	ppte	get_pte(u32 pdt, u32 index);
-static	void	unused_pde_recycle();
+static	void	unused_pde_recycle(bool is_kernel);
 
 static	void	map_phy_addr(void* phy_addr);
 static	void	sync_kernel_pdt();
@@ -108,7 +108,7 @@ void* mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr)
 			ret = usr_mem_reserve(base, num);
 
 			if(ret == NULL) {
-				unused_pde_recycle();
+				unused_pde_recycle(false);
 				switch_back();
 				pm_rls_spn_lock(&mem_page_lock);
 				return NULL;
@@ -141,7 +141,7 @@ void* mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr)
 			ret = kernel_mem_reserve(base, num);
 
 			if(ret == NULL) {
-				unused_pde_recycle();
+				unused_pde_recycle(true);
 				switch_back();
 				pm_rls_spn_lock(&mem_page_lock);
 				return NULL;
@@ -193,7 +193,7 @@ void mm_virt_free(void* start_addr, size_t size, u32 options)
 			if(options & MEM_RELEASE) {
 				//Free the page
 				usr_mem_unreserve(base, num);
-				unused_pde_recycle();
+				unused_pde_recycle(false);
 			}
 		}
 
@@ -204,7 +204,7 @@ void mm_virt_free(void* start_addr, size_t size, u32 options)
 			if(options & MEM_RELEASE) {
 				//Free the page
 				kernel_mem_unreserve(base, num);
-				unused_pde_recycle();
+				unused_pde_recycle(true);
 			}
 		}
 
@@ -302,7 +302,6 @@ void* kernel_mem_reserve(u32 base, u32 num)
 		    i++, p_pte = get_pte(0, base + i)) {
 			if(p_next_pte->present != PG_NP
 			   || p_next_pte->avail != PG_NORMAL) {
-				unused_pde_recycle();
 				return NULL;
 			}
 		}
@@ -392,7 +391,6 @@ void* usr_mem_reserve(u32 base, u32 num)
 		    i++, p_pte = get_pte(0, base + i)) {
 			if(p_next_pte->present != PG_NP
 			   || p_next_pte->avail != PG_NORMAL) {
-				unused_pde_recycle();
 				return NULL;
 			}
 		}
@@ -616,12 +614,13 @@ ppte get_pte(u32 pdt, u32 index)
 
 	p_pde += index / 1024;
 
-	if(p_pde->present = PG_NP) {
+	if(p_pde->present == PG_NP
+	   && P - pde->present == PG_NORMAL) {
 		//Allocate physical memory and initialize PDE
 		phy_mem_addr = alloc_physcl_page(NULL, 1);
 
 		if(phy_mem_addr == NULL) {
-			//Swap
+			//TODO:Swap
 			//Try again
 			phy_mem_addr = alloc_physcl_page(NULL, 1);
 
@@ -636,6 +635,9 @@ ppte get_pte(u32 pdt, u32 index)
 		map_phy_addr(p_pde->page_table_base_addr << 12);
 		rtl_memset((void*)PT_MAPPING_ADDR, 0, 4096);
 
+	} else if(p_pde->present == PG_NP
+	          && p_pde->avail == PG_SWAPPED) {
+		//TODO:Swap
 	} else {
 		map_phy_addr(p_pde->page_table_base_addr << 12);
 	}
@@ -647,9 +649,70 @@ ppte get_pte(u32 pdt, u32 index)
 
 }
 
-void unused_pde_recycle()
+void unused_pde_recycle(bool is_kernel)
 {
-	//TODO:Recycle pdt
+	ppte p_pte;
+	ppdt p_pdt;
+	u32 i, j;
+	bool recycle_flag;
+
+	if(is_kernel) {
+
+		for(i = KERNEL_MEM_BASE / 4096 / 1024, p_pdt = (ppdt)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET) + i;
+		    i < 1024;
+		    i++, p_pdt++) {
+			if(p_pdt->present == PG_P) {
+				map_phy_addr(p_pdt->page_table_base_addr << 12);
+
+				//Check if the pde should be recycled
+				for(j = 0, p_pte = (ppte)(PT_MAPPING_ADDR), recycle_flag = true;
+				    j < 1024;
+				    j++, p_pte++) {
+					if(p_pte->present == PG_P
+					   || p_pte->avail != PG_NORMAL) {
+						recycle_flag = false;
+						break;
+					}
+				}
+
+				if(recycle_flag) {
+					//Recycle
+					free_physcl_page(p_pde->page_table_base_addr << 12, 1);
+					p_pde->present = PG_NP;
+				}
+			}
+		}
+
+	} else {
+		for(i = 0, p_pdt = (ppdt)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET);
+		    i < KERNEL_MEM_BASE / 1024 / 4096;
+		    i++, p_pdt++) {
+			map_phy_addr(pdt_table[current_pdt]);
+
+			if(p_pdt->present == PG_P) {
+				map_phy_addr(p_pdt->page_table_base_addr << 12);
+
+				//Check if the pde should be recycled
+				for(j = 0, p_pte = (ppte)(PT_MAPPING_ADDR), recycle_flag = true;
+				    j < 1024;
+				    j++, p_pte++) {
+					if(p_pte->present == PG_P
+					   || p_pte->avail != PG_NORMAL) {
+						recycle_flag = false;
+						break;
+					}
+				}
+
+				if(recycle_flag) {
+					//Recycle
+					free_physcl_page(p_pde->page_table_base_addr << 12, 1);
+					p_pde->present = PG_NP;
+				}
+			}
+		}
+	}
+
+	return;
 }
 
 bool kernel_mem_uncommit(u32 base, u32 num)

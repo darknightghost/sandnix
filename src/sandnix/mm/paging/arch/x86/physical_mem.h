@@ -41,6 +41,11 @@ typedef struct _e820_table {
 	u32		len_h;
 	u32		type;
 } e820_table, *pe820_table;
+
+typedef	struct	_phy_page_state {
+	u8	status;
+	u16	ref_count;
+} phy_page_state, pphy_page_state;
 #pragma pack()
 
 void		init_phy_mem();
@@ -48,5 +53,7 @@ void*		alloc_physcl_page(void* base_addr, u32 num);
 bool		alloc_dma_physcl_page(void* base_addr, u32 num, void** ret);
 void		free_physcl_page(void* base_addr, u32 num);
 void		get_phy_mem_info(u32* phy_mem_num, u32* usable_num);
+void		increase_physcl_page_ref(void* base_addr, u32 num);
+u32			get_ref_count(void* base_addr)
 
 #endif	//!	PHYSICAL_MEM_H_INCLUDE

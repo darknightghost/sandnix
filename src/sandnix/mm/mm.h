@@ -55,36 +55,36 @@ typedef	struct	{
 void		mm_init();
 
 //Physical memory
-u32			mm_phy_mem_state_get(void* addr);
+phy_page_state		mm_phy_mem_state_get(void* addr);
 
 //Virtual memory
-void*		mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr);
-void		mm_virt_free(void* start_addr, size_t size, u32 options);
-void*		mm_virt_map(void* virt_addr, void* phy_addr);
-void		mm_virt_unmap(void* virt_addr);
+void*				mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr);
+void				mm_virt_free(void* start_addr, size_t size, u32 options);
+void*				mm_virt_map(void* virt_addr, void* phy_addr);
+void				mm_virt_unmap(void* virt_addr);
 
 //Page table
-u32			mm_pg_tbl_fork(u32 parent);
-void		mm_pg_tbl_free(u32 id);
-void		mm_pg_tbl_switch(u32 id);
-void		mm_pg_tbl_usr_spc_clear(u32 id);
+u32					mm_pg_tbl_fork(u32 parent);
+void				mm_pg_tbl_free(u32 id);
+void				mm_pg_tbl_switch(u32 id);
+void				mm_pg_tbl_usr_spc_clear(u32 id);
 
 //Status
-void		mm_get_info(pmem_info p_info);
+void				mm_get_info(pmem_info p_info);
 
 //Share memories
 //PMO=Page mapping object
-u32			mm_pmo_create(void* base_addr, size_t size);
-void		mm_pmo_free(u32	pmo);
-void*		mm_pmo_map(void* address, u32 pmo);
-void		mm_pmo_unmap(void* address);
+u32					mm_pmo_create(void* base_addr, size_t size);
+void				mm_pmo_free(u32	pmo);
+void*				mm_pmo_map(void* address, u32 pmo);
+void				mm_pmo_unmap(void* address);
 
 //Heap
-void		mm_heap_create();
-void		mm_heap_destroy();
-void*		mm_heap_alloc(size_t size, void* heap_addr);
-bool		mm_heap_chk(void* heap_addr);
-void		mm_heap_free(void* addr, void* heap_addr);
+void				mm_heap_create();
+void				mm_heap_destroy();
+void*				mm_heap_alloc(size_t size, void* heap_addr);
+bool				mm_heap_chk(void* heap_addr);
+void				mm_heap_free(void* addr, void* heap_addr);
 
 #endif	//!	MM_H_INCLUDE
 

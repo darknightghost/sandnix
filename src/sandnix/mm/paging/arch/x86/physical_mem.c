@@ -25,13 +25,13 @@
 
 #define	PHY_PAGE_INFO(addr)	phy_mem_info[(addr)/4/1024]
 
-static	u8			phy_mem_info[1024 * 1024];
-static	spin_lock	mem_info_lock;
+static	phy_page_state	phy_mem_info[1024 * 1024];
+static	spin_lock		mem_info_lock;
 
-static	void		print_phy_mem();
-static	void		print_e820();
-static	u32		phy_mem_pg_num;
-static	u32		phy_mem_pg_usable_num;
+static	void			print_phy_mem();
+static	void			print_e820();
+static	u32				phy_mem_pg_num;
+static	u32				phy_mem_pg_usable_num;
 
 void init_phy_mem()
 {
@@ -54,28 +54,28 @@ void init_phy_mem()
 
 		while(base < end) {
 			if(p_table->type == E820_USABLE) {
-				if(phy_mem_info[base] != PHY_PAGE_RESERVED
-				   && phy_mem_info[base] != PHY_PAGE_UNUSABLE
-				   && phy_mem_info[base] != PHY_PAGE_SYSTEM) {
+				if(phy_mem_info[base].status != PHY_PAGE_RESERVED
+				   && phy_mem_info[base].status != PHY_PAGE_UNUSABLE
+				   && phy_mem_info[base].status != PHY_PAGE_SYSTEM) {
 					if(base >= (KERNEL_BASE - VIRTUAL_ADDR_OFFSET) / 4096
 					   && base <= (TMP_PAGE_TABLE_BASE + TMP_PAGE_SIZE) / 4096) {
 						//Memory of kernel image
-						phy_mem_info[base] = PHY_PAGE_SYSTEM;
+						phy_mem_info[base].status = PHY_PAGE_SYSTEM;
 
 					} else {
 						//Usable memories
-						phy_mem_info[base] = PHY_PAGE_USABLE;
+						phy_mem_info[base].status = PHY_PAGE_USABLE;
 					}
 				}
 
 			} else {
 				if(base < 1024 * 1024 / 4096) {
 					//Reserved
-					phy_mem_info[base] = PHY_PAGE_RESERVED;
+					phy_mem_info[base].status = PHY_PAGE_RESERVED;
 
 				} else {
 					//Unusable
-					phy_mem_info[base] = PHY_PAGE_UNUSABLE;
+					phy_mem_info[base].status = PHY_PAGE_UNUSABLE;
 				}
 			}
 
@@ -90,21 +90,21 @@ void init_phy_mem()
 	phy_mem_pg_usable_num = 0;
 
 	for(base = 0; base < 1024 * 1024; base++) {
-		if(phy_mem_info[base] == PHY_PAGE_USABLE) {
+		if(phy_mem_info[base].status == PHY_PAGE_USABLE) {
 			phy_mem_pg_num++;
 			phy_mem_pg_usable_num++;
 
-		} else if(phy_mem_info[base] == PHY_PAGE_SYSTEM) {
+		} else if(phy_mem_info[base].status == PHY_PAGE_SYSTEM) {
 			phy_mem_pg_num++;
 
-		} else if(phy_mem_info[base] == 0) {
+		} else if(phy_mem_info[base].status == 0) {
 			if(base <= 1024 * 1024 / 4096) {
 				//Reserved
-				phy_mem_info[base] = PHY_PAGE_RESERVED;
+				phy_mem_info[base].status = PHY_PAGE_RESERVED;
 
 			} else {
 				//Unusable
-				phy_mem_info[base] = PHY_PAGE_UNUSABLE;
+				phy_mem_info[base].status = PHY_PAGE_UNUSABLE;
 			}
 		}
 	}
@@ -138,7 +138,7 @@ void* alloc_physcl_page(void* base_addr, u32 num)
 		    i < num;
 		    i++, next++) {
 			//Check if the memory is usable
-			if(phy_mem_info[next] != PHY_PAGE_USABLE) {
+			if(phy_mem_info[next].status != PHY_PAGE_USABLE) {
 				pm_rls_spn_lock(&mem_info_lock);
 				return NULL;
 			}
@@ -149,7 +149,8 @@ void* alloc_physcl_page(void* base_addr, u32 num)
 		    i++, next++) {
 
 			//Allocate memory
-			phy_mem_info[next] = PHY_PAGE_ALLOCATED;
+			phy_mem_info[next].status = PHY_PAGE_ALLOCATED;
+			phy_mem_info[next].ref_count = 1;
 		}
 
 		pm_rls_spn_lock(&mem_info_lock);
@@ -160,13 +161,13 @@ void* alloc_physcl_page(void* base_addr, u32 num)
 	for(base = 1024 * 1024 / 4096;
 	    base < 1024 * 1024;
 	    base++) {
-		if(phy_mem_info[base] == PHY_PAGE_USABLE)	{
+		if(phy_mem_info[base].status == PHY_PAGE_USABLE)	{
 			//Check number of usable pages
 			for(i = 0, next = base;
 			    i < num;
 			    i++, next++) {
 				//Check if the memory is usable
-				if(phy_mem_info[next] != PHY_PAGE_USABLE) {
+				if(phy_mem_info[next].status != PHY_PAGE_USABLE) {
 					base += i;
 					break;
 				}
@@ -177,7 +178,8 @@ void* alloc_physcl_page(void* base_addr, u32 num)
 				for(i = 0, next = base;
 				    i < num;
 				    i++, next++) {
-					phy_mem_info[next] = PHY_PAGE_ALLOCATED;
+					phy_mem_info[next].status = PHY_PAGE_ALLOCATED;
+					phy_mem_info[next].ref_count = 1;
 				}
 
 				pm_rls_spn_lock(&mem_info_lock);
@@ -215,7 +217,7 @@ bool alloc_dma_physcl_page(void* base_addr, u32 num, void** ret)
 		    i < num;
 		    i++, next++) {
 			//Check if the memory is usable
-			if(phy_mem_info[next] != PHY_PAGE_USABLE) {
+			if(phy_mem_info[next].status != PHY_PAGE_USABLE) {
 
 				pm_rls_spn_lock(&mem_info_lock);
 				return false;
@@ -226,7 +228,8 @@ bool alloc_dma_physcl_page(void* base_addr, u32 num, void** ret)
 		    i < num;
 		    i++, next++) {
 			//Allocate memory
-			phy_mem_info[next] = PHY_PAGE_ALLOCATED;
+			phy_mem_info[next].status = PHY_PAGE_ALLOCATED;
+			phy_mem_info[next].ref_count = 1;
 		}
 
 		phy_mem_pg_usable_num -= num;
@@ -237,13 +240,13 @@ bool alloc_dma_physcl_page(void* base_addr, u32 num, void** ret)
 	for(base = 0;
 	    base < 1024 * 1024 / 4096;
 	    base++) {
-		if(phy_mem_info[base] == PHY_PAGE_USABLE)	{
+		if(phy_mem_info[base].status == PHY_PAGE_USABLE)	{
 			//Check number of usable pages
 			for(i = 0, next = base;
 			    i < num;
 			    i++, next++) {
 				//Check if the memory is usable
-				if(phy_mem_info[next] != PHY_PAGE_USABLE) {
+				if(phy_mem_info[next].status != PHY_PAGE_USABLE) {
 					base += i;
 					break;
 				}
@@ -254,7 +257,8 @@ bool alloc_dma_physcl_page(void* base_addr, u32 num, void** ret)
 				for(i = 0, next = base;
 				    i < num;
 				    i++, next++) {
-					phy_mem_info[next] = PHY_PAGE_ALLOCATED;
+					phy_mem_info[next].status = PHY_PAGE_ALLOCATED;
+					phy_mem_info[next].ref_count = 1;
 				}
 
 				pm_rls_spn_lock(&mem_info_lock);
@@ -270,6 +274,33 @@ bool alloc_dma_physcl_page(void* base_addr, u32 num, void** ret)
 	return false;
 }
 
+void increase_physcl_page_ref(void* base_addr, u32 num)
+{
+	u32 i;
+	u32 base;
+
+	pm_acqr_spn_lock(&mem_info_lock);
+	base = (u32)base_addr / 4096;
+
+	for(i = 0; i < num; i++) {
+		if(phy_mem_info[base].status != PHY_PAGE_ALLOCATED) {
+			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+			            "This is because some program tried to increase the reference count of a physical page which cannot be freed.The address of the physical memory is %p.",
+			            base * 4096);
+		}
+
+		(phy_mem_info[next].ref_count)++;
+	}
+
+	pm_rls_spn_lock(&mem_info_lock);
+
+	return;
+}
+
+u32	get_ref_count(void* base_addr)
+{
+	return phy_mem_info[(u32)base_addr / 4096].ref_count;
+}
 
 void free_physcl_page(void* base_addr, u32 num)
 {
@@ -280,17 +311,21 @@ void free_physcl_page(void* base_addr, u32 num)
 	base = (u32)base_addr / 4096;
 
 	for(i = 0; i < num; i++) {
-		if(phy_mem_info[base] != PHY_PAGE_ALLOCATED) {
+		if(phy_mem_info[base].status != PHY_PAGE_ALLOCATED) {
 			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
 			            "This is because some program tried to free a physical page which cannot be freed.The address of the physical memory is %p.",
 			            base * 4096);
 		}
 
-		phy_mem_info[base] = PHY_PAGE_USABLE;
+		(phy_mem_info[next].ref_count)--;
+
+		if(phy_mem_info[next].ref_count = 0) {
+			phy_mem_info[base].status = PHY_PAGE_USABLE;
+			phy_mem_pg_usable_num += num;
+		}
 	}
 
 	pm_rls_spn_lock(&mem_info_lock);
-	phy_mem_pg_usable_num += num;
 
 	return;
 }
@@ -304,7 +339,7 @@ void get_phy_mem_info(u32* phy_mem_num, u32* usable_num)
 }
 
 
-u32 mm_phy_mem_state_get(void* addr)
+phy_page_state mm_phy_mem_state_get(void* addr)
 {
 	return phy_mem_info[(u32)addr / 4096];
 }
@@ -354,11 +389,11 @@ void print_phy_mem()
 	dbg_print("Physical memory info:\n");
 	dbg_print("%-25s%-12s\n", "Range", "Type");
 
-	type = phy_mem_info[0];;
+	type = phy_mem_info[0].status;
 	base = 0;
 
 	for(i = 0; i < 1024 * 1024; i++) {
-		if(type != phy_mem_info[i] && i != 0) {
+		if(type != phy_mem_info[i].status && i != 0) {
 			dbg_print("%-p-->%-12p", base, i * 4096 - 1);
 
 			switch(type) {
@@ -390,7 +425,7 @@ void print_phy_mem()
 				dbg_print("%-12s\n", "Unknow");
 			}
 
-			type = phy_mem_info[i];
+			type = phy_mem_info[i].status;
 			base = i * 4096;
 		}
 	}
