@@ -54,6 +54,6 @@ bool		alloc_dma_physcl_page(void* base_addr, u32 num, void** ret);
 void		free_physcl_page(void* base_addr, u32 num);
 void		get_phy_mem_info(u32* phy_mem_num, u32* usable_num);
 void		increase_physcl_page_ref(void* base_addr, u32 num);
-u32			get_ref_count(void* base_addr)
+u32			get_ref_count(void* base_addr);
 
 #endif	//!	PHYSICAL_MEM_H_INCLUDE

@@ -19,6 +19,8 @@
 #ifndef	SPINLOCK_H_INCLUDE
 #define	SPINLOCK_H_INCLUDE
 
+#include "../../pm.h"
+
 typedef	struct {
 	u32		owner;
 	u32		next;

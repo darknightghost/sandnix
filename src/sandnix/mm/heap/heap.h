@@ -19,14 +19,10 @@
 #define	HEAP_H_INCLUDE
 
 #include "../mm.h"
+#include "../../pm/pm.h"
 
 #define	HEAP_INTACT_MAGIC			(*((u32*)"HEAP"))
 #define	KERNEL_DEFAULT_HEAP_SIZE	(4096*4)
-
-#define	HEAP_EXTENDABLE				0x01
-#define	HEAP_SWAPPABLE				0x02
-#define	HEAP_MULTITHREAD			0x04
-#define	HEAP_DESTROY				0x08
 
 #pragma pack(4)
 typedef	struct _mem_block_head {

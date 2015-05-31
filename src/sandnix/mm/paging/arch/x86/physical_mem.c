@@ -289,7 +289,7 @@ void increase_physcl_page_ref(void* base_addr, u32 num)
 			            base * 4096);
 		}
 
-		(phy_mem_info[next].ref_count)++;
+		(phy_mem_info[base + i].ref_count)++;
 	}
 
 	pm_rls_spn_lock(&mem_info_lock);
@@ -317,9 +317,9 @@ void free_physcl_page(void* base_addr, u32 num)
 			            base * 4096);
 		}
 
-		(phy_mem_info[next].ref_count)--;
+		(phy_mem_info[base + i].ref_count)--;
 
-		if(phy_mem_info[next].ref_count = 0) {
+		if(phy_mem_info[base + i].ref_count == 0) {
 			phy_mem_info[base].status = PHY_PAGE_USABLE;
 			phy_mem_pg_usable_num += num;
 		}

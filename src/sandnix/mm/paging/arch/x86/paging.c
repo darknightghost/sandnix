@@ -220,13 +220,94 @@ void mm_virt_free(void* start_addr, size_t size, u32 options)
 
 void* mm_virt_map(void* virt_addr, void* phy_addr)
 {
-	//TODO:Map memory
-	return NULL;
+	ppte p_pte;
+	u32 base;
+
+	base = virt_addr / 4096;
+
+	pm_acqr_spn_lock(&mem_page_lock);
+	switch_to_0();
+
+	if(base >= KERNEL_MEM_BASE / 4096) {
+		//Kernel mem
+		p_pte = get_pte(0, base);
+
+		if(p_pte->avail != PG_RESERVED) {
+			switch_back();
+			pm_rls_spn_lock(&mem_page_lock);
+			return NULL;
+		}
+
+		p_pte->present = PG_P;
+		p_pte->avail = PG_MAPPED;
+		p_pte->global = 1;
+		p_pte->page_base_addr = phy_addr >> 12;
+		sync_kernel_pdt();
+
+	} else {
+		//User mem
+		p_pte = get_pte(current_pdt, base);
+
+		if(p_pte->avail != PG_RESERVED) {
+			switch_back();
+			pm_rls_spn_lock(&mem_page_lock);
+			return NULL;
+		}
+
+		p_pte->present = PG_P;
+		p_pte->avail = PG_MAPPED;
+		p_pte->page_base_addr = phy_addr >> 12;
+	}
+
+	switch_back();
+	REFRESH_TLB;
+	pm_rls_spn_lock(&mem_page_lock);
+	return base * 4096;
 }
 
 void mm_virt_unmap(void* virt_addr)
 {
-	//TODO:Unmap memory
+	ppte p_pte;
+	u32 base;
+
+	base = virt_addr / 4096;
+
+	pm_acqr_spn_lock(&mem_page_lock);
+	switch_to_0();
+
+	if(base >= KERNEL_MEM_BASE / 4096) {
+		//Kernel mem
+		p_pte = get_pte(0, base);
+
+		if(p_pte->avail != PG_MAPPED) {
+			switch_back();
+			pm_rls_spn_lock(&mem_page_lock);
+			return;
+		}
+
+		p_pte->present = PG_NP;
+		p_pte->avail = PG_RESERVED;
+		p_pte->global = 0;
+		sync_kernel_pdt();
+
+	} else {
+		//User mem
+		p_pte = get_pte(current_pdt, base);
+
+		if(p_pte->avail != PG_MAPPED) {
+			switch_back();
+			pm_rls_spn_lock(&mem_page_lock);
+			return NULL;
+		}
+
+		p_pte->present = PG_NP;
+		p_pte->avail = PG_RESERVED;
+	}
+
+	switch_back();
+	REFRESH_TLB;
+	pm_rls_spn_lock(&mem_page_lock);
+	return;
 }
 
 u32 mm_pg_tbl_fork(u32 parent)

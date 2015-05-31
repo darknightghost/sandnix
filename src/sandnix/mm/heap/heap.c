@@ -125,16 +125,7 @@ void* mm_heap_alloc(size_t size, void* heap_addr)
 		if(p_head->p_next == NULL) {
 			if(p_head->attr & HEAP_EXTENDABLE) {
 				//Allocate more pages
-				if(p_head->attr & HEAP_SWAPPABLE) {
-					//p_new_head = VirtualAlloc(NULL, p_head->scale, MEM_COMMIT, PAGE_READWRITE);
-					__asm__ __volatile__("ud2");
-
-				} else {
-					//p_new_head = VirtualAlloc(NULL, p_head->scale, MEM_COMMIT, PAGE_READWRITE);
-					__asm__ __volatile__("ud2");
-				}
-
-				//!
+				//p_new_head = mm_virt_alloc(NULL, p_head->scale, MEM_RESERVE | MEM_COMMIT, PAGE_WRITEABLE);
 				p_new_head = NULL;
 				init_heap_head(p_new_head, p_head->scale, p_head->attr, p_head);
 				p_head->p_next = p_new_head;

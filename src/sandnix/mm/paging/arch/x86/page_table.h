@@ -41,6 +41,7 @@
 #define	PG_SHARED_SWAPPED			4
 #define	PG_COPY_ON_WRITE_SWAPPED	5
 #define	PG_RESERVED					6
+#define	PG_MAPPED					7
 
 //Page-Directory Entry
 typedef	struct {

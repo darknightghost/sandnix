@@ -28,7 +28,6 @@
 #ifdef X86
 
 #include "heap/heap.h"
-#include "../pm/pm.h"
 
 typedef	struct	{
 	u32		phy_mem;
@@ -50,6 +49,10 @@ typedef	struct	{
 
 #define		PAGE_WRITEABLE		0x00000001
 #define		PAGE_EXECUTABLE		0x00000002
+
+#define	HEAP_EXTENDABLE				0x01
+#define	HEAP_MULTITHREAD			0x02
+#define	HEAP_DESTROY				0x04
 
 
 void		mm_init();
