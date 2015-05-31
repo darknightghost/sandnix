@@ -22,7 +22,8 @@ static	u8		kernel_default_heap[KERNEL_DEFAULT_HEAP_SIZE];
 static	bool	default_heap_init_flag = false;
 
 
-static	void	init_heap_head(void* start_addr, size_t scale, u32 attr, pheap_head p_prev);
+static	void	init_heap_head(void* start_addr, size_t scale,
+                               u32 attr, pheap_head p_prev);
 static	void	merge_mem_blocks(pheap_head p_head);
 static	void	rebuild_empty_blocks_list(pheap_head p_head);
 
@@ -40,7 +41,8 @@ void* mm_heap_alloc(size_t size, void* heap_addr)
 			default_heap_init_flag = true;
 
 			//Initialize default heap
-			init_heap_head(kernel_default_heap, KERNEL_DEFAULT_HEAP_SIZE, HEAP_EXTENDABLE | HEAP_MULTITHREAD, NULL);
+			init_heap_head(kernel_default_heap, KERNEL_DEFAULT_HEAP_SIZE,
+			               HEAP_EXTENDABLE | HEAP_MULTITHREAD, NULL);
 		}
 
 	} else {
@@ -106,11 +108,13 @@ void* mm_heap_alloc(size_t size, void* heap_addr)
 					p_block->allocated_flag = true;
 
 					if(p_block->p_next_empty_block != NULL) {
-						p_block->p_next_empty_block->p_prev_empty_block = p_block->p_prev_empty_block;
+						p_block->p_next_empty_block->p_prev_empty_block
+						    = p_block->p_prev_empty_block;
 					}
 
 					if(p_block->p_prev_empty_block != NULL) {
-						p_block->p_prev_empty_block->p_next_empty_block = p_block->p_next_empty_block;
+						p_block->p_prev_empty_block->p_next_empty_block
+						    = p_block->p_next_empty_block;
 
 					} else {
 						p_head->p_first_empty_block = p_block->p_next_empty_block;
@@ -125,8 +129,14 @@ void* mm_heap_alloc(size_t size, void* heap_addr)
 		if(p_head->p_next == NULL) {
 			if(p_head->attr & HEAP_EXTENDABLE) {
 				//Allocate more pages
-				//p_new_head = mm_virt_alloc(NULL, p_head->scale, MEM_RESERVE | MEM_COMMIT, PAGE_WRITEABLE);
-				p_new_head = NULL;
+				p_new_head = mm_virt_alloc(NULL, p_head->scale,
+				                           MEM_RESERVE | MEM_COMMIT,
+				                           PAGE_WRITEABLE);
+
+				if(p_new_head == NULL) {
+					return NULL;
+				}
+
 				init_heap_head(p_new_head, p_head->scale, p_head->attr, p_head);
 				p_head->p_next = p_new_head;
 
@@ -191,7 +201,8 @@ void mm_heap_free(void* addr, void* heap_addr)
 
 	if(p_head->p_prev != NULL
 	   && p_head->p_first_empty_block != NULL
-	   && p_head->scale == p_head->p_first_empty_block->size + sizeof(heap_head) + sizeof(mem_block_head)) {
+	   && (p_head->scale == p_head->p_first_empty_block->size
+	       + sizeof(heap_head) + sizeof(mem_block_head))) {
 
 		//Free pages
 		if(p_head->p_next != NULL) {
@@ -199,8 +210,7 @@ void mm_heap_free(void* addr, void* heap_addr)
 		}
 
 		p_head->p_prev->p_next = p_head->p_next;
-		//VirtualFree(p_head, 0, MEM_RELEASE);
-		__asm__ __volatile__("ud2");
+		mm_virt_free(p_head, p_head->scale, MEM_RELEASE);
 	}
 
 	return;

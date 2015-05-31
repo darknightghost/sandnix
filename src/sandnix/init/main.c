@@ -26,6 +26,7 @@
 #include "parameters/parameters.h"
 #include "../exceptions/exceptions.h"
 #include "../io/io.h"
+#include "../mm/mm.h"
 
 void kernel_main()
 {
