@@ -34,12 +34,13 @@
 #define	PG_DISACHE			1
 #define	PG_SIZE_4K			0
 
-#define	PG_NORMAL			0
-#define	PG_COPY_ON_WRTIE	1
-#define	PG_SHARED			2
-#define	PG_SWAPPED			3
-#define	PG_SHARED_SWAPPED	4
-#define	PG_RESERVED			5
+#define	PG_NORMAL					0
+#define	PG_SHARED					1
+#define	PG_COPY_ON_WRTIE			2
+#define	PG_SWAPPED					3
+#define	PG_SHARED_SWAPPED			4
+#define	PG_COPY_ON_WRITE_SWAPPED	5
+#define	PG_RESERVED					6
 
 //Page-Directory Entry
 typedef	struct {

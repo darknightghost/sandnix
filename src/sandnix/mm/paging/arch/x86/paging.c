@@ -730,7 +730,8 @@ bool kernel_mem_uncommit(u32 base, u32 num)
 	    i++, p_pte = get_pte(0, base + i)) {
 		//Uncommit the page
 		if(p_pte->present == PG_P
-		   && p_pte->avail == PG_NORMAL) {
+		   && (p_pte->avail == PG_NORMAL
+		       || p_pte->avail == PG_COPY_ON_WRTIE)) {
 			//The page is in physical memory
 			free_physcl_page(p_pte->page_base_addr << 12, 1);
 			p_pte->present = PG_NP;
@@ -740,13 +741,19 @@ bool kernel_mem_uncommit(u32 base, u32 num)
 		} else if(p_pte->present == PG_NP
 		          && p_pte->avail == PG_SWAPPED) {
 			//The page is in swap
+			//TODO:
 			excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
 			            __FILE__,
 			            __LINE__);
+
+		} else {
+			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADD,
+			            "You have tried to uncommit a page whitch is not commited,The virtual address is %p",
+			            (base + i) * 4096);
 		}
 	}
 
-	return true;
+	return false;
 }
 
 bool usr_mem_uncommit(u32 base, u32 num)
@@ -763,7 +770,8 @@ bool usr_mem_uncommit(u32 base, u32 num)
 	    i++, p_pte = get_pte(current_pdt, base + i)) {
 		//Uncommit the page
 		if(p_pte->present == PG_P
-		   && p_pte->avail == PG_NORMAL) {
+		   && (p_pte->avail == PG_NORMAL
+		       || p_pte->avail == PG_COPY_ON_WRTIE)) {
 			//The page is in physical memory
 			free_physcl_page(p_pte->page_base_addr << 12, 1);
 			p_pte->present = PG_NP;
@@ -772,13 +780,29 @@ bool usr_mem_uncommit(u32 base, u32 num)
 		} else if(p_pte->present == PG_NP
 		          && p_pte->avail == PG_SWAPPED) {
 			//The page is in swap
+			//TODO:
 			excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
 			            __FILE__,
 			            __LINE__);
+
+		} else if(p_pte->present == PG_NP
+		          && p_pte->avail == PG_COPY_ON_WRITE_SWAPPED) {
+			//The page is in swap
+			//TODO:
+			excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
+			            __FILE__,
+			            __LINE__);
+
+		} else {
+			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADD,
+			            "You have tried to uncommit a page whitch is not commited,The virtual address is %p",
+			            (base + i) * 4096);
 		}
+
+
 	}
 
-	return true;
+	return false;
 }
 
 void kernel_mem_unreserve(u32 base, u32 num)

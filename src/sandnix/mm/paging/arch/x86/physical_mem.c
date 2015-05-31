@@ -285,7 +285,7 @@ void increase_physcl_page_ref(void* base_addr, u32 num)
 	for(i = 0; i < num; i++) {
 		if(phy_mem_info[base].status != PHY_PAGE_ALLOCATED) {
 			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
-			            "This is because some program tried to increase the reference count of a physical page which cannot be freed.The address of the physical memory is %p.",
+			            "This is because some program tried to increase the reference count of a physical page which cannot be increased.The address of the physical memory is %p.",
 			            base * 4096);
 		}
 
