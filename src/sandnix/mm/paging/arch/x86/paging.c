@@ -26,12 +26,7 @@ void*				pdt_table[MAX_PROCESS_NUM];
 static	u32			current_pdt;
 static	spin_lock	mem_page_lock;
 
-static	ppte	get_pte(u32 pdt, u32 index);
-static	void	unused_pde_recycle(bool is_kernel);
-
-static	void	map_phy_addr(void* phy_addr);
-static	void	sync_kernel_pdt();
-
+//memory allocation
 static	void*	kernel_mem_reserve(u32 base, u32 num);
 static	void*	usr_mem_reserve(u32 base, u32 num);
 static	void*	kernel_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr);
@@ -42,9 +37,18 @@ static	bool	usr_mem_uncommit(u32 base, u32 num);
 static	void	kernel_mem_unreserve(u32 base, u32 num);
 static	void	usr_mem_unreserve(u32 base, u32 num);
 
+//Page table
+static	u32		get_unused_pdt();
+static	void	fork_kernel_pdt();
+
+static	ppte	get_pte(u32 pdt, u32 index);
+static	void	unused_pde_recycle(bool is_kernel);
+
+static	void	map_phy_addr(void* phy_addr);
+static	void	sync_kernel_pdt();
+
 static	void	switch_to_0();
 static	void	switch_back();
-
 
 void init_paging()
 {
@@ -359,7 +363,6 @@ void mm_get_info(pmem_info p_info)
 	//TODO:Return memory info
 }
 
-
 void* kernel_mem_reserve(u32 base, u32 num)
 {
 	ppte p_pte;
@@ -666,7 +669,9 @@ void sync_kernel_pdt()
 
 	for(i = 1; i < MAX_PROCESS_NUM; i++) {
 		if(pdt_table[i] != NULL) {
-			rtl_memcpy((void*)PT_MAPPING_ADDR, (void*)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET), 4096);
+			rtl_memcpy((void*)(PT_MAPPING_ADDR + sizeof(pde) * (KERNEL_MEM_BASE / 4096 / 1024)),
+			           (void*)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET + sizeof(pde) * (KERNEL_MEM_BASE / 4096 / 1024)),
+			           4096 - sizeof(pde) * (KERNEL_MEM_BASE / 4096 / 1024));
 		}
 	}
 
