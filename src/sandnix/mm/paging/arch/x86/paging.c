@@ -16,6 +16,7 @@
 */
 
 #include "paging.h"
+#include "page_table.h"
 #include "../../../../setup/setup.h"
 #include "../../../../rtl/rtl.h"
 #include "../../../../debug/debug.h"
@@ -25,6 +26,7 @@
 void*				pdt_table[MAX_PROCESS_NUM];
 static	u32			current_pdt;
 static	spin_lock	mem_page_lock;
+static	char		pdt_copy_buf[sizeof(pde) * 1024];
 
 //memory allocation
 static	void*	kernel_mem_reserve(u32 base, u32 num);
@@ -38,8 +40,11 @@ static	void	kernel_mem_unreserve(u32 base, u32 num);
 static	void	usr_mem_unreserve(u32 base, u32 num);
 
 //Page table
-static	u32		get_unused_pdt();
+static	u32		get_free_pdt();
 static	void	fork_kernel_pdt();
+static	void	fork_usr_pdt(u32 src);
+static	void	free_kernel_pdt(u32 id);
+static	void	free_usr_pdt(u32 id);
 
 static	ppte	get_pte(u32 pdt, u32 index);
 static	void	unused_pde_recycle(bool is_kernel);
@@ -678,6 +683,39 @@ void sync_kernel_pdt()
 	return;
 }
 
+u32 get_free_pdt()
+{
+	u32 i;
+
+	for(i = 0; i < MAX_PROCESS_NUM; i++) {
+		if(pdt_table[i] == NULL) {
+			return i;
+		}
+	}
+
+	return 0;
+}
+
+void fork_kernel_pdt()
+{
+	ppde p_pde;
+}
+
+void fork_usr_pdt(u32 src)
+{
+
+}
+
+void free_kernel_pdt(u32 id)
+{
+
+}
+
+void free_usr_pdt(u32 id)
+{
+
+}
+
 ppte get_pte(u32 pdt, u32 index)
 {
 	ppde p_pde;
@@ -811,7 +849,8 @@ bool kernel_mem_uncommit(u32 base, u32 num)
 		//Uncommit the page
 		if(p_pte->present == PG_P
 		   && (p_pte->avail == PG_NORMAL
-		       || p_pte->avail == PG_COPY_ON_WRTIE)) {
+		       || p_pte->avail == PG_COW_RW
+		       || p_pte->avail == PG_COW_RDONLY)) {
 			//The page is in physical memory
 			free_physcl_page((void*)(p_pte->page_base_addr << 12), 1);
 			p_pte->present = PG_NP;
@@ -852,7 +891,8 @@ bool usr_mem_uncommit(u32 base, u32 num)
 		//Uncommit the page
 		if(p_pte->present == PG_P
 		   && (p_pte->avail == PG_NORMAL
-		       || p_pte->avail == PG_COPY_ON_WRTIE)) {
+		       || p_pte->avail == PG_COW_RW
+		       || p_pte->avail == PG_COW_RDONLY)) {
 			//The page is in physical memory
 			free_physcl_page((void*)(p_pte->page_base_addr << 12), 1);
 			p_pte->present = PG_NP;
@@ -860,14 +900,6 @@ bool usr_mem_uncommit(u32 base, u32 num)
 
 		} else if(p_pte->present == PG_NP
 		          && p_pte->avail == PG_SWAPPED) {
-			//The page is in swap
-			//TODO:
-			excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
-			            __FILE__,
-			            __LINE__);
-
-		} else if(p_pte->present == PG_NP
-		          && p_pte->avail == PG_COPY_ON_WRITE_SWAPPED) {
 			//The page is in swap
 			//TODO:
 			excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",

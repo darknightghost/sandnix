@@ -19,7 +19,6 @@
 #define	PAGING_H_INCLUDE
 
 #include "../../../../../common/arch/x86/types.h"
-#include "page_table.h"
 #include "../../../mm.h"
 
 #define	PAGE_TABLE_VADDR

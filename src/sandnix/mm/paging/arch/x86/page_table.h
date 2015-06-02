@@ -20,7 +20,7 @@
 
 #include "../../../../../common/arch/x86/types.h"
 
-#pragma pack(1)
+
 
 #define	PG_NP				0
 #define	PG_P				1
@@ -34,14 +34,16 @@
 #define	PG_DISACHE			1
 #define	PG_SIZE_4K			0
 
+//COW = Copy On Write
 #define	PG_NORMAL					0
 #define	PG_SHARED					1
-#define	PG_COPY_ON_WRTIE			2
+#define	PG_COW_RW					2
 #define	PG_SWAPPED					3
-#define	PG_SHARED_SWAPPED			4
-#define	PG_COPY_ON_WRITE_SWAPPED	5
-#define	PG_RESERVED					6
-#define	PG_MAPPED					7
+#define	PG_RESERVED					4
+#define	PG_MAPPED					5
+#define	PG_COW_RDONLY				6
+
+#pragma pack(1)
 
 //Page-Directory Entry
 typedef	struct {

@@ -7,6 +7,8 @@ LDFLAGS = -m elf_i386 --gc-sections -Ttext 0xC0100100 -e _start
 
 root_path = ../..
 
+current_path = $(shell pwd)
+
 TARGET_DIR = $(root_path)/bin/sandnix/x86
 TARGET = $(TARGET_DIR)/sandnix
 MAP = $(TARGET_DIR)/sandnix.map
@@ -45,15 +47,15 @@ $(OBJS) : $(SOURCES) $(OBJS_DIR)
 	$(foreach filename,$(SOURCES),\
 		$(if $(filter .c,$(suffix $(filename))),\
 			$(shell \
-			$(CC) $(CCFLAGS) -c -o $(OBJS_DIR)/$(basename $(filename)).o $(filename))\
+			$(CC) $(CCFLAGS) -c -o $(OBJS_DIR)/$(basename $(filename)).o $(current_path)/$(filename))\
 		)\
 		$(if $(filter .s,$(suffix $(filename))),\
 			$(shell \
-			$(AS) $(ASFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(filename))\
+			$(AS) $(ASFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(current_path)/$(filename))\
 		)\
 		$(if $(filter .S,$(suffix $(filename))),\
 			$(shell \
-			$(AS) $(ASFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(filename))\
+			$(AS) $(ASFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(current_path)/$(filename))\
 		)\
 	)
 $(TARGET_DIR) :
