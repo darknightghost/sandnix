@@ -34,14 +34,13 @@
 #define	PG_DISACHE			1
 #define	PG_SIZE_4K			0
 
-//COW = Copy On Write
 #define	PG_NORMAL					0
 #define	PG_SHARED					1
-#define	PG_COW_RW					2
+#define	PG_CP_ON_W_RW				2
 #define	PG_SWAPPED					3
 #define	PG_RESERVED					4
 #define	PG_MAPPED					5
-#define	PG_COW_RDONLY				6
+#define	PG_CP_ON_W_RDONLY			6
 
 #pragma pack(1)
 

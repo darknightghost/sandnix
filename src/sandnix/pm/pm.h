@@ -20,9 +20,10 @@
 
 #ifdef	X86
 	#include "../../common/arch/x86/types.h"
+	#include "arch/x86/spinlock.h"
+	#include "arch/x86/schedule.h"
 #endif	//X86
 
-#include "arch/x86/spinlock.h"
 
 #define		MAX_PROCESS_NUM		65535
 
@@ -35,6 +36,9 @@ void		pm_resume_thrd(u32 thread_id);
 void		pm_sleep(u32 ms);
 u32			pm_get_crrnt_thrd_id();
 void		pm_task_schedule();
+
+bool		pm_get_thread_context(u32 id, pcontext p_cntxt);
+bool		pm_set_thread_context(u32 id, pcontext p_cntxt);
 
 void		pm_init_spn_lock(pspin_lock p_lock);
 void		pm_acqr_spn_lock(pspin_lock p_lock);

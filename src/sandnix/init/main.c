@@ -38,6 +38,8 @@ void kernel_main()
 	init_io();
 	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
 
+	excpt_init();
+
 	mm_init();
 
 	while(1);

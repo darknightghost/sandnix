@@ -23,7 +23,7 @@
 #include "../../../../exceptions/exceptions.h"
 #include "../../../../pm/pm.h"
 
-void*				pdt_table[MAX_PROCESS_NUM];
+void*				pdt_index_table[MAX_PROCESS_NUM];
 static	u32			current_pdt;
 static	spin_lock	mem_page_lock;
 static	char		pdt_copy_buf[sizeof(pde) * 1024];
@@ -41,9 +41,8 @@ static	void	usr_mem_unreserve(u32 base, u32 num);
 
 //Page table
 static	u32		get_free_pdt();
-static	void	fork_kernel_pdt();
-static	void	fork_usr_pdt(u32 src);
-static	void	free_kernel_pdt(u32 id);
+static	void	fork_pdt(u32 dest, u32 src);
+static	void	fork_user_pages(void* pt_phy_addr, void* src_pt_phy_addr);
 static	void	free_usr_pdt(u32 id);
 
 static	ppte	get_pte(u32 pdt, u32 index);
@@ -64,8 +63,8 @@ void init_paging()
 	pm_init_spn_lock(&mem_page_lock);
 
 	//Initialize PDT table
-	rtl_memset(pdt_table, 0, MAX_PROCESS_NUM + sizeof(void*));
-	pdt_table[0] = (void*)TMP_PDT_BASE;
+	rtl_memset(pdt_index_table, 0, MAX_PROCESS_NUM + sizeof(void*));
+	pdt_index_table[0] = (void*)TMP_PDT_BASE;
 
 	//Initialize PDT of process 0
 	dbg_print("Initializing  page table of process 0...\n");
@@ -268,6 +267,7 @@ void* mm_virt_map(void* virt_addr, void* phy_addr)
 		p_pte->page_base_addr = (u32)phy_addr >> 12;
 	}
 
+	increase_physcl_page_ref(phy_addr, 1);
 	switch_back();
 	REFRESH_TLB;
 	pm_rls_spn_lock(&mem_page_lock);
@@ -297,6 +297,7 @@ void mm_virt_unmap(void* virt_addr)
 		p_pte->present = PG_NP;
 		p_pte->avail = PG_RESERVED;
 		p_pte->global_page = 0;
+		free_physcl_page((void*)((u32)(p_pte->page_base_addr) << 12), 1);
 		sync_kernel_pdt();
 
 	} else {
@@ -311,6 +312,7 @@ void mm_virt_unmap(void* virt_addr)
 
 		p_pte->present = PG_NP;
 		p_pte->avail = PG_RESERVED;
+		free_physcl_page((void*)((u32)p_pte->page_base_addr << 12), 1);
 	}
 
 	switch_back();
@@ -321,20 +323,37 @@ void mm_virt_unmap(void* virt_addr)
 
 u32 mm_pg_tbl_fork(u32 parent)
 {
-	//TODO:Fork page tables
-	return 0;
+	u32 new_id;
+
+	pm_acqr_spn_lock(&mem_page_lock);
+	switch_to_0();
+	new_id = get_free_pdt();
+
+	if(new_id != 0) {
+		fork_pdt(new_id, parent);
+	}
+
+	switch_back();
+	pm_rls_spn_lock(&mem_page_lock);
+	return new_id;
 }
 
 void mm_pg_tbl_free(u32 id)
 {
-	//TODO:Free page tables
+	pm_acqr_spn_lock(&mem_page_lock);
+	switch_to_0();
+	free_usr_pdt(id);
+	free_physcl_page(pdt_index_table[id], 1);
+	pdt_index_table[id] = NULL;
+	switch_back();
+	pm_rls_spn_lock(&mem_page_lock);
 	return;
 }
 
 void mm_pg_tbl_switch(u32 id)
 {
 
-	if(pdt_table[id] == NULL) {
+	if(pdt_index_table[id] == NULL) {
 		excpt_panic(EXCEPTION_ILLEGAL_PDT,
 		            "An illegal id of page directory has been tied to switch to,the id is %p.",
 		            id);
@@ -350,7 +369,7 @@ void mm_pg_tbl_switch(u32 id)
 	    "andl	$0xFFFFF000,%%eax\n\t"
 	    "orl	$0x008,%%eax\n\t"
 	    "movl	%%eax,%%cr3\n\t"
-	    ::"m"(pdt_table[id]));
+	    ::"m"(pdt_index_table[id]));
 
 	pm_rls_spn_lock(&mem_page_lock);
 
@@ -359,7 +378,12 @@ void mm_pg_tbl_switch(u32 id)
 
 void mm_pg_tbl_usr_spc_clear(u32 id)
 {
-	//TODO:Clear user space
+	pm_acqr_spn_lock(&mem_page_lock);
+	switch_to_0();
+	free_usr_pdt(id);
+	switch_back();
+	pm_rls_spn_lock(&mem_page_lock);
+	return;
 }
 
 //Status
@@ -673,7 +697,8 @@ void sync_kernel_pdt()
 	u32 i;
 
 	for(i = 1; i < MAX_PROCESS_NUM; i++) {
-		if(pdt_table[i] != NULL) {
+		if(pdt_index_table[i] != NULL) {
+			map_phy_addr(pdt_index_table[i]);
 			rtl_memcpy((void*)(PT_MAPPING_ADDR + sizeof(pde) * (KERNEL_MEM_BASE / 4096 / 1024)),
 			           (void*)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET + sizeof(pde) * (KERNEL_MEM_BASE / 4096 / 1024)),
 			           4096 - sizeof(pde) * (KERNEL_MEM_BASE / 4096 / 1024));
@@ -688,7 +713,7 @@ u32 get_free_pdt()
 	u32 i;
 
 	for(i = 0; i < MAX_PROCESS_NUM; i++) {
-		if(pdt_table[i] == NULL) {
+		if(pdt_index_table[i] == NULL) {
 			return i;
 		}
 	}
@@ -696,24 +721,212 @@ u32 get_free_pdt()
 	return 0;
 }
 
-void fork_kernel_pdt()
+void fork_pdt(u32 dest, u32 src)
 {
 	ppde p_pde;
+	void* new_pdt;
+	void* new_pt;
+
+	//Copy kernel page directory table
+	rtl_memcpy((void*)(pdt_copy_buf + KERNEL_MEM_BASE / 4096 / 1024 * sizeof(pde)),
+	           (void*)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET + KERNEL_MEM_BASE / 4096 / 1024 * sizeof(pde)),
+	           4096 - KERNEL_MEM_BASE / 4096 / 1024 * sizeof(pde));
+
+	//Copy user space page directory table
+	map_phy_addr(pdt_index_table[src]);
+	rtl_memcpy(pdt_copy_buf,
+	           (void*)(PT_MAPPING_ADDR),
+	           KERNEL_MEM_BASE / 4096 / 1024 * sizeof(pde));
+
+	//Allocate memory
+	new_pdt = alloc_physcl_page(NULL, 1);
+
+	if(new_pdt == NULL) {
+		//TODO:Swap
+		excpt_panic(EXCEPTION_UNKNOW,
+		            "Not enough memory!\n");
+	}
+
+	pdt_index_table[dest] = new_pdt;
+	map_phy_addr(new_pdt);
+	rtl_memcpy((void*)PT_MAPPING_ADDR,
+	           pdt_copy_buf,
+	           4096);
+
+	//Copy user space page tables
+	for(p_pde = (ppde)PT_MAPPING_ADDR;
+	    p_pde < (ppde)(PT_MAPPING_ADDR) + KERNEL_MEM_BASE / 4096 / 1024;
+	    p_pde++) {
+		map_phy_addr(new_pdt);
+
+		if(p_pde->present == PG_P
+		   && p_pde->present == PG_NORMAL) {
+			map_phy_addr((void*)((u32)(p_pde->page_table_base_addr << 12)));
+			rtl_memcpy(pdt_copy_buf, (void*)PT_MAPPING_ADDR, 4096);
+
+			//Allocate memory
+			new_pt = alloc_physcl_page(NULL, 1);
+
+			if(new_pt == NULL) {
+				//TODO:Swap
+				excpt_panic(EXCEPTION_UNKNOW,
+				            "Not enough memory!\n");
+			}
+
+			map_phy_addr(new_pt);
+			rtl_memcpy((void*)PT_MAPPING_ADDR, pdt_copy_buf, 4096);
+			map_phy_addr(new_pdt);
+
+			//Fork pages
+			fork_user_pages(new_pt, (void*)((u32)(p_pde->page_table_base_addr) << 12));
+			p_pde->page_table_base_addr = (u32)new_pt >> 12;
+
+		} else if(p_pde->present == PG_NP
+		          && p_pde->avail == PG_SWAPPED) {
+			//TODO:Swap
+			excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
+			            __FILE__,
+			            __LINE__);
+
+		}
+	}
+
+	return;
 }
 
-void fork_usr_pdt(u32 src)
+void fork_user_pages(void* pt_phy_addr, void* src_pt_phy_addr)
 {
+	ppte p_pte;
 
-}
+	map_phy_addr(pt_phy_addr);
 
-void free_kernel_pdt(u32 id)
-{
+	for(p_pte = (ppte)PT_MAPPING_ADDR;
+	    p_pte < (ppte)PT_MAPPING_ADDR + 1024;
+	    p_pte++) {
+		if(p_pte->present == PG_P) {
+			switch(p_pte->avail) {
+			case PG_NORMAL:
+				increase_physcl_page_ref((void*)((u32)(p_pte->page_base_addr) << 12), 1);
 
+				if(p_pte->read_write == PG_RW) {
+					p_pte->avail = PG_CP_ON_W_RW;
+					p_pte->read_write = PG_RDONLY;
+					map_phy_addr(src_pt_phy_addr);
+					p_pte->avail = PG_CP_ON_W_RW;
+					p_pte->read_write = PG_RDONLY;
+					map_phy_addr(pt_phy_addr);
+
+				} else if(p_pte->read_write == PG_RDONLY) {
+					p_pte->avail = PG_CP_ON_W_RDONLY;
+					p_pte->read_write = PG_RDONLY;
+					map_phy_addr(src_pt_phy_addr);
+					p_pte->avail = PG_CP_ON_W_RDONLY;
+					p_pte->read_write = PG_RDONLY;
+					map_phy_addr(pt_phy_addr);
+
+				}
+
+				break;
+
+			case PG_CP_ON_W_RW:
+				increase_physcl_page_ref((void*)((u32)(p_pte->page_base_addr) << 12), 1);
+				break;
+
+			case PG_CP_ON_W_RDONLY:
+				increase_physcl_page_ref((void*)((u32)(p_pte->page_base_addr) << 12), 1);
+				break;
+
+			}
+
+		} else {
+			switch(p_pte->avail) {
+			case PG_SWAPPED:
+				//TODO:Swap
+				excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
+				            __FILE__,
+				            __LINE__);
+				break;
+			}
+		}
+	}
+
+	return;
 }
 
 void free_usr_pdt(u32 id)
 {
+	ppde p_pde;
+	ppte p_pte;
 
+	//Check arguments
+	if(pdt_index_table[id] == NULL) {
+		excpt_panic(EXCEPTION_ILLEGAL_PDT,
+		            "Some code tried to free a page table which id is %u,but it is unused.\n",
+		            id);
+	}
+
+	//Copy pdt to buffer
+	map_phy_addr(pdt_index_table[id]);
+	rtl_memcpy(pdt_copy_buf, (void*)PT_MAPPING_ADDR, 4096);
+
+	//Free userspace memory
+	for(p_pde = (ppde)pdt_copy_buf;
+	    p_pde < (ppde)pdt_copy_buf + KERNEL_MEM_BASE / 1024 / 4096;
+	    p_pde++) {
+		if(p_pde->present == PG_P
+		   && p_pde->avail == PG_NORMAL) {
+			//Free page table
+			map_phy_addr((void*)((u32)(p_pde->page_table_base_addr) << 12));
+
+			for(p_pte = (ppte)PT_MAPPING_ADDR;
+			    p_pte < (ppte)PT_MAPPING_ADDR + 1024;
+			    p_pte++) {
+				if(p_pte->present == PG_NP
+				   && p_pte->avail == PG_SWAPPED) {
+					//TODO:Swap
+					excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
+					            __FILE__,
+					            __LINE__);
+
+				}
+
+				if(p_pte->present == PG_P) {
+					switch(p_pte->avail) {
+					case PG_NORMAL:
+					case PG_CP_ON_W_RW:
+					case PG_CP_ON_W_RDONLY:
+					case PG_MAPPED:
+						free_physcl_page((void*)((u32)(p_pte->page_base_addr) << 12), 1);
+						break;
+
+					case PG_SHARED:
+						//TODO:Clean the share
+						//mm_pmo_unmap();
+						excpt_panic(EXCEPTION_UNKNOW, "Shared mem:file:%s\nLine:%d\n",
+						            __FILE__,
+						            __LINE__);
+						break;
+					}
+				}
+			}
+
+			p_pde->present = PG_NP;
+			free_physcl_page((void*)((u32)(p_pde->page_table_base_addr) << 12), 1);
+			p_pde->page_table_base_addr = 0;
+
+		} else if(p_pde->present == PG_NP
+		          && p_pde->avail == PG_SWAPPED) {
+			//TODO:Swap
+			excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
+			            __FILE__,
+			            __LINE__);
+		}
+	}
+
+	//Copy back
+	map_phy_addr(pdt_index_table[id]);
+	rtl_memcpy((void*)PT_MAPPING_ADDR, pdt_copy_buf,  4096);
+	return;
 }
 
 ppte get_pte(u32 pdt, u32 index)
@@ -726,14 +939,14 @@ ppte get_pte(u32 pdt, u32 index)
 		p_pde = (ppde)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET);
 
 	} else {
-		map_phy_addr(pdt_table[pdt]);
+		map_phy_addr(pdt_index_table[pdt]);
 		p_pde = (ppde)(PT_MAPPING_ADDR);
 	}
 
 	p_pde += index / 1024;
 
 	if(p_pde->present == PG_NP
-	   && p_pde->present == PG_NORMAL) {
+	   && p_pde->avail == PG_NORMAL) {
 		//Allocate physical memory and initialize PDE
 		phy_mem_addr = alloc_physcl_page(NULL, 1);
 
@@ -805,7 +1018,7 @@ void unused_pde_recycle(bool is_kernel)
 		for(i = 0, p_pde = (ppde)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET);
 		    i < KERNEL_MEM_BASE / 1024 / 4096;
 		    i++, p_pde++) {
-			map_phy_addr(pdt_table[current_pdt]);
+			map_phy_addr(pdt_index_table[current_pdt]);
 
 			if(p_pde->present == PG_P) {
 				map_phy_addr((void*)(p_pde->page_table_base_addr << 12));
@@ -849,8 +1062,8 @@ bool kernel_mem_uncommit(u32 base, u32 num)
 		//Uncommit the page
 		if(p_pte->present == PG_P
 		   && (p_pte->avail == PG_NORMAL
-		       || p_pte->avail == PG_COW_RW
-		       || p_pte->avail == PG_COW_RDONLY)) {
+		       || p_pte->avail == PG_CP_ON_W_RW
+		       || p_pte->avail == PG_CP_ON_W_RDONLY)) {
 			//The page is in physical memory
 			free_physcl_page((void*)(p_pte->page_base_addr << 12), 1);
 			p_pte->present = PG_NP;
@@ -891,8 +1104,8 @@ bool usr_mem_uncommit(u32 base, u32 num)
 		//Uncommit the page
 		if(p_pte->present == PG_P
 		   && (p_pte->avail == PG_NORMAL
-		       || p_pte->avail == PG_COW_RW
-		       || p_pte->avail == PG_COW_RDONLY)) {
+		       || p_pte->avail == PG_CP_ON_W_RW
+		       || p_pte->avail == PG_CP_ON_W_RDONLY)) {
 			//The page is in physical memory
 			free_physcl_page((void*)(p_pte->page_base_addr << 12), 1);
 			p_pte->present = PG_NP;
@@ -1001,7 +1214,7 @@ void switch_to_0()
 	    "andl	$0xFFFFF000,%%eax\n\t"
 	    "orl	$0x008,%%eax\n\t"
 	    "movl	%%eax,%%cr3\n\t"
-	    ::"m"(pdt_table[0]));
+	    ::"m"(pdt_index_table[0]));
 	return;
 
 }
@@ -1014,6 +1227,6 @@ void switch_back()
 	    "andl	$0xFFFFF000,%%eax\n\t"
 	    "orl	$0x008,%%eax\n\t"
 	    "movl	%%eax,%%cr3\n\t"
-	    ::"m"(pdt_table[current_pdt]));
+	    ::"m"(pdt_index_table[current_pdt]));
 	return;
 }
