@@ -50,21 +50,29 @@ typedef	struct	{
 #define		PAGE_WRITEABLE		0x00000001
 #define		PAGE_EXECUTABLE		0x00000002
 
-#define	HEAP_EXTENDABLE				0x01
-#define	HEAP_MULTITHREAD			0x02
-#define	HEAP_DESTROY				0x04
+#define		HEAP_EXTENDABLE				0x01
+#define		HEAP_MULTITHREAD			0x02
+#define		HEAP_DESTROY				0x04
 
 
 void		mm_init();
 
 //Physical memory
 phy_page_state		mm_phy_mem_state_get(void* addr);
+void*				mm_phy_mem_aclloc();
+void				mm_phy_mem_free();
+void				mm_phy_mem_cnt_increase();
+void				mm_phy_mem_cnt_decrease();
 
 //Virtual memory
 void*				mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr);
 void				mm_virt_free(void* start_addr, size_t size, u32 options);
 void*				mm_virt_map(void* virt_addr, void* phy_addr);
 void				mm_virt_unmap(void* virt_addr);
+
+//Swap
+void				mm_pg_lock(u32 id, void* address);
+void				mm_pg_unlock(u32 id, void* address);
 
 //Page table
 u32					mm_pg_tbl_fork(u32 parent);
@@ -83,11 +91,11 @@ void*				mm_pmo_map(void* address, u32 pmo);
 void				mm_pmo_unmap(void* address);
 
 //Heap
-void				mm_heap_create();
-void				mm_heap_destroy();
-void*				mm_heap_alloc(size_t size, void* heap_addr);
-bool				mm_heap_chk(void* heap_addr);
-void				mm_heap_free(void* addr, void* heap_addr);
+void*				mm_hp_create(size_t max_block_size, u32 attr);
+void				mm_hp_destroy(void* heap_addr);
+void*				mm_hp_alloc(size_t size, void* heap_addr);
+void				mm_hp_chk(void* heap_addr);
+void				mm_hp_free(void* addr, void* heap_addr);
 
 #endif	//!	MM_H_INCLUDE
 

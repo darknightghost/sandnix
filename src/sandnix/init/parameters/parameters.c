@@ -35,7 +35,7 @@ void get_kernel_param()
 
 	rtl_memset(&kernel_param, 0, sizeof(param_info));
 	p_param = *(char**)(KERNEL_PARAMETER);
-	buf = mm_heap_alloc(512, NULL);
+	buf = mm_hp_alloc(512, NULL);
 
 	dbg_print("\nAnalysing kernel parameters...\n");
 
@@ -43,21 +43,21 @@ void get_kernel_param()
 		if(rtl_strcmp(buf, "root") == 0) {
 			//Root partition
 			if(get_parameter_value(buf, &p_param)) {
-				kernel_param.root_partition = mm_heap_alloc(rtl_strlen(buf) + 1, NULL);
+				kernel_param.root_partition = mm_hp_alloc(rtl_strlen(buf) + 1, NULL);
 				rtl_strcpy_s(kernel_param.root_partition, rtl_strlen(buf) + 1, buf);
 			}
 
 		} else if(rtl_strcmp(buf, "driver_init") == 0) {
 			//Driver_init
 			if(get_parameter_value(buf, &p_param)) {
-				kernel_param.driver_init = mm_heap_alloc(rtl_strlen(buf) + 1, NULL);
+				kernel_param.driver_init = mm_hp_alloc(rtl_strlen(buf) + 1, NULL);
 				rtl_strcpy_s(kernel_param.driver_init, rtl_strlen(buf) + 1, buf);
 			}
 
 		} else if(rtl_strcmp(buf, "init") == 0) {
 			//Init
 			if(get_parameter_value(buf, &p_param)) {
-				kernel_param.init = mm_heap_alloc(rtl_strlen(buf) + 1, NULL);
+				kernel_param.init = mm_hp_alloc(rtl_strlen(buf) + 1, NULL);
 				rtl_strcpy_s(kernel_param.init, rtl_strlen(buf) + 1, buf);
 			}
 
@@ -67,7 +67,7 @@ void get_kernel_param()
 		}
 	}
 
-	mm_heap_free(buf, NULL);
+	mm_hp_free(buf, NULL);
 	check_kernel_param();
 	return;
 }

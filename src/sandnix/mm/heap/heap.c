@@ -28,10 +28,50 @@ static	void	merge_mem_blocks(pheap_head p_head);
 static	void	rebuild_empty_blocks_list(pheap_head p_head);
 
 
-void* mm_heap_alloc(size_t size, void* heap_addr)
+void* mm_hp_create(size_t max_block_size, u32 attr)
+{
+	void* addr;
+	u32 scale;
+
+	//Compute scale
+	scale = ((max_block_size + sizeof(heap_head) + sizeof(mem_block_head)) / 4096
+	         + ((max_block_size + sizeof(heap_head) + sizeof(mem_block_head)) % 4096 ? 1 : 0)) * 4096;
+
+	//Allocate memory
+	addr = mm_virt_alloc(NULL,
+	                     scale,
+	                     MEM_RESERVE | MEM_COMMIT,
+	                     PAGE_WRITEABLE);
+
+	if(addr == NULL) {
+		return NULL;
+	}
+
+	//Initialize the head
+	init_heap_head(addr, scale, attr, NULL);
+	return addr;
+}
+
+void mm_hp_destroy(void* heap_addr)
+{
+	pheap_head p_head, p_next_head;
+
+	p_head = (pheap_head)heap_addr;
+
+	while(p_head != NULL) {
+		p_next_head = p_head->p_next;
+		mm_virt_free(p_head, p_head->scale, MEM_RELEASE);
+		p_head = p_next_head;
+	}
+
+	return;
+}
+
+void* mm_hp_alloc(size_t size, void* heap_addr)
 {
 	pheap_head p_head, p_new_head;
 	pmem_block_head p_block, p_new_block;
+	pspin_lock p_lock;
 
 	//Get heap address
 	if(heap_addr == NULL) {
@@ -61,6 +101,11 @@ void* mm_heap_alloc(size_t size, void* heap_addr)
 	size = size % 4 ? (size / 4 + 1) * 4 : size;
 
 	//Allocate memory
+	if(p_head->attr & HEAP_MULTITHREAD) {
+		p_lock = &(p_head->lock);
+		pm_acqr_spn_lock(p_lock);
+	}
+
 	while(1) {
 		for(p_block = p_head->p_first_empty_block;
 		    p_block != NULL;
@@ -101,6 +146,11 @@ void* mm_heap_alloc(size_t size, void* heap_addr)
 
 					p_new_block->p_next_empty_block = p_block->p_next_empty_block;
 					p_new_block->p_prev_empty_block = p_block->p_prev_empty_block;
+
+					if(p_head->attr & HEAP_MULTITHREAD) {
+						pm_rls_spn_lock(p_lock);
+					}
+
 					return p_block->start_addr;
 
 				} else {
@@ -120,6 +170,10 @@ void* mm_heap_alloc(size_t size, void* heap_addr)
 						p_head->p_first_empty_block = p_block->p_next_empty_block;
 					}
 
+					if(p_head->attr & HEAP_MULTITHREAD) {
+						pm_rls_spn_lock(p_lock);
+					}
+
 					return p_block->start_addr;
 				}
 			}
@@ -134,6 +188,10 @@ void* mm_heap_alloc(size_t size, void* heap_addr)
 				                           PAGE_WRITEABLE);
 
 				if(p_new_head == NULL) {
+					if(p_head->attr & HEAP_MULTITHREAD) {
+						pm_rls_spn_lock(p_lock);
+					}
+
 					return NULL;
 				}
 
@@ -141,6 +199,10 @@ void* mm_heap_alloc(size_t size, void* heap_addr)
 				p_head->p_next = p_new_head;
 
 			} else {
+				if(p_head->attr & HEAP_MULTITHREAD) {
+					pm_rls_spn_lock(p_lock);
+				}
+
 				return NULL;
 			}
 		}
@@ -149,10 +211,11 @@ void* mm_heap_alloc(size_t size, void* heap_addr)
 	}
 }
 
-void mm_heap_free(void* addr, void* heap_addr)
+void mm_hp_free(void* addr, void* heap_addr)
 {
 	pheap_head p_head;
 	pmem_block_head p_block;
+	pspin_lock p_lock;
 
 	//Get heap address
 	if(heap_addr == NULL) {
@@ -170,6 +233,11 @@ void mm_heap_free(void* addr, void* heap_addr)
 		    EXCEPTION_ILLEGAL_HEAP_ADDR,
 		    "The heap address which caused this problem is %p",
 		    p_head);
+	}
+
+	if(p_head->attr & HEAP_MULTITHREAD) {
+		p_lock = &(p_head->lock);
+		pm_acqr_spn_lock(p_lock);
 	}
 
 	if(p_block->magic != HEAP_INTACT_MAGIC) {
@@ -213,13 +281,18 @@ void mm_heap_free(void* addr, void* heap_addr)
 		mm_virt_free(p_head, p_head->scale, MEM_RELEASE);
 	}
 
+	if(p_head->attr & HEAP_MULTITHREAD) {
+		pm_rls_spn_lock(p_lock);
+	}
+
 	return;
 }
 
-bool mm_heap_chk(void* heap_addr)
+void mm_hp_check(void* heap_addr)
 {
 	pheap_head p_head;
 	pmem_block_head p_block;
+	pspin_lock p_lock;
 
 	//Get heap address
 	if(heap_addr == NULL) {
@@ -234,7 +307,11 @@ bool mm_heap_chk(void* heap_addr)
 		    EXCEPTION_ILLEGAL_HEAP_ADDR,
 		    "The heap address which caused this problem is %p",
 		    heap_addr);
-		return false;
+	}
+
+	if(p_head->attr & HEAP_MULTITHREAD) {
+		p_lock = &(p_head->lock);
+		pm_acqr_spn_lock(p_lock);
 	}
 
 	while(p_head != NULL) {
@@ -247,14 +324,17 @@ bool mm_heap_chk(void* heap_addr)
 				    EXCEPTION_HEAP_CORRUPTION,
 				    "The block which is broken might be %p",
 				    p_block);
-				return false;
 			}
 		}
 
 		p_head = p_head->p_next;
 	}
 
-	return true;
+	if(p_head->attr & HEAP_MULTITHREAD) {
+		pm_rls_spn_lock(p_lock);
+	}
+
+	return;
 }
 
 void init_heap_head(void* start_addr, size_t scale, u32 attr, pheap_head p_prev)
@@ -269,6 +349,10 @@ void init_heap_head(void* start_addr, size_t scale, u32 attr, pheap_head p_prev)
 	p_head->scale = scale;
 	p_head->attr = attr;
 	p_head->p_first_empty_block = (pmem_block_head)(p_head + 1);
+
+	if(attr & HEAP_MULTITHREAD) {
+		pm_init_spn_lock(&(p_head->lock));
+	}
 
 	//Initialize first block
 	p_first_block = p_head->p_first_empty_block;

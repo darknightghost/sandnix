@@ -1,4 +1,3 @@
-
 /*
 	Copyright 2015,暗夜幽灵 <darknightghost.cn@gmail.com>
 
@@ -16,15 +15,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	SPINLOCK_H_INCLUDE
-#define	SPINLOCK_H_INCLUDE
+#ifndef	PROCESS_H_INCLUDE
+#define	PROCESS_H_INCLUDE
 
-#include "../../../pm/pm.h"
+#include "../../pm.h"
 
-typedef	struct {
-	u32		owner;
-	u32		next;
-	u32		int_level;
-} spin_lock, *pspin_lock;
-
-#endif	//!	SPINLOCK_H_INCLUDE
+#endif	//!	PROCESS_H_INCLUDE

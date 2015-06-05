@@ -23,7 +23,7 @@ bool rtl_list_insert_before(list* p_list, plist_node position, void* p_item, voi
 	plist_node p_node, p_new_node;
 
 	//Allocate memory
-	p_new_node = mm_heap_alloc(sizeof(list_node), heap);
+	p_new_node = mm_hp_alloc(sizeof(list_node), heap);
 
 	if(p_new_node == NULL) {
 		return false;
@@ -64,7 +64,7 @@ bool rtl_list_insert_after(list* p_list, plist_node position, void* p_item, void
 	plist_node p_node, p_new_node;
 
 	//Allocate memory
-	p_new_node = mm_heap_alloc(sizeof(list_node), heap);
+	p_new_node = mm_hp_alloc(sizeof(list_node), heap);
 
 	if(p_new_node == NULL) {
 		return false;
@@ -104,7 +104,7 @@ void rtl_list_remove(list* p_list, plist_node p_node, void* heap)
 
 	} else if(*p_list == p_node) {
 		if(p_node->p_prev == p_node) {
-			mm_heap_free(p_node, heap);
+			mm_hp_free(p_node, heap);
 			*p_list = NULL;
 			return;
 
@@ -115,7 +115,7 @@ void rtl_list_remove(list* p_list, plist_node p_node, void* heap)
 
 	p_node->p_prev->p_next = p_node->p_next;
 	p_node->p_next->p_prev = p_node->p_prev;
-	mm_heap_free(p_node, heap);
+	mm_hp_free(p_node, heap);
 	return;
 
 }

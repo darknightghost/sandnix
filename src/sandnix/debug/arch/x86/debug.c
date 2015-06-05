@@ -56,7 +56,7 @@ void dbg_print(char* fmt, ...)
 	va_list args;
 	size_t len;
 
-	buf = mm_heap_alloc(1024, NULL);
+	buf = mm_hp_alloc(1024, NULL);
 	va_start(args, fmt);
 	rtl_vprintf_s(buf, 1024, fmt, args);
 	va_end(args);
@@ -84,7 +84,7 @@ void dbg_print(char* fmt, ...)
 		print_string(buf, FG_BRIGHT_WHITE, BG_BLACK);
 	}
 
-	mm_heap_free(buf, NULL);
+	mm_hp_free(buf, NULL);
 	return;
 }
 

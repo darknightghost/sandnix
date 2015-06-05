@@ -40,6 +40,7 @@ typedef	struct _heap_head {
 	pmem_block_head				p_first_empty_block;
 	size_t						scale;
 	u32							attr;
+	spin_lock					lock;
 } heap_head, *pheap_head;
 
 #pragma pack()

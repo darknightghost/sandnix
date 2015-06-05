@@ -98,7 +98,7 @@ void start_paging()
 	    "movl	%%eax,%%cr3\n\t"
 	    //Start paging
 	    "movl	%%cr0,%%eax\n\t"
-	    //Set CR0.PG & CR0.WP
+	    //Set CR0.PG
 	    "orl	$0x80010000,%%eax\n\t"
 	    "movl	%%eax,%%cr0\n\t"
 	    ::"i"(TMP_PDT_BASE));

@@ -22,11 +22,15 @@
 #include "../../../../debug/debug.h"
 #include "../../../../exceptions/exceptions.h"
 #include "../../../../pm/pm.h"
+#include "../../../../io/io.h"
 
-void*				pdt_index_table[MAX_PROCESS_NUM];
-static	u32			current_pdt;
-static	spin_lock	mem_page_lock;
-static	char		pdt_copy_buf[sizeof(pde) * 1024];
+spin_lock				mem_lock;
+
+static	void*			pdt_index_table[MAX_PROCESS_NUM];
+static	u32				current_pdt;
+static	u32				prev_pdt;
+static	char			pdt_copy_buf[sizeof(pde) * 1024];
+static	int_hndlr_info	pf_hndlr_info;
 
 //memory allocation
 static	void*	kernel_mem_reserve(u32 base, u32 num);
@@ -54,13 +58,15 @@ static	void	sync_kernel_pdt();
 static	void	switch_to_0();
 static	void	switch_back();
 
+static	bool	pf_hndlr(u32 int_num, u32 thread_id, u32 err_code);
+
 void init_paging()
 {
 	ppde p_pde;
 	u32 i;
 
 	dbg_print("Initializing paging...\n");
-	pm_init_spn_lock(&mem_page_lock);
+	pm_init_spn_lock(&mem_lock);
 
 	//Initialize PDT table
 	rtl_memset(pdt_index_table, 0, MAX_PROCESS_NUM + sizeof(void*));
@@ -89,11 +95,116 @@ void init_paging()
 	}
 
 	current_pdt = 0;
+	prev_pdt = 0;
 
 	//Refresh TLB
 	REFRESH_TLB;
 
+	//Regist #PF handler
+	dbg_print("Registing #PF handler...\n");
+	pf_hndlr_info.func = pf_hndlr;
+	io_reg_int_hndlr(INT_PF, &pf_hndlr_info);
+
 	return;
+}
+
+bool pf_hndlr(u32 int_num, u32 thread_id, u32 err_code)
+{
+	ppde p_pde;
+	ppte p_pte;
+	u32	err_addr;
+	void* new_mem;
+	void* pt_addr;
+
+	if(mem_lock.owner != mem_lock.next) {
+		excpt_panic(EXCEPTION_UNKNOW,
+		            "#PF occured in mm!\n");
+	}
+
+	__asm__ __volatile__(
+	    "movl	%%cr2,%0\n\t"
+	    :"=r"(err_addr)
+	    :);
+
+	if(err_code & 0x01) {
+		//The page does not present
+		map_phy_addr(pdt_index_table[prev_pdt]);
+		p_pde = (ppde)PT_MAPPING_ADDR + err_addr / 1024 / 4096;
+
+		if(p_pde->present == PG_NP) {
+			return false;
+		}
+
+		map_phy_addr((void*)(p_pde->page_table_base_addr << 12));
+		p_pte = (ppte)PT_MAPPING_ADDR + err_addr % (1024 * 4096) / 4096;
+
+		switch(p_pte->avail) {
+		case PG_SWAPPED:
+			//TODO:Swap
+			excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
+			            __FILE__,
+			            __LINE__);
+			__asm__ __volatile__(
+			    "movl	%%cr3,%%eax\n\t"
+			    "movl	%%eax,%%cr3\n\t"
+			    ::);
+			return true;
+
+		default:
+			return false;
+
+		}
+
+	} else if(err_code & 0x02) {
+		//The page is not writeable
+		map_phy_addr(pdt_index_table[prev_pdt]);
+		p_pde = (ppde)PT_MAPPING_ADDR + err_addr / 1024 / 4096;
+		pt_addr = (void*)(p_pde->page_table_base_addr << 12);
+		map_phy_addr(pt_addr);
+		p_pte = (ppte)PT_MAPPING_ADDR + err_addr % (1024 * 4096) / 4096;
+
+		switch(p_pte->avail) {
+		case PG_CP_ON_W_RW:
+			if(get_ref_count((void*)(p_pte->page_base_addr << 12)) > 1) {
+				//Copy the page
+				new_mem = alloc_physcl_page(NULL, 1);
+
+				if(new_mem == NULL) {
+					//TODO:Swap
+					excpt_panic(EXCEPTION_UNKNOW, "Not enough memory!\n");
+				}
+
+				map_phy_addr((void*)(p_pte->page_base_addr << 12));
+				rtl_memcpy(pdt_copy_buf,
+				           (void*)PT_MAPPING_ADDR,
+				           4096);
+				map_phy_addr(new_mem);
+				rtl_memcpy((void*)PT_MAPPING_ADDR,
+				           pdt_copy_buf,
+				           4096);
+				map_phy_addr(pt_addr);
+				free_physcl_page((void*)(p_pte->page_base_addr << 12), 1);
+				p_pte->avail = PG_NORMAL;
+				p_pte->read_write = PG_RW;
+				p_pte->page_base_addr = (u32)new_mem >> 12;
+
+			} else {
+				p_pte->read_write = PG_RW;
+				p_pte->avail = PG_NORMAL;
+			}
+
+			__asm__ __volatile__(
+			    "movl	%%cr3,%%eax\n\t"
+			    "movl	%%eax,%%cr3\n\t"
+			    ::);
+			return true;
+
+		default:
+			return false;
+		}
+	}
+
+	return false;
 }
 
 void* mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr)
@@ -106,7 +217,7 @@ void* mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr)
 	base = (u32)start_addr / 4096;
 	num = ((u32)start_addr + size) / 4096 + (((u32)start_addr + size) % 4096 ? 1 : 0) - base;
 
-	pm_acqr_spn_lock(&mem_page_lock);
+	pm_acqr_spn_lock(&mem_lock);
 
 	switch_to_0();
 	ret = NULL;
@@ -118,7 +229,7 @@ void* mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr)
 			if(ret == NULL) {
 				unused_pde_recycle(false);
 				switch_back();
-				pm_rls_spn_lock(&mem_page_lock);
+				pm_rls_spn_lock(&mem_lock);
 				return NULL;
 			}
 		}
@@ -140,7 +251,7 @@ void* mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr)
 
 		REFRESH_TLB;
 		switch_back();
-		pm_rls_spn_lock(&mem_page_lock);
+		pm_rls_spn_lock(&mem_lock);
 		return ret;
 
 	} else {
@@ -151,7 +262,7 @@ void* mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr)
 			if(ret == NULL) {
 				unused_pde_recycle(true);
 				switch_back();
-				pm_rls_spn_lock(&mem_page_lock);
+				pm_rls_spn_lock(&mem_lock);
 				return NULL;
 			}
 		}
@@ -174,11 +285,11 @@ void* mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr)
 		sync_kernel_pdt();
 		REFRESH_TLB;
 		switch_back();
-		pm_rls_spn_lock(&mem_page_lock);
+		pm_rls_spn_lock(&mem_lock);
 		return ret;
 	}
 
-	pm_rls_spn_lock(&mem_page_lock);
+	pm_rls_spn_lock(&mem_lock);
 	return NULL;
 }
 
@@ -191,7 +302,7 @@ void mm_virt_free(void* start_addr, size_t size, u32 options)
 	base = (u32)start_addr / 4096;
 	num = ((u32)start_addr + size) / 4096 + (((u32)start_addr + size) % 4096 ? 1 : 0) - base;
 
-	pm_acqr_spn_lock(&mem_page_lock);
+	pm_acqr_spn_lock(&mem_lock);
 
 	switch_to_0();
 
@@ -221,7 +332,7 @@ void mm_virt_free(void* start_addr, size_t size, u32 options)
 
 	REFRESH_TLB;
 	switch_back();
-	pm_rls_spn_lock(&mem_page_lock);
+	pm_rls_spn_lock(&mem_lock);
 
 	return;
 }
@@ -233,7 +344,7 @@ void* mm_virt_map(void* virt_addr, void* phy_addr)
 
 	base = (u32)virt_addr / 4096;
 
-	pm_acqr_spn_lock(&mem_page_lock);
+	pm_acqr_spn_lock(&mem_lock);
 	switch_to_0();
 
 	if(base >= KERNEL_MEM_BASE / 4096) {
@@ -242,7 +353,7 @@ void* mm_virt_map(void* virt_addr, void* phy_addr)
 
 		if(p_pte->avail != PG_RESERVED) {
 			switch_back();
-			pm_rls_spn_lock(&mem_page_lock);
+			pm_rls_spn_lock(&mem_lock);
 			return NULL;
 		}
 
@@ -258,7 +369,7 @@ void* mm_virt_map(void* virt_addr, void* phy_addr)
 
 		if(p_pte->avail != PG_RESERVED) {
 			switch_back();
-			pm_rls_spn_lock(&mem_page_lock);
+			pm_rls_spn_lock(&mem_lock);
 			return NULL;
 		}
 
@@ -270,7 +381,7 @@ void* mm_virt_map(void* virt_addr, void* phy_addr)
 	increase_physcl_page_ref(phy_addr, 1);
 	switch_back();
 	REFRESH_TLB;
-	pm_rls_spn_lock(&mem_page_lock);
+	pm_rls_spn_lock(&mem_lock);
 	return (void*)(base * 4096);
 }
 
@@ -281,7 +392,7 @@ void mm_virt_unmap(void* virt_addr)
 
 	base = (u32)virt_addr / 4096;
 
-	pm_acqr_spn_lock(&mem_page_lock);
+	pm_acqr_spn_lock(&mem_lock);
 	switch_to_0();
 
 	if(base >= KERNEL_MEM_BASE / 4096) {
@@ -290,7 +401,7 @@ void mm_virt_unmap(void* virt_addr)
 
 		if(p_pte->avail != PG_MAPPED) {
 			switch_back();
-			pm_rls_spn_lock(&mem_page_lock);
+			pm_rls_spn_lock(&mem_lock);
 			return;
 		}
 
@@ -306,7 +417,7 @@ void mm_virt_unmap(void* virt_addr)
 
 		if(p_pte->avail != PG_MAPPED) {
 			switch_back();
-			pm_rls_spn_lock(&mem_page_lock);
+			pm_rls_spn_lock(&mem_lock);
 			return;
 		}
 
@@ -317,7 +428,7 @@ void mm_virt_unmap(void* virt_addr)
 
 	switch_back();
 	REFRESH_TLB;
-	pm_rls_spn_lock(&mem_page_lock);
+	pm_rls_spn_lock(&mem_lock);
 	return;
 }
 
@@ -325,7 +436,7 @@ u32 mm_pg_tbl_fork(u32 parent)
 {
 	u32 new_id;
 
-	pm_acqr_spn_lock(&mem_page_lock);
+	pm_acqr_spn_lock(&mem_lock);
 	switch_to_0();
 	new_id = get_free_pdt();
 
@@ -334,19 +445,19 @@ u32 mm_pg_tbl_fork(u32 parent)
 	}
 
 	switch_back();
-	pm_rls_spn_lock(&mem_page_lock);
+	pm_rls_spn_lock(&mem_lock);
 	return new_id;
 }
 
 void mm_pg_tbl_free(u32 id)
 {
-	pm_acqr_spn_lock(&mem_page_lock);
+	pm_acqr_spn_lock(&mem_lock);
 	switch_to_0();
 	free_usr_pdt(id);
 	free_physcl_page(pdt_index_table[id], 1);
 	pdt_index_table[id] = NULL;
 	switch_back();
-	pm_rls_spn_lock(&mem_page_lock);
+	pm_rls_spn_lock(&mem_lock);
 	return;
 }
 
@@ -359,8 +470,9 @@ void mm_pg_tbl_switch(u32 id)
 		            id);
 	}
 
-	pm_acqr_spn_lock(&mem_page_lock);
+	pm_acqr_spn_lock(&mem_lock);
 
+	prev_pdt = current_pdt;
 	current_pdt = id;
 
 	//Load CR3
@@ -371,18 +483,18 @@ void mm_pg_tbl_switch(u32 id)
 	    "movl	%%eax,%%cr3\n\t"
 	    ::"m"(pdt_index_table[id]));
 
-	pm_rls_spn_lock(&mem_page_lock);
+	pm_rls_spn_lock(&mem_lock);
 
 	return;
 }
 
 void mm_pg_tbl_usr_spc_clear(u32 id)
 {
-	pm_acqr_spn_lock(&mem_page_lock);
+	pm_acqr_spn_lock(&mem_lock);
 	switch_to_0();
 	free_usr_pdt(id);
 	switch_back();
-	pm_rls_spn_lock(&mem_page_lock);
+	pm_rls_spn_lock(&mem_lock);
 	return;
 }
 
@@ -969,6 +1081,10 @@ ppte get_pte(u32 pdt, u32 index)
 	} else if(p_pde->present == PG_NP
 	          && p_pde->avail == PG_SWAPPED) {
 		//TODO:Swap
+		excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
+		            __FILE__,
+		            __LINE__);
+
 	} else {
 		map_phy_addr((void*)(p_pde->page_table_base_addr << 12));
 	}
