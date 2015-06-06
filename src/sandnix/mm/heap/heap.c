@@ -100,6 +100,10 @@ void* mm_hp_alloc(size_t size, void* heap_addr)
 
 	size = size % 4 ? (size / 4 + 1) * 4 : size;
 
+	if(size > p_head->scale - sizeof(mem_block_head) - sizeof(heap_head)) {
+		return NULL;
+	}
+
 	//Allocate memory
 	if(p_head->attr & HEAP_MULTITHREAD) {
 		p_lock = &(p_head->lock);

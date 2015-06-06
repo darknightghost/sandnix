@@ -104,8 +104,9 @@ bool unhndld_excpt_call(u32 int_num, u32 thread_id, u32 err_code)
 {
 	context thrd_cntxt;
 
-	if(pm_get_thread_context(thread_id, &thrd_cntxt)
-	   && thrd_cntxt.eip < KERNEL_MEM_BASE) {
+	//if(pm_get_thread_context(thread_id, &thrd_cntxt)
+	// && thrd_cntxt.eip < KERNEL_MEM_BASE) {
+	if(0) {
 		//Occured in userspace
 		//TODO:Kill the process
 	} else {
@@ -113,126 +114,126 @@ bool unhndld_excpt_call(u32 int_num, u32 thread_id, u32 err_code)
 		switch(int_num) {
 		case INT_DE:
 			excpt_panic(EXCEPTION_UNHANDLED_DE,
-			            "Thread id is %u,\nError code is %u.\n",
+			            "Thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_DB:
 			excpt_panic(EXCEPTION_UNHANDLED_DB,
-			            "Thread id is %u,\nError code is %u.\n",
+			            "Thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_BP:
 			excpt_panic(EXCEPTION_UNHANDLED_BP,
-			            "Thread id is %u,\nError code is %u.\n",
+			            "Thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_OF:
 			excpt_panic(EXCEPTION_UNHANDLED_OF,
-			            "Thread id is %u,\nError code is %u.\n",
+			            "Thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_BR:
 			excpt_panic(EXCEPTION_UNHANDLED_BR,
-			            "Thread id is %u,\nError code is %u.\n",
+			            "Thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_UD:
 			excpt_panic(EXCEPTION_UNHANDLED_UD,
-			            "Thread id is %u,\nError code is %u.\n",
+			            "Thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_NM:
 			excpt_panic(EXCEPTION_UNHANDLED_NM,
-			            "Thread id is %u,\nError code is %u.\n",
+			            "Thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_DF:
 			excpt_panic(EXCEPTION_UNHANDLED_DF,
-			            "Thread id is %u,\nError code is %u.\n",
+			            "Thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_FPU:
 			excpt_panic(EXCEPTION_UNHANDLED_FPU,
-			            "Thread id is %u,\nError code is %u.\n",
+			            "Thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_TS:
 			excpt_panic(EXCEPTION_UNHANDLED_TS,
-			            "Thread id is %u,\nError code is %u.\n",
+			            "Thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_NP:
 			excpt_panic(EXCEPTION_UNHANDLED_NP,
-			            "Thread id is %u,\nError code is %u.\n",
+			            "Thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_SS:
 			excpt_panic(EXCEPTION_UNHANDLED_SS,
-			            "Thread id is %u,\nError code is %u.\n",
+			            "Thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_GP:
 			excpt_panic(EXCEPTION_UNHANDLED_GP,
-			            "Thread id is %u,\nError code is %u.\n",
+			            "Thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_PF:
 			excpt_panic(EXCEPTION_UNHANDLED_PF,
-			            "Thread id is %u,\nError code is %u.\n",
+			            "Thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_MF:
 			excpt_panic(EXCEPTION_UNHANDLED_MF,
-			            "Thread id is %u,\nError code is %u.\n",
+			            "Thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_AC:
 			excpt_panic(EXCEPTION_UNHANDLED_AC,
-			            "Thread id is %u,\nError code is %u.\n",
+			            "Thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_MC:
 			excpt_panic(EXCEPTION_UNHANDLED_MC,
-			            "Thread id is %u,\nError code is %u.\n",
+			            "Thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_XF:
 			excpt_panic(EXCEPTION_UNHANDLED_XF,
-			            "Thread id is %u,\nError code is %u.\n",
+			            "Thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;

@@ -20,7 +20,7 @@
 #include "../../../rtl/rtl.h"
 #include "int.h"
 #include "int_handler.h"
-#include "../../../exceptions/exceptions.h"
+#include "../../../debug/debug.h"
 #include "../../../pm/pm.h"
 
 #define	HAS_ERR_CODE(num)	((num) == INT_DF\
@@ -32,10 +32,10 @@
                              || (num) == INT_AC)
 
 int_hndlr_entry		int_hndlr_tbl[256];
-bool				exception_handling_flag = false;
+bool				exception_handling_flag;
 u32					tick_count;
 u8					current_int_level;
-bool				new_int_flag = false;
+u32					new_int = 0;
 
 static	void		call_hndlr(u32 i);
 
@@ -43,6 +43,7 @@ void init_int_dispatcher()
 {
 	u32 i;
 
+	exception_handling_flag = false;
 	rtl_memset(int_hndlr_tbl, 0, 256 * sizeof(int_hndlr_entry));
 
 	//Initialize int levels
@@ -50,7 +51,13 @@ void init_int_dispatcher()
 		//Exceptions ,breakpoints and clocks
 		//will be INT_LEVEL_EXCEPTION or INT_LEVEL_TASK.
 		//Others will be INT_LEVEL_IO
-		io_set_int_level(i, INT_LEVEL_IO);
+		if(i <= INT_XF) {
+			io_set_int_level(i, INT_LEVEL_EXCEPTION);
+
+		} else {
+			io_set_int_level(i, INT_LEVEL_IO);
+		}
+
 	}
 
 	return;
@@ -73,7 +80,7 @@ void int_excpt_dispatcher(u32 num, pret_regs p_regs)
 	//Resume interrupt dispatcher thread
 	pm_resume_thrd(0);
 
-	new_int_flag = true;
+	new_int = int_hndlr_tbl[num].level;
 
 	//Schedule
 	__asm__ __volatile__(
@@ -92,7 +99,7 @@ void int_normal_dispatcher(u32 num, pret_regs p_regs)
 	//Resume interrupt dispatcher thread
 	pm_resume_thrd(0);
 
-	new_int_flag = true;
+	new_int = int_hndlr_tbl[num].level;
 
 	//Schedule
 	__asm__ __volatile__(
@@ -112,7 +119,7 @@ void int_bp_dispatcher(pret_regs p_regs)
 	//Resume interrupt dispatcher thread
 	pm_resume_thrd(0);
 
-	new_int_flag = true;
+	new_int = int_hndlr_tbl[INT_BP].level;
 
 	//Schedule
 	__asm__ __volatile__(
@@ -128,10 +135,9 @@ void io_dispatch_int()
 	u32 i;
 
 	io_set_crrnt_int_level(INT_LEVEL_EXCEPTION);
+	new_int = 0;
 
 	while(1) {
-		new_int_flag = false;
-
 		//Dispatch interrupts
 		for(i = 0; i < 256; i++) {
 			//Exceptions must be handled,if not,call excpt_panic
@@ -142,9 +148,11 @@ void io_dispatch_int()
 			}
 		}
 
+		exception_handling_flag = false;
+
 		for(i = INT_XF + 1; i < 256; i++) {
 			if(int_hndlr_tbl[i].called_flag) {
-				if(new_int_flag) {
+				if(new_int > INT_LEVEL_IO) {
 					continue;
 				}
 
@@ -157,7 +165,7 @@ void io_dispatch_int()
 
 		for(i = INT_XF + 1; i < 256; i++) {
 			if(int_hndlr_tbl[i].called_flag) {
-				if(new_int_flag) {
+				if(new_int > INT_LEVEL_TASK) {
 					continue;
 				}
 
@@ -168,6 +176,7 @@ void io_dispatch_int()
 			}
 		}
 
+		new_int = 0;
 		__asm__ __volatile__(
 		    "sti\n\t"
 		    ::);

@@ -18,6 +18,7 @@
 #include "../../pm.h"
 #include "../../../rtl/rtl.h"
 #include "schedule.h"
+#include "../../../io/io.h"
 
 tss		sys_tss;
 
@@ -25,7 +26,7 @@ context		tmp;
 
 void pm_schedule()
 {
-
+	io_dispatch_int();
 }
 
 void pm_terminate_thrd(u32 thread_id)
@@ -55,5 +56,5 @@ u32 pm_get_crrnt_thrd_id()
 
 void pm_task_schedule()
 {
-
+	io_dispatch_int();
 }

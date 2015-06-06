@@ -38,6 +38,7 @@
 #define	START_ADDR_H_REG	0x0C
 #define	START_ADDR_L_REG	0x0D
 
+#define	BUF_SIZE	1024
 
 static	char	k_dbg_tty_buf[K_TTY_BUF_SIZE];
 static	char*	p_tty_buf = NULL;
@@ -56,9 +57,9 @@ void dbg_print(char* fmt, ...)
 	va_list args;
 	size_t len;
 
-	buf = mm_hp_alloc(1024, NULL);
+	buf = mm_hp_alloc(BUF_SIZE, NULL);
 	va_start(args, fmt);
-	rtl_vprintf_s(buf, 1024, fmt, args);
+	rtl_vprintf_s(buf, BUF_SIZE, fmt, args);
 	va_end(args);
 
 	//Wrtie string to buf;

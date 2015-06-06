@@ -24,7 +24,10 @@
 #define	HEAP_INTACT_MAGIC			(*((u32*)"HEAP"))
 #define	KERNEL_DEFAULT_HEAP_SIZE	(4096*4)
 
-#pragma pack(4)
+#ifdef	X86
+	#pragma pack(4)
+#endif	//X86
+
 typedef	struct _mem_block_head {
 	u32							magic;
 	struct _mem_block_head*		p_prev_empty_block;

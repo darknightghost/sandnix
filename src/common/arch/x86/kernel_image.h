@@ -27,6 +27,6 @@
 #define	KERNEL_MEM_INFO					(KERNEL_PARAMETER + 4)
 #define	KERNEL_PARAMETER_PHYSICAL		(KERNEL_PARAMETER - VIRTUAL_ADDR_OFFSET)
 #define	KERNEL_MEM_INFO_PHYSICAL		(KERNEL_MEM_INFO - VIRTUAL_ADDR_OFFSET)
-#define	KERNEL_MAX_SIZE					(16*1024*1024)		//The maximum size of kernel in memory
+#define	KERNEL_MAX_SIZE					(48*1024*1024)		//The maximum size of kernel in memory
 
 #endif	//!	KERNEL_IMAGE_H_INCLUDE

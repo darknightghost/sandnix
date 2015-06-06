@@ -48,7 +48,7 @@ fmt_df:
 		pushfl
 		pushal
 		pushl	%esp
-		pushl	\num
+		pushl	$\num
 		call	int_normal_dispatcher
 .endm
 
@@ -58,7 +58,7 @@ fmt_df:
 		pushfl
 		pushal
 		pushl	%esp
-		pushl	\num
+		pushl	$\num
 		movl	tick_count,%eax
 		incl	%eax
 		movl	%eax,tick_count
@@ -92,7 +92,7 @@ fmt_df:
 		movb	$1,%al
 		movb	%al,exception_handling_flag
 		pushl	%esp
-		pushl	\num
+		pushl	$\num
 		call	int_excpt_dispatcher
 .endm
 

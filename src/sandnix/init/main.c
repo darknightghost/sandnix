@@ -30,19 +30,31 @@
 
 void kernel_main()
 {
+	char* a;
 	dbg_cls();
+	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
 
 	dbg_print("%s", "Sandnix 0.0.1 kernel loaded.\n");
 
 	get_kernel_param();
 	init_io();
-	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
 
 	excpt_init();
 
 	mm_init();
 
+	a = mm_virt_alloc(NULL, 4096,
+	                  MEM_RESERVE | MEM_COMMIT,
+	                  PAGE_WRITEABLE);
+	*a = 'a';
+	mm_virt_free(a, 4096, MEM_RELEASE);
+	dbg_print("%s", "Alloc Tested.\n");
+
 	while(1);
+
+	__asm__ __volatile__(
+	    "call	0\n\t"
+	    ::);
 
 	io_dispatch_int();
 
