@@ -103,6 +103,7 @@ void excpt_init()
 bool unhndld_excpt_call(u32 int_num, u32 thread_id, u32 err_code)
 {
 	context thrd_cntxt;
+	u32 cr2;
 
 	//if(pm_get_thread_context(thread_id, &thrd_cntxt)
 	// && thrd_cntxt.eip < KERNEL_MEM_BASE) {
@@ -204,10 +205,15 @@ bool unhndld_excpt_call(u32 int_num, u32 thread_id, u32 err_code)
 			break;
 
 		case INT_PF:
+			__asm__ __volatile__(
+			    "movl	%%cr2,%0\n\t"
+			    :"=r"(cr2)
+			    :);
 			excpt_panic(EXCEPTION_UNHANDLED_PF,
-			            "Thread id is %u,\nError code is %p.\n",
+			            "Thread id is %u,\nError code is %p.\nCR2 = %p\n",
 			            thread_id,
-			            err_code);
+			            err_code,
+			            cr2);
 			break;
 
 		case INT_MF:

@@ -27,7 +27,7 @@
 
 static	phy_page_state	phy_mem_info[1024 * 1024];
 
-static	void			print_phy_mem();
+/*static*/	void			print_phy_mem();
 static	void			print_e820();
 static	u32				phy_mem_pg_num;
 static	u32				phy_mem_pg_usable_num;
@@ -109,6 +109,10 @@ void init_phy_mem()
 	}
 
 	print_phy_mem();
+
+	dbg_print("Total physical memory : %12u Bytes\nUsable physical memory : %12u Bytes\n\n",
+	          phy_mem_pg_num * 4096,
+	          phy_mem_pg_usable_num * 4096);
 	return;
 }
 
@@ -118,7 +122,7 @@ void* alloc_physcl_page(void* base_addr, u32 num)
 	u32 next;
 	u32 i;
 
-	if(IS_DMA_MEM(base_addr)) {
+	if(IS_DMA_MEM(base_addr) && base_addr != NULL) {
 		return NULL;
 	}
 
@@ -269,8 +273,8 @@ void increase_physcl_page_ref(void* base_addr, u32 num)
 	base = (u32)base_addr / 4096;
 
 	for(i = 0; i < num; i++) {
-		if(phy_mem_info[base].status != PHY_PAGE_ALLOCATED
-		   && phy_mem_info[base].status != PHY_PAGE_RESERVED) {
+		if(phy_mem_info[base + i].status != PHY_PAGE_ALLOCATED
+		   && phy_mem_info[base + i].status != PHY_PAGE_RESERVED) {
 			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
 			            "This is because some program tried to increase the reference count of a physical page which cannot be increased.The address of the physical memory is %p.",
 			            base * 4096);
@@ -295,18 +299,18 @@ void free_physcl_page(void* base_addr, u32 num)
 	base = (u32)base_addr / 4096;
 
 	for(i = 0; i < num; i++) {
-		if(phy_mem_info[base].status != PHY_PAGE_ALLOCATED
-		   && phy_mem_info[base].status != PHY_PAGE_RESERVED) {
+		if(phy_mem_info[base + i].status != PHY_PAGE_ALLOCATED
+		   && phy_mem_info[base + i].status != PHY_PAGE_RESERVED) {
 			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
-			            "This is because some program tried to free a physical page which cannot be freed.The address of the physical memory is %p.",
-			            base * 4096);
+			            "This is because some program tried to free a physical page which cannot be freed.The address of the physical memory is %p.\nFile : %s\nLine : %s.\n",
+			            (base + i) * 4096);
 		}
 
 		(phy_mem_info[base + i].ref_count)--;
 
 		if(phy_mem_info[base + i].ref_count == 0
 		   && phy_mem_info[base + i].status == PHY_PAGE_ALLOCATED) {
-			phy_mem_info[base].status = PHY_PAGE_USABLE;
+			phy_mem_info[base + i].status = PHY_PAGE_USABLE;
 			phy_mem_pg_usable_num += num;
 		}
 	}

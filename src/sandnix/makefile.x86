@@ -2,7 +2,7 @@ AS = as
 CC = gcc
 LINKER = ld
 ASFLAGS = --32
-CCFLAGS = -fno-zero-initialized-in-bss -Wall -Werror-implicit-function-declaration -std=c99 -m32 -nostdlib -fno-builtin -DX86 -DVERSION=0x0000000001
+CCFLAGS = -fno-zero-initialized-in-bss -Wall -Werror-implicit-function-declaration -std=c99 -m32 -nostdlib -fno-builtin -DX86 -DVERSION=0x0000000001 -g
 LDFLAGS = -m elf_i386 --gc-sections -Ttext 0xC0100100 -e _start
 
 root_path = ../..

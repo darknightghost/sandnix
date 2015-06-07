@@ -43,12 +43,14 @@ void kernel_main()
 
 	mm_init();
 
-	a = mm_virt_alloc(NULL, 4096,
+	/*a = mm_virt_alloc(NULL, 4096,
 	                  MEM_RESERVE | MEM_COMMIT,
-	                  PAGE_WRITEABLE);
-	*a = 'a';
-	mm_virt_free(a, 4096, MEM_RELEASE);
-	dbg_print("%s", "Alloc Tested.\n");
+	                  PAGE_WRITEABLE);*/
+	//*a = 'a';
+	//mm_virt_free(a, 4096, MEM_RELEASE);
+	while(1);
+
+	//dbg_print("%s", "Alloc Tested.\n");
 
 	while(1);
 
