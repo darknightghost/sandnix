@@ -74,6 +74,16 @@ typedef	struct {
 	u32		page_base_addr			: 20;
 } pte, *ppte;
 
+//#PF error code
+typedef	struct	{
+	u32		present			: 1;
+	u32		read_write		: 1;
+	u32		u_s				: 1;
+	u32		rsvd			: 1;
+	u32		i_d				: 1;
+	u32		reserved		: 17;
+} pf_err_code, *ppf_err_code;
+
 #pragma pack()
 
 #endif	//!	PAGE_TABLE_H_INCLUDE

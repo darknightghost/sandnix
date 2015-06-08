@@ -112,9 +112,11 @@ bool pf_hndlr(u32 int_num, u32 thread_id, u32 err_code)
 {
 	ppde p_pde;
 	ppte p_pte;
-	u32	err_addr;
+	u32 err_addr;
 	void* new_mem;
 	void* pt_addr;
+	pf_err_code err = *(ppf_err_code)(&err_code);
+
 
 	if(mem_lock.owner != mem_lock.next) {
 		excpt_panic(EXCEPTION_UNKNOW,
@@ -126,10 +128,10 @@ bool pf_hndlr(u32 int_num, u32 thread_id, u32 err_code)
 	    :"=r"(err_addr)
 	    :);
 
-	if(err_code & 0x01) {
+	if(err.present == 0) {
 		//The page does not present
 		map_phy_addr(pdt_index_table[prev_pdt]);
-		p_pde = (ppde)PT_MAPPING_ADDR + err_addr / 1024 / 4096;
+		p_pde = (ppde)PT_MAPPING_ADDR + err_addr / 1024 / 4096;;
 
 		if(p_pde->present == PG_NP) {
 			return false;
@@ -155,7 +157,8 @@ bool pf_hndlr(u32 int_num, u32 thread_id, u32 err_code)
 
 		}
 
-	} else if(err_code & 0x02) {
+	} else if(err.read_write == 1) {
+
 		//The page is not writeable
 		map_phy_addr(pdt_index_table[prev_pdt]);
 		p_pde = (ppde)PT_MAPPING_ADDR + err_addr / 1024 / 4096;
@@ -317,6 +320,7 @@ void mm_virt_free(void* start_addr, size_t size, u32 options)
 		}
 
 	} else {
+
 
 		if(kernel_mem_uncommit(base, num)) {
 
@@ -516,7 +520,7 @@ void* kernel_mem_reserve(u32 base, u32 num)
 		return NULL;
 	}
 
-	if(base == 0) {
+	if(base != 0) {
 		//Test if there are enough free pages
 		for(i = 0, p_pte = get_pte(0, base);
 		    i < num;
@@ -531,6 +535,7 @@ void* kernel_mem_reserve(u32 base, u32 num)
 		for(i = 0, p_pte = get_pte(0, base);
 		    i < num;
 		    i++, p_pte = get_pte(0, base + i)) {
+			p_pte->present = PG_NP;
 			p_pte->read_write = PG_RW;
 			p_pte->user_supervisor = PG_SUPERVISOR;
 			p_pte->write_through = PG_WRITE_THROUGH;
@@ -548,7 +553,7 @@ void* kernel_mem_reserve(u32 base, u32 num)
 	} else {
 		page_count = 0;
 
-		for(base = TMP_PAGED_MEM_SIZE / 4096;
+		for(base = (KERNEL_MEM_BASE + TMP_PAGED_MEM_SIZE) / 4096;
 		    base < 1024 * 1024;
 		    base++) {
 			p_pte = get_pte(0, base);
@@ -560,15 +565,17 @@ void* kernel_mem_reserve(u32 base, u32 num)
 
 			} else {
 				page_count = 0;
+				continue;
 			}
 
 			if(page_count >= num) {
-				base -= (page_count - 1);
+				base -= page_count;
 
 				//Allocate pages
 				for(i = 0, p_pte = get_pte(0, base);
 				    i < num;
 				    i++, p_pte = get_pte(0, base + i)) {
+					p_pte->present = PG_NP;
 					p_pte->read_write = PG_RW;
 					p_pte->user_supervisor = PG_SUPERVISOR;
 					p_pte->write_through = PG_WRITE_THROUGH;
@@ -601,8 +608,7 @@ void* usr_mem_reserve(u32 base, u32 num)
 		return NULL;
 	}
 
-
-	if(base == 0) {
+	if(base != 0) {
 		//Test if there are enough free pages
 		for(i = 0, p_pte = get_pte(current_pdt, base);
 		    i < num;
@@ -649,7 +655,7 @@ void* usr_mem_reserve(u32 base, u32 num)
 			}
 
 			if(page_count >= num) {
-				base -= (page_count - 1);
+				base -= page_count;
 
 				//Allocate pages
 				for(i = 0, p_pte = get_pte(current_pdt, base);
@@ -691,7 +697,7 @@ void* kernel_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr)
 		phy_mem_addr = alloc_physcl_page(NULL, num);
 
 		if(phy_mem_addr == NULL) {
-			//Swap
+			//TODO:Swap
 			//Try again
 			phy_mem_addr = alloc_physcl_page(NULL, 1);
 
@@ -705,10 +711,12 @@ void* kernel_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr)
 	for(i = 0, p_pte = get_pte(0, base);
 	    i < num;
 	    i++, p_pte = get_pte(0, base + i)) {
+
 		if(p_pte->avail == PG_RESERVED
 		   && p_pte->present == PG_NP) {
 			p_pte->page_base_addr = ((u32)phy_mem_addr + i * 4096) >> 12;
 			p_pte->present = PG_P;
+			p_pte->avail = PG_NORMAL;
 
 			if(attr & PAGE_WRITEABLE) {
 				p_pte->read_write = PG_RW;
@@ -743,7 +751,7 @@ void* usr_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr)
 		phy_mem_addr = alloc_physcl_page(NULL, num);
 
 		if(phy_mem_addr == NULL) {
-			//Swap
+			//TODO:Swap
 			//Try again
 			phy_mem_addr = alloc_physcl_page(NULL, 1);
 
@@ -761,6 +769,7 @@ void* usr_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr)
 		   && p_pte->present == PG_NP) {
 			p_pte->page_base_addr = ((u32)phy_mem_addr + i * 4096) >> 12;
 			p_pte->present = PG_P;
+			p_pte->avail = PG_NORMAL;
 
 			if(attr & PAGE_WRITEABLE) {
 				p_pte->read_write = PG_RW;
@@ -1057,33 +1066,38 @@ ppte get_pte(u32 pdt, u32 index)
 
 	p_pde += index / 1024;
 
-	if(p_pde->present == PG_NP
-	   && p_pde->avail == PG_NORMAL) {
-		//Allocate physical memory and initialize PDE
-		phy_mem_addr = alloc_physcl_page(NULL, 1);
-
-		if(phy_mem_addr == NULL) {
-			//TODO:Swap
-			//Try again
+	if(p_pde->present == PG_NP) {
+		if(p_pde->avail == PG_NORMAL) {
+			//Allocate physical memory and initialize PDE
 			phy_mem_addr = alloc_physcl_page(NULL, 1);
 
 			if(phy_mem_addr == NULL) {
-				excpt_panic(EXCEPTION_RESOURCE_DEPLETED,
-				            "Physical memory depleted and no pages can be swapped!\n");
+				//TODO:Swap
+				//Try again
+				phy_mem_addr = alloc_physcl_page(NULL, 1);
+
+				if(phy_mem_addr == NULL) {
+					excpt_panic(EXCEPTION_RESOURCE_DEPLETED,
+					            "Physical memory depleted and no pages can be swapped!\n");
+				}
 			}
+
+			p_pde->page_table_base_addr = (u32)phy_mem_addr >> 12;
+			p_pde->present = PG_P;
+			map_phy_addr((void*)(p_pde->page_table_base_addr << 12));
+			rtl_memset((void*)PT_MAPPING_ADDR, 0, 4096);
+
+		} else if(p_pde->present == PG_NP
+		          && p_pde->avail == PG_SWAPPED) {
+			//TODO:Swap
+			excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
+			            __FILE__,
+			            __LINE__);
+
+		} else {
+			excpt_panic(EXCEPTION_ILLEGAL_PDT,
+			            "pdt_table has been broken!\n");
 		}
-
-		p_pde->page_table_base_addr = (u32)phy_mem_addr >> 12;
-		p_pde->present = PG_P;
-		map_phy_addr((void*)(p_pde->page_table_base_addr << 12));
-		rtl_memset((void*)PT_MAPPING_ADDR, 0, 4096);
-
-	} else if(p_pde->present == PG_NP
-	          && p_pde->avail == PG_SWAPPED) {
-		//TODO:Swap
-		excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
-		            __FILE__,
-		            __LINE__);
 
 	} else {
 		map_phy_addr((void*)(p_pde->page_table_base_addr << 12));
@@ -1175,12 +1189,14 @@ bool kernel_mem_uncommit(u32 base, u32 num)
 	for(i = 0, p_pte = get_pte(0, base);
 	    i < num;
 	    i++, p_pte = get_pte(0, base + i)) {
+
 		//Uncommit the page
 		if(p_pte->present == PG_P
 		   && (p_pte->avail == PG_NORMAL
 		       || p_pte->avail == PG_CP_ON_W_RW
 		       || p_pte->avail == PG_CP_ON_W_RDONLY)) {
 			//The page is in physical memory
+
 			free_physcl_page((void*)(p_pte->page_base_addr << 12), 1);
 			p_pte->present = PG_NP;
 			p_pte->avail = PG_RESERVED;

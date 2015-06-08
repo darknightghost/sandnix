@@ -51,13 +51,17 @@ static	void		print_string(char* str, u8 color, u8 bg_color);
 static	void		set_cursor_pos(u16 line, u16 row);
 static	void		scroll_down(u16 line, u16 color);
 
+//DEBUG:
+char tmp_buf[1024];
+
 void dbg_print(char* fmt, ...)
 {
 	char* buf;
 	va_list args;
 	size_t len;
 
-	buf = mm_hp_alloc(BUF_SIZE, NULL);
+	//buf = mm_hp_alloc(BUF_SIZE, NULL);
+	buf = tmp_buf;
 	va_start(args, fmt);
 	rtl_vprintf_s(buf, BUF_SIZE, fmt, args);
 	va_end(args);
@@ -85,7 +89,7 @@ void dbg_print(char* fmt, ...)
 		print_string(buf, FG_BRIGHT_WHITE, BG_BLACK);
 	}
 
-	mm_hp_free(buf, NULL);
+	//mm_hp_free(buf, NULL);
 	return;
 }
 

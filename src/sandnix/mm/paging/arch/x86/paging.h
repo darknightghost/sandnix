@@ -27,6 +27,10 @@
 		                     "movl	%%cr4,%%eax\n\t"\
 		                     "btcl	$7,%%eax\n\t"\
 		                     "movl	%%eax,%%cr4\n\t"\
+		                     "pushl	%%eax\n\t"\
+		                     "movl	%%cr3,%%eax\n\t"\
+		                     "movl	%%eax,%%cr3\n\t"\
+		                     "popl	%%eax\n\t"\
 		                     "btsl	$7,%%eax\n\t"\
 		                     "movl	%%eax,%%cr4\n\t"\
 		                     ::);\

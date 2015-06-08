@@ -43,20 +43,27 @@ void kernel_main()
 
 	mm_init();
 
-	/*a = mm_virt_alloc(NULL, 4096,
+	a = mm_virt_alloc((void*)0xD0000000, 4096,
 	                  MEM_RESERVE | MEM_COMMIT,
-	                  PAGE_WRITEABLE);*/
-	//*a = 'a';
-	//mm_virt_free(a, 4096, MEM_RELEASE);
-	while(1);
+	                  PAGE_WRITEABLE);
+	dbg_print("a = %p\n", a);
 
-	//dbg_print("%s", "Alloc Tested.\n");
+	if(a != NULL) {
+		rtl_strcpy_s(a, 4096, "Hello world!\n");
+		dbg_print("%s\n", a);
+	}
 
-	while(1);
-
+	mm_virt_free(a, 4096, MEM_RELEASE);
+	dbg_print("%s", "Freed.\n");
 	__asm__ __volatile__(
-	    "call	0\n\t"
-	    ::);
+	    ".global _a\n\t"
+	    "_a:\n\t"
+	    "movl	%0,%%eax\n\t"
+	    "movl	$0,(%%eax)\n\t"
+	    ::"m"(a));
+	dbg_print("%s", "Alloc Tested.\n");
+
+	while(1);
 
 	io_dispatch_int();
 

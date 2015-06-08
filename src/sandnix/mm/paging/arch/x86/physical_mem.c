@@ -27,7 +27,7 @@
 
 static	phy_page_state	phy_mem_info[1024 * 1024];
 
-/*static*/	void			print_phy_mem();
+static	void			print_phy_mem();
 static	void			print_e820();
 static	u32				phy_mem_pg_num;
 static	u32				phy_mem_pg_usable_num;
