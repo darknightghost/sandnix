@@ -18,7 +18,7 @@
 #ifndef	EXCEPTIONS_H_INCLUDE
 #define	EXCEPTIONS_H_INCLUDE
 
-#include "../../common/arch/x86/types.h"
+#include "../common/common.h"
 #include "err.h"
 
 void	excpt_init();

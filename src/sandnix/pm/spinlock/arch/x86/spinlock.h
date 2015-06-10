@@ -15,14 +15,17 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	DEBUG_H_INCLUDE
-#define	DEBUG_H_INCLUDE
+#ifndef	SPINLOCK_H_INCLUDE
+#define	SPINLOCK_H_INCLUDE
 
-#include "../common/common.h"
+#ifdef X86
+	#include "../../../../../common/arch/x86/types.h"
+#endif
 
-#define	K_TTY_BUF_SIZE		4096
+typedef	struct {
+	u32		owner;
+	u32		next;
+	u32		int_level;
+} spin_lock, *pspin_lock;
 
-void	dbg_cls();
-void	dbg_print(char* fmt, ...);
-
-#endif	//!	DEBUG_H_INCLUDE
+#endif	//!	SPINLOCK_H_INCLUDE

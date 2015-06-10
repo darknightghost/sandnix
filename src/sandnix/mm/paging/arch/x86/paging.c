@@ -454,31 +454,31 @@ u32 mm_pg_tbl_fork(u32 parent)
 	return new_id;
 }
 
-void mm_pg_tbl_free(u32 id)
+void mm_pg_tbl_free(u32 pdt_id)
 {
 	pm_acqr_spn_lock(&mem_lock);
 	switch_to_0();
-	free_usr_pdt(id);
-	free_physcl_page(pdt_index_table[id], 1);
-	pdt_index_table[id] = NULL;
+	free_usr_pdt(pdt_id);
+	free_physcl_page(pdt_index_table[pdt_id], 1);
+	pdt_index_table[pdt_id] = NULL;
 	switch_back();
 	pm_rls_spn_lock(&mem_lock);
 	return;
 }
 
-void mm_pg_tbl_switch(u32 id)
+void mm_pg_tbl_switch(u32 pdt_id)
 {
 
-	if(pdt_index_table[id] == NULL) {
+	if(pdt_index_table[pdt_id] == NULL) {
 		excpt_panic(EXCEPTION_ILLEGAL_PDT,
 		            "An illegal id of page directory has been tied to switch to,the id is %p.",
-		            id);
+		            pdt_id);
 	}
 
 	pm_acqr_spn_lock(&mem_lock);
 
 	prev_pdt = current_pdt;
-	current_pdt = id;
+	current_pdt = pdt_id;
 
 	//Load CR3
 	__asm__ __volatile__(
@@ -486,18 +486,18 @@ void mm_pg_tbl_switch(u32 id)
 	    "andl	$0xFFFFF000,%%eax\n\t"
 	    "orl	$0x008,%%eax\n\t"
 	    "movl	%%eax,%%cr3\n\t"
-	    ::"m"(pdt_index_table[id]));
+	    ::"m"(pdt_index_table[pdt_id]));
 
 	pm_rls_spn_lock(&mem_lock);
 
 	return;
 }
 
-void mm_pg_tbl_usr_spc_clear(u32 id)
+void mm_pg_tbl_usr_spc_clear(u32 pdt_id)
 {
 	pm_acqr_spn_lock(&mem_lock);
 	switch_to_0();
-	free_usr_pdt(id);
+	free_usr_pdt(pdt_id);
 	switch_back();
 	pm_rls_spn_lock(&mem_lock);
 	return;

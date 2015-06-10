@@ -18,8 +18,9 @@
 #ifndef	MM_H_INCLUDE
 #define	MM_H_INCLUDE
 
+#include "../common/common.h"
+
 #ifdef	X86
-	#include "../../common/arch/x86/types.h"
 	#include "paging/arch/x86/page_table.h"
 	#include "paging/arch/x86/paging.h"
 	#include "paging/arch/x86/physical_mem.h"
@@ -77,9 +78,9 @@ void				mm_pg_unlock(u32 id, void* address);
 
 //Page table
 u32					mm_pg_tbl_fork(u32 parent);
-void				mm_pg_tbl_free(u32 id);
-void				mm_pg_tbl_switch(u32 id);
-void				mm_pg_tbl_usr_spc_clear(u32 id);
+void				mm_pg_tbl_free(u32 pdt_id);
+void				mm_pg_tbl_switch(u32 pdt_id);
+void				mm_pg_tbl_usr_spc_clear(u32 pdt_id);
 
 //Status
 void				mm_get_info(pmem_info p_info);

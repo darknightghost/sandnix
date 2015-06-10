@@ -16,10 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../../pm.h"
 #include "spinlock.h"
-#include "../../../io/io.h"
-#include "../../../exceptions/exceptions.h"
+#include "../../../../io/io.h"
+#include "../../../../exceptions/exceptions.h"
 
 void pm_init_spn_lock(pspin_lock p_lock)
 {

@@ -15,14 +15,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	DEBUG_H_INCLUDE
-#define	DEBUG_H_INCLUDE
+#ifndef	MUTEX_H_INCLUDE
+#define	MUTEX_H_INCLUDE
 
-#include "../common/common.h"
+#include "../pm.h"
+#include "../../rtl/rtl.h"
 
-#define	K_TTY_BUF_SIZE		4096
+typedef	struct {
 
-void	dbg_cls();
-void	dbg_print(char* fmt, ...);
+} mutex, *pmutex;
 
-#endif	//!	DEBUG_H_INCLUDE
+
+#endif	//!	MUTEX_H_INCLUDE

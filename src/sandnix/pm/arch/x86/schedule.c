@@ -29,10 +29,6 @@ void pm_schedule()
 	io_dispatch_int();
 }
 
-void pm_terminate_thrd(u32 thread_id)
-{
-
-}
 
 void pm_suspend_thrd(u32 thread_id)
 {

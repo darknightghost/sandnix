@@ -18,12 +18,11 @@
 #ifndef	IO_H_INCLUDE
 #define	IO_H_INCLUDE
 
-#ifdef	X86
+#include "../common/common.h"
 
-	#include "../../common/arch/x86/types.h"
+#ifdef	X86
 	#include "arch/x86/int.h"
 	#include "arch/x86/int_dispatcher.h"
-
 #endif	//X86
 
 //Interrupt level

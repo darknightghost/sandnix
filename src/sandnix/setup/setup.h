@@ -19,10 +19,9 @@
 #define	SETUP_H_INCLUDE
 
 #include "../mm/mm.h"
+#include "../common/common.h"
 
 #ifdef	X86
-#include "../../common/arch/x86/types.h"
-#include "../../common/arch/x86/kernel_image.h"
 
 #define	TMP_PAGE_MEM_BASE		(((KERNEL_MAX_SIZE+(KERNEL_BASE-VIRTUAL_ADDR_OFFSET))/4096\
                                   +((KERNEL_MAX_SIZE+(KERNEL_BASE-VIRTUAL_ADDR_OFFSET))%4096?1:0))\

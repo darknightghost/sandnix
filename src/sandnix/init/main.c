@@ -15,13 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef	X86
-
-	#include "../../common/arch/x86/types.h"
-	#include "../../common/arch/x86/kernel_image.h"
-
-#endif	//X86
-
+#include "../common/common.h"
 #include "../debug/debug.h"
 #include "parameters/parameters.h"
 #include "../exceptions/exceptions.h"
