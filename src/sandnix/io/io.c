@@ -18,7 +18,7 @@
 #include "io.h"
 #include "../debug/debug.h"
 
-void init_io()
+void io_init()
 {
 	dbg_print("%s", "\nInitializing io module...\n");
 	#ifdef	X86

@@ -38,8 +38,8 @@ static	void*	usr_mem_reserve(u32 base, u32 num);
 static	void*	kernel_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr);
 static	void*	usr_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr);
 
-static	bool	kernel_mem_uncommit(u32 base, u32 num);
-static	bool	usr_mem_uncommit(u32 base, u32 num);
+static	void	kernel_mem_uncommit(u32 base, u32 num);
+static	void	usr_mem_uncommit(u32 base, u32 num);
 static	void	kernel_mem_unreserve(u32 base, u32 num);
 static	void	usr_mem_unreserve(u32 base, u32 num);
 
@@ -310,25 +310,26 @@ void mm_virt_free(void* start_addr, size_t size, u32 options)
 	switch_to_0();
 
 	if(options & MEM_USER) {
-		if(usr_mem_uncommit(base, num)) {
+		if(options & MEM_UNCOMMIT) {
+			usr_mem_uncommit(base, num);
+		}
 
-			if(options & MEM_RELEASE) {
-				//Free the page
-				usr_mem_unreserve(base, num);
-				unused_pde_recycle(false);
-			}
+		if(options & MEM_RELEASE) {
+			//Free the page
+			usr_mem_unreserve(base, num);
+			unused_pde_recycle(false);
 		}
 
 	} else {
 
+		if(options & MEM_UNCOMMIT) {
+			kernel_mem_uncommit(base, num);
+		}
 
-		if(kernel_mem_uncommit(base, num)) {
-
-			if(options & MEM_RELEASE) {
-				//Free the page
-				kernel_mem_unreserve(base, num);
-				unused_pde_recycle(true);
-			}
+		if(options & MEM_RELEASE) {
+			//Free the page
+			kernel_mem_unreserve(base, num);
+			unused_pde_recycle(true);
 		}
 
 		sync_kernel_pdt();
@@ -517,7 +518,9 @@ void* kernel_mem_reserve(u32 base, u32 num)
 	//Check arguments
 	if(base != 0
 	   && base * 4096 < KERNEL_MEM_BASE) {
-		return NULL;
+		excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+		            "Address %p is not in kernel memspace!\n",
+		            base * 4096);
 	}
 
 	if(base != 0) {
@@ -547,20 +550,21 @@ void* kernel_mem_reserve(u32 base, u32 num)
 			p_pte->avail = PG_RESERVED;
 			p_pte->page_base_addr = 0;
 
-			return (void*)(base * 4096);
 		}
+
+		return (void*)(base * 4096);
 
 	} else {
 		page_count = 0;
 
-		for(base = (KERNEL_MEM_BASE + TMP_PAGED_MEM_SIZE) / 4096;
+		for(base = (KERNEL_MEM_BASE + TMP_PAGED_MEM_SIZE) / 4096 + 1;
 		    base < 1024 * 1024;
 		    base++) {
 			p_pte = get_pte(0, base);
 
 			//Count free pages
 			if(p_pte->present == PG_NP
-			   || p_pte->avail == PG_NORMAL) {
+			   && p_pte->avail == PG_NORMAL) {
 				page_count++;
 
 			} else {
@@ -569,7 +573,7 @@ void* kernel_mem_reserve(u32 base, u32 num)
 			}
 
 			if(page_count >= num) {
-				base -= page_count;
+				base -= page_count - 1;
 
 				//Allocate pages
 				for(i = 0, p_pte = get_pte(0, base);
@@ -587,8 +591,9 @@ void* kernel_mem_reserve(u32 base, u32 num)
 					p_pte->avail = PG_RESERVED;
 					p_pte->page_base_addr = 0;
 
-					return (void*)(base * 4096);
 				}
+
+				return (void*)(base * 4096);
 			}
 		}
 	}
@@ -605,7 +610,9 @@ void* usr_mem_reserve(u32 base, u32 num)
 	//Check arguments
 	if(base != 0
 	   && base * 4096 >= KERNEL_MEM_BASE) {
-		return NULL;
+		excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+		            "Address %p is not in user memspace!\n",
+		            base * 4096);
 	}
 
 	if(base != 0) {
@@ -634,8 +641,9 @@ void* usr_mem_reserve(u32 base, u32 num)
 			p_pte->avail = PG_RESERVED;
 			p_pte->page_base_addr = 0;
 
-			return (void*)(base * 4096);
 		}
+
+		return (void*)(base * 4096);
 
 	} else {
 		page_count = 0;
@@ -647,7 +655,7 @@ void* usr_mem_reserve(u32 base, u32 num)
 
 			//Count free pages
 			if(p_pte->present == PG_NP
-			   || p_pte->avail == PG_NORMAL) {
+			   && p_pte->avail == PG_NORMAL) {
 				page_count++;
 
 			} else {
@@ -655,7 +663,7 @@ void* usr_mem_reserve(u32 base, u32 num)
 			}
 
 			if(page_count >= num) {
-				base -= page_count;
+				base -= (page_count - 1);
 
 				//Allocate pages
 				for(i = 0, p_pte = get_pte(current_pdt, base);
@@ -672,8 +680,9 @@ void* usr_mem_reserve(u32 base, u32 num)
 					p_pte->avail = PG_RESERVED;
 					p_pte->page_base_addr = 0;
 
-					return (void*)(base * 4096);
 				}
+
+				return (void*)(base * 4096);
 			}
 		}
 	}
@@ -1176,14 +1185,16 @@ void unused_pde_recycle(bool is_kernel)
 	return;
 }
 
-bool kernel_mem_uncommit(u32 base, u32 num)
+void kernel_mem_uncommit(u32 base, u32 num)
 {
 	ppte p_pte;
 	u32 i;
 
 	//Check arguments
 	if(base * 4096 < KERNEL_MEM_BASE) {
-		return false;
+		excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+		            "Address %p is not in kernel memspace!\n",
+		            base * 4096);
 	}
 
 	for(i = 0, p_pte = get_pte(0, base);
@@ -1217,18 +1228,21 @@ bool kernel_mem_uncommit(u32 base, u32 num)
 		}
 	}
 
-	return false;
+	return;
 }
 
-bool usr_mem_uncommit(u32 base, u32 num)
+void usr_mem_uncommit(u32 base, u32 num)
 {
 	ppte p_pte;
 	u32 i;
 
 	//Check arguments
 	if(base * 4096 >= KERNEL_MEM_BASE) {
-		return false;
+		excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+		            "Address %p is not in user memspace!\n",
+		            base * 4096);
 	}
+
 
 	for(i = 0, p_pte = get_pte(current_pdt, base);
 	    i < num;
@@ -1260,7 +1274,7 @@ bool usr_mem_uncommit(u32 base, u32 num)
 
 	}
 
-	return false;
+	return;
 }
 
 void kernel_mem_unreserve(u32 base, u32 num)
@@ -1270,14 +1284,16 @@ void kernel_mem_unreserve(u32 base, u32 num)
 
 	//Check arguments
 	if(base * 4096 < KERNEL_MEM_BASE) {
-		return;
+		excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+		            "Address %p is not in kernel memspace!\n",
+		            base * 4096);
 	}
 
 	for(i = 0, p_pte = get_pte(0, base);
 	    i < num;
 	    i++, p_pte = get_pte(0, base + i)) {
 		//Unreserve the page
-		if(p_pte->present == PG_P
+		if(p_pte->present == PG_NP
 		   && p_pte->avail == PG_RESERVED) {
 			p_pte->read_write = PG_RW;
 			p_pte->user_supervisor = PG_SUPERVISOR;
@@ -1307,14 +1323,17 @@ void usr_mem_unreserve(u32 base, u32 num)
 
 	//Check arguments
 	if(base * 4096 >= KERNEL_MEM_BASE) {
-		return;
+		excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+		            "Address %p is not in user memspace!\n",
+		            base * 4096);
 	}
 
 	for(i = 0, p_pte = get_pte(current_pdt, base);
 	    i < num;
 	    i++, p_pte = get_pte(current_pdt, base + i)) {
+
 		//Unreserve the page
-		if(p_pte->present == PG_P
+		if(p_pte->present == PG_NP
 		   && p_pte->avail == PG_RESERVED) {
 			p_pte->read_write = PG_RW;
 			p_pte->user_supervisor = PG_USER;

@@ -41,7 +41,7 @@
 #define		SYS_TICK				10
 
 //Init
-void		init_io();
+void		io_init();
 
 //Ports
 void		io_read_port_bytes(u32 port, u8* buf, u32 num);
