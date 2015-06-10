@@ -18,10 +18,6 @@
 #ifndef	SPINLOCK_H_INCLUDE
 #define	SPINLOCK_H_INCLUDE
 
-#ifdef X86
-	#include "../../../../../common/arch/x86/types.h"
-#endif
-
 typedef	struct {
 	u32		owner;
 	u32		next;
