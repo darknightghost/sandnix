@@ -85,13 +85,17 @@ typedef	struct _context {
 } context, *pcontext;
 
 typedef	struct _thread_info {
+	bool		alloc_flag;
 	u32			process_id;
 	u8			level;
+	u32			exit_code;
 	u32			ebp0;
 	u32			esp0;
 	u32			ebp3;
 	u32			esp3;
 } thread_info, *pthread_info;
+
+void	init_schedule();
 
 #endif	//!	SCHEDULE_H_INCLUDE
 

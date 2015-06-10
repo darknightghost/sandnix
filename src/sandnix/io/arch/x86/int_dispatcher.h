@@ -51,7 +51,6 @@ typedef	struct {
 	u32		edx;
 	u32		ecx;
 	u32		eax;
-	u32		eflags;
 } ret_regs, *pret_regs;
 #pragma pack()
 

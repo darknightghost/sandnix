@@ -45,7 +45,6 @@ fmt_df:
 .macro		NORMAL_INT_HNDLR num
 	.global		int_\num
 	int_\num :
-		pushfl
 		pushal
 		pushl	%esp
 		pushl	$\num
@@ -55,7 +54,6 @@ fmt_df:
 .macro		CLOCK_INT_HNDLR num
 	.global		int_\num
 	int_\num :
-		pushfl
 		pushal
 		pushl	%esp
 		pushl	$\num
@@ -66,14 +64,12 @@ fmt_df:
 .endm
 
 .macro		BP_INT_HNDLR
-		pushfl
 		pushal
 		pushl	%esp
 		call	int_bp_dispatcher
 .endm
 
 .macro		EXCEPTION_INT_HNDLR num has_err_code
-		pushfl
 		pushal
 		movb	exception_handling_flag,%al
 		#if(exception_handling_flag)

@@ -15,15 +15,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	SPINLOCK_H_INCLUDE
-#define	SPINLOCK_H_INCLUDE
+#include "pm.h"
+#include "../debug/debug.h"
 
-#include "../../../../common/common.h"
 
-typedef	struct {
-	u32		owner;
-	u32		next;
-	u32		int_level;
-} spin_lock, *pspin_lock;
-
-#endif	//!	SPINLOCK_H_INCLUDE
+void pm_init()
+{
+	dbg_print("Initializing pm...\n");
+	init_schedule();
+}

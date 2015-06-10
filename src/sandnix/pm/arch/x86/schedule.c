@@ -19,14 +19,43 @@
 #include "../../../rtl/rtl.h"
 #include "schedule.h"
 #include "../../../io/io.h"
+#include "../../../setup/setup.h"
+#include "../../../debug/debug.h"
 
 tss		sys_tss;
 
-context		tmp;
+static	u32				current_thread;
+static	thread_info		thread_table[MAX_PROCESS_NUM];
+
+static	void			switch_to(u32 thread_id);
+
+void init_schedule()
+{
+	//Initialize thread table
+	dbg_print("Initializing schedule...\n");
+	rtl_memset(thread_table, 0, sizeof(thread_table));
+	thread_table[0].alloc_flag = true;
+	__asm__ __volatile__(
+	    "movl	%%ebp,(%0)\n\t"
+	    ::"r"(&(thread_table[0].esp0)));
+
+	//Initialize schedule queue
+	return;
+}
 
 void pm_schedule()
 {
-	io_dispatch_int();
+	__asm__ __volatile__(
+	    "pushfl\n\t"
+	    "lcalll		%0,$_call_schedule\n\t"
+	    "_call_schedule:\n\t"
+	    "popl	%%eax\n\t"
+	    "pushl	$_ret\n\t"
+	    "pushal\n\t"
+	    "call	pm_task_schedule\n\t"
+	    "_ret:\n\t"
+	    ::"i"(SELECTOR_K_CODE));
+	return;
 }
 
 
@@ -53,4 +82,10 @@ u32 pm_get_crrnt_thrd_id()
 void pm_task_schedule()
 {
 	io_dispatch_int();
+}
+
+
+void switch_to(u32 thread_id)
+{
+	return;
 }
