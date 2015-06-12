@@ -30,6 +30,11 @@
 
 #define		MAX_PROCESS_NUM		65535
 
+#define		TASK_READY			0x01
+#define		TASK_SUSPEND		0x02
+#define		TASK_SLEEP			0x03
+#define		TASK_ZOMBIE			0x04
+
 //Thread function
 //void			thread_func(u32 thread_id,void* p_args);
 typedef	void	(*thread_func)(u32, void*);

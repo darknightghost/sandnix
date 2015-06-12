@@ -28,12 +28,12 @@ typedef	struct _list_node {
 	void*				p_item;
 } list_node, *plist_node, *list;
 
-bool		rtl_list_insert_before(
+plist_node		rtl_list_insert_before(
     list* p_list,
     plist_node position,		//Null if at the start of the list
     void* p_item,
     void* heap);
-bool		rtl_list_insert_after(
+plist_node		rtl_list_insert_after(
     list* p_list,
     plist_node position,		//Null if at the end of the list
     void* p_item,

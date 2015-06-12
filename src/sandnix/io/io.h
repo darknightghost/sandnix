@@ -32,7 +32,6 @@
 #define		INT_LEVEL_EXCEPTION		0xFF
 #define		INT_LEVEL_IO			0xD0
 #define		INT_LEVEL_DISPATCH		0x40	//Dispatch messages and signals,the task will not switch.
-#define		INT_LEVEL_TASK			0x20
 #define		INT_LEVEL_USR_HIGHEST	0x0F
 #define		INT_LEVEL_IDLE			0x00
 

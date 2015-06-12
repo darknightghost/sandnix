@@ -18,7 +18,7 @@
 #include "list.h"
 #include "../../mm/mm.h"
 
-bool rtl_list_insert_before(list* p_list, plist_node position, void* p_item, void* heap)
+plist_node rtl_list_insert_before(list* p_list, plist_node position, void* p_item, void* heap)
 {
 	plist_node p_node, p_new_node;
 
@@ -26,7 +26,7 @@ bool rtl_list_insert_before(list* p_list, plist_node position, void* p_item, voi
 	p_new_node = mm_hp_alloc(sizeof(list_node), heap);
 
 	if(p_new_node == NULL) {
-		return false;
+		return NULL;
 	}
 
 	p_new_node->p_item = p_item;
@@ -56,10 +56,10 @@ bool rtl_list_insert_before(list* p_list, plist_node position, void* p_item, voi
 
 	}
 
-	return true;
+	return p_new_node;
 }
 
-bool rtl_list_insert_after(list* p_list, plist_node position, void* p_item, void* heap)
+plist_node rtl_list_insert_after(list* p_list, plist_node position, void* p_item, void* heap)
 {
 	plist_node p_node, p_new_node;
 
@@ -67,7 +67,7 @@ bool rtl_list_insert_after(list* p_list, plist_node position, void* p_item, void
 	p_new_node = mm_hp_alloc(sizeof(list_node), heap);
 
 	if(p_new_node == NULL) {
-		return false;
+		return NULL;
 	}
 
 	p_new_node->p_item = p_item;
@@ -94,7 +94,7 @@ bool rtl_list_insert_after(list* p_list, plist_node position, void* p_item, void
 
 	}
 
-	return true;
+	return p_new_node;
 }
 
 void rtl_list_remove(list* p_list, plist_node p_node, void* heap)

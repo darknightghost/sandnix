@@ -21,6 +21,7 @@
 #include "../exceptions/exceptions.h"
 #include "../io/io.h"
 #include "../mm/mm.h"
+#include "../pm/pm.h"
 
 void kernel_main()
 {
@@ -31,10 +32,9 @@ void kernel_main()
 
 	get_kernel_param();
 	io_init();
-
 	excpt_init();
-
 	mm_init();
+	pm_init();
 
 	while(1);
 

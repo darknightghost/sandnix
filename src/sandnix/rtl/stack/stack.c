@@ -19,11 +19,16 @@
 
 bool rtl_stack_push(stack* p_s, void* p_item, void* heap)
 {
-	return rtl_list_insert_after(
-	           p_s,
-	           NULL,
-	           p_item,
-	           heap);
+	if(rtl_list_insert_after(
+	       p_s,
+	       NULL,
+	       p_item,
+	       heap) == NULL) {
+		return false;
+
+	} else {
+		return true;
+	}
 }
 
 

@@ -36,6 +36,8 @@ void pm_acqr_spn_lock(pspin_lock p_lock)
 
 	int_level = io_get_crrnt_int_level();
 
+	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
+
 	if(int_level > INT_LEVEL_DISPATCH) {
 		excpt_panic(EXCEPTION_INT_LEVEL_ERROR,
 		            "Spining locks can only be used while interrupt level <= INT_LEVEL_DISPATCH\n");
@@ -53,7 +55,6 @@ void pm_acqr_spn_lock(pspin_lock p_lock)
 	while(p_lock->owner != ticket);
 
 	//Increase interrupt level
-	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
 	p_lock->int_level = int_level;
 
 	return;

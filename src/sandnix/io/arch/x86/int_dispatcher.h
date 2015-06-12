@@ -58,5 +58,6 @@ void		init_int_dispatcher();
 void		int_excpt_dispatcher(u32 num, pret_regs p_regs);
 void		int_normal_dispatcher(u32 num, pret_regs p_regs);
 void		int_bp_dispatcher(pret_regs p_regs);
+void		int_clock_dispatcher(pret_regs p_regs);
 
 #endif	//!	INT_DISPATCHER_H_INCLUDE

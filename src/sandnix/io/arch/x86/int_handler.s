@@ -56,11 +56,10 @@ fmt_df:
 	int_\num :
 		pushal
 		pushl	%esp
-		pushl	$\num
 		movl	tick_count,%eax
 		incl	%eax
 		movl	%eax,tick_count
-		call	int_normal_dispatcher
+		call	int_clock_dispatcher
 .endm
 
 .macro		BP_INT_HNDLR

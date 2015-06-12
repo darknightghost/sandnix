@@ -86,6 +86,7 @@ void int_excpt_dispatcher(u32 num, pret_regs p_regs)
 	__asm__ __volatile__(
 	    "leave\n\t"
 	    "movl		%0,%%esp\n\t"
+	    "pushl		%0\n\t"
 	    "call		pm_task_schedule\n\t"
 	    ::"r"(p_regs));
 	return;
@@ -107,6 +108,7 @@ void int_normal_dispatcher(u32 num, pret_regs p_regs)
 	    "sti\n\t"
 	    "leave\n\t"
 	    "movl		%0,%%esp\n\t"
+	    "pushl		$0\n\t"
 	    "call		pm_task_schedule\n\t"
 	    ::"r"(p_regs));
 	return;
@@ -128,6 +130,31 @@ void int_bp_dispatcher(pret_regs p_regs)
 	    "sti\n\t"
 	    "leave\n\t"
 	    "movl		%0,%%esp\n\t"
+	    "pushl		$0\n\t"
+	    "call		pm_task_schedule\n\t"
+	    ::"r"(p_regs));
+	return;
+}
+
+void int_clock_dispatcher(pret_regs p_regs)
+{
+	//Set interrupt status
+	int_hndlr_tbl[INT_CLOCK].called_flag = true;
+	int_hndlr_tbl[INT_CLOCK].thread_id = pm_get_crrnt_thrd_id();
+
+	//Resume interrupt dispatcher thread
+	if(int_hndlr_tbl[INT_CLOCK].entry != NULL) {
+		pm_resume_thrd(0);
+	}
+
+	new_int = int_hndlr_tbl[INT_CLOCK].level;
+
+	//Schedule
+	__asm__ __volatile__(
+	    "sti\n\t"
+	    "leave\n\t"
+	    "movl		%0,%%esp\n\t"
+	    "pushl		$1\n\t"
 	    "call		pm_task_schedule\n\t"
 	    ::"r"(p_regs));
 	return;
@@ -142,12 +169,14 @@ void io_dispatch_int()
 
 	while(1) {
 		//Dispatch interrupts
-		for(i = 0; i < 256; i++) {
-			//Exceptions must be handled,if not,call excpt_panic
-			if(int_hndlr_tbl[i].called_flag
-			   && int_hndlr_tbl[i].level == INT_LEVEL_EXCEPTION) {
-				call_hndlr(i);
-				int_hndlr_tbl[i].called_flag = false;
+		if(new_int >= INT_LEVEL_EXCEPTION) {
+			for(i = 0; i < 256; i++) {
+				//Exceptions must be handled,if not,call excpt_panic
+				if(int_hndlr_tbl[i].called_flag
+				   && int_hndlr_tbl[i].level == INT_LEVEL_EXCEPTION) {
+					call_hndlr(i);
+					int_hndlr_tbl[i].called_flag = false;
+				}
 			}
 		}
 
@@ -160,19 +189,6 @@ void io_dispatch_int()
 				}
 
 				if(int_hndlr_tbl[i].level <= INT_LEVEL_DISPATCH) {
-					call_hndlr(i);
-					int_hndlr_tbl[i].called_flag = false;
-				}
-			}
-		}
-
-		for(i = INT_XF + 1; i < 256; i++) {
-			if(int_hndlr_tbl[i].called_flag) {
-				if(new_int > INT_LEVEL_TASK) {
-					continue;
-				}
-
-				if(int_hndlr_tbl[i].level >= INT_LEVEL_TASK) {
 					call_hndlr(i);
 					int_hndlr_tbl[i].called_flag = false;
 				}
@@ -265,7 +281,7 @@ void io_set_crrnt_int_level(u8 level)
 
 	current_int_level = level;
 
-	if(level < INT_LEVEL_TASK
+	if(level < INT_LEVEL_DISPATCH
 	   && level < prev_level) {
 		pm_schedule();
 	}
@@ -287,9 +303,6 @@ void io_set_int_level(u8 num, u8 level)
 {
 	if(num <= INT_XF) {
 		int_hndlr_tbl[num].level = INT_LEVEL_EXCEPTION;
-
-	} else if(num == INT_CLOCK) {
-		int_hndlr_tbl[num].level = INT_LEVEL_TASK;
 
 	} else {
 		int_hndlr_tbl[num].level = level;

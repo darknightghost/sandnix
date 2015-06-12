@@ -19,6 +19,10 @@
 #define	SCHEDULE_H_INCLUDE
 
 #include "../../pm.h"
+#include "../../../rtl/rtl.h"
+#include "../../spinlock/arch/x86/spinlock.h"
+
+#define	TIME_SLICE_TICKS	5
 
 #pragma	pack(1)
 typedef	struct _tss {
@@ -84,16 +88,38 @@ typedef	struct _context {
 	u16		gs;
 } context, *pcontext;
 
-typedef	struct _thread_info {
-	bool		alloc_flag;
-	u32			process_id;
-	u8			level;
-	u32			exit_code;
-	u32			ebp0;
-	u32			esp0;
-	u32			ebp3;
-	u32			esp3;
+typedef	struct {
+	u32		start_tick;
+	u32		stop_tick;
+} sleep_thread_info, *psleep_thread_info;
+
+typedef	struct {
+	u32		time_slice;
+} ready_thread_info.*pready_thread_info;
+
+typedef	union {
+	ready_thread_info	ready;
+	sleep_thread_info 	sleep;
+} thread_status_info, pthread_status_info;
+
+typedef	struct {
+	bool				alloc_flag;
+	u32					process_id;
+	u8					level;
+	u32					exit_code;
+	plist_node			p_node;
+	u32					status;
+	thread_status_info	status_info;
+	u32					ebp0;
+	u32					esp0;
+	u32					ebp3;
+	u32					esp3;
 } thread_info, *pthread_info;
+
+typedef	struct	{
+	list		queue;
+	spin_lock	lock;
+} task_queue, ptask_queue;
 
 void	init_schedule();
 
