@@ -110,10 +110,10 @@ typedef	struct {
 	plist_node			p_node;
 	u32					status;
 	thread_status_info	status_info;
-	u32					ebp0;
-	u32					esp0;
-	u32					ebp3;
-	u32					esp3;
+	void*				kernel_stack;
+	void*				user_stack;
+	u32					ebp;			//Ring0
+	u32					esp;			//Ring0
 } thread_info, *pthread_info;
 
 typedef	struct	{

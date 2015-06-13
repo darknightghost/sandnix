@@ -49,10 +49,6 @@ $(OBJS) : $(SOURCES) $(OBJS_DIR)
 			$(shell \
 			$(CC) $(CCFLAGS) -c -o $(OBJS_DIR)/$(basename $(filename)).o $(current_path)/$(filename))\
 		)\
-		$(if $(filter .c,$(suffix $(filename))),\
-			$(shell \
-			$(CC) $(CCFLAGS) -S -o $(OBJS_DIR)/$(basename $(filename)).S $(current_path)/$(filename))\
-		)\
 		$(if $(filter .s,$(suffix $(filename))),\
 			$(shell \
 			$(AS) $(ASFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(current_path)/$(filename))\

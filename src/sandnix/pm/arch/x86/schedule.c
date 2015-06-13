@@ -29,12 +29,17 @@ tss		sys_tss;
 static	void*			schedule_heap;
 static	u32				current_thread;
 static	u32				current_process;
-static	thread_info		thread_table[MAX_PROCESS_NUM];
+static	thread_info		thread_table[MAX_THREAD_NUM];
 static	spin_lock		thread_table_lock;
+static	u32				free_thread_id_num;
 
 static	u32				get_next_task(bool is_clock);
+static	u32				get_free_thread_id();
 static	void			reset_time_slice();
-static	bool			switch_to(u32 thread_id);
+static	void			switch_to(u32 thread_id);
+static	void			resume_thread(u32 thread_id);
+static	void			suspend_thread(u33 thread_id);
+static	void			user_thread_caller(u32 thread_id, void* p_args);
 
 //Task queues
 static	task_queue		task_queues[INT_LEVEL_HIGHEST + 1];
@@ -44,17 +49,31 @@ void init_schedule()
 	u32 i;
 
 	//Initialize thread table
-	dbg_print("Initializing schedule...\n");
+	dbg_print("\nInitializing schedule...\n");
+	dbg_print("Creating thread 0...\n");
 	rtl_memset(thread_table, 0, sizeof(thread_table));
 	thread_table[0].alloc_flag = true;
 	thread_table[0].level = INT_LEVEL_DISPATCH;
 	thread_table[0].status = TASK_READY;
 	__asm__ __volatile__(
 	    "movl	%%ebp,(%0)\n\t"
-	    ::"r"(&(thread_table[0].esp0)));
+	    ::"r"(&(thread_table[0].kernel_stack)));
 	pm_init_spn_lock(&thread_table_lock);
+	free_thread_id_num = MAX_THREAD_NUM - 1;
+
+	//Initialize TSS
+	dbg_print("Initializing TSS...\n");
+	rtl_memset(&sys_tss, 0, sizeof(sys_tss));
+	__asm__ __volatile__(
+	    "movl	%%ebp,%0\n\t"
+	    :"=r"(sys_tss, ebp0)
+	    :);
+	sys_tss.ss0 = SELECTOR_K_DATA;
+	sys_tss.ss3 = SELECTOR_U_DATA;
+	sys_tss.ios_base = sizeof(sys_tss);
 
 	//Initialize task queue
+	dbg_print("Initializing task queue...\n");
 	current_thread = 0;
 	current_process = 0;
 	schedule_heap = mm_hp_create(1024, HEAP_EXTENDABLE);
@@ -85,6 +104,7 @@ void pm_schedule()
 {
 	__asm__ __volatile__(
 	    "pushfl\n\t"
+	    "cli\n\t"
 	    "lcalll		%0,$_call_schedule\n\t"
 	    "_call_schedule:\n\t"
 	    "popl	%%eax\n\t"
@@ -97,80 +117,105 @@ void pm_schedule()
 	return;
 }
 
-
-void pm_suspend_thrd(u32 thread_id)
-{
-}
-
-void pm_resume_thrd(u32 thread_id)
-{
-
-}
-
-void pm_sleep(u32 ms)
-{
-
-}
-
-u32 pm_get_crrnt_thrd_id()
-{
-	return 0;
-}
-
 void pm_task_schedule(bool is_clock)
 {
 	u32 id;
 
-	__asm__ __volatile__(
-	    "cli\n\t"
-	    ::);
-
 	id = get_next_task(is_clock);
 
-	if(switch_to(id)) {
-		//Reset tss
-	}
+	switch_to(id);
 
 	__asm__ __volatile__(
 	    "leave\n\t"
 	    "addl	$8,%%esp\n\t"
+	    "popal\n\t"
 	    "iretd\n\t"
 	    ::);
 
 }
 
+u32 pm_create_thrd(thread_func entry,
+                   bool is ready,
+                   bool	is_user,
+                   void* p_args)
+{
+	void* k_stack, u_stack;
+	u32 new_id;
 
-bool switch_to(u32 thread_id)
+	pm_acqr_spn_lock(&thread_table_lock);
+
+	//Allocate a new id
+	new_id = get_free_thread_id();
+
+	if(new_id == NULL) {
+		pm_rls_spn_lock(&thread_table_lock);
+		return 0;
+	}
+
+	//Allocate kernel stack
+	k_stack = mm_virt_alloc(NULL, KERNEL_STACK_SIZE,
+	                        MEM_RESERVE | MEM_COMMIT,
+	                        PAGE_WRITEABLE);
+
+	if(k_stack == NULL) {
+		thread_table[new_id].alloc_flag = false;
+		pm_rls_spn_lock(&thread_table_lock);
+		return 0;
+	}
+
+	//Prepare
+}
+
+void pm_terminate_thrd(u32 thread_id, u32 exit_code);
+void pm_suspend_thrd(u32 thread_id);
+void pm_resume_thrd(u32 thread_id);
+void pm_sleep(u32 ms);
+u32 pm_get_crrnt_thrd_id();
+
+void switch_to(u32 thread_id)
 {
 	u32 proc_id;
 
 	if(current_thread == thread_id) {
-		return false;
+		return;
 	}
 
 	proc_id = pm_get_proc_id(thread_id);
 
+	//Switch page table
 	if(proc_id != current_process) {
-		mm_pg_tbl_switch(pm_get_pdt_id(proc_id));
+		pm_switch_process(proc_id);
 	}
 
+	//Set TSS
+	sys_tss.esp0 = thread_table[current_thread].kernel_stack;
+
+	//Set MSR
+	__asm__ __volatile__(
+	    "movl	$0x0175,%%ecx\n\t"
+	    "movl	%0,%%eax\n\t"
+	    "wmsr\n\t"
+	    ::"m"(thread_table[current_thread].kernel_stack));
+
+	//Save esp,ebp
 	__asm__ __volatile__(
 	    "movl	%%esp,(%0)\n\t"
 	    "movl	%%ebp,(%1)\n\t"
-	    ::"r"(&(thread_table[current_thread].esp0)),
-	    "r"(&(thread_table[current_thread], ebp0)));
+	    ::"r"(&(thread_table[current_thread].esp)),
+	    "r"(&(thread_table[current_thread], ebp)));
 	current_thread = thread_id;
 	current_process = proc_id;
+
+	//Set esp,ebp
 	__asm__ __volatile__(
 	    "movl	(%0),%%eax\n\t"
 	    "movl	%%eax,%%esp\n\t"
 	    "movl	(%1),%%eax\n\t"
 	    "movl	%%eax,%%ebp\n\t"
 	    "leave\n\t"
-	    "movl	$1,%%eax\n\t"
 	    "ret\n\t"
-	    ::"b"(&(thread_table[thread_id].esp0)),
-	    "c"(&(thread_table[thread_id], ebp0)));
+	    ::"b"(&(thread_table[thread_id].esp)),
+	    "c"(&(thread_table[thread_id].ebp)));
 
 	return;
 }
@@ -180,7 +225,40 @@ u32 get_next_task(bool is_clock)
 	return 0;
 }
 
+u32 get_free_thread_id()
+{
+	u32 i;
+
+	for(i = 0; i < MAX_THREAD_NUM; i++) {
+		if(!thread_table[i].alloc_flag) {
+			rtl_memset(&(thread_table[i]), 0, sizeof(thread_table[i]));
+			thread_table[i].alloc_flag = true;
+			thread_table[i].status = TASK_SUSPEND;
+			thread_table[i].level = INT_LEVEL_USR_HIGHEST;
+			thread_table[i].proc_id = current_process;
+			free_thread_id_num--;
+			return i;
+		}
+	}
+
+	return 0;
+}
+
 void reset_time_slice()
 {
 
+}
+void resume_thread(u32 thread_id)
+{
+	return;
+}
+
+void suspend_thread(u33 thread_id)
+{
+	return;
+}
+
+void user_thread_caller(u32 thread_id, void* p_args)
+{
+	return;
 }

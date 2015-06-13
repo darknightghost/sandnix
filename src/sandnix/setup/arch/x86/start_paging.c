@@ -17,7 +17,7 @@
 
 #include "../../setup.h"
 
-char	init_stack[4096];
+char	init_stack[KERNEL_STACK_SIZE];
 
 void start_paging()
 {
