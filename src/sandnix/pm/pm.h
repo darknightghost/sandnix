@@ -27,6 +27,7 @@
 #define		MAX_PROCESS_NUM		32767
 #define		MAX_THREAD_NUM		65535
 
+#define		TASK_RUNNING		0x00
 #define		TASK_READY			0x01
 #define		TASK_SUSPEND		0x02
 #define		TASK_SLEEP			0x03

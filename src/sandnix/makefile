@@ -4,6 +4,7 @@ export SOURCES = init/main.c \
 					mm/mm.c \
 					rtl/list/list.c \
 					rtl/stack/stack.c \
+					pm/pm.c \
 					init/parameters/parameters.c
 
 x86_build :

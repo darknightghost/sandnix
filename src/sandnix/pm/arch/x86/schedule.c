@@ -71,7 +71,7 @@ void init_schedule()
 	dbg_print("Initializing task queue...\n");
 	current_thread = 0;
 	current_process = 0;
-	schedule_heap = mm_hp_create(1024, HEAP_EXTENDABLE);
+	schedule_heap = mm_hp_create(TASK_QUEUE_HEAP_SIZE, HEAP_MULTITHREAD);
 
 	if(schedule_heap == NULL) {
 		excpt_panic(EXCEPTION_ILLEGAL_HEAP_ADDR,
@@ -247,6 +247,11 @@ void switch_to(u32 thread_id)
 	    "movl	%%ebp,(%1)\n\t"
 	    ::"r"(&(thread_table[current_thread].esp)),
 	    "r"(&(thread_table[current_thread].ebp)));
+
+	if(thread_table[current_thread].status == TASK_RUNNING) {
+		thread_table[current_thread].status = TASK_READY;
+	}
+
 	current_thread = thread_id;
 	current_process = proc_id;
 
@@ -266,6 +271,97 @@ void switch_to(u32 thread_id)
 
 u32 get_next_task(bool is_clock)
 {
+	u32 i;
+	u32	old_int_level;
+	plist_node p_node;
+	pthread_info p_info;
+
+	old_int_level = io_get_crrnt_int_level();
+	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
+
+	while(1) {
+		for(i = INT_LEVEL_HIGHEST;
+		    i + 1 > 0;
+		    i--) {
+			if(i > INT_LEVEL_USR_HIGHEST) {
+
+				//Real-time thread
+				//FCFS
+				pm_acqr_spn_lock(&task_queues[i].lock);
+
+				if(task_queues[i].queue != NULL) {
+
+					//Look for TASK_READY thread
+					p_node = task_queues[i].queue;
+
+					do {
+						p_info = (pthread_info)p_node->p_item;
+
+						if(p_info->status == TASK_READY) {
+							p_info->status->status = TASK_RUNNING;
+							pm_rls_spn_lock(&task_queues[i].lock);
+							io_set_crrnt_int_level(old_int_level);
+							return p_info - thread_table;
+						}
+
+						p_node = p_node->next;
+					} while(p_node! -task_queues[i].queue);
+				}
+
+				pm_rls_spn_lock(&task_queues[i].lock);
+
+			} else {
+				//Normal thread
+				//Round Robin
+				pm_acqr_spn_lock(&task_queues[i].lock);
+
+				if(task_queues[i].queue != NULL) {
+
+					//Look for TASK_READY thread
+					p_node = task_queues[i].queue;
+
+					do {
+						p_info = (pthread_info)p_node->p_item;
+
+						if(p_info->status == TASK_READY
+						   && p_info->time_slice < 0) {
+							p_info->status->status = TASK_RUNNING;
+
+							//Decrease time slice
+							(p_info->time_slice)--;
+
+							if(p_info->time_slice == 0) {
+								rtl_list_remove(&task_queues[i].queue,
+								                p_info,
+								                schedule_heap);
+
+								if(rtl_list_insert_after(
+								       &task_queues[i].queue,
+								       NULL,
+								       p_info,
+								       schedule_heap) == NULL) {
+									excpt_panic(EXCEPTION_RESOURCE_DEPLETED,
+									            "Failes to append new item to task queue!\n");
+								}
+							}
+
+							pm_rls_spn_lock(&task_queues[i].lock);
+							io_set_crrnt_int_level(old_int_level);
+							return p_info - thread_table;
+						}
+
+						p_node = p_node->next;
+					} while(p_node! -task_queues[i].queue);
+				}
+
+				pm_rls_spn_lock(&task_queues[i].lock);
+
+			}
+		}
+
+		reset_time_slice();
+	}
+
 	return 0;
 }
 

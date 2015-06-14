@@ -18,10 +18,12 @@
 #ifndef	SCHEDULE_H_INCLUDE
 #define	SCHEDULE_H_INCLUDE
 
+#include "../../../common/common.h"
 #include "../../../rtl/rtl.h"
 #include "../../spinlock/arch/x86/spinlock.h"
 
-#define	TIME_SLICE_TICKS	5
+#define	TIME_SLICE_TICKS		5
+#define	TASK_QUEUE_HEAP_SIZE	4096
 
 #pragma	pack(1)
 typedef	struct _tss {
