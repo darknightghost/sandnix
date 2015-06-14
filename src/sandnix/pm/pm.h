@@ -20,10 +20,6 @@
 
 #include "../common/common.h"
 
-#ifdef	X86
-	#include "arch/x86/schedule.h"
-#endif	//X86
-
 #include "mutex/mutex.h"
 #include "semaphore/semaphore.h"
 #include "spinlock/arch/x86/spinlock.h"
@@ -42,6 +38,10 @@
 //Thread function
 //void			thread_func(u32 thread_id,void* p_args);
 typedef	void	(*thread_func)(u32, void*);
+
+#ifdef	X86
+	#include "arch/x86/schedule.h"
+#endif	//X86
 
 //All
 void		pm_init();

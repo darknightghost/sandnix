@@ -18,7 +18,6 @@
 #ifndef	SCHEDULE_H_INCLUDE
 #define	SCHEDULE_H_INCLUDE
 
-#include "../../pm.h"
 #include "../../../rtl/rtl.h"
 #include "../../spinlock/arch/x86/spinlock.h"
 
@@ -95,7 +94,7 @@ typedef	struct {
 
 typedef	struct {
 	u32		time_slice;
-} ready_thread_info.*pready_thread_info;
+} ready_thread_info, *pready_thread_info;
 
 typedef	union {
 	ready_thread_info	ready;
@@ -120,6 +119,11 @@ typedef	struct	{
 	list		queue;
 	spin_lock	lock;
 } task_queue, ptask_queue;
+
+typedef	struct {
+	thread_func		func;
+	void*			p_args;
+} usr_thread_info, *pusr_thread_info;
 
 void	init_schedule();
 

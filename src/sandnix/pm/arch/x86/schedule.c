@@ -15,8 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../../pm.h"
 #include "../../../rtl/rtl.h"
+#include "../../pm.h"
 #include "schedule.h"
 #include "../../../io/io.h"
 #include "../../../setup/setup.h"
@@ -24,21 +24,21 @@
 #include "../../../mm/mm.h"
 #include "../../../exceptions/exceptions.h"
 
-tss		sys_tss;
+tss					sys_tss;
 
-static	void*			schedule_heap;
-static	u32				current_thread;
-static	u32				current_process;
-static	thread_info		thread_table[MAX_THREAD_NUM];
-static	spin_lock		thread_table_lock;
-static	u32				free_thread_id_num;
+void*				schedule_heap;
+u32					current_thread;
+u32					current_process;
+thread_info			thread_table[MAX_THREAD_NUM];
+spin_lock			thread_table_lock;
+u32					free_thread_id_num;
 
 static	u32				get_next_task(bool is_clock);
 static	u32				get_free_thread_id();
 static	void			reset_time_slice();
 static	void			switch_to(u32 thread_id);
 static	void			resume_thread(u32 thread_id);
-static	void			suspend_thread(u33 thread_id);
+static	void			suspend_thread(u32 thread_id);
 static	void			user_thread_caller(u32 thread_id, void* p_args);
 
 //Task queues
@@ -64,13 +64,8 @@ void init_schedule()
 	//Initialize TSS
 	dbg_print("Initializing TSS...\n");
 	rtl_memset(&sys_tss, 0, sizeof(sys_tss));
-	__asm__ __volatile__(
-	    "movl	%%ebp,%0\n\t"
-	    :"=r"(sys_tss, ebp0)
-	    :);
 	sys_tss.ss0 = SELECTOR_K_DATA;
-	sys_tss.ss3 = SELECTOR_U_DATA;
-	sys_tss.ios_base = sizeof(sys_tss);
+	sys_tss.io_map_base_addr = sizeof(sys_tss);
 
 	//Initialize task queue
 	dbg_print("Initializing task queue...\n");
@@ -129,25 +124,28 @@ void pm_task_schedule(bool is_clock)
 	    "leave\n\t"
 	    "addl	$8,%%esp\n\t"
 	    "popal\n\t"
-	    "iretd\n\t"
+	    "iretl\n\t"
 	    ::);
 
 }
 
 u32 pm_create_thrd(thread_func entry,
-                   bool is ready,
+                   bool is_ready,
                    bool	is_user,
                    void* p_args)
 {
-	void* k_stack, u_stack;
+	void* k_stack;
 	u32 new_id;
+	u8* p_stack;
+	u32 eflags;
+	pusr_thread_info p_usr_thread_info;
 
 	pm_acqr_spn_lock(&thread_table_lock);
 
 	//Allocate a new id
 	new_id = get_free_thread_id();
 
-	if(new_id == NULL) {
+	if(new_id == 0) {
 		pm_rls_spn_lock(&thread_table_lock);
 		return 0;
 	}
@@ -163,7 +161,53 @@ u32 pm_create_thrd(thread_func entry,
 		return 0;
 	}
 
-	//Prepare
+	//Prepare kernel stack
+	p_stack = (u8*)k_stack + KERNEL_STACK_SIZE;
+
+	//Prepare parameters
+	if(is_user) {
+		p_stack -= sizeof(usr_thread_info);
+		p_usr_thread_info = (pusr_thread_info)p_stack;
+		p_usr_thread_info->func = entry;
+		p_usr_thread_info->p_args = p_args;
+		p_stack -= 4;
+		*(pusr_thread_info*)p_stack = p_usr_thread_info;
+		p_stack -= 4;
+		*(u32*)p_stack = new_id;
+
+	} else {
+		p_stack -= 4;
+		*(void**)p_stack = p_args;
+		p_stack -= 4;
+		*(u32*)p_stack = new_id;
+	}
+
+	//Prepare for iret
+	p_stack -= 4;
+	__asm__ __volatile__(
+	    "pushfl\n\t"
+	    "popl	%0\n\t"
+	    :"=r"(eflags));
+	*(u32*)p_stack = eflags;
+	p_stack -= 2;
+	*(u16*)p_stack = SELECTOR_K_DATA;
+	p_stack -= 4;
+
+	if(is_user) {
+		*(thread_func*)p_stack = entry;
+
+	} else {
+		*(thread_func*)p_stack = user_thread_caller;
+	}
+
+	pm_rls_spn_lock(&thread_table_lock);
+
+	if(is_ready) {
+		pm_resume_thrd(new_id);
+	}
+
+	return new_id;
+
 }
 
 void pm_terminate_thrd(u32 thread_id, u32 exit_code);
@@ -188,13 +232,13 @@ void switch_to(u32 thread_id)
 	}
 
 	//Set TSS
-	sys_tss.esp0 = thread_table[current_thread].kernel_stack;
+	sys_tss.esp0 = (u32)(thread_table[current_thread].kernel_stack);
 
 	//Set MSR
 	__asm__ __volatile__(
 	    "movl	$0x0175,%%ecx\n\t"
 	    "movl	%0,%%eax\n\t"
-	    "wmsr\n\t"
+	    "wrmsr\n\t"
 	    ::"m"(thread_table[current_thread].kernel_stack));
 
 	//Save esp,ebp
@@ -202,7 +246,7 @@ void switch_to(u32 thread_id)
 	    "movl	%%esp,(%0)\n\t"
 	    "movl	%%ebp,(%1)\n\t"
 	    ::"r"(&(thread_table[current_thread].esp)),
-	    "r"(&(thread_table[current_thread], ebp)));
+	    "r"(&(thread_table[current_thread].ebp)));
 	current_thread = thread_id;
 	current_process = proc_id;
 
@@ -235,7 +279,7 @@ u32 get_free_thread_id()
 			thread_table[i].alloc_flag = true;
 			thread_table[i].status = TASK_SUSPEND;
 			thread_table[i].level = INT_LEVEL_USR_HIGHEST;
-			thread_table[i].proc_id = current_process;
+			thread_table[i].process_id = current_process;
 			free_thread_id_num--;
 			return i;
 		}
@@ -253,7 +297,7 @@ void resume_thread(u32 thread_id)
 	return;
 }
 
-void suspend_thread(u33 thread_id)
+void suspend_thread(u32 thread_id)
 {
 	return;
 }
