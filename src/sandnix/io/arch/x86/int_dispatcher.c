@@ -86,7 +86,6 @@ void int_excpt_dispatcher(u32 num, pret_regs p_regs)
 	__asm__ __volatile__(
 	    "leave\n\t"
 	    "movl		%0,%%esp\n\t"
-	    "pushl		%0\n\t"
 	    "call		pm_task_schedule\n\t"
 	    ::"r"(p_regs));
 	return;
@@ -108,7 +107,6 @@ void int_normal_dispatcher(u32 num, pret_regs p_regs)
 	    "sti\n\t"
 	    "leave\n\t"
 	    "movl		%0,%%esp\n\t"
-	    "pushl		$0\n\t"
 	    "call		pm_task_schedule\n\t"
 	    ::"r"(p_regs));
 	return;
@@ -130,7 +128,6 @@ void int_bp_dispatcher(pret_regs p_regs)
 	    "sti\n\t"
 	    "leave\n\t"
 	    "movl		%0,%%esp\n\t"
-	    "pushl		$0\n\t"
 	    "call		pm_task_schedule\n\t"
 	    ::"r"(p_regs));
 	return;
@@ -154,8 +151,7 @@ void int_clock_dispatcher(pret_regs p_regs)
 	    "sti\n\t"
 	    "leave\n\t"
 	    "movl		%0,%%esp\n\t"
-	    "pushl		$1\n\t"
-	    "call		pm_task_schedule\n\t"
+	    "call		pm_clock_schedule\n\t"
 	    ::"r"(p_regs));
 	return;
 }

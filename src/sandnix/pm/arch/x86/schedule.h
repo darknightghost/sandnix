@@ -24,6 +24,7 @@
 
 #define	TIME_SLICE_TICKS		5
 #define	TASK_QUEUE_HEAP_SIZE	4096
+#define	MAX_TIME_SLICE_NUM		5
 
 #pragma	pack(1)
 typedef	struct _tss {
@@ -106,7 +107,7 @@ typedef	union {
 typedef	struct {
 	bool				alloc_flag;
 	u32					process_id;
-	u8					level;
+	u8					level;			//Interrupt level <=> thread priority
 	u32					exit_code;
 	plist_node			p_task_queue_node;
 	u32					status;

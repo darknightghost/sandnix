@@ -24,6 +24,13 @@
 #include "../../../mm/mm.h"
 #include "../../../exceptions/exceptions.h"
 
+#define	TIME_SLICE(level)	(\
+                             ((level)/((level)/MAX_TIME_SLICE_NUM)\
+                              >=MAX_TIME_SLICE_NUM)\
+                             ?MAX_TIME_SLICE_NUM\
+                             :(level)/((level)/MAX_TIME_SLICE_NUM)\
+                          )
+
 tss					sys_tss;
 
 void*				schedule_heap;
@@ -33,7 +40,7 @@ thread_info			thread_table[MAX_THREAD_NUM];
 spin_lock			thread_table_lock;
 u32					free_thread_id_num;
 
-static	u32				get_next_task(bool is_clock);
+static	u32				get_next_task();
 static	u32				get_free_thread_id();
 static	void			reset_time_slice();
 static	void			switch_to(u32 thread_id);
@@ -44,9 +51,14 @@ static	void			user_thread_caller(u32 thread_id, void* p_args);
 //Task queues
 static	task_queue		task_queues[INT_LEVEL_HIGHEST + 1];
 
+//Ticks
+static	u32				cpu0_tick;
+
 void init_schedule()
 {
 	u32 i;
+
+	cpu0_tick = 0;
 
 	//Initialize thread table
 	dbg_print("\nInitializing schedule...\n");
@@ -97,6 +109,7 @@ void init_schedule()
 
 void pm_schedule()
 {
+	//Prepare for iret and call pm_task_schedule
 	__asm__ __volatile__(
 	    "pushfl\n\t"
 	    "cli\n\t"
@@ -112,17 +125,39 @@ void pm_schedule()
 	return;
 }
 
-void pm_task_schedule(bool is_clock)
+void pm_clock_schedule()
+{
+	cpu0_tick++;
+
+	if(cpu0_tick > TIME_SLICE_TICKS) {
+		__asm__ __volatile__(
+		    "leave\n\t"
+		    "addl	$4,%%esp\n\t"
+		    "call	pm_task_schedule\n\t"
+		    ::);
+
+	} else {
+		__asm__ __volatile__(
+		    "leave\n\t"
+		    "addl	$4,%%esp\n\t"
+		    "popal\n\t"
+		    "iretl\n\t"
+		    ::);
+	}
+}
+
+void pm_task_schedule()
 {
 	u32 id;
 
-	id = get_next_task(is_clock);
+	cpu0_tick = 0;
+	id = get_next_task();
 
 	switch_to(id);
 
 	__asm__ __volatile__(
 	    "leave\n\t"
-	    "addl	$8,%%esp\n\t"
+	    "addl	$4,%%esp\n\t"
 	    "popal\n\t"
 	    "iretl\n\t"
 	    ::);
@@ -269,7 +304,7 @@ void switch_to(u32 thread_id)
 	return;
 }
 
-u32 get_next_task(bool is_clock)
+u32 get_next_task()
 {
 	u32 i;
 	u32	old_int_level;
@@ -297,7 +332,7 @@ u32 get_next_task(bool is_clock)
 					p_node = task_queues[i].queue;
 
 					do {
-						p_info = (pthread_info)p_node->p_item;
+						p_info = (pthread_info)(p_node->p_item);
 
 						if(p_info->status == TASK_READY) {
 							p_info->status = TASK_RUNNING;
@@ -363,13 +398,15 @@ u32 get_next_task(bool is_clock)
 
 			} else if(idle_flag) {
 				//IDLE thread
+				pm_acqr_spn_lock(&task_queues[INT_LEVEL_IDLE].lock);
+
 				if(task_queues[INT_LEVEL_IDLE].queue != NULL) {
 
 					//Look for TASK_READY thread
 					p_node = task_queues[INT_LEVEL_IDLE].queue;
 
 					do {
-						p_info = (pthread_info)p_node->p_item;
+						p_info = (pthread_info)(p_node->p_item);
 
 						if(p_info->status == TASK_READY) {
 							idle_flag = false;
@@ -395,7 +432,7 @@ u32 get_next_task(bool is_clock)
 									}
 								}
 
-								pm_rls_spn_lock(&task_queues[i].lock);
+								pm_rls_spn_lock(&task_queues[INT_LEVEL_IDLE].lock);
 								io_set_crrnt_int_level(old_int_level);
 								return p_info - thread_table;
 							}
@@ -404,14 +441,13 @@ u32 get_next_task(bool is_clock)
 						p_node = p_node->p_next;
 					} while(p_node != task_queues[i].queue);
 				}
+
+				pm_rls_spn_lock(&task_queues[INT_LEVEL_IDLE].lock);
 			}
 		}
 
 		reset_time_slice();
 	}
-
-
-	return 0;
 }
 
 u32 get_free_thread_id()
@@ -435,8 +471,43 @@ u32 get_free_thread_id()
 
 void reset_time_slice()
 {
+	u32 i;
+	plist_node p_node;
+	pthread_info p_info;
 
+	//IDLE threads
+	pm_acqr_spn_lock(&(task_queues[INT_LEVEL_IDLE].lock));
+	p_node = task_queues[INT_LEVEL_IDLE].queue;
+	p_info = (pthread_info)(p_node->p_item);
+
+	if(p_info->status_info.ready.time_slice == 0) {
+		//Reset time slice
+		do {
+			p_info = (pthread_info)(p_node->p_item);
+			p_info->status_info.ready.time_slice = 1;
+			p_node = p_node->p_next;
+		} while(p_node != task_queues[INT_LEVEL_IDLE].queue);
+	}
+
+	pm_rls_spn_lock(&(task_queues[INT_LEVEL_IDLE].lock));
+
+	//Normal thread
+	for(i = 1; i <= INT_LEVEL_USR_HIGHEST; i++) {
+		p_node = task_queues[i].queue;
+		p_info = (pthread_info)(p_node->p_item);
+
+		//Reset time slice
+		do {
+			p_info = (pthread_info)(p_node->p_item);
+			p_info->status_info.ready.time_slice = TIME_SLICE[i];
+			p_node = p_node->p_next;
+		} while(p_node != task_queues[i].queue);
+
+	}
+
+	return;
 }
+
 void resume_thread(u32 thread_id)
 {
 	return;
