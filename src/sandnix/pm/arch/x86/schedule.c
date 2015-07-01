@@ -44,6 +44,7 @@ static	u32				get_next_task();
 static	u32				get_free_thread_id();
 static	void			reset_time_slice();
 static	void			switch_to(u32 thread_id);
+static	void			adjust_int_level();
 static	void			user_thread_caller(u32 thread_id, void* p_args);
 
 //Task queues
@@ -156,7 +157,11 @@ void pm_clock_schedule()
 void pm_task_schedule()
 {
 	u32 id;
+	__asm__ __volatile__(
+	    "cli\n\t"
+	    ::);
 
+	adjust_int_level();
 	cpu0_tick = 0;
 	id = get_next_task();
 
@@ -169,6 +174,58 @@ void pm_task_schedule()
 	    "iretl\n\t"
 	    ::);
 
+}
+
+void adjust_int_level()
+{
+	u32 int_level;
+	u32 old_level;
+	plist_node p_new_node;
+
+	pm_acqr_spn_lock(&thread_table_lock);
+	int_level = io_get_crrnt_int_level();
+	old_level = thread_table[current_thread].level;
+
+	if(int_level != old_level) {
+
+		pm_acqr_spn_lock(&(task_queues[old_level].lock));
+		rtl_list_remove(&(task_queues[old_level].queue),
+		                thread_table[current_thread].p_task_queue_node,
+		                schedule_heap);
+		pm_rls_spn_lock(&(task_queues[old_level].lock));
+
+		pm_acqr_spn_lock(&(task_queues[int_level].lock));
+
+		if(thread_table[current_thread].status_info.ready.time_slice > 0) {
+			p_new_node = rtl_list_insert_before(
+			                 &(task_queues[int_level].queue),
+			                 NULL,
+			                 &thread_table[current_thread].p_task_queue_node,
+			                 schedule_heap);
+
+		} else {
+			p_new_node = rtl_list_insert_after(
+			                 &(task_queues[int_level].queue),
+			                 NULL,
+			                 &thread_table[current_thread].p_task_queue_node,
+			                 schedule_heap);
+		}
+
+		if(p_new_node == NULL) {
+			excpt_panic(EXCEPTION_RESOURCE_DEPLETED,
+			            "Failes to append new item to task queue!\n");
+		}
+
+		thread_table[current_thread].level = int_level;
+		thread_table[current_thread].p_task_queue_node = p_new_node;
+
+		pm_rls_spn_lock(&(task_queues[int_level].lock));
+
+	}
+
+	pm_rls_spn_lock(&thread_table_lock);
+
+	return;
 }
 
 u32 pm_create_thrd(thread_func entry,
@@ -253,8 +310,79 @@ u32 pm_create_thrd(thread_func entry,
 }
 
 void pm_terminate_thrd(u32 thread_id, u32 exit_code);
-void pm_suspend_thrd(u32 thread_id);
-void pm_resume_thrd(u32 thread_id);
+
+void pm_suspend_thrd(u32 thread_id)
+{
+	u32 level;
+
+	pm_acqr_spn_lock(&thread_table_lock);
+
+	//Check the status of the thread
+	if(thread_table[thread_id].alloc_flag == false
+	   || (thread_table[thread_id].status != TASK_READY
+	       && thread_table[thread_id].status != TASK_RUNNING
+	       && thread_table[thread_id].status != TASK_SLEEP)) {
+		pm_rls_spn_lock(&thread_table_lock);
+		return;
+	}
+
+	//Remove the thread from task queue
+	level = thread_table[thread_id].level;
+	pm_acqr_spn_lock(&(task_queues[level].lock));
+	rtl_list_remove(
+	    &(task_queues[level].queue),
+	    thread_table[thread_id].p_task_queue_node,
+	    schedule_heap);
+	pm_rls_spn_lock(&(task_queues[level].lock));
+	thread_table[thread_id].status = TASK_SUSPEND;
+
+	pm_rls_spn_lock(&thread_table_lock);
+	pm_schedule();
+	return;
+}
+
+void pm_resume_thrd(u32 thread_id)
+{
+	plist_node p_new_node;
+	u32 int_level;
+
+	pm_acqr_spn_lock(&thread_table_lock);
+
+	if(thread_table[thread_id].alloc_flag == false
+	   || thread_table[thread_id].status != TASK_SUSPEND) {
+		pm_rls_spn_lock(&thread_table_lock);
+		return;
+	}
+
+	int_level = thread_table[thread_id].level;
+
+	//Set thread status and time slice
+	thread_table[thread_id].status = TASK_READY;
+	thread_table[thread_id].status_info.ready.time_slice
+	    = TIME_SLICE(int_level);
+
+	//Add thread to task queue
+	pm_acqr_spn_lock(&(task_queues[int_level].lock));
+	p_new_node = rtl_list_insert_before(
+	                 &(task_queues[int_level].queue),
+	                 NULL,
+	                 &thread_table[thread_id],
+	                 schedule_heap);
+
+	if(p_new_node == NULL) {
+		excpt_panic(EXCEPTION_RESOURCE_DEPLETED,
+		            "Failes to append new item to task queue!\n");
+	}
+
+	thread_table[thread_id].p_task_queue_node = p_new_node;
+
+	pm_rls_spn_lock(&(task_queues[int_level].lock));
+	pm_rls_spn_lock(&thread_table_lock);
+
+	pm_schedule();
+	return;
+}
+
 void pm_sleep(u32 ms);
 u32 pm_get_crrnt_thrd_id();
 
@@ -282,6 +410,7 @@ void switch_to(u32 thread_id)
 	    "movl	%0,%%eax\n\t"
 	    "wrmsr\n\t"
 	    ::"m"(thread_table[current_thread].kernel_stack));
+	io_set_crrnt_int_level(thread_table[thread_id].level);
 
 	//Save esp,ebp
 	__asm__ __volatile__(
@@ -314,14 +443,12 @@ void switch_to(u32 thread_id)
 u32 get_next_task()
 {
 	u32 i;
-	u32	old_int_level;
 	plist_node p_node;
+	plist_node p_new_node;
 	pthread_info p_info;
 	bool idle_flag;
 	u32 current_tick;
 
-	old_int_level = io_get_crrnt_int_level();
-	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
 	idle_flag = true;
 
 	while(1) {
@@ -332,7 +459,7 @@ u32 get_next_task()
 
 				//Real-time thread
 				//FCFS
-				pm_acqr_spn_lock(&task_queues[i].lock);
+				pm_acqr_spn_lock(&(task_queues[i].lock));
 
 				if(task_queues[i].queue != NULL) {
 
@@ -345,8 +472,7 @@ u32 get_next_task()
 
 						if(p_info->status == TASK_READY) {
 							p_info->status = TASK_RUNNING;
-							pm_rls_spn_lock(&task_queues[i].lock);
-							io_set_crrnt_int_level(old_int_level);
+							pm_rls_spn_lock(&(task_queues[i].lock));
 							return p_info - thread_table;
 
 						} else if(p_info->status == TASK_SLEEP
@@ -362,12 +488,12 @@ u32 get_next_task()
 					} while(p_node != task_queues[i].queue);
 				}
 
-				pm_rls_spn_lock(&task_queues[i].lock);
+				pm_rls_spn_lock(&(task_queues[i].lock));
 
 			} else if(i > INT_LEVEL_IDLE) {
 				//Normal thread
 				//Round Robin
-				pm_acqr_spn_lock(&task_queues[i].lock);
+				pm_acqr_spn_lock(&(task_queues[i].lock));
 
 				if(task_queues[i].queue != NULL) {
 
@@ -388,22 +514,25 @@ u32 get_next_task()
 								(p_info->status_info.ready.time_slice)--;
 
 								if(p_info->status_info.ready.time_slice == 0) {
-									rtl_list_remove(&task_queues[i].queue,
+									rtl_list_remove(&(task_queues[i].queue),
 									                p_node,
 									                schedule_heap);
 
-									if(rtl_list_insert_after(
-									       &task_queues[i].queue,
-									       NULL,
-									       p_info,
-									       schedule_heap) == NULL) {
+									p_new_node = rtl_list_insert_after(
+									                 &(task_queues[i].queue),
+									                 NULL,
+									                 p_info,
+									                 schedule_heap);
+
+									if(p_new_node == NULL) {
 										excpt_panic(EXCEPTION_RESOURCE_DEPLETED,
 										            "Failes to append new item to task queue!\n");
 									}
+
+									p_info->p_task_queue_node = p_new_node;
 								}
 
-								pm_rls_spn_lock(&task_queues[i].lock);
-								io_set_crrnt_int_level(old_int_level);
+								pm_rls_spn_lock(&(task_queues[i].lock));
 								return p_info - thread_table;
 							}
 
@@ -421,11 +550,11 @@ u32 get_next_task()
 					} while(p_node != task_queues[i].queue);
 				}
 
-				pm_rls_spn_lock(&task_queues[i].lock);
+				pm_rls_spn_lock(&(task_queues[i].lock));
 
 			} else if(idle_flag) {
 				//IDLE thread
-				pm_acqr_spn_lock(&task_queues[INT_LEVEL_IDLE].lock);
+				pm_acqr_spn_lock(&(task_queues[INT_LEVEL_IDLE].lock));
 
 				if(task_queues[INT_LEVEL_IDLE].queue != NULL) {
 
@@ -446,22 +575,25 @@ u32 get_next_task()
 								(p_info->status_info.ready.time_slice)--;
 
 								if(p_info->status_info.ready.time_slice == 0) {
-									rtl_list_remove(&task_queues[i].queue,
+									rtl_list_remove(&(task_queues[i].queue),
 									                p_node,
 									                schedule_heap);
 
-									if(rtl_list_insert_after(
-									       &task_queues[i].queue,
-									       NULL,
-									       p_info,
-									       schedule_heap) == NULL) {
+									p_new_node = rtl_list_insert_after(
+									                 &(task_queues[i].queue),
+									                 NULL,
+									                 p_info,
+									                 schedule_heap);
+
+									if(p_new_node == NULL) {
 										excpt_panic(EXCEPTION_RESOURCE_DEPLETED,
 										            "Failes to append new item to task queue!\n");
 									}
+
+									p_info->p_task_queue_node = p_new_node;
 								}
 
-								pm_rls_spn_lock(&task_queues[INT_LEVEL_IDLE].lock);
-								io_set_crrnt_int_level(old_int_level);
+								pm_rls_spn_lock(&(task_queues[INT_LEVEL_IDLE].lock));
 								return p_info - thread_table;
 							}
 
@@ -478,7 +610,7 @@ u32 get_next_task()
 					} while(p_node != task_queues[i].queue);
 				}
 
-				pm_rls_spn_lock(&task_queues[INT_LEVEL_IDLE].lock);
+				pm_rls_spn_lock(&(task_queues[INT_LEVEL_IDLE].lock));
 			}
 		}
 
@@ -535,7 +667,7 @@ void reset_time_slice()
 		//Reset time slice
 		do {
 			p_info = (pthread_info)(p_node->p_item);
-			p_info->status_info.ready.time_slice = TIME_SLICE[i];
+			p_info->status_info.ready.time_slice = TIME_SLICE(i);
 			p_node = p_node->p_next;
 		} while(p_node != task_queues[i].queue);
 
