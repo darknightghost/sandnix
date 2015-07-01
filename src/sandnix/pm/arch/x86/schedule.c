@@ -44,12 +44,19 @@ static	u32				get_next_task();
 static	u32				get_free_thread_id();
 static	void			reset_time_slice();
 static	void			switch_to(u32 thread_id);
-static	void			resume_thread(u32 thread_id);
-static	void			suspend_thread(u32 thread_id);
 static	void			user_thread_caller(u32 thread_id, void* p_args);
 
 //Task queues
 static	task_queue		task_queues[INT_LEVEL_HIGHEST + 1];
+
+/*
+	It's safe to edit the information of a thread in thread_table if you'v got
+	the lock of the task queue which the thread is in.Because when a thread is
+	TASK_SLEEP or TASK_READY or TASK_RUNNING,It must been removed from the task
+	queue before it can be removed from thread_table.YOU SHOULD NOT GET
+	thread_table_lock AFTER YOU'V GOT THE LOCK OF ANY TASK QUEUE.That may cause
+	deadlock.
+*/
 
 //Ticks
 static	u32				cpu0_tick;
@@ -311,6 +318,7 @@ u32 get_next_task()
 	plist_node p_node;
 	pthread_info p_info;
 	bool idle_flag;
+	u32 current_tick;
 
 	old_int_level = io_get_crrnt_int_level();
 	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
@@ -333,12 +341,21 @@ u32 get_next_task()
 
 					do {
 						p_info = (pthread_info)(p_node->p_item);
+						current_tick = io_get_tick_count();
 
 						if(p_info->status == TASK_READY) {
 							p_info->status = TASK_RUNNING;
 							pm_rls_spn_lock(&task_queues[i].lock);
 							io_set_crrnt_int_level(old_int_level);
 							return p_info - thread_table;
+
+						} else if(p_info->status == TASK_SLEEP
+						          && current_tick >= p_info->status_info.sleep.start_tick
+						          && current_tick <= p_info->status_info.sleep.stop_tick) {
+
+							//Awake sleeping thread
+							p_info->status = TASK_READY;
+							p_info->status_info.ready.time_slice = 0;
 						}
 
 						p_node = p_node->p_next;
@@ -359,6 +376,7 @@ u32 get_next_task()
 
 					do {
 						p_info = (pthread_info)(p_node->p_item);
+						current_tick = io_get_tick_count();
 
 						if(p_info->status == TASK_READY) {
 							idle_flag = false;
@@ -388,7 +406,16 @@ u32 get_next_task()
 								io_set_crrnt_int_level(old_int_level);
 								return p_info - thread_table;
 							}
+
+						} else if(p_info->status == TASK_SLEEP
+						          && current_tick >= p_info->status_info.sleep.start_tick
+						          && current_tick <= p_info->status_info.sleep.stop_tick) {
+
+							//Awake sleeping thread
+							p_info->status = TASK_READY;
+							p_info->status_info.ready.time_slice = 0;
 						}
+
 
 						p_node = p_node->p_next;
 					} while(p_node != task_queues[i].queue);
@@ -407,6 +434,7 @@ u32 get_next_task()
 
 					do {
 						p_info = (pthread_info)(p_node->p_item);
+						current_tick = io_get_tick_count();
 
 						if(p_info->status == TASK_READY) {
 							idle_flag = false;
@@ -436,6 +464,14 @@ u32 get_next_task()
 								io_set_crrnt_int_level(old_int_level);
 								return p_info - thread_table;
 							}
+
+						} else if(p_info->status == TASK_SLEEP
+						          && current_tick >= p_info->status_info.sleep.start_tick
+						          && current_tick <= p_info->status_info.sleep.stop_tick) {
+
+							//Awake sleeping thread
+							p_info->status = TASK_READY;
+							p_info->status_info.ready.time_slice = 0;
 						}
 
 						p_node = p_node->p_next;
@@ -505,16 +541,6 @@ void reset_time_slice()
 
 	}
 
-	return;
-}
-
-void resume_thread(u32 thread_id)
-{
-	return;
-}
-
-void suspend_thread(u32 thread_id)
-{
 	return;
 }
 
