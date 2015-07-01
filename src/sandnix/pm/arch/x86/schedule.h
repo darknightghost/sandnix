@@ -108,7 +108,7 @@ typedef	struct {
 	u32					process_id;
 	u8					level;
 	u32					exit_code;
-	plist_node			p_node;
+	plist_node			p_task_queue_node;
 	u32					status;
 	thread_status_info	status_info;
 	void*				kernel_stack;
