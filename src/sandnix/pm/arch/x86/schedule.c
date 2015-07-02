@@ -65,6 +65,7 @@ static	u32				cpu0_tick;
 void init_schedule()
 {
 	u32 i;
+	plist_node p_new_node;
 
 	cpu0_tick = 0;
 
@@ -103,14 +104,18 @@ void init_schedule()
 		pm_init_spn_lock(&(task_queues[i].lock));
 	}
 
-	if(rtl_list_insert_after(
-	       &(task_queues[INT_LEVEL_DISPATCH].queue),
-	       NULL,
-	       &thread_table[0],
-	       schedule_heap) == NULL) {
+	p_new_node = rtl_list_insert_after(
+	                 &(task_queues[INT_LEVEL_DISPATCH].queue),
+	                 NULL,
+	                 &thread_table[0],
+	                 schedule_heap);
+
+	if(p_new_node == NULL) {
 		excpt_panic(EXCEPTION_UNKNOW,
 		            "Unable to initialize task queue!\n");
 	}
+
+	thread_table[0].p_task_queue_node = p_new_node;
 
 	return;
 }
@@ -126,7 +131,6 @@ void pm_schedule()
 	    "popl	%%eax\n\t"
 	    "pushl	$_ret\n\t"
 	    "pushal\n\t"
-	    "pushl	$0\n\t"
 	    "call	pm_task_schedule\n\t"
 	    "_ret:\n\t"
 	    ::"i"(SELECTOR_K_CODE));
@@ -149,7 +153,7 @@ void pm_clock_schedule()
 		    "leave\n\t"
 		    "addl	$4,%%esp\n\t"
 		    "popal\n\t"
-		    "iretl\n\t"
+		    "iret\n\t"
 		    ::);
 	}
 }
@@ -157,21 +161,27 @@ void pm_clock_schedule()
 void pm_task_schedule()
 {
 	u32 id;
+	u32 current_int_level;
+
 	__asm__ __volatile__(
 	    "cli\n\t"
 	    ::);
 
-	adjust_int_level();
-	cpu0_tick = 0;
-	id = get_next_task();
+	current_int_level = io_get_crrnt_int_level();
 
-	switch_to(id);
+	if(current_int_level <= INT_LEVEL_USR_HIGHEST) {
+		adjust_int_level();
+		cpu0_tick = 0;
+		id = get_next_task();
+
+		switch_to(id);
+	}
 
 	__asm__ __volatile__(
 	    "leave\n\t"
 	    "addl	$4,%%esp\n\t"
 	    "popal\n\t"
-	    "iretl\n\t"
+	    "iret\n\t"
 	    ::);
 
 }
@@ -388,7 +398,11 @@ void pm_resume_thrd(u32 thread_id)
 }
 
 void pm_sleep(u32 ms);
-u32 pm_get_crrnt_thrd_id();
+
+u32 pm_get_crrnt_thrd_id()
+{
+	return current_thread;
+}
 
 void switch_to(u32 thread_id)
 {

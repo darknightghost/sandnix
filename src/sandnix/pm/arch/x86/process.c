@@ -14,3 +14,24 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+#include "../../pm.h"
+
+u32			pm_fork();
+void		pm_exit(u32 exit_code);
+u32			pm_wait(u32 thread_id);
+void		pm_exec(char* cmd_line);
+u32 pm_switch_process(u32 process_id)
+{
+	return 0;
+}
+u32			pm_get_pdt_id(u32 process_id);
+
+u32 pm_get_proc_id(u32 thread_id)
+{
+	return 0;
+}
+
+u32			pm_get_proc_uid(u32 process_id);
+bool		pm_set_proc_uid(u32 process_id, u32 uid);
+

@@ -16,11 +16,13 @@
 */
 
 #include "pm.h"
+#include "../io/io.h"
 #include "../debug/debug.h"
 
 
 void pm_init()
 {
-	dbg_print("Initializing pm...\n");
+	dbg_print("\nInitializing pm...\n");
 	init_schedule();
+	//io_enable_interrupt();
 }

@@ -23,6 +23,9 @@
 #include "../mm/mm.h"
 #include "../pm/pm.h"
 
+
+void test();
+
 void kernel_main()
 {
 	dbg_cls();
@@ -35,10 +38,25 @@ void kernel_main()
 	excpt_init();
 	mm_init();
 	pm_init();
-
-	while(1);
+	pm_schedule();
+	//test();
 
 	io_dispatch_int();
 
+	while(1);
+
 	return;
+}
+
+void test_thread(u32 thread_id, void* p_args)
+{
+	dbg_print("task 1\n");
+
+	while(1);
+}
+
+void test()
+{
+	pm_create_thrd(test_thread, true, false, NULL);
+	dbg_print("task 0\n");
 }

@@ -146,6 +146,12 @@ void int_clock_dispatcher(pret_regs p_regs)
 
 	new_int = int_hndlr_tbl[INT_CLOCK].level;
 
+	//Enable next clock interrupt
+	__asm__ __volatile__(
+	    "movb	$0x20,%%al\n\t"
+	    "outb	%%al,$0x20\n\t"
+	    ::);
+
 	//Schedule
 	__asm__ __volatile__(
 	    "sti\n\t"
@@ -160,12 +166,12 @@ void io_dispatch_int()
 {
 	u32 i;
 
-	io_set_crrnt_int_level(INT_LEVEL_EXCEPTION);
 	new_int = 0;
 
 	while(1) {
 		//Dispatch interrupts
 		if(new_int >= INT_LEVEL_EXCEPTION) {
+
 			for(i = 0; i < 256; i++) {
 				//Exceptions must be handled,if not,call excpt_panic
 				if(int_hndlr_tbl[i].called_flag
@@ -195,6 +201,7 @@ void io_dispatch_int()
 		__asm__ __volatile__(
 		    "sti\n\t"
 		    ::);
+		io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
 		pm_suspend_thrd(0);
 	}
 }
