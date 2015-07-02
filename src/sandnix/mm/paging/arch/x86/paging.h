@@ -19,5 +19,22 @@
 #define	PAGING_H_INCLUDE
 
 #include "../../../../../common/arch/x86/types.h"
+#include "../../../mm.h"
 
+#define	PAGE_TABLE_VADDR
+#define	REFRESH_TLB	{\
+		__asm__ __volatile__(\
+		                     "movl	%%cr4,%%eax\n\t"\
+		                     "btcl	$7,%%eax\n\t"\
+		                     "movl	%%eax,%%cr4\n\t"\
+		                     "pushl	%%eax\n\t"\
+		                     "movl	%%cr3,%%eax\n\t"\
+		                     "movl	%%eax,%%cr3\n\t"\
+		                     "popl	%%eax\n\t"\
+		                     "btsl	$7,%%eax\n\t"\
+		                     "movl	%%eax,%%cr4\n\t"\
+		                     ::);\
+	}
+
+void		init_paging();
 #endif	//!	PAGING_H_INCLUDE

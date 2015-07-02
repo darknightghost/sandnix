@@ -40,6 +40,7 @@ u32 get_hdd_info(u8 dev)
 		//Compute I/O port
 		if(checked_dev < 2) {
 			data_reg = 0x01F0;
+
 		} else {
 			data_reg = 0x0170;
 		}
@@ -56,6 +57,7 @@ u32 get_hdd_info(u8 dev)
 
 		if(checked_dev % 2 == 0) {
 			dev_reg_value.members.drv_slave_flag = 0;
+
 		} else {
 			dev_reg_value.members.drv_slave_flag = 1;
 		}
@@ -119,10 +121,11 @@ bool hdd_read(u32 hdd_info, u32 start_sector, u8 sector_num, u8* buf)
 	//Compute I/O port
 	if(hdd_info & DEVICE_PORT_PRIMARY_FLAG) {
 		data_reg = 0x01F0;
+
 	} else {
 		data_reg = 0x0170;
 	}
-	
+
 	error_reg = data_reg + 1;
 	sector_count_reg = data_reg + 2;
 	lba_low_reg = data_reg + 3;
@@ -146,13 +149,14 @@ bool hdd_read(u32 hdd_info, u32 start_sector, u8 sector_num, u8* buf)
 
 	if(hdd_info & DEVICE_MASTER_FLAG) {
 		dev_reg_value.members.drv_slave_flag = 0;
+
 	} else {
 		dev_reg_value.members.drv_slave_flag = 1;
 	}
 
 	out_byte(dev_reg_value.value, device_reg);
 	out_byte(0x20, status_reg);
-	
+
 	//Read disk
 	while(!(in_byte(status_reg) & 0x08));		//0x08=0000 1000
 

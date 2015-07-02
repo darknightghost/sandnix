@@ -20,20 +20,20 @@
 
 #ifdef	X86
 #include "../../common/arch/x86/types.h"
-
 //Variable Arguments
 typedef	char*			va_list;
 
 #define	va_start(ap,v)	((ap) = (va_list)&(v) + 4)
 
 #define	va_arg(ap,t)	(ap += 4 ,(\
-								   sizeof(t) <= 4\
-								   ? *((t*)(ap-4))\
-								   : **((t**)(ap-4))))
+                                   sizeof(t) <= 4\
+                                   ? *((t*)(ap-4))\
+                                   : **((t**)(ap-4))))
 
 #define	va_end(ap)		(ap = (va_list)0)
 #endif	//!	X86
 
+<<<<<<< HEAD
 void*		rtl_memcpy(void* dest, void* src, size_t len);
 void*		rtl_memset(void* dest, u8 val, size_t len);
 void*		rtl_memmove(void* dest, void* src, size_t len);
@@ -48,5 +48,11 @@ char*		rtl_itoa(char* buf, u64 num);
 char*		rtl_htoa(char* buf, u64 num, bool capital_flag);
 char*		rtl_otoa(char* buf, u64 num);
 //char*		rtl_ftoa(char* buf, u64 num);
+=======
+#include "string/string.h"
+#include "math/math.h"
+#include "list/list.h"
+#include "stack/stack.h"
+>>>>>>> sandnix_parent/master
 
 #endif	//!	RTL_H_INCLUDE

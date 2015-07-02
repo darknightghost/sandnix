@@ -40,9 +40,9 @@ void show_menu()
 	u32 i;
 	pmenu_item p_menu_item;
 	print_string(
-		GET_REAL_ADDR("Searching for /boot/sanlo.cfg...\n"),
-		FG_BRIGHT_WHITE | BG_BLACK,
-		BG_BLACK);
+	    GET_REAL_ADDR("Searching for /boot/sanlo.cfg...\n"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
 	//Open config file
 	fp = open_cfg_file();
 
@@ -64,9 +64,9 @@ void show_menu()
 	//Show menu
 	cls(BG_BLACK | FG_BRIGHT_WHITE);
 	print_string(
-		GET_REAL_ADDR("Enter a choice or press <ESC> to restart your computer:\n"),
-		FG_BRIGHT_WHITE | BG_BLACK,
-		BG_BLACK);
+	    GET_REAL_ADDR("Enter a choice or press <ESC> to restart your computer:\n"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
 	print_menu(1, &boot_menu);
 
 	while(1) {
@@ -82,16 +82,19 @@ void show_menu()
 			if(!load_os_kernel(p_menu_item->kernel_path, p_menu_item->parameter)) {
 				panic(EXCEPTION_NO_KERNEL);
 			}
+
 		} else if(pressed_key == KEY_UP_PRESSED) {
 			if(boot_menu.selected_item > 0) {
 				(boot_menu.selected_item)--;
 				print_menu(1, &boot_menu);
 			}
+
 		} else if(pressed_key == KEY_DOWN_PRESSED) {
 			if(boot_menu.selected_item < boot_menu.item_num - 1) {
 				(boot_menu.selected_item)++;
 				print_menu(1, &boot_menu);
 			}
+
 		} else if(pressed_key == KEY_ESC_PRESSED) {
 			break;
 		}
@@ -137,6 +140,7 @@ pfile open_cfg_file()
 					free(path);
 					return fp;
 				}
+
 			} else {
 				break;
 			}
@@ -144,8 +148,8 @@ pfile open_cfg_file()
 
 		//Logic partitions
 		for(partition = 4;
-			get_partition_info(disk, partition, &t, &t, (u8*)&t) != PARTITION_NOT_FOUND;
-			partition++) {
+		    get_partition_info(disk, partition, &t, &t, (u8*)&t) != PARTITION_NOT_FOUND;
+		    partition++) {
 			strcpy(path, GET_REAL_ADDR("(hd"));
 			dectostr(disk, path + 3);
 			strcat(path, GET_REAL_ADDR(","));
@@ -189,11 +193,14 @@ char* get_word(pfile fp, char* buf, size_t buf_size)
 
 		if(byte == '\"') {
 			quote_flag = !quote_flag;
+
 		} else if((byte == ' ' || byte == '\t')
-				  && !quote_flag) {
+		          && !quote_flag) {
 			break;
+
 		} else if(byte == '\n') {
 			break;
+
 		} else {
 			*p = byte;
 			p++;
@@ -217,6 +224,7 @@ char* get_line(pfile fp, char* buf, size_t buf_size)
 
 		if(byte == '\n') {
 			break;
+
 		} else {
 			*p = byte;
 			p++;
@@ -261,8 +269,10 @@ bool check_version(pfile fp)
 	for(p = buf; *p != '\0'; p++) {
 		if(*p >= '0' && *p <= '9') {
 			num = num * 10 + (*p - '0');
+
 		} else if(*p == '.') {
 			ver = ver * 0x100 + num;
+
 		} else {
 			return false;
 		}
@@ -322,6 +332,7 @@ bool analyse_cfg_file(pfile fp, pmenu p_boot_menu)
 			p_item->p_prev = p_item;
 			p_item->p_next = p_item;
 			p_boot_menu->menu_list = p_item;
+
 		} else {
 			p_item->p_prev = p_boot_menu->menu_list->p_prev;
 			p_item->p_next = p_boot_menu->menu_list;
@@ -350,26 +361,27 @@ void print_menu(u16 line, pmenu p_boot_menu)
 
 	for(i = 0; i < p_boot_menu->item_num; i++) {
 		print_string(
-			GET_REAL_ADDR("\t"),
-			FG_BRIGHT_WHITE | BG_BLACK,
-			BG_BLACK);
+		    GET_REAL_ADDR("\t"),
+		    FG_BRIGHT_WHITE | BG_BLACK,
+		    BG_BLACK);
 
 		if(i == p_boot_menu->selected_item) {
 			print_string(
-				p_item->name,
-				FG_BLACK | BG_WHITE,
-				BG_BLACK);
+			    p_item->name,
+			    FG_BLACK | BG_WHITE,
+			    BG_BLACK);
+
 		} else {
 			print_string(
-				p_item->name,
-				FG_BRIGHT_WHITE | BG_BLACK,
-				BG_BLACK);
+			    p_item->name,
+			    FG_BRIGHT_WHITE | BG_BLACK,
+			    BG_BLACK);
 		}
 
 		print_string(
-			GET_REAL_ADDR("\n"),
-			FG_BRIGHT_WHITE | BG_BLACK,
-			BG_BLACK);
+		    GET_REAL_ADDR("\n"),
+		    FG_BRIGHT_WHITE | BG_BLACK,
+		    BG_BLACK);
 		p_item = p_item->p_next;
 	}
 

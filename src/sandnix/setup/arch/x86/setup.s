@@ -66,6 +66,7 @@
 .equ		SELECTOR_U_DATA,		(3 * DESCRIPTOR_SIZE | 3)
 .equ		SELECTOR_U_CODE,		(4 * DESCRIPTOR_SIZE | 3)
 .equ		SELECTOR_BASIC_VIDEO,	(5 * DESCRIPTOR_SIZE)
+.equ		SELECTOR_TSS,			(6 * DESCRIPTOR_SIZE)
 .equ		BASIC_VIDEO_BASE_ADDR,	0xC00B8000
 
 .code32
@@ -83,16 +84,16 @@ descriptor_user_code:
 SEGMENT_DESCRIPTOR	0,				0xFFFFF,			DA_CR | DA_DPL3 | DA_32
 descriptor_basic_video:
 SEGMENT_DESCRIPTOR	0xC00B8000,		0xFFFFF,			DA_DRW | DA_DPL0 | DA_32
+descriptor_tss:
+SEGMENT_DESCRIPTOR	0,		0x67,				DA_386TSS | DA_DPL0
 gdt_end:
 
 gdtr_value:
 	.word		(gdt_end - gdt - 1)
 	.long		gdt
 //------------------------------Functions---------------------------------------
-.global _aaa
 _start:
 		call	start_paging
-_aaa:
 		movl	$_kernel_mem_entry,%eax
 //Jmp to kernel memory
 		jmpl	*%eax
@@ -105,6 +106,19 @@ _kernel_mem_entry:
 		movw	%ax,%es
 		movw	%ax,%ss
 		movw	%ax,%fs
+		movl	$gdt,%ebx
+		addl	$SELECTOR_TSS,%ebx
+		movl	$sys_tss,%eax
+		movw	%ax,0x02(%ebx)
+		shrl	$16,%eax
+		movb	%al,0x04(%ebx)
+		movb	%ah,0x07(%ebx)
+		movw	$SELECTOR_TSS,%ax
+		ltr		%ax
 		movw	$SELECTOR_BASIC_VIDEO,%ax
 		movw	%ax,%gs
+		movl	$init_stack,%eax
+		addl	$0x1000,%eax
+		movl	%eax,%esp
+		movl	%esp,%ebp
 		ljmpl	$SELECTOR_K_CODE,$kernel_main

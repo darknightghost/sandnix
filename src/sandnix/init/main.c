@@ -15,16 +15,48 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef	X86
+#include "../common/common.h"
+#include "../debug/debug.h"
+#include "parameters/parameters.h"
+#include "../exceptions/exceptions.h"
+#include "../io/io.h"
+#include "../mm/mm.h"
+#include "../pm/pm.h"
 
-#include "../../common/arch/x86/types.h"
-#include "../../common/arch/x86/kernel_image.h"
 
-#endif	//X86
+void test();
 
 void kernel_main()
 {
+	dbg_cls();
+	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
+
+	dbg_print("%s", "Sandnix 0.0.1 kernel loaded.\n");
+
+	get_kernel_param();
+	io_init();
+	excpt_init();
+	mm_init();
+	pm_init();
+	pm_schedule();
+	//test();
+
+	io_dispatch_int();
+
 	while(1);
 
 	return;
+}
+
+void test_thread(u32 thread_id, void* p_args)
+{
+	dbg_print("task 1\n");
+
+	while(1);
+}
+
+void test()
+{
+	pm_create_thrd(test_thread, true, false, NULL);
+	dbg_print("task 0\n");
 }

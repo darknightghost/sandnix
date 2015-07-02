@@ -18,9 +18,86 @@
 #ifndef	MM_H_INCLUDE
 #define	MM_H_INCLUDE
 
+#include "../common/common.h"
+
 #ifdef	X86
-#include "paging/arch/x86/page_table.h"
+	#include "paging/arch/x86/page_table.h"
+	#include "paging/arch/x86/paging.h"
+	#include "paging/arch/x86/physical_mem.h"
 #endif	//X86
+
+#ifdef X86
+
+#include "heap/heap.h"
+
+typedef	struct	{
+	u32		phy_mem;
+	u32		phy_mem_usable;
+	u32		swap;
+	u32		swap_usable;
+	u32		pde_table_num;
+	u32		pte_table_num;
+	u32		shared_pages;
+} mem_info, *pmem_info;
+
+#endif	//X86
+
+#define		MEM_USER			0x00000001
+#define		MEM_COMMIT			0x00000002
+#define		MEM_RESERVE			0x00000004
+#define		MEM_UNCOMMIT		0x00000008
+#define		MEM_RELEASE			0x00000010
+#define		MEM_DMA				0x00000020
+
+#define		PAGE_WRITEABLE		0x00000001
+#define		PAGE_EXECUTABLE		0x00000002
+
+#define		HEAP_EXTENDABLE				0x01
+#define		HEAP_MULTITHREAD			0x02
+#define		HEAP_DESTROY				0x04
+
+
+void		mm_init();
+
+//Physical memory
+phy_page_state		mm_phy_mem_state_get(void* addr);
+void*				mm_phy_mem_aclloc();
+void				mm_phy_mem_free();
+void				mm_phy_mem_cnt_increase();
+void				mm_phy_mem_cnt_decrease();
+
+//Virtual memory
+void*				mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr);
+void				mm_virt_free(void* start_addr, size_t size, u32 options);
+void*				mm_virt_map(void* virt_addr, void* phy_addr);
+void				mm_virt_unmap(void* virt_addr);
+
+//Swap
+void				mm_pg_lock(u32 id, void* address);
+void				mm_pg_unlock(u32 id, void* address);
+
+//Page table
+u32					mm_pg_tbl_fork(u32 parent);
+void				mm_pg_tbl_free(u32 pdt_id);
+void				mm_pg_tbl_switch(u32 pdt_id);
+void				mm_pg_tbl_usr_spc_clear(u32 pdt_id);
+
+//Status
+void				mm_get_info(pmem_info p_info);
+
+//Share memories
+//PMO=Page mapping object
+u32					mm_pmo_create(void* base_addr, size_t size);
+void				mm_pmo_free(u32	pmo);
+void*				mm_pmo_map(void* address, u32 pmo);
+void				mm_pmo_unmap(void* address);
+
+//Heap
+void*				mm_hp_create(size_t max_block_size, u32 attr);
+void				mm_hp_destroy(void* heap_addr);
+void*				mm_hp_alloc(size_t size, void* heap_addr);
+void				mm_hp_chk(void* heap_addr);
+void				mm_hp_free(void* addr, void* heap_addr);
 
 #endif	//!	MM_H_INCLUDE
 

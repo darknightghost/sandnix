@@ -1,5 +1,11 @@
 
-export SOURCES = init/main.c
+export SOURCES = init/main.c \
+					mm/heap/heap.c \
+					mm/mm.c \
+					rtl/list/list.c \
+					rtl/stack/stack.c \
+					pm/pm.c \
+					init/parameters/parameters.c
 
 x86_build :
 		$(MAKE) -f makefile.x86 all

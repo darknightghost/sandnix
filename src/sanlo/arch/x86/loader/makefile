@@ -5,6 +5,8 @@ CCFLAGS = -std=c99 -m32 -nostdlib -fno-builtin -DVERSION=0x0000000001 -c
 
 root_path = ../../../../..
 
+current_path = $(shell pwd)
+
 TARGET_DIR = $(root_path)/bin/sanlo/x86
 TARGET = $(TARGET_DIR)/sanlo_x86_loader
 MAP = $(TARGET_DIR)/sanlo_x86_loader.map
@@ -24,7 +26,8 @@ SOURCES = init.s \
 			fs/fs.c \
 			fs/ext2.c \
 			menu/menu.c \
-			k_loader/k_loader.c
+			k_loader/k_loader.c \
+			memtest/memtest.s
 
 OBJS_DIR = $(root_path)/obj/sanlo/x86/loader
 
@@ -44,15 +47,15 @@ $(OBJS) : $(SOURCES) $(OBJS_DIR)
 	$(foreach filename,$(SOURCES),\
 		$(if $(filter .c,$(suffix $(filename))),\
 			$(shell \
-			$(CC) $(CCFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(filename))\
+			$(CC) $(CCFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(current_path)/$(filename))\
 		)\
 		$(if $(filter .s,$(suffix $(filename))),\
 			$(shell \
-			$(AS) $(ASFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(filename))\
+			$(AS) $(ASFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(current_path)/$(filename))\
 		)\
 		$(if $(filter .S,$(suffix $(filename))),\
 			$(shell \
-			$(AS) $(ASFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(filename))\
+			$(AS) $(ASFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(current_path)/$(filename))\
 		)\
 	)
 $(TARGET_DIR) :

@@ -69,6 +69,9 @@ def rebuild(argv):
 	return True
 
 def main(argv):
+	
+	os.chdir(sys.path[0])
+
 	if len(argv) < 3:
 		show_help()
 		if len(argv) < 2:

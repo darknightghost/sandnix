@@ -37,13 +37,13 @@ void cls(u8 color)
 	size_t size;
 	size = DEFAULT_STDOUT_WIDTH * DEFAULT_STDOUT_HEIGHT;
 	__asm__ __volatile__(
-		"cld\n\t"
-		"movl		%2,%%edi\n\t"
-		"movl		%0,%%ecx\n\t"
-		"movb		%1,%%ah\n\t"
-		"movb		$0x20,%%al\n\t"
-		"rep		stosw"
-		::"m"(size), "m"(color), "i"(BASIC_VIDEO_BASE_ADDR));
+	    "cld\n\t"
+	    "movl		%2,%%edi\n\t"
+	    "movl		%0,%%ecx\n\t"
+	    "movb		%1,%%ah\n\t"
+	    "movb		$0x20,%%al\n\t"
+	    "rep		stosw"
+	    ::"m"(size), "m"(color), "i"(BASIC_VIDEO_BASE_ADDR));
 	GET_REAL_VARIABLE(current_cursor_line) = 0;
 	GET_REAL_VARIABLE(current_cursor_row) = 0;
 	set_cursor_pos(0, 0);
@@ -70,17 +70,25 @@ void print_string(char* str, u8 color, u8 bg_color)
 			}
 
 			set_cursor_pos(
-				GET_REAL_VARIABLE(current_cursor_line),
-				GET_REAL_VARIABLE(current_cursor_row));
+			    GET_REAL_VARIABLE(current_cursor_line),
+			    GET_REAL_VARIABLE(current_cursor_row));
+
 		} else if(*p == '\t') {
-			print_string(GET_REAL_ADDR("    "), color, bg_color);
+			if(GET_REAL_VARIABLE(current_cursor_row) % 4 == 0) {
+				print_string(GET_REAL_ADDR(" "), color, bg_color);
+			}
+
+			while(GET_REAL_VARIABLE(current_cursor_row) % 4 != 0) {
+				print_string(GET_REAL_ADDR(" "), color, bg_color);
+			}
+
 		} else {
 			//Print character
 			character = (u16)color * 0x100 + *p;
 			offset =
-				(GET_REAL_VARIABLE(current_cursor_line) * DEFAULT_STDOUT_WIDTH
-				 + GET_REAL_VARIABLE(current_cursor_row))
-				* 2;
+			    (GET_REAL_VARIABLE(current_cursor_line) * DEFAULT_STDOUT_WIDTH
+			     + GET_REAL_VARIABLE(current_cursor_row))
+			    * 2;
 			p_video_mem = (u16*)((u8*)BASIC_VIDEO_BASE_ADDR + offset);
 			*p_video_mem = character;
 			GET_REAL_VARIABLE(current_cursor_row)++;
@@ -97,8 +105,8 @@ void print_string(char* str, u8 color, u8 bg_color)
 			}
 
 			set_cursor_pos(
-				GET_REAL_VARIABLE(current_cursor_line),
-				GET_REAL_VARIABLE(current_cursor_row));
+			    GET_REAL_VARIABLE(current_cursor_line),
+			    GET_REAL_VARIABLE(current_cursor_row));
 		}
 	}
 
@@ -120,29 +128,29 @@ void set_cursor_pos(u16 line, u16 row)
 	GET_REAL_VARIABLE(current_cursor_row) = row;
 	//Disable interruptions
 	__asm__ __volatile__(
-		"pushf\n\t"
-		"cli\n\t");
+	    "pushf\n\t"
+	    "cli\n\t");
 	out_byte((u8)CURSOR_POS_H_REG, (u16)CRTC_ADDR_REG);
 	out_byte((u8)((pos >> 8) & 0xFF), (u16)CRTC_DATA_REG);
 	out_byte((u8)CURSOR_POS_L_REG, (u16)CRTC_ADDR_REG);
 	out_byte((u8)(pos & 0xFF), (u16)CRTC_DATA_REG);
 	__asm__ __volatile__(
-		"popf\n\t");
+	    "popf\n\t");
 	return;
 }
 
 void get_cursor_pos(u16* line, u16* row)
 {
-	*line=current_cursor_line;
-	*row=current_cursor_row;
+	*line = current_cursor_line;
+	*row = current_cursor_row;
 	return;
 }
 
 void write_video_buf(
-	u16* p_data,
-	size_t size,
-	u16 line,
-	u16 row)
+    u16* p_data,
+    size_t size,
+    u16 line,
+    u16 row)
 {
 	u16 offset;
 	u16* p_dest;
@@ -176,23 +184,23 @@ void scroll_down(u16 line, u16 color)
 	len = DEFAULT_STDOUT_HEIGHT * DEFAULT_STDOUT_WIDTH * 2 - offset;
 	half_len = offset / 2;
 	__asm__ __volatile__(
-		"cld\n\t"
-		"push		%%es\n\t"
-		"push		%%ds\n\t"
-		"movw		%%gs,%%ax\n\t"
-		"movw		%%ax,%%es\n\t"
-		"movw		%%ax,%%ds\n\t"
-		"movzwl		%0,%%esi\n\t"
-		"xorl		%%edi,%%edi\n\t"
-		"movzwl		%1,%%ecx\n\t"
-		"rep		movsb\n\t"
-		"movzwl		%1,%%edi\n\t"
-		"movzwl		%3,%%ecx\n\t"
-		"movb		%2,%%ah\n\t"
-		"movb		$0x20,%%al\n\t"
-		"rep		stosw\n\t"
-		"pop		%%ds\n\t"
-		"pop		%%es\n\t"
-		::"m"(offset), "m"(len), "m"(color), "m"(half_len));
+	    "cld\n\t"
+	    "push		%%es\n\t"
+	    "push		%%ds\n\t"
+	    "movw		%%gs,%%ax\n\t"
+	    "movw		%%ax,%%es\n\t"
+	    "movw		%%ax,%%ds\n\t"
+	    "movzwl		%0,%%esi\n\t"
+	    "xorl		%%edi,%%edi\n\t"
+	    "movzwl		%1,%%ecx\n\t"
+	    "rep		movsb\n\t"
+	    "movzwl		%1,%%edi\n\t"
+	    "movzwl		%3,%%ecx\n\t"
+	    "movb		%2,%%ah\n\t"
+	    "movb		$0x20,%%al\n\t"
+	    "rep		stosw\n\t"
+	    "pop		%%ds\n\t"
+	    "pop		%%es\n\t"
+	    ::"m"(offset), "m"(len), "m"(color), "m"(half_len));
 	return;
 }

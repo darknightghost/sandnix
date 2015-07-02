@@ -20,9 +20,9 @@
 #include "../exception/exception.h"
 
 static	u32			get_logical_partion_info(u32 extended_lba, u32 disk_info, u8 partition,
-		u32* p_start_lba, u32* p_sector_count,u8* p_type);
+        u32* p_start_lba, u32* p_sector_count, u8* p_type);
 
-u32 get_partition_info(u8 disk, u8 partition, u32* p_start_lba, u32* p_sector_count,u8* p_type)
+u32 get_partition_info(u8 disk, u8 partition, u32* p_start_lba, u32* p_sector_count, u8* p_type)
 {
 	u32 disk_info;
 	u8* sector_buf;
@@ -54,7 +54,7 @@ u32 get_partition_info(u8 disk, u8 partition, u32* p_start_lba, u32* p_sector_co
 		p_table += partition;
 
 		if((p_table->state != 0x00
-			&& p_table->state != 0x80)
+		    && p_table->state != 0x80)
 		   || p_table->partition_type == 00) {
 			free(sector_buf);
 			return PARTITION_NOT_FOUND;
@@ -62,21 +62,23 @@ u32 get_partition_info(u8 disk, u8 partition, u32* p_start_lba, u32* p_sector_co
 
 		*p_start_lba = p_table->start_lba;
 		*p_sector_count = p_table->sector_count;
-		*p_type=p_table->partition_type;
+		*p_type = p_table->partition_type;
 
 		if(p_table->partition_type == 0x05) {
 			free(sector_buf);
 			return PARTITION_EXTENDED;
+
 		} else {
 			free(sector_buf);
 			return PARTITION_PRIMARY;
 		}
+
 	} else {
 		//The partition is a logic partition
 		//Look for extended partition
 		for(count = 0; count < 4; count++, p_table++) {
 			if((p_table->state != 0x00
-				&& p_table->state != 0x80)
+			    && p_table->state != 0x80)
 			   || p_table->partition_type == 00) {
 				free(sector_buf);
 				return PARTITION_NOT_FOUND;
@@ -84,7 +86,7 @@ u32 get_partition_info(u8 disk, u8 partition, u32* p_start_lba, u32* p_sector_co
 
 			if(p_table->partition_type == 0x05) {
 				ret = get_logical_partion_info(p_table->start_lba, disk_info, partition,
-											   p_start_lba, p_sector_count,p_type);
+				                               p_start_lba, p_sector_count, p_type);
 				free(sector_buf);
 				return ret;
 			}
@@ -96,7 +98,7 @@ u32 get_partition_info(u8 disk, u8 partition, u32* p_start_lba, u32* p_sector_co
 }
 
 u32 get_logical_partion_info(u32 extended_lba, u32 disk_info, u8 partition,
-							 u32* p_start_lba, u32* p_sector_count,u8* p_type)
+                             u32* p_start_lba, u32* p_sector_count, u8* p_type)
 {
 	u32 count;
 	u8* sector_buf;
@@ -125,7 +127,7 @@ u32 get_logical_partion_info(u32 extended_lba, u32 disk_info, u8 partition,
 		if(count >= partition) {
 			*p_start_lba = p_table->start_lba;
 			*p_sector_count = p_table->sector_count;
-			*p_type=p_table->partition_type;
+			*p_type = p_table->partition_type;
 			free(sector_buf);
 			return PARTITION_LOGIC;
 		}

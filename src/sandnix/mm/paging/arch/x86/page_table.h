@@ -20,7 +20,7 @@
 
 #include "../../../../../common/arch/x86/types.h"
 
-#pragma pack(1)
+
 
 #define	PG_NP				0
 #define	PG_P				1
@@ -34,12 +34,15 @@
 #define	PG_DISACHE			1
 #define	PG_SIZE_4K			0
 
-#define	PG_NORMAL			0
-#define	PG_COPY_ON_WRTIE	1
-#define	PG_SHARED			2
-#define	PG_SWAPPED			3
-#define	PG_SHARED_SWAPPED	4
-#define	PG_RESERVED			5
+#define	PG_NORMAL					0
+#define	PG_SHARED					1
+#define	PG_CP_ON_W_RW				2
+#define	PG_SWAPPED					3
+#define	PG_RESERVED					4
+#define	PG_MAPPED					5
+#define	PG_CP_ON_W_RDONLY			6
+
+#pragma pack(1)
 
 //Page-Directory Entry
 typedef	struct {
@@ -70,6 +73,16 @@ typedef	struct {
 	u32		avail					: 3;
 	u32		page_base_addr			: 20;
 } pte, *ppte;
+
+//#PF error code
+typedef	struct	{
+	u32		present			: 1;
+	u32		read_write		: 1;
+	u32		u_s				: 1;
+	u32		rsvd			: 1;
+	u32		i_d				: 1;
+	u32		reserved		: 17;
+} pf_err_code, *ppf_err_code;
 
 #pragma pack()
 

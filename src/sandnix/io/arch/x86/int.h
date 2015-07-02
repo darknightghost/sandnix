@@ -21,10 +21,6 @@
 #include "../../io.h"
 #include "../../../setup/setup.h"
 
-typedef	struct {
-	u32		level;
-	void*	func;
-}int_hndlr_info,*pint_hndlr_info;
 #pragma	pack(1)
 
 typedef struct {
@@ -52,8 +48,8 @@ typedef	struct	_idt {
 
 #define		INTERRUPT_MAX_NUM		256
 #define		SET_IDT(base,num,func,cs_selector,d_type,d_s,d_dpl,s_p) {\
-		(base)[(num)].offset1=(u32)GET_REAL_ADDR((func))&0x0000FFFF;\
-		(base)[(num)].offset2=(((u32)GET_REAL_ADDR((func))&0xFFFF0000)>>16);\
+		(base)[(num)].offset1=(u32)(func)&0x0000FFFF;\
+		(base)[(num)].offset2=(((u32)(func)&0xFFFF0000)>>16);\
 		(base)[(num)].selector=(cs_selector);\
 		(base)[(num)].attr.reserved=0;\
 		(base)[(num)].attr.zero=0;\
@@ -62,6 +58,8 @@ typedef	struct	_idt {
 		(base)[(num)].attr.dpl=d_dpl;\
 		(base)[(num)].attr.p=s_p;\
 	}
+
+#define		SET_NORMAL_IDT(base,num)	SET_IDT((base), num, int_##num, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1)
 
 //Interrupt number
 #define	INT_DE			0x00
@@ -100,6 +98,8 @@ typedef	struct	_idt {
 #define	IRQ13			0x2D
 #define	IRQ14			0x2E
 #define	IRQ15			0x2F
+
+#define	INT_CLOCK		IRQ0
 
 void		init_idt();
 #endif	//!	INT_H_INCLUDE

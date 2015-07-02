@@ -12,6 +12,8 @@ SOURCES = boot.s
 
 OBJS_DIR = $(root_path)/obj/sanlo/x86/boot
 
+current_path = $(shell pwd)
+
 OBJS = $(foreach filename,\
 		$(SOURCES),\
 		$(OBJS_DIR)/$(basename $(filename)).o)
@@ -27,15 +29,15 @@ $(OBJS) : $(SOURCES) $(OBJS_DIR)
 	$(foreach filename,$(SOURCES),\
 		$(if $(filter .c,$(suffix $(filename))),\
 			$(shell \
-			$(CC) $(CCFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(filename))\
+			$(CC) $(CCFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(current_path)/$(filename))\
 		)\
 		$(if $(filter .s,$(suffix $(filename))),\
 			$(shell \
-			$(AS) $(ASFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(filename))\
+			$(AS) $(ASFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(current_path)/$(filename))\
 		)\
 		$(if $(filter .S,$(suffix $(filename))),\
 			$(shell \
-			$(AS) $(ASFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(filename))\
+			$(AS) $(ASFLAGS) -o $(OBJS_DIR)/$(basename $(filename)).o $(current_path)/$(filename))\
 		)\
 	)
 $(TARGET_DIR) :

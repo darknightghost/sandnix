@@ -19,24 +19,26 @@
 #define	SETUP_H_INCLUDE
 
 #include "../mm/mm.h"
+#include "../common/common.h"
 
 #ifdef	X86
-#include "../../common/arch/x86/types.h"
-#include "../../common/arch/x86/kernel_image.h"
 
 #define	TMP_PAGE_MEM_BASE		(((KERNEL_MAX_SIZE+(KERNEL_BASE-VIRTUAL_ADDR_OFFSET))/4096\
-								  +((KERNEL_MAX_SIZE+(KERNEL_BASE-VIRTUAL_ADDR_OFFSET))%4096?1:0))\
-								 *4096)
+                                  +((KERNEL_MAX_SIZE+(KERNEL_BASE-VIRTUAL_ADDR_OFFSET))%4096?1:0))\
+                                 *4096)
 //A temporary marcos used to compute TMP_PAGE_SIZE
 #define	TMP_SIZE_MID1			(TMP_PAGE_MEM_BASE/4096*4+TMP_PAGE_TABLE_BASE+4096)
 #define	TMP_SIZE_MID2			((TMP_SIZE_MID1/4096+(TMP_SIZE_MID1%4096?1:0))*4+TMP_SIZE_MID1)
+#define	TMP_SIZE_MID3			((TMP_SIZE_MID2/4096+1)*4096)
 
-#define	TMP_PAGE_SIZE			((TMP_SIZE_MID2/4096+1)*4096)
+#define	TMP_PAGE_SIZE			(TMP_SIZE_MID3+(TMP_SIZE_MID3/4096?0:4096))
 #define	TMP_PAGE_NUM			(TMP_PAGE_SIZE/4096)
 
 #define	TMP_PAGE_TABLE_BASE		(TMP_PAGE_MEM_BASE+4096)
 #define	TMP_PAGED_MEM_SIZE		(TMP_PAGE_SIZE+TMP_PAGE_TABLE_BASE)
 #define	TMP_PDT_BASE			TMP_PAGE_MEM_BASE
+#define	PT_MAPPING_PAGE			(TMP_PAGED_MEM_SIZE/4096*sizeof(pte)+TMP_PAGE_TABLE_BASE+VIRTUAL_ADDR_OFFSET)
+#define	PT_MAPPING_ADDR			(TMP_PAGED_MEM_SIZE+VIRTUAL_ADDR_OFFSET)
 
 //Segment selectors
 #define	DESCRIPTOR_SIZE			8
@@ -47,6 +49,7 @@
 #define	SELECTOR_U_DATA			(DESCRIPTOR_SIZE * 3 | 3)
 #define	SELECTOR_U_CODE			(DESCRIPTOR_SIZE * 4 | 3)
 #define	SELECTOR_BASIC_VIDEO	(DESCRIPTOR_SIZE * 5)
+#define	SELECTOR_TSS			(DESCRIPTOR_SIZE * 6)
 //Video segment
 #define	BASIC_VIDEO_BASE_ADDR	((void*)0xC00B8000)
 

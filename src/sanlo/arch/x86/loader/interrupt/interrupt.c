@@ -48,7 +48,7 @@ void setup_interrupt()
 	setup_8259A();
 	setup_idt();
 	__asm__ __volatile__(
-		"sti\n\t"
+	    "sti\n\t"
 	);
 	return;
 }
@@ -92,10 +92,10 @@ void setup_8259A()
 void io_delay()
 {
 	__asm__ __volatile__(
-		"nop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"nop\n\t"
+	    "nop\n\t"
+	    "nop\n\t"
+	    "nop\n\t"
+	    "nop\n\t"
 	);
 	return;
 }
@@ -125,7 +125,7 @@ void setup_idt()
 	idt_value.base = IDT_BASE_ADDR;
 	idt_value.limit = INTERRUPT_MAX_NUM * sizeof(idt) - 1;
 	__asm__ __volatile__(
-		"lidt		%0\n\t"
-		::"m"(idt_value));
+	    "lidt		%0\n\t"
+	    ::"m"(idt_value));
 	return;
 }

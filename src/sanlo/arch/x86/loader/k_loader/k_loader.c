@@ -22,8 +22,11 @@
 #include "../exception/exception.h"
 #include "../../../../../common/arch/x86/elf_x86.h"
 #include "../../../../../common/arch/x86/kernel_image.h"
+#include "../memtest/memtest.h"
 
 static	bool		load_segment(Elf32_Phdr* p_pheader, pfile fp);
+
+char num_buf[64];
 
 bool load_os_kernel(char* path, char* parameters)
 {
@@ -40,10 +43,18 @@ bool load_os_kernel(char* path, char* parameters)
 		return false;
 	}
 
-	//Check parameters length
-	if(strlen(parameters) + 1 > KERNEL_PARAMETER_MAX_LEN) {
-		panic(EXCEPTION_KERNEL_PARAMETER_TOO_LONG);
-	}
+	print_string(
+	    GET_REAL_ADDR("Kernel file	: "),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    path,
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    GET_REAL_ADDR("\n\n"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
 
 	//Read elf header
 	if(read(fp, (u8*)&elf_header, sizeof(Elf32_Ehdr)) != sizeof(Elf32_Ehdr)) {
@@ -51,6 +62,19 @@ bool load_os_kernel(char* path, char* parameters)
 	}
 
 	entry_address = (void*)(elf_header.e_entry) - VIRTUAL_ADDR_OFFSET;
+	print_string(
+	    GET_REAL_ADDR("entry		: 0x"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    hextostr((u32)entry_address,
+	             GET_REAL_ADDR(num_buf)),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    GET_REAL_ADDR("\n\n"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
 	//Read program header table
 	pheader_buf = malloc(elf_header.e_phnum * elf_header.e_phentsize);
 
@@ -67,20 +91,40 @@ bool load_os_kernel(char* path, char* parameters)
 
 	//Load segments
 	for(p_pheader = pheader_buf, cnt = 0;
-		cnt < elf_header.e_phnum;
-		cnt++, p_pheader = (Elf32_Phdr*)((char*)p_pheader + elf_header.e_phentsize)) {
+	    cnt < elf_header.e_phnum;
+	    cnt++, p_pheader = (Elf32_Phdr*)((char*)p_pheader + elf_header.e_phentsize)) {
 		if(!load_segment(p_pheader, fp)) {
 			panic(EXCEPTION_UNKNOW_KERNEL_FORMAT);
 		}
 	}
 
-	//Copy parameters
-	strcpy((char*)KERNEL_PARAMETER_PHYSICAL, parameters);
+	print_string(
+	    GET_REAL_ADDR("Copying parameters...\n"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+
+	//Copy parameters address
+	*(char**)KERNEL_PARAMETER_PHYSICAL = parameters;
+
+	//Copy memory info address
+	*(void**)KERNEL_MEM_INFO_PHYSICAL = GET_REAL_ADDR(mem_info);
+
+	print_string(
+	    GET_REAL_ADDR("Loading ramdisk...\n"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+
+	print_string(
+	    GET_REAL_ADDR("Starting kernel...\n"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+
 	__asm__ __volatile__(
-		"cli\n\t"
-		"movl		%0,%%eax\n\t"
-		"jmpl		*%%eax\n\t"
-		::"m"(entry_address));
+	    "cli\n\t"
+	    "movl		%0,%%eax\n\t"
+	    "jmpl		*%%eax\n\t"
+	    ::"m"(entry_address));
+
 	//Err...In fact,this function will never return true
 	return true;
 }
@@ -88,10 +132,49 @@ bool load_os_kernel(char* path, char* parameters)
 bool load_segment(Elf32_Phdr* p_pheader, pfile fp)
 {
 	u32 size_in_mem;
-	size_in_mem = (p_pheader->p_memsz % p_pheader->p_align ? 1 : 0
-				   + p_pheader->p_memsz / p_pheader->p_align)
-				  * p_pheader->p_align;
+
 	seek(fp, p_pheader->p_offset, FILE_POS_BEGIN);
+
+	print_string(
+	    GET_REAL_ADDR("Segment:\naddr		: 0x"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    hextostr((p_pheader->p_vaddr - VIRTUAL_ADDR_OFFSET),
+	             GET_REAL_ADDR(num_buf)),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    GET_REAL_ADDR("\nalign		: 0x"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    hextostr(p_pheader->p_align,
+	             GET_REAL_ADDR(num_buf)),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    GET_REAL_ADDR("\nsize		: 0x"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    hextostr(p_pheader->p_filesz,
+	             GET_REAL_ADDR(num_buf)),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    GET_REAL_ADDR("\nfile offset	: 0x"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    hextostr(p_pheader->p_offset,
+	             GET_REAL_ADDR(num_buf)),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    GET_REAL_ADDR("\n\n"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
 
 	//Read segment
 	if(read(fp, (u8*)(p_pheader->p_vaddr - VIRTUAL_ADDR_OFFSET), p_pheader->p_filesz)
@@ -99,8 +182,5 @@ bool load_segment(Elf32_Phdr* p_pheader, pfile fp)
 		return false;
 	}
 
-	memset((u8*)(p_pheader->p_vaddr - VIRTUAL_ADDR_OFFSET + p_pheader->p_filesz),
-		   0,
-		   size_in_mem - p_pheader->p_filesz);
 	return true;
 }
