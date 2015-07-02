@@ -186,8 +186,11 @@ void adjust_int_level()
 	int_level = io_get_crrnt_int_level();
 	old_level = thread_table[current_thread].level;
 
+	//Check if the interrupt level of current thread in the thread table is
+	//equal to current interrupt level
 	if(int_level != old_level) {
 
+		//If not put current thread into the correct task queue
 		pm_acqr_spn_lock(&(task_queues[old_level].lock));
 		rtl_list_remove(&(task_queues[old_level].queue),
 		                thread_table[current_thread].p_task_queue_node,
@@ -216,6 +219,7 @@ void adjust_int_level()
 			            "Failes to append new item to task queue!\n");
 		}
 
+		//Set the interrupt level in the thread table
 		thread_table[current_thread].level = int_level;
 		thread_table[current_thread].p_task_queue_node = p_new_node;
 
