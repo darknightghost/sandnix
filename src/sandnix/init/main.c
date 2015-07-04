@@ -38,10 +38,9 @@ void kernel_main()
 	excpt_init();
 	mm_init();
 	pm_init();
-	pm_schedule();
-	//test();
+	test();
 
-	io_dispatch_int();
+	//io_dispatch_int();
 
 	while(1);
 
@@ -50,13 +49,25 @@ void kernel_main()
 
 void test_thread(u32 thread_id, void* p_args)
 {
-	dbg_print("task 1\n");
+	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST);
+
+	while(1) {
+		dbg_print("task 1\n");
+		pm_schedule();
+	}
 
 	while(1);
 }
 
 void test()
 {
-	pm_create_thrd(test_thread, true, false, NULL);
-	dbg_print("task 0\n");
+	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST);
+	//pm_create_thrd(test_thread, true, false, NULL);
+
+	while(1) {
+		dbg_print("task 0\n");
+		pm_schedule();
+	}
+
+	//pm_suspend_thrd(0);
 }

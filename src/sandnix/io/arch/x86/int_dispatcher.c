@@ -85,8 +85,8 @@ void int_excpt_dispatcher(u32 num, pret_regs p_regs)
 	//Schedule
 	__asm__ __volatile__(
 	    "leave\n\t"
-	    "movl		%0,%%esp\n\t"
-	    "call		pm_task_schedule\n\t"
+	    "movl	%0,%%esp\n\t"
+	    "call	pm_task_schedule\n\t"
 	    ::"r"(p_regs));
 	return;
 }
@@ -104,10 +104,9 @@ void int_normal_dispatcher(u32 num, pret_regs p_regs)
 
 	//Schedule
 	__asm__ __volatile__(
-	    "sti\n\t"
 	    "leave\n\t"
-	    "movl		%0,%%esp\n\t"
-	    "call		pm_task_schedule\n\t"
+	    "movl	%0,%%esp\n\t"
+	    "call	pm_task_schedule\n\t"
 	    ::"r"(p_regs));
 	return;
 }
@@ -125,10 +124,9 @@ void int_bp_dispatcher(pret_regs p_regs)
 
 	//Schedule
 	__asm__ __volatile__(
-	    "sti\n\t"
 	    "leave\n\t"
-	    "movl		%0,%%esp\n\t"
-	    "call		pm_task_schedule\n\t"
+	    "movl	%0,%%esp\n\t"
+	    "call	pm_task_schedule\n\t"
 	    ::"r"(p_regs));
 	return;
 }
@@ -154,10 +152,9 @@ void int_clock_dispatcher(pret_regs p_regs)
 
 	//Schedule
 	__asm__ __volatile__(
-	    "sti\n\t"
 	    "leave\n\t"
-	    "movl		%0,%%esp\n\t"
-	    "call		pm_clock_schedule\n\t"
+	    "addl	$8,%%esp\n\t"
+	    "call	pm_clock_schedule\n\t"
 	    ::"r"(p_regs));
 	return;
 }
@@ -167,6 +164,8 @@ void io_dispatch_int()
 	u32 i;
 
 	new_int = 0;
+
+	io_set_crrnt_int_level(INT_LEVEL_EXCEPTION);
 
 	while(1) {
 		//Dispatch interrupts
@@ -198,9 +197,6 @@ void io_dispatch_int()
 		}
 
 		new_int = 0;
-		__asm__ __volatile__(
-		    "sti\n\t"
-		    ::);
 		io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
 		pm_suspend_thrd(0);
 	}
@@ -278,17 +274,7 @@ void io_unreg_int_hndlr(u8 num, pint_hndlr_info p_info)
 
 void io_set_crrnt_int_level(u8 level)
 {
-	u32 prev_level;
-
-	prev_level = current_int_level;
-
 	current_int_level = level;
-
-	if(level < INT_LEVEL_DISPATCH
-	   && level < prev_level) {
-		pm_schedule();
-	}
-
 	return;
 }
 

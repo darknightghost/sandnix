@@ -46,6 +46,7 @@ static	void			reset_time_slice();
 static	void			switch_to(u32 thread_id);
 static	void			adjust_int_level();
 static	void			user_thread_caller(u32 thread_id, void* p_args);
+static	spin_lock		cpu0_schedule_lock;
 
 //Task queues
 static	task_queue		task_queues[INT_LEVEL_HIGHEST + 1];
@@ -74,7 +75,8 @@ void init_schedule()
 	dbg_print("Creating thread 0...\n");
 	rtl_memset(thread_table, 0, sizeof(thread_table));
 	thread_table[0].alloc_flag = true;
-	thread_table[0].level = INT_LEVEL_DISPATCH;
+	thread_table[0].level = INT_LEVEL_USR_HIGHEST;
+	thread_table[0].status_info.ready.time_slice = 0;
 	thread_table[0].status = TASK_READY;
 	__asm__ __volatile__(
 	    "movl	%%ebp,(%0)\n\t"
@@ -92,6 +94,7 @@ void init_schedule()
 	dbg_print("Initializing task queue...\n");
 	current_thread = 0;
 	current_process = 0;
+	pm_init_spn_lock(&cpu0_schedule_lock);
 	schedule_heap = mm_hp_create(TASK_QUEUE_HEAP_SIZE, HEAP_MULTITHREAD);
 
 	if(schedule_heap == NULL) {
@@ -105,7 +108,7 @@ void init_schedule()
 	}
 
 	p_new_node = rtl_list_insert_after(
-	                 &(task_queues[INT_LEVEL_DISPATCH].queue),
+	                 &(task_queues[INT_LEVEL_USR_HIGHEST].queue),
 	                 NULL,
 	                 &thread_table[0],
 	                 schedule_heap);
@@ -139,23 +142,31 @@ void pm_schedule()
 
 void pm_clock_schedule()
 {
+	u32 int_level;
 	cpu0_tick++;
 
-	if(cpu0_tick > TIME_SLICE_TICKS) {
-		__asm__ __volatile__(
-		    "leave\n\t"
-		    "addl	$4,%%esp\n\t"
-		    "call	pm_task_schedule\n\t"
-		    ::);
+	int_level = io_get_crrnt_int_level();
+
+	if(int_level <= INT_LEVEL_USR_HIGHEST) {
+		if(cpu0_tick > TIME_SLICE_TICKS) {
+			__asm__ __volatile__(
+			    "leave\n\t"
+			    "addl	$4,%%esp\n\t"
+			    "call	pm_task_schedule\n\t"
+			    ::);
+		}
 
 	} else {
-		__asm__ __volatile__(
-		    "leave\n\t"
-		    "addl	$4,%%esp\n\t"
-		    "popal\n\t"
-		    "iret\n\t"
-		    ::);
+		cpu0_tick = 0;
 	}
+
+	__asm__ __volatile__(
+	    "leave\n\t"
+	    "addl	$4,%%esp\n\t"
+	    "popal\n\t"
+	    "iret\n\t"
+	    ::);
+
 }
 
 void pm_task_schedule()
@@ -163,18 +174,17 @@ void pm_task_schedule()
 	u32 id;
 	u32 current_int_level;
 
-	__asm__ __volatile__(
-	    "cli\n\t"
-	    ::);
-
 	current_int_level = io_get_crrnt_int_level();
 
-	if(current_int_level <= INT_LEVEL_USR_HIGHEST) {
-		adjust_int_level();
-		cpu0_tick = 0;
-		id = get_next_task();
+	if(current_int_level <= INT_LEVEL_DISPATCH) {
+		if(pm_try_acqr_raw_spn_lock(&cpu0_schedule_lock)) {
+			adjust_int_level();
+			cpu0_tick = 0;
+			id = get_next_task();
 
-		switch_to(id);
+			switch_to(id);
+			pm_rls_raw_spn_lock(&cpu0_schedule_lock);
+		}
 	}
 
 	__asm__ __volatile__(
@@ -192,7 +202,7 @@ void adjust_int_level()
 	u32 old_level;
 	plist_node p_new_node;
 
-	pm_acqr_spn_lock(&thread_table_lock);
+	pm_acqr_raw_spn_lock(&thread_table_lock);
 	int_level = io_get_crrnt_int_level();
 	old_level = thread_table[current_thread].level;
 
@@ -201,13 +211,13 @@ void adjust_int_level()
 	if(int_level != old_level) {
 
 		//If not put current thread into the correct task queue
-		pm_acqr_spn_lock(&(task_queues[old_level].lock));
+		pm_acqr_raw_spn_lock(&(task_queues[old_level].lock));
 		rtl_list_remove(&(task_queues[old_level].queue),
 		                thread_table[current_thread].p_task_queue_node,
 		                schedule_heap);
-		pm_rls_spn_lock(&(task_queues[old_level].lock));
+		pm_rls_raw_spn_lock(&(task_queues[old_level].lock));
 
-		pm_acqr_spn_lock(&(task_queues[int_level].lock));
+		pm_acqr_raw_spn_lock(&(task_queues[int_level].lock));
 
 		if(thread_table[current_thread].status_info.ready.time_slice > 0) {
 			p_new_node = rtl_list_insert_before(
@@ -233,11 +243,11 @@ void adjust_int_level()
 		thread_table[current_thread].level = int_level;
 		thread_table[current_thread].p_task_queue_node = p_new_node;
 
-		pm_rls_spn_lock(&(task_queues[int_level].lock));
+		pm_rls_raw_spn_lock(&(task_queues[int_level].lock));
 
 	}
 
-	pm_rls_spn_lock(&thread_table_lock);
+	pm_rls_raw_spn_lock(&thread_table_lock);
 
 	return;
 }
@@ -302,15 +312,15 @@ u32 pm_create_thrd(thread_func entry,
 	    "popl	%0\n\t"
 	    :"=r"(eflags));
 	*(u32*)p_stack = eflags;
-	p_stack -= 2;
+	p_stack -= 4;
 	*(u16*)p_stack = SELECTOR_K_DATA;
 	p_stack -= 4;
 
 	if(is_user) {
-		*(thread_func*)p_stack = entry;
+		*(thread_func*)p_stack = user_thread_caller;
 
 	} else {
-		*(thread_func*)p_stack = user_thread_caller;
+		*(thread_func*)p_stack = entry;
 	}
 
 	pm_rls_spn_lock(&thread_table_lock);
@@ -477,7 +487,7 @@ u32 get_next_task()
 
 				//Real-time thread
 				//FCFS
-				pm_acqr_spn_lock(&(task_queues[i].lock));
+				pm_acqr_raw_spn_lock(&(task_queues[i].lock));
 
 				if(task_queues[i].queue != NULL) {
 
@@ -488,9 +498,10 @@ u32 get_next_task()
 						p_info = (pthread_info)(p_node->p_item);
 						current_tick = io_get_tick_count();
 
-						if(p_info->status == TASK_READY) {
+						if(p_info->status == TASK_READY
+						   || p_info->status == TASK_RUNNING) {
 							p_info->status = TASK_RUNNING;
-							pm_rls_spn_lock(&(task_queues[i].lock));
+							pm_rls_raw_spn_lock(&(task_queues[i].lock));
 							return p_info - thread_table;
 
 						} else if(p_info->status == TASK_SLEEP
@@ -506,12 +517,12 @@ u32 get_next_task()
 					} while(p_node != task_queues[i].queue);
 				}
 
-				pm_rls_spn_lock(&(task_queues[i].lock));
+				pm_rls_raw_spn_lock(&(task_queues[i].lock));
 
 			} else if(i > INT_LEVEL_IDLE) {
 				//Normal thread
 				//Round Robin
-				pm_acqr_spn_lock(&(task_queues[i].lock));
+				pm_acqr_raw_spn_lock(&(task_queues[i].lock));
 
 				if(task_queues[i].queue != NULL) {
 
@@ -522,10 +533,11 @@ u32 get_next_task()
 						p_info = (pthread_info)(p_node->p_item);
 						current_tick = io_get_tick_count();
 
-						if(p_info->status == TASK_READY) {
+						if(p_info->status == TASK_READY
+						   || p_info->status == TASK_RUNNING) {
 							idle_flag = false;
 
-							if(p_info->status_info.ready.time_slice < 0) {
+							if(p_info->status_info.ready.time_slice > 0) {
 								p_info->status = TASK_RUNNING;
 
 								//Decrease time slice
@@ -550,7 +562,7 @@ u32 get_next_task()
 									p_info->p_task_queue_node = p_new_node;
 								}
 
-								pm_rls_spn_lock(&(task_queues[i].lock));
+								pm_rls_raw_spn_lock(&(task_queues[i].lock));
 								return p_info - thread_table;
 							}
 
@@ -568,11 +580,11 @@ u32 get_next_task()
 					} while(p_node != task_queues[i].queue);
 				}
 
-				pm_rls_spn_lock(&(task_queues[i].lock));
+				pm_rls_raw_spn_lock(&(task_queues[i].lock));
 
 			} else if(idle_flag) {
 				//IDLE thread
-				pm_acqr_spn_lock(&(task_queues[INT_LEVEL_IDLE].lock));
+				pm_acqr_raw_spn_lock(&(task_queues[INT_LEVEL_IDLE].lock));
 
 				if(task_queues[INT_LEVEL_IDLE].queue != NULL) {
 
@@ -583,7 +595,8 @@ u32 get_next_task()
 						p_info = (pthread_info)(p_node->p_item);
 						current_tick = io_get_tick_count();
 
-						if(p_info->status == TASK_READY) {
+						if(p_info->status == TASK_READY
+						   || p_info->status == TASK_RUNNING) {
 							idle_flag = false;
 
 							if(p_info->status_info.ready.time_slice < 0) {
@@ -611,7 +624,7 @@ u32 get_next_task()
 									p_info->p_task_queue_node = p_new_node;
 								}
 
-								pm_rls_spn_lock(&(task_queues[INT_LEVEL_IDLE].lock));
+								pm_rls_raw_spn_lock(&(task_queues[INT_LEVEL_IDLE].lock));
 								return p_info - thread_table;
 							}
 
@@ -628,7 +641,7 @@ u32 get_next_task()
 					} while(p_node != task_queues[i].queue);
 				}
 
-				pm_rls_spn_lock(&(task_queues[INT_LEVEL_IDLE].lock));
+				pm_rls_raw_spn_lock(&(task_queues[INT_LEVEL_IDLE].lock));
 			}
 		}
 
@@ -662,33 +675,41 @@ void reset_time_slice()
 	pthread_info p_info;
 
 	//IDLE threads
-	pm_acqr_spn_lock(&(task_queues[INT_LEVEL_IDLE].lock));
+	pm_acqr_raw_spn_lock(&(task_queues[INT_LEVEL_IDLE].lock));
 	p_node = task_queues[INT_LEVEL_IDLE].queue;
-	p_info = (pthread_info)(p_node->p_item);
 
-	if(p_info->status_info.ready.time_slice == 0) {
-		//Reset time slice
-		do {
-			p_info = (pthread_info)(p_node->p_item);
-			p_info->status_info.ready.time_slice = 1;
-			p_node = p_node->p_next;
-		} while(p_node != task_queues[INT_LEVEL_IDLE].queue);
+	if(p_node != NULL) {
+		p_info = (pthread_info)(p_node->p_item);
+
+		if(p_info->status_info.ready.time_slice == 0) {
+			//Reset time slice
+			do {
+				p_info = (pthread_info)(p_node->p_item);
+				p_info->status_info.ready.time_slice = 1;
+				p_node = p_node->p_next;
+			} while(p_node != task_queues[INT_LEVEL_IDLE].queue);
+		}
 	}
 
-	pm_rls_spn_lock(&(task_queues[INT_LEVEL_IDLE].lock));
+	pm_rls_raw_spn_lock(&(task_queues[INT_LEVEL_IDLE].lock));
 
 	//Normal thread
 	for(i = 1; i <= INT_LEVEL_USR_HIGHEST; i++) {
+		pm_acqr_raw_spn_lock(&(task_queues[i].lock));
 		p_node = task_queues[i].queue;
-		p_info = (pthread_info)(p_node->p_item);
 
-		//Reset time slice
-		do {
+		if(p_node != NULL) {
 			p_info = (pthread_info)(p_node->p_item);
-			p_info->status_info.ready.time_slice = TIME_SLICE(i);
-			p_node = p_node->p_next;
-		} while(p_node != task_queues[i].queue);
 
+			//Reset time slice
+			do {
+				p_info = (pthread_info)(p_node->p_item);
+				p_info->status_info.ready.time_slice = TIME_SLICE(i);
+				p_node = p_node->p_next;
+			} while(p_node != task_queues[i].queue);
+		}
+
+		pm_rls_spn_lock(&(task_queues[i].lock));
 	}
 
 	return;
