@@ -24,5 +24,4 @@ void pm_init()
 {
 	dbg_print("\nInitializing pm...\n");
 	init_schedule();
-	//io_enable_interrupt();
 }

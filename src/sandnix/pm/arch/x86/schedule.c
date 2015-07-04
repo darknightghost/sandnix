@@ -171,7 +171,6 @@ void pm_clock_schedule()
 
 void pm_task_schedule()
 {
-	u32 id;
 	u32 current_int_level;
 
 	current_int_level = io_get_crrnt_int_level();
@@ -180,10 +179,16 @@ void pm_task_schedule()
 		if(pm_try_acqr_raw_spn_lock(&cpu0_schedule_lock)) {
 			adjust_int_level();
 			cpu0_tick = 0;
-			id = get_next_task();
 
-			switch_to(id);
-			pm_rls_raw_spn_lock(&cpu0_schedule_lock);
+			__asm__ __volatile__(""::"i"(get_next_task));
+			__asm__ __volatile__(""::"i"(switch_to));
+			__asm__ __volatile__(
+			    "leave\n\t"
+			    "addl	$4,%%esp\n\t"
+			    "call	get_next_task\n\t"
+			    "pushl	%%eax\n\t"
+			    "call	switch_to\n\t"
+			    ::);
 		}
 	}
 
@@ -260,8 +265,8 @@ u32 pm_create_thrd(thread_func entry,
 	void* k_stack;
 	u32 new_id;
 	u8* p_stack;
-	u32 eflags;
 	pusr_thread_info p_usr_thread_info;
+	ret_regs regs;
 
 	pm_acqr_spn_lock(&thread_table_lock);
 
@@ -306,14 +311,15 @@ u32 pm_create_thrd(thread_func entry,
 	}
 
 	//Prepare for iret
+	//Eflags
 	p_stack -= 4;
-	__asm__ __volatile__(
-	    "pushfl\n\t"
-	    "popl	%0\n\t"
-	    :"=r"(eflags));
-	*(u32*)p_stack = eflags;
+	*(u32*)p_stack = 0x200;
+
+	//CS
 	p_stack -= 4;
-	*(u16*)p_stack = SELECTOR_K_DATA;
+	*(u16*)p_stack = SELECTOR_K_CODE;
+
+	//EIP
 	p_stack -= 4;
 
 	if(is_user) {
@@ -322,6 +328,19 @@ u32 pm_create_thrd(thread_func entry,
 	} else {
 		*(thread_func*)p_stack = entry;
 	}
+
+	//pushal
+	rtl_memset(&regs, 0, sizeof(ret_regs));
+	regs.ebp = (u32)((u8*)k_stack + KERNEL_STACK_SIZE);
+	regs.esp = (u32)p_stack;
+
+	p_stack -= sizeof(ret_regs);
+	rtl_memcpy(p_stack, &regs, sizeof(ret_regs));
+
+	//Set stack
+	thread_table[new_id].kernel_stack = k_stack;
+	thread_table[new_id].ebp = (u32)((u8*)k_stack + KERNEL_STACK_SIZE);
+	thread_table[new_id].esp = (u32)p_stack;
 
 	pm_rls_spn_lock(&thread_table_lock);
 
@@ -417,8 +436,18 @@ u32 pm_get_crrnt_thrd_id()
 void switch_to(u32 thread_id)
 {
 	u32 proc_id;
+	u32 old_esp;
+	u32 old_ebp;
+	u8* current_ebp;
 
 	if(current_thread == thread_id) {
+		pm_rls_raw_spn_lock(&cpu0_schedule_lock);
+		__asm__ __volatile__(
+		    "leave\n\t"
+		    "addl	$8,%%esp\n\t"
+		    "popal\n\t"
+		    "iret\n\t"
+		    ::);
 		return;
 	}
 
@@ -442,10 +471,13 @@ void switch_to(u32 thread_id)
 
 	//Save esp,ebp
 	__asm__ __volatile__(
-	    "movl	%%esp,(%0)\n\t"
-	    "movl	%%ebp,(%1)\n\t"
-	    ::"r"(&(thread_table[current_thread].esp)),
-	    "r"(&(thread_table[current_thread].ebp)));
+	    "movl	%%ebp,%0\n\t"
+	    :"=r"(current_ebp)
+	    :);
+	old_esp = (u32)(current_ebp + 4 + 4 + 4);
+	old_ebp = *(u32*)current_ebp;
+	thread_table[current_thread].esp = old_esp;
+	thread_table[current_thread].ebp = old_ebp;
 
 	if(thread_table[current_thread].status == TASK_RUNNING) {
 		thread_table[current_thread].status = TASK_READY;
@@ -453,6 +485,7 @@ void switch_to(u32 thread_id)
 
 	current_thread = thread_id;
 	current_process = proc_id;
+	pm_rls_raw_spn_lock(&cpu0_schedule_lock);
 
 	//Set esp,ebp
 	__asm__ __volatile__(
@@ -460,8 +493,8 @@ void switch_to(u32 thread_id)
 	    "movl	%%eax,%%esp\n\t"
 	    "movl	(%1),%%eax\n\t"
 	    "movl	%%eax,%%ebp\n\t"
-	    "leave\n\t"
-	    "ret\n\t"
+	    "popal\n\t"
+	    "iret\n\t"
 	    ::"b"(&(thread_table[thread_id].esp)),
 	    "c"(&(thread_table[thread_id].ebp)));
 
@@ -476,6 +509,7 @@ u32 get_next_task()
 	pthread_info p_info;
 	bool idle_flag;
 	u32 current_tick;
+	u32 ret_id;
 
 	idle_flag = true;
 
@@ -502,7 +536,8 @@ u32 get_next_task()
 						   || p_info->status == TASK_RUNNING) {
 							p_info->status = TASK_RUNNING;
 							pm_rls_raw_spn_lock(&(task_queues[i].lock));
-							return p_info - thread_table;
+							ret_id = ((u32)p_info - (u32)thread_table) / sizeof(thread_info);
+							return ret_id;
 
 						} else if(p_info->status == TASK_SLEEP
 						          && current_tick >= p_info->status_info.sleep.start_tick
@@ -563,7 +598,8 @@ u32 get_next_task()
 								}
 
 								pm_rls_raw_spn_lock(&(task_queues[i].lock));
-								return p_info - thread_table;
+								ret_id = ((u32)p_info - (u32)thread_table) / sizeof(thread_info);
+								return ret_id;
 							}
 
 						} else if(p_info->status == TASK_SLEEP
@@ -625,7 +661,8 @@ u32 get_next_task()
 								}
 
 								pm_rls_raw_spn_lock(&(task_queues[INT_LEVEL_IDLE].lock));
-								return p_info - thread_table;
+								ret_id = ((u32)p_info - (u32)thread_table) / sizeof(thread_info);
+								return ret_id;
 							}
 
 						} else if(p_info->status == TASK_SLEEP

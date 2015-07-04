@@ -38,6 +38,7 @@ void kernel_main()
 	excpt_init();
 	mm_init();
 	pm_init();
+	io_enable_interrupt();
 	test();
 
 	//io_dispatch_int();
@@ -49,11 +50,16 @@ void kernel_main()
 
 void test_thread(u32 thread_id, void* p_args)
 {
-	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST);
+	io_set_crrnt_int_level(1);
+	u32 i;
 
 	while(1) {
-		dbg_print("task 1\n");
-		pm_schedule();
+		for(i = 0; i < 10000; i++);
+
+		dbg_print("1");
+		__asm__ __volatile__(
+		    "sti\n\t"
+		    ::);
 	}
 
 	while(1);
@@ -61,12 +67,17 @@ void test_thread(u32 thread_id, void* p_args)
 
 void test()
 {
+	u32 i;
 	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST);
-	//pm_create_thrd(test_thread, true, false, NULL);
+	pm_create_thrd(test_thread, true, false, NULL);
 
 	while(1) {
-		dbg_print("task 0\n");
-		pm_schedule();
+		for(i = 0; i < 10000; i++);
+
+		dbg_print("0");
+		__asm__ __volatile__(
+		    "sti\n\t"
+		    ::);
 	}
 
 	//pm_suspend_thrd(0);
