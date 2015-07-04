@@ -228,14 +228,14 @@ void adjust_int_level()
 			p_new_node = rtl_list_insert_before(
 			                 &(task_queues[int_level].queue),
 			                 NULL,
-			                 &thread_table[current_thread].p_task_queue_node,
+			                 &thread_table[current_thread],
 			                 schedule_heap);
 
 		} else {
 			p_new_node = rtl_list_insert_after(
 			                 &(task_queues[int_level].queue),
 			                 NULL,
-			                 &thread_table[current_thread].p_task_queue_node,
+			                 &thread_table[current_thread],
 			                 schedule_heap);
 		}
 
