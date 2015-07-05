@@ -25,10 +25,11 @@
 #include "../../../exceptions/exceptions.h"
 
 #define	TIME_SLICE(level)	(\
-                             ((level)/((level)/MAX_TIME_SLICE_NUM)\
-                              >=MAX_TIME_SLICE_NUM)\
-                             ?MAX_TIME_SLICE_NUM\
-                             :(level)/((level)/MAX_TIME_SLICE_NUM)\
+                             ((level)+1)/(\
+                                     (INT_LEVEL_USR_HIGHEST+1)%MAX_TIME_SLICE_NUM\
+                                     ?(INT_LEVEL_USR_HIGHEST+1)/MAX_TIME_SLICE_NUM+1\
+                                     :(INT_LEVEL_USR_HIGHEST+1)/MAX_TIME_SLICE_NUM\
+                                         )+1\
                           )
 
 tss					sys_tss;

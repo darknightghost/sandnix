@@ -53,10 +53,12 @@ void test_thread(u32 thread_id, void* p_args)
 	io_set_crrnt_int_level(1);
 	u32 i;
 
+	dbg_print("Task 1\n");
+
 	while(1) {
 		for(i = 0; i < 10000; i++);
 
-		dbg_print("1");
+		//dbg_print("1");
 		__asm__ __volatile__(
 		    "sti\n\t"
 		    ::);
@@ -71,10 +73,12 @@ void test()
 	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST);
 	pm_create_thrd(test_thread, true, false, NULL);
 
+	dbg_print("Task 0\n");
+
 	while(1) {
 		for(i = 0; i < 10000; i++);
 
-		dbg_print("0");
+		//dbg_print("0");
 		__asm__ __volatile__(
 		    "sti\n\t"
 		    ::);
