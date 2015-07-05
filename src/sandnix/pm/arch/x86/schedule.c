@@ -216,7 +216,7 @@ void adjust_int_level()
 	//equal to current interrupt level
 	if(int_level != old_level) {
 
-		//If not put current thread into the correct task queue
+		//If current thread was not been put in the correct task queue
 		pm_acqr_raw_spn_lock(&(task_queues[old_level].lock));
 		rtl_list_remove(&(task_queues[old_level].queue),
 		                thread_table[current_thread].p_task_queue_node,
