@@ -356,7 +356,10 @@ u32 pm_create_thrd(thread_func entry,
 
 }
 
-void pm_terminate_thrd(u32 thread_id, u32 exit_code);
+void pm_terminate_thrd(u32 thread_id, u32 exit_code)
+{
+	return;
+}
 
 void pm_suspend_thrd(u32 thread_id)
 {
@@ -430,7 +433,19 @@ void pm_resume_thrd(u32 thread_id)
 	return;
 }
 
-void pm_sleep(u32 ms);
+void pm_sleep(u32 ms)
+{
+	u32 tick;
+
+	pm_acqr_spn_lock(&thread_table_lock);
+	thread_table[current_thread].status = TASK_SLEEP;
+	tick = io_get_tick_count();
+	thread_table[current_thread].status_info.sleep.start_tick = tick;
+	thread_table[current_thread].status_info.sleep.stop_tick = tick + ms / SYS_TICK;
+	pm_rls_spn_lock(&thread_table_lock);
+	pm_schedule();
+	return;
+}
 
 u32 pm_get_crrnt_thrd_id()
 {
@@ -544,8 +559,9 @@ u32 get_next_task()
 							return ret_id;
 
 						} else if(p_info->status == TASK_SLEEP
-						          && current_tick >= p_info->status_info.sleep.start_tick
-						          && current_tick <= p_info->status_info.sleep.stop_tick) {
+						          && current_tick - p_info->status_info.sleep.start_tick
+						          >= p_info->status_info.sleep.stop_tick
+						          - p_info->status_info.sleep.start_tick) {
 
 							//Awake sleeping thread
 							p_info->status = TASK_READY;
@@ -607,8 +623,9 @@ u32 get_next_task()
 							}
 
 						} else if(p_info->status == TASK_SLEEP
-						          && current_tick >= p_info->status_info.sleep.start_tick
-						          && current_tick <= p_info->status_info.sleep.stop_tick) {
+						          && current_tick - p_info->status_info.sleep.start_tick
+						          >= p_info->status_info.sleep.stop_tick
+						          - p_info->status_info.sleep.start_tick) {
 
 							//Awake sleeping thread
 							p_info->status = TASK_READY;
@@ -670,8 +687,9 @@ u32 get_next_task()
 							}
 
 						} else if(p_info->status == TASK_SLEEP
-						          && current_tick >= p_info->status_info.sleep.start_tick
-						          && current_tick <= p_info->status_info.sleep.stop_tick) {
+						          && current_tick - p_info->status_info.sleep.start_tick
+						          >= p_info->status_info.sleep.stop_tick
+						          - p_info->status_info.sleep.start_tick) {
 
 							//Awake sleeping thread
 							p_info->status = TASK_READY;
