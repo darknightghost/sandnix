@@ -78,6 +78,6 @@ u32			io_get_tick_count();
 void		io_enable_interrupt();
 void		io_disable_interrupt();
 
-void		io_dispatch_int();
+void		io_dispatch_int(u32 thread_id, void* p_args);
 
 #endif	//!	IO_H_INCLUDE

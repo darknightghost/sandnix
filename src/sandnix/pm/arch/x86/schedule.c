@@ -311,6 +311,9 @@ u32 pm_create_thrd(thread_func entry,
 		*(u32*)p_stack = new_id;
 	}
 
+	//Returning address
+	p_stack -= 4;
+
 	//Prepare for iret
 	//Eflags
 	p_stack -= 4;

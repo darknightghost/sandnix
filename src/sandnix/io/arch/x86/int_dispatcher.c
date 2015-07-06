@@ -36,6 +36,7 @@ bool				exception_handling_flag;
 u32					tick_count;
 u8					current_int_level;
 u32					new_int = 0;
+static	u32					dispatcher_thread = 0;
 
 static	void		call_hndlr(u32 i);
 
@@ -78,7 +79,9 @@ void int_excpt_dispatcher(u32 num, pret_regs p_regs)
 	}
 
 	//Resume interrupt dispatcher thread
-	pm_resume_thrd(0);
+	if(dispatcher_thread != 0) {
+		pm_resume_thrd(dispatcher_thread);
+	}
 
 	new_int = int_hndlr_tbl[num].level;
 
@@ -98,9 +101,13 @@ void int_normal_dispatcher(u32 num, pret_regs p_regs)
 	int_hndlr_tbl[num].thread_id = pm_get_crrnt_thrd_id();
 
 	//Resume interrupt dispatcher thread
-	pm_resume_thrd(0);
+	if(dispatcher_thread != 0) {
+		pm_resume_thrd(dispatcher_thread);
+	}
 
-	new_int = int_hndlr_tbl[num].level;
+	if(new_int < int_hndlr_tbl[INT_CLOCK].level) {
+		new_int = int_hndlr_tbl[num].level;
+	}
 
 	//Schedule
 	__asm__ __volatile__(
@@ -118,9 +125,13 @@ void int_bp_dispatcher(pret_regs p_regs)
 	int_hndlr_tbl[INT_BP].thread_id = pm_get_crrnt_thrd_id();
 
 	//Resume interrupt dispatcher thread
-	pm_resume_thrd(0);
+	if(dispatcher_thread != 0) {
+		pm_resume_thrd(dispatcher_thread);
+	}
 
-	new_int = int_hndlr_tbl[INT_BP].level;
+	if(new_int < int_hndlr_tbl[INT_CLOCK].level) {
+		new_int = int_hndlr_tbl[INT_BP].level;
+	}
 
 	//Schedule
 	__asm__ __volatile__(
@@ -139,10 +150,14 @@ void int_clock_dispatcher(pret_regs p_regs)
 
 	//Resume interrupt dispatcher thread
 	if(int_hndlr_tbl[INT_CLOCK].entry != NULL) {
-		pm_resume_thrd(0);
+		if(dispatcher_thread != 0) {
+			pm_resume_thrd(dispatcher_thread);
+		}
 	}
 
-	new_int = int_hndlr_tbl[INT_CLOCK].level;
+	if(new_int < int_hndlr_tbl[INT_CLOCK].level) {
+		new_int = int_hndlr_tbl[INT_CLOCK].level;
+	}
 
 	//Enable next clock interrupt
 	__asm__ __volatile__(
@@ -159,11 +174,12 @@ void int_clock_dispatcher(pret_regs p_regs)
 	return;
 }
 
-void io_dispatch_int()
+void io_dispatch_int(u32 thread_id, void* p_args)
 {
 	u32 i;
 
 	new_int = 0;
+	dispatcher_thread = thread_id;
 
 	io_set_crrnt_int_level(INT_LEVEL_EXCEPTION);
 
@@ -198,7 +214,7 @@ void io_dispatch_int()
 
 		new_int = 0;
 		io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
-		pm_suspend_thrd(0);
+		pm_suspend_thrd(dispatcher_thread);
 	}
 }
 
