@@ -75,8 +75,11 @@ bool		pm_set_proc_uid(u32 process_id, u32 uid);
 //Spin lock
 void		pm_init_spn_lock(pspin_lock p_lock);
 void		pm_acqr_spn_lock(pspin_lock p_lock);
+void		pm_acqr_raw_spn_lock(pspin_lock p_lock);
 bool		pm_try_acqr_spn_lock(pspin_lock p_lock);
+bool		pm_try_acqr_raw_spn_lock(pspin_lock p_lock);
 void		pm_rls_spn_lock(pspin_lock p_lock);
+void		pm_rls_raw_spn_lock(pspin_lock p_lock);
 
 //Mutex
 void		pm_init_mutex(pmutex p_mutex);

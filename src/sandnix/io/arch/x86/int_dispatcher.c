@@ -36,6 +36,7 @@ bool				exception_handling_flag;
 u32					tick_count;
 u8					current_int_level;
 u32					new_int = 0;
+static	u32					dispatcher_thread = 0;
 
 static	void		call_hndlr(u32 i);
 
@@ -78,15 +79,17 @@ void int_excpt_dispatcher(u32 num, pret_regs p_regs)
 	}
 
 	//Resume interrupt dispatcher thread
-	pm_resume_thrd(0);
+	if(dispatcher_thread != 0) {
+		pm_resume_thrd(dispatcher_thread);
+	}
 
 	new_int = int_hndlr_tbl[num].level;
 
 	//Schedule
 	__asm__ __volatile__(
 	    "leave\n\t"
-	    "movl		%0,%%esp\n\t"
-	    "call		pm_task_schedule\n\t"
+	    "movl	%0,%%esp\n\t"
+	    "call	pm_task_schedule\n\t"
 	    ::"r"(p_regs));
 	return;
 }
@@ -98,16 +101,19 @@ void int_normal_dispatcher(u32 num, pret_regs p_regs)
 	int_hndlr_tbl[num].thread_id = pm_get_crrnt_thrd_id();
 
 	//Resume interrupt dispatcher thread
-	pm_resume_thrd(0);
+	if(dispatcher_thread != 0) {
+		pm_resume_thrd(dispatcher_thread);
+	}
 
-	new_int = int_hndlr_tbl[num].level;
+	if(new_int < int_hndlr_tbl[INT_CLOCK].level) {
+		new_int = int_hndlr_tbl[num].level;
+	}
 
 	//Schedule
 	__asm__ __volatile__(
-	    "sti\n\t"
 	    "leave\n\t"
-	    "movl		%0,%%esp\n\t"
-	    "call		pm_task_schedule\n\t"
+	    "movl	%0,%%esp\n\t"
+	    "call	pm_task_schedule\n\t"
 	    ::"r"(p_regs));
 	return;
 }
@@ -119,16 +125,19 @@ void int_bp_dispatcher(pret_regs p_regs)
 	int_hndlr_tbl[INT_BP].thread_id = pm_get_crrnt_thrd_id();
 
 	//Resume interrupt dispatcher thread
-	pm_resume_thrd(0);
+	if(dispatcher_thread != 0) {
+		pm_resume_thrd(dispatcher_thread);
+	}
 
-	new_int = int_hndlr_tbl[INT_BP].level;
+	if(new_int < int_hndlr_tbl[INT_CLOCK].level) {
+		new_int = int_hndlr_tbl[INT_BP].level;
+	}
 
 	//Schedule
 	__asm__ __volatile__(
-	    "sti\n\t"
 	    "leave\n\t"
-	    "movl		%0,%%esp\n\t"
-	    "call		pm_task_schedule\n\t"
+	    "movl	%0,%%esp\n\t"
+	    "call	pm_task_schedule\n\t"
 	    ::"r"(p_regs));
 	return;
 }
@@ -141,10 +150,14 @@ void int_clock_dispatcher(pret_regs p_regs)
 
 	//Resume interrupt dispatcher thread
 	if(int_hndlr_tbl[INT_CLOCK].entry != NULL) {
-		pm_resume_thrd(0);
+		if(dispatcher_thread != 0) {
+			pm_resume_thrd(dispatcher_thread);
+		}
 	}
 
-	new_int = int_hndlr_tbl[INT_CLOCK].level;
+	if(new_int < int_hndlr_tbl[INT_CLOCK].level) {
+		new_int = int_hndlr_tbl[INT_CLOCK].level;
+	}
 
 	//Enable next clock interrupt
 	__asm__ __volatile__(
@@ -154,19 +167,21 @@ void int_clock_dispatcher(pret_regs p_regs)
 
 	//Schedule
 	__asm__ __volatile__(
-	    "sti\n\t"
 	    "leave\n\t"
-	    "movl		%0,%%esp\n\t"
-	    "call		pm_clock_schedule\n\t"
+	    "addl	$8,%%esp\n\t"
+	    "call	pm_clock_schedule\n\t"
 	    ::"r"(p_regs));
 	return;
 }
 
-void io_dispatch_int()
+void io_dispatch_int(u32 thread_id, void* p_args)
 {
 	u32 i;
 
 	new_int = 0;
+	dispatcher_thread = thread_id;
+
+	io_set_crrnt_int_level(INT_LEVEL_EXCEPTION);
 
 	while(1) {
 		//Dispatch interrupts
@@ -198,11 +213,8 @@ void io_dispatch_int()
 		}
 
 		new_int = 0;
-		__asm__ __volatile__(
-		    "sti\n\t"
-		    ::);
 		io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
-		pm_suspend_thrd(0);
+		pm_suspend_thrd(dispatcher_thread);
 	}
 }
 
@@ -278,17 +290,7 @@ void io_unreg_int_hndlr(u8 num, pint_hndlr_info p_info)
 
 void io_set_crrnt_int_level(u8 level)
 {
-	u32 prev_level;
-
-	prev_level = current_int_level;
-
 	current_int_level = level;
-
-	if(level < INT_LEVEL_DISPATCH
-	   && level < prev_level) {
-		pm_schedule();
-	}
-
 	return;
 }
 

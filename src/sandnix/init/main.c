@@ -38,10 +38,13 @@ void kernel_main()
 	excpt_init();
 	mm_init();
 	pm_init();
-	pm_schedule();
-	//test();
+	io_enable_interrupt();
+	pm_create_thrd(io_dispatch_int, true, false, NULL);
+	test();
 
-	io_dispatch_int();
+	//io_dispatch_int();
+
+	io_set_crrnt_int_level(INT_LEVEL_IDLE);
 
 	while(1);
 
@@ -50,13 +53,62 @@ void kernel_main()
 
 void test_thread(u32 thread_id, void* p_args)
 {
-	dbg_print("task 1\n");
+	io_set_crrnt_int_level(1);
+	u32 i;
+
+	dbg_print("Task 1\n");
+
+	while(1) {
+		for(i = 0; i < 10000; i++);
+
+		//dbg_print("1");
+		//	__asm__ __volatile__(
+		//	    "sti\n\t"
+		//	    ::);
+	}
 
 	while(1);
 }
 
+void test_thread1(u32 thread_id, void* p_args)
+{
+	u32 i;
+
+	dbg_print("Task 2\n");
+
+	while(1) {
+		for(i = 0; i < 10000; i++);
+
+		//dbg_print("2");
+		//	__asm__ __volatile__(
+		//	    "sti\n\t"
+		//	    ::);
+	}
+
+	while(1);
+}
+
+
+
 void test()
 {
-	pm_create_thrd(test_thread, true, false, NULL);
-	dbg_print("task 0\n");
+	u32 i;
+	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST);
+	//pm_create_thrd(test_thread, true, false, NULL);
+	//pm_create_thrd(test_thread1, true, false, NULL);
+
+	dbg_print("Task 0\n");
+
+	while(1) {
+		for(i = 0; i < 1000000; i++);
+
+		__asm__ __volatile__("ud2\n\t");
+
+		//	dbg_print("0");
+		//	__asm__ __volatile__(
+		//	    "sti\n\t"
+		//	    ::);
+	}
+
+	//pm_suspend_thrd(0);
 }

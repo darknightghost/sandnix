@@ -96,7 +96,7 @@ typedef	struct {
 } sleep_thread_info, *psleep_thread_info;
 
 typedef	struct {
-	u32		time_slice;
+	s32		time_slice;
 } ready_thread_info, *pready_thread_info;
 
 typedef	union {

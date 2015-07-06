@@ -22,6 +22,7 @@
 
 #define	K_TTY_BUF_SIZE		4096
 
+void	dbg_init();
 void	dbg_cls();
 void	dbg_print(char* fmt, ...);
 
