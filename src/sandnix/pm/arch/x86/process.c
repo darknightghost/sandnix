@@ -19,7 +19,6 @@
 
 u32			pm_fork();
 void		pm_exit(u32 exit_code);
-u32			pm_wait(u32 thread_id);
 void		pm_exec(char* cmd_line);
 u32 pm_switch_process(u32 process_id)
 {

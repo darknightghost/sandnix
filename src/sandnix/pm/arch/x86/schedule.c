@@ -47,10 +47,11 @@ static	void			reset_time_slice();
 static	void			switch_to(u32 thread_id);
 static	void			adjust_int_level();
 static	void			user_thread_caller(u32 thread_id, void* p_args);
-static	spin_lock		cpu0_schedule_lock;
+static	void			thread_recycler(u32 thread_id, void* p_args);
 
-//Task queues
 static	task_queue		task_queues[INT_LEVEL_HIGHEST + 1];
+static	spin_lock		cpu0_schedule_lock;
+static	u32				recycler_thread_id;
 
 /*
 	It's safe to edit the information of a thread in thread_table if you'v got
@@ -108,6 +109,8 @@ void init_schedule()
 		pm_init_spn_lock(&(task_queues[i].lock));
 	}
 
+	//Create thread 0
+	dbg_print("Creating thread 0...\n");
 	p_new_node = rtl_list_insert_after(
 	                 &(task_queues[INT_LEVEL_USR_HIGHEST].queue),
 	                 NULL,
@@ -120,6 +123,10 @@ void init_schedule()
 	}
 
 	thread_table[0].p_task_queue_node = p_new_node;
+
+	//Create recycler thread
+	dbg_print("Creating stack recycler thread...\n");
+	recycler_thread_id = pm_create_thrd(thread_recycler, true, false, NULL);
 
 	return;
 }
@@ -346,6 +353,9 @@ u32 pm_create_thrd(thread_func entry,
 	thread_table[new_id].ebp = (u32)((u8*)k_stack + KERNEL_STACK_SIZE);
 	thread_table[new_id].esp = (u32)p_stack;
 
+	thread_table[new_id].parent_id = current_thread;
+	thread_table[current_thread].child_num++;
+
 	pm_rls_spn_lock(&thread_table_lock);
 
 	if(is_ready) {
@@ -358,13 +368,19 @@ u32 pm_create_thrd(thread_func entry,
 
 void pm_terminate_thrd(u32 thread_id, u32 exit_code)
 {
+	pm_acqr_spn_lock(&thread_table_lock);
+	thread_table[thread_id].status = TASK_ZOMBIE;
+	pm_rls_spn_lock(&thread_table_lock);
+	pm_resume_thrd(recycler_thread_id);
 	return;
 }
 
 void pm_suspend_thrd(u32 thread_id)
 {
 	u32 level;
+	u32 current_level;
 
+	current_level = io_get_crrnt_int_level();
 	pm_acqr_spn_lock(&thread_table_lock);
 
 	//Check the status of the thread
@@ -385,6 +401,7 @@ void pm_suspend_thrd(u32 thread_id)
 	    schedule_heap);
 	pm_rls_spn_lock(&(task_queues[level].lock));
 	thread_table[thread_id].status = TASK_SUSPEND;
+	thread_table[thread_id].level = current_level;
 
 	pm_rls_spn_lock(&thread_table_lock);
 	pm_schedule();
@@ -441,7 +458,7 @@ void pm_sleep(u32 ms)
 	thread_table[current_thread].status = TASK_SLEEP;
 	tick = io_get_tick_count();
 	thread_table[current_thread].status_info.sleep.start_tick = tick;
-	thread_table[current_thread].status_info.sleep.stop_tick = tick + ms / SYS_TICK;
+	thread_table[current_thread].status_info.sleep.stop_tick = tick + ms * 10 / SYS_TICK;
 	pm_rls_spn_lock(&thread_table_lock);
 	pm_schedule();
 	return;
@@ -772,6 +789,15 @@ void reset_time_slice()
 	}
 
 	return;
+}
+
+void thread_recycler(u32 thread_id, void* p_args)
+{
+	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
+
+	while(1) {
+		pm_suspend_thrd(thread_id);
+	}
 }
 
 void user_thread_caller(u32 thread_id, void* p_args)

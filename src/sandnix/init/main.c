@@ -39,6 +39,7 @@ void kernel_main()
 	mm_init();
 	pm_init();
 	io_enable_interrupt();
+	dbg_print("Creating interrupt dispatcher thread...\n");
 	pm_create_thrd(io_dispatch_int, true, false, NULL);
 	test();
 
@@ -56,7 +57,7 @@ void test_thread(u32 thread_id, void* p_args)
 	io_set_crrnt_int_level(1);
 	u32 i;
 
-	dbg_print("Task 1\n");
+	//dbg_print("Task 1\n");
 
 	while(1) {
 		for(i = 0; i < 10000; i++);
@@ -72,9 +73,13 @@ void test_thread(u32 thread_id, void* p_args)
 
 void test_thread1(u32 thread_id, void* p_args)
 {
-	u32 i;
+	u32 i, b, e;
 
 	dbg_print("Task 2\n");
+	b = io_get_tick_count();
+	pm_sleep(10000);
+	e = io_get_tick_count();
+	dbg_print("Task 2,%u\n", e - b);
 
 	while(1) {
 		for(i = 0; i < 10000; i++);
@@ -94,15 +99,15 @@ void test()
 {
 	u32 i;
 	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST);
-	//pm_create_thrd(test_thread, true, false, NULL);
-	//pm_create_thrd(test_thread1, true, false, NULL);
+	pm_create_thrd(test_thread, true, false, NULL);
+	pm_create_thrd(test_thread1, true, false, NULL);
 
-	dbg_print("Task 0\n");
+	//dbg_print("Task 0\n");
 
 	while(1) {
 		for(i = 0; i < 1000000; i++);
 
-		__asm__ __volatile__("ud2\n\t");
+		//	__asm__ __volatile__("ud2\n\t");
 
 		//	dbg_print("0");
 		//	__asm__ __volatile__(
