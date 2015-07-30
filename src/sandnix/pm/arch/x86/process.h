@@ -20,4 +20,7 @@
 
 #include "../../pm.h"
 
+void	add_proc_thrd(u32 thrd_id, u32 proc_id);
+void	remove_proc_thrd(u32 thrd_id, u32 proc_id);
+
 #endif	//!	PROCESS_H_INCLUDE

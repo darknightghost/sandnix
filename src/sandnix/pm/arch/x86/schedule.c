@@ -493,6 +493,28 @@ u32 pm_get_crrnt_thrd_id()
 
 u32 pm_join(u32 thread_id)
 {
+	int i;
+
+	while(1) {
+		pm_acqr_spn_lock(&thread_table_lock);
+
+		for(i = 0; i < MAX_THREAD_NUM; i++) {
+			if((thread_id == 0
+			    && thread_table[i].process_id == current_process)
+			   || thread_id == i) {
+				if(thread_table[i].alloc_flag
+				   && thread_table[i].status == TASK_ZOMBIE) {
+					thread_table[i].alloc_flag = false;
+					return thread_table[i].exit_code;
+
+				}
+			}
+		}
+
+		pm_rls_spn_lock(&thread_table_lock);
+		pm_suspend_thrd(current_thread);
+	}
+
 	return 0;
 }
 
@@ -821,22 +843,34 @@ void reset_time_slice()
 void thread_recycler(u32 thread_id, void* p_args)
 {
 	plist_node p_node;
+	list current_join_list = NULL;
 
 	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
 
 	while(1) {
 		pm_suspend_thrd(thread_id);
 
-		//Wake up all of the threads whitch are calling pm_join
+		//Copy the list
 		pm_acqr_spn_lock(&join_list_lock);
 
 		p_node = join_list;
 
 		do {
-			pm_resume_thrd((u32)(p_node->p_item));
+			rtl_list_insert_after(&current_join_list, NULL,
+			                      p_node->p_item, schedule_heap);
 		} while(p_node != join_list);
 
 		pm_rls_spn_lock(&join_list_lock);
+
+		//Wake up all of the threads which are calling pm_join
+		p_node = current_join_list;
+
+		do {
+			pm_resume_thrd((u32)(p_node->p_item));
+		} while(p_node != join_list);
+
+		rtl_list_destroy(&current_join_list, schedule_heap, NULL);
+
 	}
 }
 

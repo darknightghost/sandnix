@@ -34,3 +34,13 @@ u32 pm_get_proc_id(u32 thread_id)
 u32			pm_get_proc_uid(u32 process_id);
 bool		pm_set_proc_uid(u32 process_id, u32 uid);
 
+void	add_proc_thrd(u32 thrd_id, u32 proc_id)
+{
+	return;
+}
+
+void	remove_proc_thrd(u32 thrd_id, u32 proc_id)
+{
+	return;
+}
+
