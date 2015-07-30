@@ -47,11 +47,9 @@ static	void			reset_time_slice();
 static	void			switch_to(u32 thread_id);
 static	void			adjust_int_level();
 static	void			user_thread_caller(u32 thread_id, void* p_args);
-static	void			thread_recycler(u32 thread_id, void* p_args);
 
 static	task_queue		task_queues[INT_LEVEL_HIGHEST + 1];
 static	spin_lock		cpu0_schedule_lock;
-static	u32				recycler_thread_id;
 
 static	plist_node		join_list;
 static	spin_lock		join_list_lock;
@@ -130,8 +128,6 @@ void init_schedule()
 	//Create recycler thread
 	pm_init_spn_lock(&join_list_lock);
 	join_list = NULL;
-	dbg_print("Creating stack recycler thread...\n");
-	recycler_thread_id = pm_create_thrd(thread_recycler, true, false, NULL);
 
 	return;
 }
@@ -368,6 +364,8 @@ u32 pm_create_thrd(thread_func entry,
 void pm_terminate_thrd(u32 thread_id, u32 exit_code)
 {
 	u32 level;
+	list current_join_list = NULL;
+	plist_node p_node;
 
 	pm_acqr_spn_lock(&thread_table_lock);
 
@@ -379,21 +377,42 @@ void pm_terminate_thrd(u32 thread_id, u32 exit_code)
 	}
 
 	level = thread_table[thread_id].level;
+	pm_rls_spn_lock(&thread_table_lock);
+
 	//Remove the thread from task queue
 	pm_acqr_spn_lock(&(task_queues[level].lock));
 	rtl_list_remove(
 	    &(task_queues[level].queue),
 	    thread_table[thread_id].p_task_queue_node,
 	    schedule_heap);
-	pm_rls_spn_lock(&(task_queues[level].lock));
 
 	//Set thread status
 	thread_table[thread_id].status = TASK_ZOMBIE;
 	thread_table[thread_id].exit_code = exit_code;
+	pm_rls_spn_lock(&(task_queues[level].lock));
 
-	pm_rls_spn_lock(&thread_table_lock);
+	//Copy the list
+	pm_acqr_spn_lock(&join_list_lock);
 
-	pm_resume_thrd(recycler_thread_id);
+	p_node = join_list;
+
+	do {
+		rtl_list_insert_after(&current_join_list, NULL,
+		                      p_node->p_item, schedule_heap);
+	} while(p_node != join_list);
+
+	pm_rls_spn_lock(&join_list_lock);
+
+	//Wake up all of the threads which are calling pm_join
+	p_node = current_join_list;
+
+	do {
+		pm_resume_thrd((u32)(p_node->p_item));
+	} while(p_node != join_list);
+
+	rtl_list_destroy(&current_join_list, schedule_heap, NULL);
+
+
 	return;
 }
 
@@ -426,7 +445,11 @@ void pm_suspend_thrd(u32 thread_id)
 	thread_table[thread_id].level = current_level;
 
 	pm_rls_spn_lock(&thread_table_lock);
-	pm_schedule();
+
+	if(thread_id == current_thread) {
+		pm_schedule();
+	}
+
 	return;
 }
 
@@ -468,7 +491,10 @@ void pm_resume_thrd(u32 thread_id)
 	pm_rls_spn_lock(&(task_queues[int_level].lock));
 	pm_rls_spn_lock(&thread_table_lock);
 
-	pm_schedule();
+	if(int_level > io_get_crrnt_int_level()) {
+		pm_schedule();
+	}
+
 	return;
 }
 
@@ -494,6 +520,7 @@ u32 pm_get_crrnt_thrd_id()
 u32 pm_join(u32 thread_id)
 {
 	int i;
+	bool flag = false;
 
 	while(1) {
 		pm_acqr_spn_lock(&thread_table_lock);
@@ -512,6 +539,16 @@ u32 pm_join(u32 thread_id)
 		}
 
 		pm_rls_spn_lock(&thread_table_lock);
+
+		if(!flag) {
+			//Add current thread to the list
+			pm_acqr_spn_lock(&join_list_lock);
+			rtl_list_insert_after(&join_list, NULL,
+			                      (void*)thread_id, schedule_heap);
+			pm_rls_spn_lock(&join_list_lock);
+			flag = true;
+		}
+
 		pm_suspend_thrd(current_thread);
 	}
 
@@ -838,40 +875,6 @@ void reset_time_slice()
 	}
 
 	return;
-}
-
-void thread_recycler(u32 thread_id, void* p_args)
-{
-	plist_node p_node;
-	list current_join_list = NULL;
-
-	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
-
-	while(1) {
-		pm_suspend_thrd(thread_id);
-
-		//Copy the list
-		pm_acqr_spn_lock(&join_list_lock);
-
-		p_node = join_list;
-
-		do {
-			rtl_list_insert_after(&current_join_list, NULL,
-			                      p_node->p_item, schedule_heap);
-		} while(p_node != join_list);
-
-		pm_rls_spn_lock(&join_list_lock);
-
-		//Wake up all of the threads which are calling pm_join
-		p_node = current_join_list;
-
-		do {
-			pm_resume_thrd((u32)(p_node->p_item));
-		} while(p_node != join_list);
-
-		rtl_list_destroy(&current_join_list, schedule_heap, NULL);
-
-	}
 }
 
 void user_thread_caller(u32 thread_id, void* p_args)
