@@ -57,7 +57,7 @@ void		pm_sleep(u32 ms);
 u32			pm_get_crrnt_thrd_id();
 void		pm_task_schedule();
 void		pm_clock_schedule();
-u32			pm_wait(u32 thread_id);
+u32			pm_join(u32 thread_id);
 
 bool		pm_get_thread_context(u32 id, pcontext p_cntxt);
 bool		pm_set_thread_context(u32 id, pcontext p_cntxt);

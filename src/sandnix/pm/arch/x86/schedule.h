@@ -108,7 +108,6 @@ typedef	struct {
 	bool				alloc_flag;
 	u32					process_id;
 	u32					parent_id;		//Parent thread
-	u32					child_num;		//Number of child thread
 	u8					level;			//Interrupt level <=> thread priority
 	u32					exit_code;
 	plist_node			p_task_queue_node;
@@ -129,6 +128,9 @@ typedef	struct {
 	thread_func		func;
 	void*			p_args;
 } usr_thread_info, *pusr_thread_info;
+
+typedef	struct	{
+} thread_wait_info;
 
 void	init_schedule();
 

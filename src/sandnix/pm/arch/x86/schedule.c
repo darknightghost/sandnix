@@ -53,6 +53,9 @@ static	task_queue		task_queues[INT_LEVEL_HIGHEST + 1];
 static	spin_lock		cpu0_schedule_lock;
 static	u32				recycler_thread_id;
 
+static	plist_node		join_list;
+static	spin_lock		join_list_lock;
+
 /*
 	It's safe to edit the information of a thread in thread_table if you'v got
 	the lock of the task queue which the thread is in.Because when a thread is
@@ -125,6 +128,8 @@ void init_schedule()
 	thread_table[0].p_task_queue_node = p_new_node;
 
 	//Create recycler thread
+	pm_init_spn_lock(&join_list_lock);
+	join_list = NULL;
 	dbg_print("Creating stack recycler thread...\n");
 	recycler_thread_id = pm_create_thrd(thread_recycler, true, false, NULL);
 
@@ -179,25 +184,20 @@ void pm_clock_schedule()
 
 void pm_task_schedule()
 {
-	u32 current_int_level;
 
-	current_int_level = io_get_crrnt_int_level();
+	if(pm_try_acqr_raw_spn_lock(&cpu0_schedule_lock)) {
+		adjust_int_level();
+		cpu0_tick = 0;
 
-	if(current_int_level <= INT_LEVEL_DISPATCH) {
-		if(pm_try_acqr_raw_spn_lock(&cpu0_schedule_lock)) {
-			adjust_int_level();
-			cpu0_tick = 0;
-
-			__asm__ __volatile__(""::"i"(get_next_task));
-			__asm__ __volatile__(""::"i"(switch_to));
-			__asm__ __volatile__(
-			    "leave\n\t"
-			    "addl	$4,%%esp\n\t"
-			    "call	get_next_task\n\t"
-			    "pushl	%%eax\n\t"
-			    "call	switch_to\n\t"
-			    ::);
-		}
+		__asm__ __volatile__(""::"i"(get_next_task));
+		__asm__ __volatile__(""::"i"(switch_to));
+		__asm__ __volatile__(
+		    "leave\n\t"
+		    "addl	$4,%%esp\n\t"
+		    "call	get_next_task\n\t"
+		    "pushl	%%eax\n\t"
+		    "call	switch_to\n\t"
+		    ::);
 	}
 
 	__asm__ __volatile__(
@@ -354,7 +354,6 @@ u32 pm_create_thrd(thread_func entry,
 	thread_table[new_id].esp = (u32)p_stack;
 
 	thread_table[new_id].parent_id = current_thread;
-	thread_table[current_thread].child_num++;
 
 	pm_rls_spn_lock(&thread_table_lock);
 
@@ -368,9 +367,32 @@ u32 pm_create_thrd(thread_func entry,
 
 void pm_terminate_thrd(u32 thread_id, u32 exit_code)
 {
+	u32 level;
+
 	pm_acqr_spn_lock(&thread_table_lock);
+
+	//Check the status of the thread
+	if(thread_table[thread_id].alloc_flag == false
+	   || thread_table[thread_id].status == TASK_ZOMBIE) {
+		pm_rls_spn_lock(&thread_table_lock);
+		return;
+	}
+
+	level = thread_table[thread_id].level;
+	//Remove the thread from task queue
+	pm_acqr_spn_lock(&(task_queues[level].lock));
+	rtl_list_remove(
+	    &(task_queues[level].queue),
+	    thread_table[thread_id].p_task_queue_node,
+	    schedule_heap);
+	pm_rls_spn_lock(&(task_queues[level].lock));
+
+	//Set thread status
 	thread_table[thread_id].status = TASK_ZOMBIE;
+	thread_table[thread_id].exit_code = exit_code;
+
 	pm_rls_spn_lock(&thread_table_lock);
+
 	pm_resume_thrd(recycler_thread_id);
 	return;
 }
@@ -467,6 +489,11 @@ void pm_sleep(u32 ms)
 u32 pm_get_crrnt_thrd_id()
 {
 	return current_thread;
+}
+
+u32 pm_join(u32 thread_id)
+{
+	return 0;
 }
 
 void switch_to(u32 thread_id)
@@ -793,10 +820,23 @@ void reset_time_slice()
 
 void thread_recycler(u32 thread_id, void* p_args)
 {
+	plist_node p_node;
+
 	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
 
 	while(1) {
 		pm_suspend_thrd(thread_id);
+
+		//Wake up all of the threads whitch are calling pm_join
+		pm_acqr_spn_lock(&join_list_lock);
+
+		p_node = join_list;
+
+		do {
+			pm_resume_thrd((u32)(p_node->p_item));
+		} while(p_node != join_list);
+
+		pm_rls_spn_lock(&join_list_lock);
 	}
 }
 
