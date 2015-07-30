@@ -107,7 +107,6 @@ typedef	union {
 typedef	struct {
 	bool				alloc_flag;
 	u32					process_id;
-	u32					parent_id;		//Parent thread
 	u8					level;			//Interrupt level <=> thread priority
 	u32					exit_code;
 	plist_node			p_task_queue_node;

@@ -349,8 +349,6 @@ u32 pm_create_thrd(thread_func entry,
 	thread_table[new_id].ebp = (u32)((u8*)k_stack + KERNEL_STACK_SIZE);
 	thread_table[new_id].esp = (u32)p_stack;
 
-	thread_table[new_id].parent_id = current_thread;
-
 	pm_rls_spn_lock(&thread_table_lock);
 
 	if(is_ready) {
@@ -521,6 +519,7 @@ u32 pm_join(u32 thread_id)
 {
 	int i;
 	bool flag = false;
+	u32 proc_id;
 
 	while(1) {
 		pm_acqr_spn_lock(&thread_table_lock);
@@ -532,6 +531,26 @@ u32 pm_join(u32 thread_id)
 				if(thread_table[i].alloc_flag
 				   && thread_table[i].status == TASK_ZOMBIE) {
 					thread_table[i].alloc_flag = false;
+
+					//Switch process
+					proc_id = current_process;
+					pm_switch_process(thread_table[i].process_id);
+
+					//Release stacks
+					if(thread_table[i].kernel_stack != NULL) {
+						mm_virt_free(thread_table[i].kernel_stack,
+						             KERNEL_STACK_SIZE, MEM_UNCOMMIT | MEM_RELEASE);
+					}
+
+					if(thread_table[i].user_stack != NULL) {
+						mm_virt_free(thread_table[i].user_stack,
+						             USER_STACK_SIZE, MEM_UNCOMMIT | MEM_RELEASE);
+					}
+
+					//Switch back
+					pm_switch_process(proc_id);
+
+					pm_rls_spn_lock(&thread_table_lock);
 					return thread_table[i].exit_code;
 
 				}
