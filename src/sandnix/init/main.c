@@ -33,16 +33,23 @@ void kernel_main()
 
 	dbg_print("%s", "Sandnix 0.0.1 kernel loaded.\n");
 
+	//Initialize
 	get_kernel_param();
 	io_init();
 	excpt_init();
 	mm_init();
 	pm_init();
+
+
+	//Create daemon threads
 	io_enable_interrupt();
 	dbg_print("Creating interrupt dispatcher thread...\n");
 	pm_create_thrd(io_dispatch_int, true, false, INT_LEVEL_EXCEPTION, NULL);
+
+	//Create driver_init process
 	test();
 
+	//IDLE
 	io_set_crrnt_int_level(INT_LEVEL_IDLE);
 
 	while(1);

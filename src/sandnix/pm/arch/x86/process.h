@@ -30,6 +30,8 @@ typedef struct _process_info {
 	u32			priority;			//0x00-0x0F
 	u32			uid;				//Real uid
 	u32			euid;				//Effective uid
+	spin_lock	file_desc_list_lock;
+	spin_lock	file_desc_list;		//File descriptors
 	spin_lock	child_list_lock;
 	list		child_list;			//Child processes
 	spin_lock	thread_list_lock;
@@ -40,9 +42,9 @@ typedef struct _process_info {
 	list		wait_list;			//Zombie children
 } process_info, *pprocess_info;
 
+void	init_process();
 void	add_proc_thrd(u32 thrd_id, u32 proc_id);
 void	zomble_proc_thrd(u32 thrd_id, u32 proc_id);
 void	remove_proc_thrd(u32 thrd_id, u32 proc_id);
-void	init_process();
 
 #endif	//!	PROCESS_H_INCLUDE

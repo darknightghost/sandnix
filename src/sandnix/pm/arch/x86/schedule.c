@@ -586,6 +586,11 @@ u32 pm_join(u32 thread_id)
 	return 0;
 }
 
+u32 pm_get_proc_id(u32 thread_id)
+{
+	return current_process;
+}
+
 void switch_to(u32 thread_id)
 {
 	u32 proc_id;

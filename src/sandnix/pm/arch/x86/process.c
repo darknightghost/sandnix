@@ -21,6 +21,7 @@
 #include "../../../debug/debug.h"
 #include "../../../mm/mm.h"
 #include "../../../exceptions/exceptions.h"
+#include "../../../vfs/vfs.h"
 
 spin_lock		process_table_lock;
 process_info	process_table[MAX_PROCESS_NUM];
@@ -28,6 +29,7 @@ void*			process_heap;
 
 void init_process()
 {
+	dbg_print("\nInitializing process...\n");
 	rtl_memset(process_table, 0, sizeof(process_table));
 	pm_init_spn_lock(&process_table_lock);
 
@@ -73,18 +75,16 @@ u32 pm_switch_process(u32 process_id)
 {
 	u32 pdt_id;
 
-	pm_acqr_raw_spn_lock(&process_table_lock);
-
 	if(process_table[process_id].alloc_flag == false) {
 		excpt_panic(ESRCH,
 		            "Unavailable process id!\n");
 	}
 
 	pdt_id = process_table[process_id].pdt_id;
-	pm_rls_raw_spn_lock(&process_table_lock);
 	mm_pg_tbl_switch(pdt_id);
 	return 0;
 }
+
 u32			pm_get_pdt_id(u32 process_id);
 
 u32 pm_get_proc_id(u32 thread_id)
