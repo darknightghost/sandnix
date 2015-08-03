@@ -114,6 +114,7 @@ typedef	struct {
 	thread_status_info	status_info;
 	void*				kernel_stack;
 	void*				user_stack;
+	u32					errno;
 	u32					ebp;			//Ring0
 	u32					esp;			//Ring0
 } thread_info, *pthread_info;
@@ -128,11 +129,11 @@ typedef	struct {
 	void*			p_args;
 } usr_thread_info, *pusr_thread_info;
 
-typedef	struct	{
-} thread_wait_info;
+
+extern	u32		current_process;
 
 void	init_schedule();
-extern	u32		current_process;
+s32		fork_thread();
 
 #endif	//!	SCHEDULE_H_INCLUDE
 

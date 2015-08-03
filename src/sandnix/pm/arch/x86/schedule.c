@@ -280,6 +280,7 @@ u32 pm_create_thrd(thread_func entry,
 
 	if(new_id == 0) {
 		pm_rls_spn_lock(&thread_table_lock);
+		pm_set_errno(EAGAIN);
 		return 0;
 	}
 
@@ -293,6 +294,7 @@ u32 pm_create_thrd(thread_func entry,
 	if(k_stack == NULL) {
 		thread_table[new_id].alloc_flag = false;
 		pm_rls_spn_lock(&thread_table_lock);
+		pm_set_errno(ENOMEM);
 		return 0;
 	}
 
@@ -381,6 +383,8 @@ void pm_exit_thrd(u32 exit_code)
 	if(thread_table[current_thread].alloc_flag == false
 	   || thread_table[current_thread].status == TASK_ZOMBIE) {
 		pm_rls_spn_lock(&thread_table_lock);
+		excpt_panic(ESRCH,
+		            "Zombie thread running!");
 		return;
 	}
 
@@ -439,6 +443,7 @@ void pm_suspend_thrd(u32 thread_id)
 	       && thread_table[thread_id].status != TASK_RUNNING
 	       && thread_table[thread_id].status != TASK_SLEEP)) {
 		pm_rls_spn_lock(&thread_table_lock);
+		pm_set_errno(ESRCH);
 		return;
 	}
 
@@ -472,6 +477,7 @@ void pm_resume_thrd(u32 thread_id)
 	if(thread_table[thread_id].alloc_flag == false
 	   || thread_table[thread_id].status != TASK_SUSPEND) {
 		pm_rls_spn_lock(&thread_table_lock);
+		pm_set_errno(ESRCH);
 		return;
 	}
 
@@ -589,6 +595,17 @@ u32 pm_join(u32 thread_id)
 u32 pm_get_proc_id(u32 thread_id)
 {
 	return current_process;
+}
+
+void pm_set_errno(u32 errno)
+{
+	thread_table[current_thread].errno = errno;
+	return;
+}
+
+u32 pm_get_errno()
+{
+	return thread_table[current_thread].errno;
 }
 
 void switch_to(u32 thread_id)

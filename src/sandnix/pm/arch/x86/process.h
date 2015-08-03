@@ -30,15 +30,10 @@ typedef struct _process_info {
 	u32			priority;			//0x00-0x0F
 	u32			uid;				//Real uid
 	u32			euid;				//Effective uid
-	spin_lock	file_desc_list_lock;
-	spin_lock	file_desc_list;		//File descriptors
-	spin_lock	child_list_lock;
+	list		file_desc_list;		//File descriptors
 	list		child_list;			//Child processes
-	spin_lock	thread_list_lock;
 	list		thread_list;		//Alive threads
-	spin_lock	zombie_list_lock;
 	list		zombie_list;		//Zombie threads
-	spin_lock	wait_list_lock;
 	list		wait_list;			//Zombie children
 } process_info, *pprocess_info;
 

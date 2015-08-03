@@ -67,12 +67,14 @@ void		pm_task_schedule();
 void		pm_clock_schedule();
 u32			pm_join(u32 thread_id);
 u32			pm_get_proc_id(u32 thread_id);
+void		pm_set_errno(u32 errno);
+u32			pm_get_errno();
 
 bool		pm_get_thread_context(u32 id, pcontext p_cntxt);
 bool		pm_set_thread_context(u32 id, pcontext p_cntxt);
 
 //Process
-u32			pm_fork();
+s32			pm_fork();
 void		pm_exec(char* cmd_line);
 u32			pm_wait(u32 child_id);
 u32			pm_get_crrnt_process();
