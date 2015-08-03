@@ -40,10 +40,8 @@ void kernel_main()
 	pm_init();
 	io_enable_interrupt();
 	dbg_print("Creating interrupt dispatcher thread...\n");
-	pm_create_thrd(io_dispatch_int, true, false, NULL);
+	pm_create_thrd(io_dispatch_int, true, false, INT_LEVEL_EXCEPTION, NULL);
 	test();
-
-	//io_dispatch_int();
 
 	io_set_crrnt_int_level(INT_LEVEL_IDLE);
 
@@ -52,68 +50,18 @@ void kernel_main()
 	return;
 }
 
-void test_thread(u32 thread_id, void* p_args)
-{
-	io_set_crrnt_int_level(1);
-	u32 i;
-
-	//dbg_print("Task 1\n");
-
-	while(1) {
-		for(i = 0; i < 10000; i++);
-
-		//dbg_print("1");
-		//	__asm__ __volatile__(
-		//	    "sti\n\t"
-		//	    ::);
-	}
-
-	while(1);
-}
-
-void test_thread1(u32 thread_id, void* p_args)
-{
-	u32 i, b, e;
-
-	dbg_print("Task 2\n");
-	b = io_get_tick_count();
-	pm_sleep(10000);
-	e = io_get_tick_count();
-	dbg_print("Task 2,%u\n", e - b);
-
-	while(1) {
-		for(i = 0; i < 10000; i++);
-
-		//dbg_print("2");
-		//	__asm__ __volatile__(
-		//	    "sti\n\t"
-		//	    ::);
-	}
-
-	while(1);
-}
-
-
-
 void test()
 {
-	u32 i;
-	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST);
-	pm_create_thrd(test_thread, true, false, NULL);
-	pm_create_thrd(test_thread1, true, false, NULL);
+	u32 new_tbl;
+	char* p;
 
-	//dbg_print("Task 0\n");
+	p = mm_virt_alloc(NULL, 4096, MEM_RESERVE | MEM_COMMIT | MEM_USER, PAGE_WRITEABLE);
+	new_tbl = mm_pg_tbl_fork(0);
+	mm_pg_tbl_switch(new_tbl);
+	*p = 'a';
+	*(p + 1) = '\0';
+	mm_pg_tbl_switch(0);
 
-	while(1) {
-		for(i = 0; i < 1000000; i++);
+	__asm__ __volatile__("nop\n\tnop\n\tnop\n\tnop\n\t");
 
-		//	__asm__ __volatile__("ud2\n\t");
-
-		//	dbg_print("0");
-		//	__asm__ __volatile__(
-		//	    "sti\n\t"
-		//	    ::);
-	}
-
-	//pm_suspend_thrd(0);
 }

@@ -275,7 +275,7 @@ void increase_physcl_page_ref(void* base_addr, u32 num)
 	for(i = 0; i < num; i++) {
 		if(phy_mem_info[base + i].status != PHY_PAGE_ALLOCATED
 		   && phy_mem_info[base + i].status != PHY_PAGE_RESERVED) {
-			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+			excpt_panic(EFAULT,
 			            "This is because some program tried to increase the reference count of a physical page which cannot be increased.The address of the physical memory is %p.",
 			            base * 4096);
 		}
@@ -301,7 +301,7 @@ void free_physcl_page(void* base_addr, u32 num)
 	for(i = 0; i < num; i++) {
 		if(phy_mem_info[base + i].status != PHY_PAGE_ALLOCATED
 		   && phy_mem_info[base + i].status != PHY_PAGE_RESERVED) {
-			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+			excpt_panic(EFAULT,
 			            "This is because some program tried to free a physical page which cannot be freed.The address of the physical memory is %p.\nFile : %s\nLine : %s.\n",
 			            (base + i) * 4096);
 		}

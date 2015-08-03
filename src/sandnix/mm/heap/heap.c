@@ -93,7 +93,7 @@ void* mm_hp_alloc(size_t size, void* heap_addr)
 	if(p_head->p_prev != NULL) {
 		//panic
 		excpt_panic(
-		    EXCEPTION_ILLEGAL_HEAP_ADDR,
+		    EINVAL,
 		    "The heap address which caused this problem is %p",
 		    p_head);
 	}
@@ -119,8 +119,8 @@ void* mm_hp_alloc(size_t size, void* heap_addr)
 			if(p_block->magic != HEAP_INTACT_MAGIC) {
 				//Panic
 				excpt_panic(
-				    EXCEPTION_HEAP_CORRUPTION,
-				    "The block which is broken might be %p",
+				    EOVERFLOW,
+				    "Heap corruption occured,the block which is broken might be %p",
 				    p_block);
 			}
 
@@ -234,8 +234,8 @@ void mm_hp_free(void* addr, void* heap_addr)
 	if(p_head->p_prev != NULL) {
 		//Panic
 		excpt_panic(
-		    EXCEPTION_ILLEGAL_HEAP_ADDR,
-		    "The heap address which caused this problem is %p",
+		    EINVAL,
+		    "Illegal heap address,the heap address which caused this problem is %p",
 		    p_head);
 	}
 
@@ -247,8 +247,8 @@ void mm_hp_free(void* addr, void* heap_addr)
 	if(p_block->magic != HEAP_INTACT_MAGIC) {
 		//Panic
 		excpt_panic(
-		    EXCEPTION_HEAP_CORRUPTION,
-		    "The block which is broken might be %p",
+		    EOVERFLOW,
+		    "Heap corruption occured,the block which is broken might be %p",
 		    p_block);
 	}
 
@@ -257,8 +257,8 @@ void mm_hp_free(void* addr, void* heap_addr)
 		if(p_head->p_next == NULL) {
 			//Panic
 			excpt_panic(
-			    EXCEPTION_ILLEGAL_HEAP_ADDR,
-			    "The heap address which caused this problem is %p",
+			    EINVAL,
+			    "Illegal heap address,the heap address which caused this problem is %p",
 			    heap_addr);
 		}
 
@@ -308,8 +308,8 @@ void mm_hp_check(void* heap_addr)
 
 	if(p_head->p_prev != NULL) {
 		excpt_panic(
-		    EXCEPTION_ILLEGAL_HEAP_ADDR,
-		    "The heap address which caused this problem is %p",
+		    EINVAL,
+		    "Illegal heap address,the heap address which caused this problem is %p",
 		    heap_addr);
 	}
 
@@ -325,8 +325,8 @@ void mm_hp_check(void* heap_addr)
 			if(p_block->magic != HEAP_INTACT_MAGIC) {
 				//Panic
 				excpt_panic(
-				    EXCEPTION_HEAP_CORRUPTION,
-				    "The block which is broken might be %p",
+				    EOVERFLOW,
+				    "Heap corruption occured,the block which is broken might be %p",
 				    p_block);
 			}
 		}
@@ -382,8 +382,8 @@ void merge_mem_blocks(pheap_head p_head)
 		if(p_block->magic != HEAP_INTACT_MAGIC) {
 			//Panic
 			excpt_panic(
-			    EXCEPTION_HEAP_CORRUPTION,
-			    "The block which is broken might be %p",
+			    EOVERFLOW,
+			    "Heap corruption occured,the block which is broken might be %p",
 			    p_block);
 			return;
 		}
@@ -397,8 +397,8 @@ void merge_mem_blocks(pheap_head p_head)
 				if(p_next_block->magic != HEAP_INTACT_MAGIC) {
 					//Panic
 					excpt_panic(
-					    EXCEPTION_HEAP_CORRUPTION,
-					    "The block which is broken might be %p",
+					    EOVERFLOW,
+					    "Heap corruption occured,the block which is broken might be %p",
 					    p_block);
 					return;
 				}
@@ -426,8 +426,8 @@ void rebuild_empty_blocks_list(pheap_head p_head)
 		if(p_block->magic != HEAP_INTACT_MAGIC) {
 			//Panic
 			excpt_panic(
-			    EXCEPTION_HEAP_CORRUPTION,
-			    "The block which is broken might be %p",
+			    EOVERFLOW,
+			    "Heap corruption occured,the block which is broken might be %p",
 			    p_block);
 			return;
 		}

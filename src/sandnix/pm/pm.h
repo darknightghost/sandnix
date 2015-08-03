@@ -33,6 +33,13 @@
 #define		TASK_SLEEP			0x03
 #define		TASK_ZOMBIE			0x04
 
+#define		PROC_ALIVE			0x00
+#define		PROC_ZOMBIE			0x01
+
+#define		PRIORITY_LOWEST		INT_LEVEL_LOWEST
+#define		PRIORITY_HIGHEST	INT_LEVEL_USR_HIGHEST
+#define		PRIORITY_NORMAL		(INT_LEVEL_USR_HIGHEST / 2)
+
 #define		KERNEL_STACK_SIZE	(4096*2)
 #define		USER_STACK_SIZE		(2*1024*1024)
 
@@ -42,6 +49,7 @@ typedef	void	(*thread_func)(u32, void*);
 
 #ifdef	X86
 	#include "arch/x86/schedule.h"
+	#include "arch/x86/process.h"
 #endif	//X86
 
 //All
@@ -49,8 +57,8 @@ void		pm_init();
 
 //Thread
 void		pm_schedule();
-u32			pm_create_thrd(thread_func entry, bool is_ready, bool is_user, void* p_args);
-void		pm_terminate_thrd(u32 thread_id, u32 exit_code);
+u32			pm_create_thrd(thread_func entry, bool is_ready, bool is_user, u32 priority, void* p_args);
+void		pm_exit_thrd(u32 exit_code);
 void		pm_suspend_thrd(u32 thread_id);
 void		pm_resume_thrd(u32 thread_id);
 void		pm_sleep(u32 ms);
@@ -64,8 +72,8 @@ bool		pm_set_thread_context(u32 id, pcontext p_cntxt);
 
 //Process
 u32			pm_fork();
-void		pm_exit(u32 exit_code);
 void		pm_exec(char* cmd_line);
+u32			pm_wait(u32 child_id);
 u32			pm_switch_process(u32 process_id);
 u32			pm_get_pdt_id(u32 process_id);
 u32			pm_get_proc_id(u32 thread_id);

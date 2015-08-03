@@ -76,6 +76,9 @@ void int_excpt_dispatcher(u32 num, pret_regs p_regs)
 
 		//Move saved registers
 		rtl_memmove(((u8*)(p_regs) + 4), p_regs, sizeof(ret_regs));
+
+		p_regs = (pret_regs)((u8*)p_regs + 4);
+
 	}
 
 	//Resume interrupt dispatcher thread

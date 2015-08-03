@@ -79,7 +79,7 @@ void				mm_pg_unlock(u32 id, void* address);
 //Page table
 u32					mm_pg_tbl_fork(u32 parent);
 void				mm_pg_tbl_free(u32 pdt_id);
-void				mm_pg_tbl_switch(u32 pdt_id);
+void				mm_pg_tbl_switch(u32 pdt_id);				//pm only
 void				mm_pg_tbl_usr_spc_clear(u32 pdt_id);
 
 //Status

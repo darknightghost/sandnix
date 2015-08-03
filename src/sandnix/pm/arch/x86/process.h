@@ -20,7 +20,29 @@
 
 #include "../../pm.h"
 
+typedef struct _process_info {
+	bool		alloc_flag;			//Allocate flag
+	char*		process_name;		//Name
+	u32			parent_id;			//Parent process
+	u32			pdt_id;				//Page table id
+	u32			exit_code;			//Exit code
+	u32			status;				//Status,alive or zombie
+	u32			priority;			//0x00-0x0F
+	u32			uid;				//Real uid
+	u32			euid;				//Effective uid
+	spin_lock	child_list_lock;
+	list		child_list;			//Child processes
+	spin_lock	thread_list_lock;
+	list		thread_list;		//Alive threads
+	spin_lock	zombie_list_lock;
+	list		zombie_list;		//Zombie threads
+	spin_lock	wait_list_lock;
+	list		wait_list;			//Zombie children
+} process_info, *pprocess_info;
+
 void	add_proc_thrd(u32 thrd_id, u32 proc_id);
+void	zomble_proc_thrd(u32 thrd_id, u32 proc_id);
 void	remove_proc_thrd(u32 thrd_id, u32 proc_id);
+void	init_process();
 
 #endif	//!	PROCESS_H_INCLUDE

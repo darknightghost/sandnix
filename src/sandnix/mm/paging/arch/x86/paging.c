@@ -119,7 +119,7 @@ bool pf_hndlr(u32 int_num, u32 thread_id, u32 err_code)
 
 
 	if(mem_lock.owner != mem_lock.next) {
-		excpt_panic(EXCEPTION_UNKNOW,
+		excpt_panic(EFAULT,
 		            "#PF occured in mm!\n");
 	}
 
@@ -128,12 +128,15 @@ bool pf_hndlr(u32 int_num, u32 thread_id, u32 err_code)
 	    :"=r"(err_addr)
 	    :);
 
+	switch_to_0();
+
 	if(err.present == 0) {
 		//The page does not present
 		map_phy_addr(pdt_index_table[prev_pdt]);
 		p_pde = (ppde)PT_MAPPING_ADDR + err_addr / 1024 / 4096;;
 
 		if(p_pde->present == PG_NP) {
+			switch_back();
 			return false;
 		}
 
@@ -143,16 +146,18 @@ bool pf_hndlr(u32 int_num, u32 thread_id, u32 err_code)
 		switch(p_pte->avail) {
 		case PG_SWAPPED:
 			//TODO:Swap
-			excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
+			excpt_panic(ENOTSUP, "MEM in swap,file:%s\nLine:%d\n",
 			            __FILE__,
 			            __LINE__);
 			__asm__ __volatile__(
 			    "movl	%%cr3,%%eax\n\t"
 			    "movl	%%eax,%%cr3\n\t"
 			    ::);
+			switch_back();
 			return true;
 
 		default:
+			switch_back();
 			return false;
 
 		}
@@ -174,7 +179,7 @@ bool pf_hndlr(u32 int_num, u32 thread_id, u32 err_code)
 
 				if(new_mem == NULL) {
 					//TODO:Swap
-					excpt_panic(EXCEPTION_UNKNOW, "Not enough memory!\n");
+					excpt_panic(ENOTSUP, "Not enough memory!\n");
 				}
 
 				map_phy_addr((void*)(p_pte->page_base_addr << 12));
@@ -200,13 +205,16 @@ bool pf_hndlr(u32 int_num, u32 thread_id, u32 err_code)
 			    "movl	%%cr3,%%eax\n\t"
 			    "movl	%%eax,%%cr3\n\t"
 			    ::);
+			switch_back();
 			return true;
 
 		default:
+			switch_back();
 			return false;
 		}
 	}
 
+	switch_back();
 	return false;
 }
 
@@ -470,12 +478,12 @@ void mm_pg_tbl_switch(u32 pdt_id)
 {
 
 	if(pdt_index_table[pdt_id] == NULL) {
-		excpt_panic(EXCEPTION_ILLEGAL_PDT,
+		excpt_panic(EFAULT,
 		            "An illegal id of page directory has been tied to switch to,the id is %p.",
 		            pdt_id);
 	}
 
-	pm_acqr_spn_lock(&mem_lock);
+	pm_acqr_raw_spn_lock(&mem_lock);
 
 	prev_pdt = current_pdt;
 	current_pdt = pdt_id;
@@ -488,7 +496,7 @@ void mm_pg_tbl_switch(u32 pdt_id)
 	    "movl	%%eax,%%cr3\n\t"
 	    ::"m"(pdt_index_table[pdt_id]));
 
-	pm_rls_spn_lock(&mem_lock);
+	pm_rls_raw_spn_lock(&mem_lock);
 
 	return;
 }
@@ -518,7 +526,7 @@ void* kernel_mem_reserve(u32 base, u32 num)
 	//Check arguments
 	if(base != 0
 	   && base * 4096 < KERNEL_MEM_BASE) {
-		excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+		excpt_panic(EFAULT,
 		            "Address %p is not in kernel memspace!\n",
 		            base * 4096);
 	}
@@ -610,7 +618,7 @@ void* usr_mem_reserve(u32 base, u32 num)
 	//Check arguments
 	if(base != 0
 	   && base * 4096 >= KERNEL_MEM_BASE) {
-		excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+		excpt_panic(EFAULT,
 		            "Address %p is not in user memspace!\n",
 		            base * 4096);
 	}
@@ -735,7 +743,7 @@ void* kernel_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr)
 			}
 
 		} else {
-			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+			excpt_panic(EFAULT,
 			            "A page whitch is not reserved has been tried to commit.the address of the page is %p.\n",
 			            (base + i) * 4096);
 		}
@@ -788,7 +796,7 @@ void* usr_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr)
 			}
 
 		} else {
-			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+			excpt_panic(EFAULT,
 			            "A page whitch is not reserved has been tried to commit.the address of the page is %p.\n",
 			            (base + i) * 4096);
 		}
@@ -873,7 +881,7 @@ void fork_pdt(u32 dest, u32 src)
 
 	if(new_pdt == NULL) {
 		//TODO:Swap
-		excpt_panic(EXCEPTION_UNKNOW,
+		excpt_panic(ENOTSUP,
 		            "Not enough memory!\n");
 	}
 
@@ -889,8 +897,7 @@ void fork_pdt(u32 dest, u32 src)
 	    p_pde++) {
 		map_phy_addr(new_pdt);
 
-		if(p_pde->present == PG_P
-		   && p_pde->present == PG_NORMAL) {
+		if(p_pde->present == PG_P) {
 			map_phy_addr((void*)((u32)(p_pde->page_table_base_addr << 12)));
 			rtl_memcpy(pdt_copy_buf, (void*)PT_MAPPING_ADDR, 4096);
 
@@ -899,7 +906,7 @@ void fork_pdt(u32 dest, u32 src)
 
 			if(new_pt == NULL) {
 				//TODO:Swap
-				excpt_panic(EXCEPTION_UNKNOW,
+				excpt_panic(ENOTSUP,
 				            "Not enough memory!\n");
 			}
 
@@ -914,7 +921,7 @@ void fork_pdt(u32 dest, u32 src)
 		} else if(p_pde->present == PG_NP
 		          && p_pde->avail == PG_SWAPPED) {
 			//TODO:Swap
-			excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
+			excpt_panic(ENOTSUP, "MEM in swap,file:%s\nLine:%d\n",
 			            __FILE__,
 			            __LINE__);
 
@@ -972,7 +979,7 @@ void fork_user_pages(void* pt_phy_addr, void* src_pt_phy_addr)
 			switch(p_pte->avail) {
 			case PG_SWAPPED:
 				//TODO:Swap
-				excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
+				excpt_panic(ENOTSUP, "MEM in swap,file:%s\nLine:%d\n",
 				            __FILE__,
 				            __LINE__);
 				break;
@@ -990,7 +997,7 @@ void free_usr_pdt(u32 id)
 
 	//Check arguments
 	if(pdt_index_table[id] == NULL) {
-		excpt_panic(EXCEPTION_ILLEGAL_PDT,
+		excpt_panic(EFAULT,
 		            "Some code tried to free a page table which id is %u,but it is unused.\n",
 		            id);
 	}
@@ -1014,7 +1021,7 @@ void free_usr_pdt(u32 id)
 				if(p_pte->present == PG_NP
 				   && p_pte->avail == PG_SWAPPED) {
 					//TODO:Swap
-					excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
+					excpt_panic(ENOTSUP, "MEM in swap,file:%s\nLine:%d\n",
 					            __FILE__,
 					            __LINE__);
 
@@ -1032,7 +1039,7 @@ void free_usr_pdt(u32 id)
 					case PG_SHARED:
 						//TODO:Clean the share
 						//mm_pmo_unmap();
-						excpt_panic(EXCEPTION_UNKNOW, "Shared mem:file:%s\nLine:%d\n",
+						excpt_panic(ENOTSUP, "Shared mem:file:%s\nLine:%d\n",
 						            __FILE__,
 						            __LINE__);
 						break;
@@ -1047,7 +1054,7 @@ void free_usr_pdt(u32 id)
 		} else if(p_pde->present == PG_NP
 		          && p_pde->avail == PG_SWAPPED) {
 			//TODO:Swap
-			excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
+			excpt_panic(ENOTSUP, "MEM in swap,file:%s\nLine:%d\n",
 			            __FILE__,
 			            __LINE__);
 		}
@@ -1086,7 +1093,7 @@ ppte get_pte(u32 pdt, u32 index)
 				phy_mem_addr = alloc_physcl_page(NULL, 1);
 
 				if(phy_mem_addr == NULL) {
-					excpt_panic(EXCEPTION_RESOURCE_DEPLETED,
+					excpt_panic(ENOMEM,
 					            "Physical memory depleted and no pages can be swapped!\n");
 				}
 			}
@@ -1099,12 +1106,12 @@ ppte get_pte(u32 pdt, u32 index)
 		} else if(p_pde->present == PG_NP
 		          && p_pde->avail == PG_SWAPPED) {
 			//TODO:Swap
-			excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
+			excpt_panic(ENOTSUP, "MEM in swap,file:%s\nLine:%d\n",
 			            __FILE__,
 			            __LINE__);
 
 		} else {
-			excpt_panic(EXCEPTION_ILLEGAL_PDT,
+			excpt_panic(EOVERFLOW,
 			            "pdt_table has been broken!\n");
 		}
 
@@ -1192,7 +1199,7 @@ void kernel_mem_uncommit(u32 base, u32 num)
 
 	//Check arguments
 	if(base * 4096 < KERNEL_MEM_BASE) {
-		excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+		excpt_panic(EFAULT,
 		            "Address %p is not in kernel memspace!\n",
 		            base * 4096);
 	}
@@ -1217,12 +1224,12 @@ void kernel_mem_uncommit(u32 base, u32 num)
 		          && p_pte->avail == PG_SWAPPED) {
 			//The page is in swap
 			//TODO:
-			excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
+			excpt_panic(ENOTSUP, "MEM in swap,file:%s\nLine:%d\n",
 			            __FILE__,
 			            __LINE__);
 
 		} else {
-			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+			excpt_panic(EFAULT,
 			            "You have tried to uncommit a page whitch is not commited,The virtual address is %p",
 			            (base + i) * 4096);
 		}
@@ -1238,7 +1245,7 @@ void usr_mem_uncommit(u32 base, u32 num)
 
 	//Check arguments
 	if(base * 4096 >= KERNEL_MEM_BASE) {
-		excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+		excpt_panic(EFAULT,
 		            "Address %p is not in user memspace!\n",
 		            base * 4096);
 	}
@@ -1261,12 +1268,12 @@ void usr_mem_uncommit(u32 base, u32 num)
 		          && p_pte->avail == PG_SWAPPED) {
 			//The page is in swap
 			//TODO:
-			excpt_panic(EXCEPTION_UNKNOW, "MEM in swap,file:%s\nLine:%d\n",
+			excpt_panic(ENOTSUP, "MEM in swap,file:%s\nLine:%d\n",
 			            __FILE__,
 			            __LINE__);
 
 		} else {
-			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+			excpt_panic(EFAULT,
 			            "You have tried to uncommit a page whitch is not commited,The virtual address is %p",
 			            (base + i) * 4096);
 		}
@@ -1284,7 +1291,7 @@ void kernel_mem_unreserve(u32 base, u32 num)
 
 	//Check arguments
 	if(base * 4096 < KERNEL_MEM_BASE) {
-		excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+		excpt_panic(EFAULT,
 		            "Address %p is not in kernel memspace!\n",
 		            base * 4096);
 	}
@@ -1307,7 +1314,7 @@ void kernel_mem_unreserve(u32 base, u32 num)
 			p_pte->page_base_addr = 0;
 
 		} else {
-			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+			excpt_panic(EFAULT,
 			            "A page which is not PG_RESERVED has been tried to release.The address is %p.\n",
 			            (base + i) * 1024);
 		}
@@ -1323,7 +1330,7 @@ void usr_mem_unreserve(u32 base, u32 num)
 
 	//Check arguments
 	if(base * 4096 >= KERNEL_MEM_BASE) {
-		excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+		excpt_panic(EFAULT,
 		            "Address %p is not in user memspace!\n",
 		            base * 4096);
 	}
@@ -1347,7 +1354,7 @@ void usr_mem_unreserve(u32 base, u32 num)
 			p_pte->page_base_addr = 0;
 
 		} else {
-			excpt_panic(EXCEPTION_ILLEGAL_MEM_ADDR,
+			excpt_panic(EFAULT,
 			            "A page which is not PG_RESERVED has been tried to release.The address is %p.\n",
 			            (base + i) * 1024);
 		}

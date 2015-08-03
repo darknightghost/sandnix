@@ -23,5 +23,6 @@
 void pm_init()
 {
 	dbg_print("\nInitializing pm...\n");
+	init_process();
 	init_schedule();
 }

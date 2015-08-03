@@ -182,7 +182,7 @@ bool get_parameter_value(char* buf, char** p_p_param)
 void check_kernel_param()
 {
 	if(kernel_param.root_partition == NULL) {
-		excpt_panic(EXCEPTION_UNSPECIFIED_ROOT_PARTITION,
+		excpt_panic(EKERNELARG,
 		            "%s\n", "You should use root=(hdm,n) to specify a root partition in \"sanlo.cfg\".");
 
 	} else if(kernel_param.driver_init == NULL) {

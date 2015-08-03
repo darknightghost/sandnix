@@ -16,12 +16,73 @@
 */
 
 #include "../../pm.h"
+#include "process.h"
+#include "../../../rtl/rtl.h"
+#include "../../../debug/debug.h"
+#include "../../../mm/mm.h"
+#include "../../../exceptions/exceptions.h"
 
-u32			pm_fork();
-void		pm_exit(u32 exit_code);
-void		pm_exec(char* cmd_line);
+spin_lock		process_table_lock;
+process_info	process_table[MAX_PROCESS_NUM];
+void*			process_heap;
+
+void init_process()
+{
+	rtl_memset(process_table, 0, sizeof(process_table));
+	pm_init_spn_lock(&process_table_lock);
+
+	process_heap = mm_hp_create(TASK_QUEUE_HEAP_SIZE, HEAP_MULTITHREAD);
+
+	if(process_heap == NULL) {
+		excpt_panic(EFAULT,
+		            "Unable to create process heap!\n");
+	}
+
+	dbg_print("Creating process 0...\n");
+	process_table[0].alloc_flag = true;
+	rtl_list_insert_after(
+	    &(process_table[0].thread_list),
+	    NULL,
+	    (void*)0,
+	    process_heap);
+	process_table[0].process_name = "system";
+	return;
+}
+
+u32	pm_fork()
+{
+	//TODO:
+	//Allocate process id
+	//Fork page table
+	//Fork file descrpitors
+	//Fork thread
+	return 0;
+}
+
+void pm_exit(u32 exit_code)
+{
+	//TODO:
+}
+
+void pm_exec(char* cmd_line)
+{
+	//TODO:
+}
+
 u32 pm_switch_process(u32 process_id)
 {
+	u32 pdt_id;
+
+	pm_acqr_raw_spn_lock(&process_table_lock);
+
+	if(process_table[process_id].alloc_flag == false) {
+		excpt_panic(ESRCH,
+		            "Unavailable process id!\n");
+	}
+
+	pdt_id = process_table[process_id].pdt_id;
+	pm_rls_raw_spn_lock(&process_table_lock);
+	mm_pg_tbl_switch(pdt_id);
 	return 0;
 }
 u32			pm_get_pdt_id(u32 process_id);
@@ -34,12 +95,24 @@ u32 pm_get_proc_id(u32 thread_id)
 u32			pm_get_proc_uid(u32 process_id);
 bool		pm_set_proc_uid(u32 process_id, u32 uid);
 
-void	add_proc_thrd(u32 thrd_id, u32 proc_id)
+void add_proc_thrd(u32 thrd_id, u32 proc_id)
+{
+	pm_acqr_spn_lock(&process_table_lock);
+
+	if(process_table[proc_id].alloc_flag == false) {
+		excpt_panic(ESRCH,
+		            "Unavailable process id!\n");
+	}
+
+	return;
+}
+
+void zombie_proc_thrd(u32 thrd_id, u32 proc_id)
 {
 	return;
 }
 
-void	remove_proc_thrd(u32 thrd_id, u32 proc_id)
+void remove_proc_thrd(u32 thrd_id, u32 proc_id)
 {
 	return;
 }

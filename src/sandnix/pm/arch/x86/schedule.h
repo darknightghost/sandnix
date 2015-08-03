@@ -132,6 +132,7 @@ typedef	struct	{
 } thread_wait_info;
 
 void	init_schedule();
+extern	u32		current_process;
 
 #endif	//!	SCHEDULE_H_INCLUDE
 

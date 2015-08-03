@@ -51,7 +51,7 @@ static	void			user_thread_caller(u32 thread_id, void* p_args);
 static	task_queue		task_queues[INT_LEVEL_HIGHEST + 1];
 static	spin_lock		cpu0_schedule_lock;
 
-static	plist_node		join_list;
+static	list			join_list;
 static	spin_lock		join_list_lock;
 
 /*
@@ -101,7 +101,7 @@ void init_schedule()
 	schedule_heap = mm_hp_create(TASK_QUEUE_HEAP_SIZE, HEAP_MULTITHREAD);
 
 	if(schedule_heap == NULL) {
-		excpt_panic(EXCEPTION_ILLEGAL_HEAP_ADDR,
+		excpt_panic(EFAULT,
 		            "Unable to create schedule heap!\n");
 	}
 
@@ -119,7 +119,7 @@ void init_schedule()
 	                 schedule_heap);
 
 	if(p_new_node == NULL) {
-		excpt_panic(EXCEPTION_UNKNOW,
+		excpt_panic(EFAULT,
 		            "Unable to initialize task queue!\n");
 	}
 
@@ -244,7 +244,7 @@ void adjust_int_level()
 		}
 
 		if(p_new_node == NULL) {
-			excpt_panic(EXCEPTION_RESOURCE_DEPLETED,
+			excpt_panic(EFAULT,
 			            "Failes to append new item to task queue!\n");
 		}
 
@@ -264,6 +264,7 @@ void adjust_int_level()
 u32 pm_create_thrd(thread_func entry,
                    bool is_ready,
                    bool	is_user,
+                   u32 priority,
                    void* p_args)
 {
 	void* k_stack;
@@ -281,6 +282,8 @@ u32 pm_create_thrd(thread_func entry,
 		pm_rls_spn_lock(&thread_table_lock);
 		return 0;
 	}
+
+	thread_table[new_id].level = priority;
 
 	//Allocate kernel stack
 	k_stack = mm_virt_alloc(NULL, KERNEL_STACK_SIZE,
@@ -351,6 +354,13 @@ u32 pm_create_thrd(thread_func entry,
 
 	pm_rls_spn_lock(&thread_table_lock);
 
+	if(is_user) {
+		add_proc_thrd(new_id, current_process);
+
+	} else {
+		add_proc_thrd(new_id, 0);
+	}
+
 	if(is_ready) {
 		pm_resume_thrd(new_id);
 	}
@@ -359,7 +369,7 @@ u32 pm_create_thrd(thread_func entry,
 
 }
 
-void pm_terminate_thrd(u32 thread_id, u32 exit_code)
+void pm_exit_thrd(u32 exit_code)
 {
 	u32 level;
 	list current_join_list = NULL;
@@ -368,26 +378,21 @@ void pm_terminate_thrd(u32 thread_id, u32 exit_code)
 	pm_acqr_spn_lock(&thread_table_lock);
 
 	//Check the status of the thread
-	if(thread_table[thread_id].alloc_flag == false
-	   || thread_table[thread_id].status == TASK_ZOMBIE) {
+	if(thread_table[current_thread].alloc_flag == false
+	   || thread_table[current_thread].status == TASK_ZOMBIE) {
 		pm_rls_spn_lock(&thread_table_lock);
 		return;
 	}
 
-	level = thread_table[thread_id].level;
+	level = thread_table[current_thread].level;
 	pm_rls_spn_lock(&thread_table_lock);
 
 	//Remove the thread from task queue
 	pm_acqr_spn_lock(&(task_queues[level].lock));
 	rtl_list_remove(
 	    &(task_queues[level].queue),
-	    thread_table[thread_id].p_task_queue_node,
+	    thread_table[current_thread].p_task_queue_node,
 	    schedule_heap);
-
-	//Set thread status
-	thread_table[thread_id].status = TASK_ZOMBIE;
-	thread_table[thread_id].exit_code = exit_code;
-	pm_rls_spn_lock(&(task_queues[level].lock));
 
 	//Copy the list
 	pm_acqr_spn_lock(&join_list_lock);
@@ -400,6 +405,12 @@ void pm_terminate_thrd(u32 thread_id, u32 exit_code)
 	} while(p_node != join_list);
 
 	pm_rls_spn_lock(&join_list_lock);
+
+	//Set thread status
+	thread_table[current_thread].status = TASK_ZOMBIE;
+	thread_table[current_thread].exit_code = exit_code;
+	zomble_proc_thrd(current_thread, current_process);
+	pm_rls_spn_lock(&(task_queues[level].lock));
 
 	//Wake up all of the threads which are calling pm_join
 	p_node = current_join_list;
@@ -480,7 +491,7 @@ void pm_resume_thrd(u32 thread_id)
 	                 schedule_heap);
 
 	if(p_new_node == NULL) {
-		excpt_panic(EXCEPTION_RESOURCE_DEPLETED,
+		excpt_panic(EFAULT,
 		            "Failes to append new item to task queue!\n");
 	}
 
@@ -551,6 +562,7 @@ u32 pm_join(u32 thread_id)
 					pm_switch_process(proc_id);
 
 					pm_rls_spn_lock(&thread_table_lock);
+					remove_proc_thrd(i, current_process);
 					return thread_table[i].exit_code;
 
 				}
@@ -732,7 +744,7 @@ u32 get_next_task()
 									                 schedule_heap);
 
 									if(p_new_node == NULL) {
-										excpt_panic(EXCEPTION_RESOURCE_DEPLETED,
+										excpt_panic(EFAULT,
 										            "Failes to append new item to task queue!\n");
 									}
 
@@ -796,7 +808,7 @@ u32 get_next_task()
 									                 schedule_heap);
 
 									if(p_new_node == NULL) {
-										excpt_panic(EXCEPTION_RESOURCE_DEPLETED,
+										excpt_panic(EFAULT,
 										            "Failes to append new item to task queue!\n");
 									}
 

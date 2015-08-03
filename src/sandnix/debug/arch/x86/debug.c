@@ -21,6 +21,7 @@
 #include "../../../io/io.h"
 #include "../../../setup/setup.h"
 #include "../../../pm/pm.h"
+#include "../../../setup/setup.h"
 
 #define	DEFAULT_STDOUT_WIDTH	80
 #define	DEFAULT_STDOUT_HEIGHT	25
@@ -51,11 +52,11 @@ static	unsigned short	current_cursor_row = 0;
 static	void		print_string(char* str, u8 color, u8 bg_color);
 static	void		set_cursor_pos(u16 line, u16 row);
 static	void		scroll_down(u16 line, u16 color);
-static	spin_lock	screen_lock;
+static	spin_lock	print_lock;
 
 void dbg_init()
 {
-	pm_init_spn_lock(&screen_lock);
+	pm_init_spn_lock(&print_lock);
 	return;
 }
 
@@ -65,6 +66,7 @@ void dbg_print(char* fmt, ...)
 	va_list args;
 	size_t len;
 
+	pm_acqr_spn_lock(&print_lock);
 	buf = mm_hp_alloc(BUF_SIZE, NULL);
 	va_start(args, fmt);
 	rtl_vprintf_s(buf, BUF_SIZE, fmt, args);
@@ -89,18 +91,17 @@ void dbg_print(char* fmt, ...)
 	p_tty_buf += len;
 
 	if(p_tty_buf >= k_dbg_tty_buf + K_TTY_BUF_SIZE) {
-		excpt_panic(EXCEPTION_BUF_OVERFLOW,
+		excpt_panic(ENOMEM,
 		            "There's not enought memory for k_dbg_tty_buf!\n");
 	}
 
 	//Print string
 	if(enable_print_flag) {
-		pm_acqr_spn_lock(&screen_lock);
 		print_string(buf, FG_BRIGHT_WHITE, BG_BLACK);
-		pm_rls_spn_lock(&screen_lock);
 	}
 
 	mm_hp_free(buf, NULL);
+	pm_rls_spn_lock(&print_lock);
 	return;
 }
 
@@ -211,7 +212,7 @@ void scroll_down(u16 line, u16 color)
 {
 	u16 offset;
 	u16 len;
-	u16	half_len;
+	u16 half_len;
 
 	if(line >= DEFAULT_STDOUT_HEIGHT) {
 		dbg_cls(color);
@@ -222,22 +223,18 @@ void scroll_down(u16 line, u16 color)
 	len = DEFAULT_STDOUT_HEIGHT * DEFAULT_STDOUT_WIDTH * 2 - offset;
 	half_len = offset / 2;
 	__asm__ __volatile__(
-	    "push		%%es\n\t"
-	    "push		%%ds\n\t"
-	    "movw		%%gs,%%ax\n\t"
-	    "movw		%%ax,%%es\n\t"
-	    "movw		%%ax,%%ds\n\t"
 	    "movzwl		%0,%%esi\n\t"
-	    "xorl		%%edi,%%edi\n\t"
+	    "addl		%4,%%esi\n\t"
+	    "movl		%4,%%edi\n\t"
 	    "movzwl		%1,%%ecx\n\t"
 	    "rep		movsb\n\t"
 	    "movzwl		%1,%%edi\n\t"
+	    "addl		%4,%%edi\n\t"
 	    "movzwl		%3,%%ecx\n\t"
 	    "movb		%2,%%ah\n\t"
 	    "movb		$0x20,%%al\n\t"
 	    "rep		stosw\n\t"
-	    "pop		%%ds\n\t"
-	    "pop		%%es\n\t"
-	    ::"m"(offset), "m"(len), "m"(color), "m"(half_len));
+	    ::"m"(offset), "m"(len), "m"(color),
+	    "m"(half_len), "i"(BASIC_VIDEO_BASE_ADDR));
 	return;
 }
