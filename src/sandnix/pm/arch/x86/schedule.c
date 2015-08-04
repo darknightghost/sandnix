@@ -406,6 +406,7 @@ void pm_exit_thrd(u32 exit_code)
 	do {
 		rtl_list_insert_after(&current_join_list, NULL,
 		                      p_node->p_item, schedule_heap);
+		p_node = p_node->p_next;
 	} while(p_node != join_list);
 
 	pm_rls_spn_lock(&join_list_lock);
@@ -421,6 +422,7 @@ void pm_exit_thrd(u32 exit_code)
 
 	do {
 		pm_resume_thrd((u32)(p_node->p_item));
+		p_node = p_node->p_next;
 	} while(p_node != join_list);
 
 	rtl_list_destroy(&current_join_list, schedule_heap, NULL);

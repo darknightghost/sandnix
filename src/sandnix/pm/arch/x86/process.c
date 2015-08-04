@@ -125,6 +125,7 @@ s32	pm_fork()
 		                      process_heap);
 	}
 
+	pm_set_errno(ESUCCESS);
 	pm_rls_spn_lock(&process_table_lock);
 	return new_id;
 }
@@ -213,11 +214,36 @@ u32 get_free_proc_id()
 
 u32 fork_descrpitor_list(u32 dest, u32 src)
 {
-	//TODO:
-	return 0;
+	plist_node p_node;
+
+	p_node = process_table[src].file_desc_list;
+
+	if(p_node != NULL) {
+		do {
+			//Increase reference count
+			vfs_inc_fdesc_reference((u32)(p_node->p_item));
+
+			//Add to child's descriptor list
+			if(rtl_list_insert_after(&(process_table[dest].file_desc_list),
+			                         NULL,
+			                         p_node->p_item,
+			                         process_heap) == NULL) {
+				rtl_list_destroy(&(process_table[dest].file_desc_list),
+				                 process_heap,
+				                 descriptor_destroy_callback);
+				return EAGAIN;
+
+			}
+
+			p_node = p_node->p_next;
+		} while(p_node != process_table[src].file_desc_list);
+	}
+
+	return ESUCCESS;
 }
 
 void descriptor_destroy_callback(void* descriptor)
 {
-	//TODO:
+	vfs_close((u32)descriptor);
+	return;
 }
