@@ -99,7 +99,7 @@ s32	pm_fork()
 	}
 
 	//Fork thread
-	new_thread = fork_thread();
+	new_thread = fork_thread(new_id);
 
 	if(new_thread < 0) {
 		rtl_list_destroy(&(process_table[new_id].file_desc_list),
@@ -127,6 +127,7 @@ s32	pm_fork()
 
 	pm_set_errno(ESUCCESS);
 	pm_rls_spn_lock(&process_table_lock);
+	pm_resume_thrd(new_thread);
 	return new_id;
 }
 
@@ -140,7 +141,7 @@ void pm_exec(char* cmd_line)
 	//TODO:
 }
 
-u32 pm_switch_process(u32 process_id)
+void switch_process(u32 process_id)
 {
 	u32 pdt_id;
 
@@ -151,18 +152,136 @@ u32 pm_switch_process(u32 process_id)
 
 	pdt_id = process_table[process_id].pdt_id;
 	mm_pg_tbl_switch(pdt_id);
-	return 0;
+	return;
 }
 
-u32			pm_get_pdt_id(u32 process_id);
+bool pm_get_proc_uid(u32 process_id, u32* p_uid)
+{
+	pm_acqr_spn_lock(&process_table_lock);
 
-u32			pm_get_proc_uid(u32 process_id);
-bool		pm_set_proc_uid(u32 process_id, u32 uid);
+	//Check if the process exists
+	if(!process_table[process_id].alloc_flag) {
+		pm_rls_spn_lock(&process_table_lock);
+		pm_set_errno(ESRCH);
+		return false;
+	}
 
-bool		pm_set_proc_euid(u32 process_id, u32 euid);
-u32			pm_get_proc_euid(u32 process_id);
-u32			pm_add_proc_file_descriptor(u32 process_id, u32 descriptor);
-u32			pm_remove_proc_file_descriptor(u32 process_id, u32 descriptor);
+	*p_uid = process_table[process_id].uid;
+	pm_rls_spn_lock(&process_table_lock);
+
+	pm_set_errno(ESUCCESS);
+
+	return true;
+}
+
+bool pm_set_proc_euid(u32 process_id, u32 euid)
+{
+	pm_acqr_spn_lock(&process_table_lock);
+
+	//Check if the process exists
+	if(!process_table[process_id].alloc_flag) {
+		pm_rls_spn_lock(&process_table_lock);
+		pm_set_errno(ESRCH);
+		return false;
+	}
+
+	if(euid != process_table[process_id].euid
+	   && euid != process_table[process_id].uid
+	   && euid != process_table[process_id].suid) {
+		pm_rls_spn_lock(&process_table_lock);
+		pm_set_errno(EPERM);
+		return false;
+	}
+
+	if(process_table[process_id].euid == 0) {
+		process_table[process_id].uid = euid;
+	}
+
+	process_table[process_id].euid = euid;
+
+	pm_rls_spn_lock(&process_table_lock);
+
+	pm_set_errno(ESUCCESS);
+
+	return true;
+}
+
+bool pm_get_proc_euid(u32 process_id, u32* p_euid)
+{
+	pm_acqr_spn_lock(&process_table_lock);
+
+	//Check if the process exists
+	if(!process_table[process_id].alloc_flag) {
+		pm_rls_spn_lock(&process_table_lock);
+		pm_set_errno(ESRCH);
+		return false;
+	}
+
+	*p_euid = process_table[process_id].euid;
+	pm_rls_spn_lock(&process_table_lock);
+
+	pm_set_errno(ESUCCESS);
+
+	return true;
+}
+
+bool pm_add_proc_file_descriptor(u32 process_id, u32 descriptor)
+{
+	pm_acqr_spn_lock(&process_table_lock);
+
+	if(process_table[process_id].alloc_flag == false) {
+		pm_rls_spn_lock(&process_table_lock);
+		pm_set_errno(ESRCH);
+		return false;
+	}
+
+	//Add new file descriptor
+	if(rtl_list_insert_after(&(process_table[process_id].file_desc_list),
+	                         NULL,
+	                         (void*)descriptor,
+	                         process_heap) == NULL) {
+		pm_rls_spn_lock(&process_table_lock);
+		pm_set_errno(EFAULT);
+		return false;
+	}
+
+	pm_rls_spn_lock(&process_table_lock);
+
+	pm_set_errno(ESUCCESS);
+	return true;
+}
+
+bool pm_remove_proc_file_descriptor(u32 process_id, u32 descriptor)
+{
+	plist_node p_node;
+
+	pm_acqr_spn_lock(&process_table_lock);
+
+	if(process_table[process_id].alloc_flag == false) {
+		pm_rls_spn_lock(&process_table_lock);
+		pm_set_errno(ESRCH);
+		return false;
+	}
+
+	//Remove from descriptor list
+	p_node = rtl_list_get_node_by_item(process_table[process_id].file_desc_list,
+	                                   (void*)descriptor);
+
+	if(p_node == NULL) {
+		pm_rls_spn_lock(&process_table_lock);
+		pm_set_errno(EFAULT);
+		return false;
+	}
+
+	rtl_list_remove(&(process_table[process_id].file_desc_list),
+	                p_node,
+	                process_heap);
+
+	pm_rls_spn_lock(&process_table_lock);
+	pm_set_errno(ESUCCESS);
+
+	return true;
+}
 
 void add_proc_thrd(u32 thrd_id, u32 proc_id)
 {
@@ -173,6 +292,15 @@ void add_proc_thrd(u32 thrd_id, u32 proc_id)
 		            "Unavailable process id!\n");
 	}
 
+	//Add new thread to thread list
+	if(rtl_list_insert_after(&(process_table[proc_id].thread_list),
+	                         NULL,
+	                         (void*)thrd_id,
+	                         process_heap) == NULL) {
+		excpt_panic(EFAULT,
+		            "Failed to add thread!\n");
+	}
+
 	pm_rls_spn_lock(&process_table_lock);
 
 	return;
@@ -180,11 +308,70 @@ void add_proc_thrd(u32 thrd_id, u32 proc_id)
 
 void zombie_proc_thrd(u32 thrd_id, u32 proc_id)
 {
+	plist_node p_node;
+
+	pm_acqr_spn_lock(&process_table_lock);
+
+	if(process_table[proc_id].alloc_flag == false) {
+		excpt_panic(ESRCH,
+		            "Unavailable process id!\n");
+	}
+
+	//Remove from thread list
+	p_node = rtl_list_get_node_by_item(process_table[proc_id].thread_list,
+	                                   (void*)thrd_id);
+
+	if(p_node == NULL) {
+		excpt_panic(EFAULT,
+		            "Failed to zombie thread!\n");
+	}
+
+	rtl_list_remove(&(process_table[proc_id].thread_list),
+	                p_node,
+	                process_heap);
+
+	//Add to zombie list
+	if(rtl_list_insert_after(&(process_table[proc_id].zombie_list),
+	                         NULL,
+	                         (void*)thrd_id,
+	                         process_heap) == NULL) {
+		excpt_panic(EFAULT,
+		            "Failed to zombie thread!\n");
+	}
+
+
+
+	pm_rls_spn_lock(&process_table_lock);
+
 	return;
 }
 
 void remove_proc_thrd(u32 thrd_id, u32 proc_id)
 {
+	plist_node p_node;
+
+	pm_acqr_spn_lock(&process_table_lock);
+
+	if(process_table[proc_id].alloc_flag == false) {
+		excpt_panic(ESRCH,
+		            "Unavailable process id!\n");
+	}
+
+	//Remove from zombie list
+	p_node = rtl_list_get_node_by_item(process_table[proc_id].zombie_list,
+	                                   (void*)thrd_id);
+
+	if(p_node == NULL) {
+		excpt_panic(EFAULT,
+		            "Failed to remove thread!\n");
+	}
+
+	rtl_list_remove(&(process_table[proc_id].zombie_list),
+	                p_node,
+	                process_heap);
+
+	pm_rls_spn_lock(&process_table_lock);
+
 	return;
 }
 
@@ -204,6 +391,7 @@ u32 get_free_proc_id()
 			process_table[id].status = PROC_ALIVE;
 			process_table[id].priority = process_table[current_process].priority;
 			process_table[id].uid = process_table[current_process].uid;
+			process_table[id].suid = process_table[current_process].suid;
 			process_table[id].euid = process_table[current_process].euid;
 			return id;
 		}

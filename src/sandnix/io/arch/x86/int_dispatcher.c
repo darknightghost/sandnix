@@ -219,6 +219,9 @@ void io_dispatch_int(u32 thread_id, void* p_args)
 		io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
 		pm_suspend_thrd(dispatcher_thread);
 	}
+
+	UNREFERRED_PARAMETER(p_args);
+	return;
 }
 
 bool io_reg_int_hndlr(u8 num, pint_hndlr_info p_info)

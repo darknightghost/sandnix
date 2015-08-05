@@ -80,7 +80,7 @@ void* rtl_memcpy(void* dest, void* src, size_t len)
 	    "movl		%0,%%edi\n\t"
 	    "movl		%1,%%esi\n\t"
 	    "movl		%2,%%ecx\n\t"
-	    "rep		movsb"
+	    "rep		movsb\n\t"
 	    ::"m"(dest), "m"(src), "m"(len));
 	return dest;
 }

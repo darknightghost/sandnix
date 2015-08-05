@@ -215,6 +215,8 @@ bool pf_hndlr(u32 int_num, u32 thread_id, u32 err_code)
 	}
 
 	switch_back();
+	UNREFERRED_PARAMETER(int_num);
+	UNREFERRED_PARAMETER(thread_id);
 	return false;
 }
 

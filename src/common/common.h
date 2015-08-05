@@ -15,9 +15,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	SANDNIX_COMMON_H_INCLUDE
-#define	SANDNIX_COMMON_H_IONCLUDE
+#ifndef	COMMON_H_INCLUDE
+#define	COMMON_H_INCLUDE
 
-#include "../../common/common.h"
+#ifdef	X86
+	#include "./arch/x86/types.h"
+	#include "./arch/x86/kernel_image.h"
+#endif	//X86
 
-#endif	//!	SANDNIX_COMMON_H_INCLUDE
+#define	UNREFERRED_PARAMETER(x)		((void)(x))
+
+#endif	//!	COMMON_H_INCLUDE

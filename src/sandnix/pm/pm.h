@@ -66,7 +66,7 @@ u32			pm_get_crrnt_thrd_id();
 void		pm_task_schedule();
 void		pm_clock_schedule();
 u32			pm_join(u32 thread_id);
-u32			pm_get_proc_id(u32 thread_id);
+bool		pm_get_proc_id(u32 thread_id, u32* p_proc_id);
 void		pm_set_errno(u32 errno);
 u32			pm_get_errno();
 
@@ -78,13 +78,11 @@ s32			pm_fork();
 void		pm_exec(char* cmd_line);
 u32			pm_wait(u32 child_id);
 u32			pm_get_crrnt_process();
-u32			pm_switch_process(u32 process_id);
-u32			pm_get_pdt_id(u32 process_id);
-u32			pm_get_proc_uid(u32 process_id);
+bool		pm_get_proc_uid(u32 process_id, u32* p_uid);
 bool		pm_set_proc_euid(u32 process_id, u32 euid);
-u32			pm_get_proc_euid(u32 process_id);
-u32			pm_add_proc_file_descriptor(u32 process_id, u32 descriptor);
-u32			pm_remove_proc_file_descriptor(u32 process_id, u32 descriptor);
+bool		pm_get_proc_euid(u32 process_id, u32* p_euid);
+bool		pm_add_proc_file_descriptor(u32 process_id, u32 descriptor);
+bool		pm_remove_proc_file_descriptor(u32 process_id, u32 descriptor);
 
 //Spin lock
 void		pm_init_spn_lock(pspin_lock p_lock);

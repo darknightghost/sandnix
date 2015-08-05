@@ -29,6 +29,7 @@ typedef struct _process_info {
 	u32			status;				//Status,alive or zombie
 	u32			priority;			//0x00-0x0F
 	u32			uid;				//Real uid
+	u32			suid;				//Saved uid
 	u32			euid;				//Effective uid
 	list		file_desc_list;		//File descriptors
 	list		child_list;			//Child processes
@@ -38,8 +39,9 @@ typedef struct _process_info {
 } process_info, *pprocess_info;
 
 void	init_process();
+void	switch_process(u32 process_id);
 void	add_proc_thrd(u32 thrd_id, u32 proc_id);
-void	zomble_proc_thrd(u32 thrd_id, u32 proc_id);
+void	zombie_proc_thrd(u32 thrd_id, u32 proc_id);
 void	remove_proc_thrd(u32 thrd_id, u32 proc_id);
 
 #endif	//!	PROCESS_H_INCLUDE

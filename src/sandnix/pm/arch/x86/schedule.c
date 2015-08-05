@@ -371,6 +371,117 @@ u32 pm_create_thrd(thread_func entry,
 
 }
 
+s32 fork_thread(u32 new_proc_id)
+{
+	void* k_stack;
+	u32 new_id;
+	u8* p_stack;
+	ret_regs regs;
+	u32	esp;
+	u32 ebp;
+
+	//Save registers
+	__asm__ __volatile__(
+	    "pushal\n\t"
+	    "movl	%0,%%edi\n\t"
+	    "movl	%%esp,%%esi\n\t"
+	    "cld\n\t"
+	    "movl	%1,%%ecx\n\t"
+	    "rep	movsb\n\t"
+	    "popal\n\t"
+	    ::"a"(&regs), "i"(sizeof(regs)));
+
+	pm_acqr_spn_lock(&thread_table_lock);
+
+	//Allocate a new id
+	new_id = get_free_thread_id();
+
+	if(new_id == 0) {
+		pm_rls_spn_lock(&thread_table_lock);
+		pm_set_errno(EAGAIN);
+		return -1;
+	}
+
+	//Fork thread info
+	rtl_memcpy(&thread_table[new_id],
+	           &thread_table[current_thread],
+	           sizeof(thread_table[new_id]));
+	thread_table[new_id].process_id = new_proc_id;
+	thread_table[new_id].status = TASK_SUSPEND;
+
+	//Allocate kernel stack
+	k_stack = mm_virt_alloc(NULL, KERNEL_STACK_SIZE,
+	                        MEM_RESERVE | MEM_COMMIT,
+	                        PAGE_WRITEABLE);
+
+	if(k_stack == NULL) {
+		thread_table[new_id].alloc_flag = false;
+		pm_rls_spn_lock(&thread_table_lock);
+		pm_set_errno(ENOMEM);
+		return -1;
+	}
+
+	//Copy kernel stack
+	rtl_memcpy(k_stack,
+	           thread_table[current_thread].kernel_stack,
+	           KERNEL_STACK_SIZE);
+
+	//Prepare kernel stack
+	__asm__ __volatile__(
+	    "movl	%%ebp,%0\n\t"
+	    "movl	%%esp,%1\n\t"
+	    :"=r"(ebp), "=r"(esp)
+	    :);
+	esp -= (u32)(thread_table[current_thread].kernel_stack);
+	ebp -= (u32)(thread_table[current_thread].kernel_stack);
+	esp += (u32)k_stack;
+	ebp += (u32)k_stack;
+	p_stack = (void*)esp;
+
+	//Returning address
+	p_stack -= 4;
+
+	//Prepare for iret
+	//Eflags
+	p_stack -= 4;
+	*(u32*)p_stack = 0x200;
+
+	//CS
+	p_stack -= 4;
+	*(u16*)p_stack = SELECTOR_K_CODE;
+
+	//EIP
+	p_stack -= 4;
+
+	__asm__ __volatile__(
+	    "jmp	_next\n\t"
+	    "_child_ret:\n\t"
+	    "leave\n\t"
+	    "xorl	%%eax,%%eax\n\t"
+	    "ret\n\t"
+	    "_next:\n\t"
+	    "movl	$_child_ret,(%0)\n\t"
+	    ::"r"(p_stack):"memory");
+
+	//pushal
+	regs.ebp = ebp;
+	regs.esp = (u32)p_stack;
+
+	p_stack -= sizeof(ret_regs);
+	rtl_memcpy(p_stack, &regs, sizeof(ret_regs));
+
+	//Set stack
+	thread_table[new_id].kernel_stack = k_stack;
+	thread_table[new_id].ebp = ebp;
+	thread_table[new_id].esp = (u32)p_stack;
+
+	pm_rls_spn_lock(&thread_table_lock);
+
+
+	return new_id;
+
+}
+
 void pm_exit_thrd(u32 exit_code)
 {
 	u32 level;
@@ -414,7 +525,7 @@ void pm_exit_thrd(u32 exit_code)
 	//Set thread status
 	thread_table[current_thread].status = TASK_ZOMBIE;
 	thread_table[current_thread].exit_code = exit_code;
-	zomble_proc_thrd(current_thread, current_process);
+	zombie_proc_thrd(current_thread, current_process);
 	pm_rls_spn_lock(&(task_queues[level].lock));
 
 	//Wake up all of the threads which are calling pm_join
@@ -553,7 +664,7 @@ u32 pm_join(u32 thread_id)
 
 					//Switch process
 					proc_id = current_process;
-					pm_switch_process(thread_table[i].process_id);
+					switch_process(thread_table[i].process_id);
 
 					//Release stacks
 					if(thread_table[i].kernel_stack != NULL) {
@@ -567,7 +678,7 @@ u32 pm_join(u32 thread_id)
 					}
 
 					//Switch back
-					pm_switch_process(proc_id);
+					switch_process(proc_id);
 
 					pm_rls_spn_lock(&thread_table_lock);
 					remove_proc_thrd(i, current_process);
@@ -594,9 +705,20 @@ u32 pm_join(u32 thread_id)
 	return 0;
 }
 
-u32 pm_get_proc_id(u32 thread_id)
+bool  pm_get_proc_id(u32 thread_id, u32* p_proc_id)
 {
-	return current_process;
+	pm_acqr_spn_lock(&thread_table_lock);
+
+	if(thread_table[thread_id].alloc_flag == false) {
+		pm_rls_spn_lock(&thread_table_lock);
+		pm_set_errno(ESRCH);
+		return false;
+	}
+
+	*p_proc_id = thread_table[thread_id].process_id;
+	pm_rls_spn_lock(&thread_table_lock);
+	pm_set_errno(ESUCCESS);
+	return true;
 }
 
 void pm_set_errno(u32 errno)
@@ -628,11 +750,11 @@ void switch_to(u32 thread_id)
 		return;
 	}
 
-	proc_id = pm_get_proc_id(thread_id);
+	proc_id = thread_table[thread_id].process_id;
 
 	//Switch page table
 	if(proc_id != current_process) {
-		pm_switch_process(proc_id);
+		switch_process(proc_id);
 	}
 
 	//Set TSS
