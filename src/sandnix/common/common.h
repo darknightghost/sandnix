@@ -16,7 +16,7 @@
 */
 
 #ifndef	SANDNIX_COMMON_H_INCLUDE
-#define	SANDNIX_COMMON_H_IONCLUDE
+#define	SANDNIX_COMMON_H_INCLUDE
 
 #include "../../common/common.h"
 
