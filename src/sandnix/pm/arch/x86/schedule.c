@@ -798,7 +798,7 @@ bool pm_is_break(u32 thread_id)
 	return ret;
 }
 
-booli pm_should_break()
+bool pm_should_break()
 {
 	return thread_table[current_thread].break_flag;
 }

@@ -59,15 +59,22 @@ void kernel_main()
 
 void test()
 {
-	u32 new_tbl;
-	char* p;
 
-	p = mm_virt_alloc(NULL, 4096, MEM_RESERVE | MEM_COMMIT | MEM_USER, PAGE_WRITEABLE);
-	new_tbl = mm_pg_tbl_fork(0);
-	mm_pg_tbl_switch(new_tbl);
-	*p = 'a';
-	*(p + 1) = '\0';
-	mm_pg_tbl_switch(0);
+	u32 pid;
+
+	pid = pm_fork();
+
+	if(pid > 0) {
+		dbg_print("I'm parent!\n");
+
+	} else if(pid == 0) {
+		dbg_print("I'm child!\n");
+
+		while(1);
+
+	} else {
+		dbg_print("Failed!\n");
+	}
 
 	__asm__ __volatile__("nop\n\tnop\n\tnop\n\tnop\n\t");
 
