@@ -66,6 +66,8 @@ static	spin_lock		join_list_lock;
 //Ticks
 static	u32				cpu0_tick;
 
+extern	char			init_stack[];
+
 void init_schedule()
 {
 	u32 i;
@@ -81,9 +83,7 @@ void init_schedule()
 	thread_table[0].level = INT_LEVEL_USR_HIGHEST;
 	thread_table[0].status_info.ready.time_slice = 0;
 	thread_table[0].status = TASK_READY;
-	__asm__ __volatile__(
-	    "movl	%%ebp,(%0)\n\t"
-	    ::"r"(&(thread_table[0].kernel_stack)));
+	thread_table[0].kernel_stack = init_stack;
 	pm_init_spn_lock(&thread_table_lock);
 	free_thread_id_num = MAX_THREAD_NUM - 1;
 

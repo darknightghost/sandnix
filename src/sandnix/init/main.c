@@ -65,7 +65,7 @@ void test()
 	pid = pm_fork();
 
 	if(pid > 0) {
-		dbg_print("I'm parent!\n");
+		dbg_print("I'm parent!,my child is %d!\n", pid);
 
 	} else if(pid == 0) {
 		dbg_print("I'm child!\n");
