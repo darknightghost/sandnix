@@ -367,6 +367,8 @@ u32 pm_create_thrd(thread_func entry,
 		pm_resume_thrd(new_id);
 	}
 
+	pm_set_errno(ESUCCESS);
+
 	return new_id;
 
 }
@@ -577,6 +579,8 @@ void pm_suspend_thrd(u32 thread_id)
 		pm_schedule();
 	}
 
+	pm_set_errno(ESUCCESS);
+
 	return;
 }
 
@@ -623,6 +627,8 @@ void pm_resume_thrd(u32 thread_id)
 		pm_schedule();
 	}
 
+	pm_set_errno(ESUCCESS);
+
 	return;
 }
 
@@ -658,6 +664,29 @@ u32 pm_join(u32 thread_id)
 			if((thread_id == 0
 			    && thread_table[i].process_id == current_process)
 			   || thread_id == i) {
+
+				//Break
+				if(pm_should_break()) {
+					pm_rls_spn_lock(&thread_table_lock);
+					pm_set_errno(EAGAIN);
+					return 0;
+				}
+
+				//Avoid deadlock
+				if(thread_id != 0) {
+					if(thread_table[thread_id].join_flag) {
+						if(thread_table[thread_id].join_thread != current_thread) {
+							pm_rls_spn_lock(&thread_table_lock);
+							pm_set_errno(EDEADLK);
+							return 0;
+						}
+
+					} else {
+						thread_table[thread_id].join_flag = true;
+						thread_table[thread_id].join_thread = current_thread;
+					}
+				}
+
 				if(thread_table[i].alloc_flag
 				   && thread_table[i].status == TASK_ZOMBIE) {
 					thread_table[i].alloc_flag = false;
@@ -682,6 +711,7 @@ u32 pm_join(u32 thread_id)
 
 					pm_rls_spn_lock(&thread_table_lock);
 					remove_proc_thrd(i, current_process);
+					pm_set_errno(ESUCCESS);
 					return thread_table[i].exit_code;
 
 				}
@@ -730,6 +760,47 @@ void pm_set_errno(u32 errno)
 u32 pm_get_errno()
 {
 	return thread_table[current_thread].errno;
+}
+
+void pm_set_break(u32 thread_id, bool if_break)
+{
+	pm_acqr_spn_lock(&thread_table_lock);
+
+	if(thread_table[thread_id].alloc_flag == false) {
+		pm_rls_spn_lock(&thread_table_lock);
+		pm_set_errno(ESRCH);
+		return;
+	}
+
+	thread_table[thread_id].break_flag = if_break;
+
+	pm_rls_spn_lock(&thread_table_lock);
+	pm_set_errno(ESUCCESS);
+	return;
+}
+
+
+bool pm_is_break(u32 thread_id)
+{
+	bool ret;
+	pm_acqr_spn_lock(&thread_table_lock);
+
+	if(thread_table[thread_id].alloc_flag == false) {
+		pm_rls_spn_lock(&thread_table_lock);
+		pm_set_errno(ESRCH);
+		return false;
+	}
+
+	ret = thread_table[thread_id].break_flag;
+
+	pm_rls_spn_lock(&thread_table_lock);
+	pm_set_errno(ESUCCESS);
+	return ret;
+}
+
+booli pm_should_break()
+{
+	return thread_table[current_thread].break_flag;
 }
 
 void switch_to(u32 thread_id)

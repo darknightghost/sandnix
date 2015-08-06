@@ -69,6 +69,9 @@ u32			pm_join(u32 thread_id);
 bool		pm_get_proc_id(u32 thread_id, u32* p_proc_id);
 void		pm_set_errno(u32 errno);
 u32			pm_get_errno();
+void		pm_set_break(u32 thread_id, bool if_break);
+bool		pm_is_break(u32 thread_id);
+bool		pm_should_break();
 
 bool		pm_get_thread_context(u32 id, pcontext p_cntxt);
 bool		pm_set_thread_context(u32 id, pcontext p_cntxt);

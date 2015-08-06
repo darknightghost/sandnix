@@ -110,6 +110,9 @@ typedef	struct {
 	u8					level;			//Interrupt level <=> thread priority
 	u32					exit_code;
 	plist_node			p_task_queue_node;
+	bool				join_flag;
+	u32					join_thread;
+	bool				break_flag;
 	u32					status;
 	thread_status_info	status_info;
 	void*				kernel_stack;
