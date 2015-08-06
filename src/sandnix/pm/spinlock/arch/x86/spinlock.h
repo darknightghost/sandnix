@@ -18,7 +18,7 @@
 #ifndef	SPINLOCK_H_INCLUDE
 #define	SPINLOCK_H_INCLUDE
 
-#include "../../../../common/common.h"
+#include "../../../../../common/common.h"
 
 typedef	struct {
 	u32		owner;

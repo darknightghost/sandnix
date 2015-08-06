@@ -19,7 +19,7 @@
 #define	SETUP_H_INCLUDE
 
 #include "../mm/mm.h"
-#include "../common/common.h"
+#include "../../common/common.h"
 
 #ifdef	X86
 

@@ -18,7 +18,7 @@
 #ifndef	PM_H_INCLUDE
 #define	PM_H_INCLUDE
 
-#include "../common/common.h"
+#include "../../common/common.h"
 
 #include "mutex/mutex.h"
 #include "semaphore/semaphore.h"

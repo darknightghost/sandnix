@@ -18,7 +18,7 @@
 #ifndef	IO_H_INCLUDE
 #define	IO_H_INCLUDE
 
-#include "../common/common.h"
+#include "../../common/common.h"
 
 #ifdef	X86
 	#include "arch/x86/int.h"

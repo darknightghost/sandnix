@@ -18,7 +18,7 @@
 #ifndef	SCHEDULE_H_INCLUDE
 #define	SCHEDULE_H_INCLUDE
 
-#include "../../../common/common.h"
+#include "../../../../common/common.h"
 #include "../../../rtl/rtl.h"
 #include "../../spinlock/arch/x86/spinlock.h"
 

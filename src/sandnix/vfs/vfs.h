@@ -18,7 +18,7 @@
 #ifndef	VFS_H_INCLUDE
 #define	VFS_H_INCLUDE
 
-#include "../common/common.h"
+#include "../../common/common.h"
 
 void			vfs_init();
 

@@ -18,7 +18,7 @@
 #ifndef	DEBUG_H_INCLUDE
 #define	DEBUG_H_INCLUDE
 
-#include "../common/common.h"
+#include "../../common/common.h"
 
 #define	K_TTY_BUF_SIZE		4096
 

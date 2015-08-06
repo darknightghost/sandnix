@@ -18,7 +18,7 @@
 #ifndef	MM_H_INCLUDE
 #define	MM_H_INCLUDE
 
-#include "../common/common.h"
+#include "../../common/common.h"
 
 #ifdef	X86
 	#include "paging/arch/x86/page_table.h"
