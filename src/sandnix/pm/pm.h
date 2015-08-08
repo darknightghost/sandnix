@@ -60,6 +60,7 @@ void		pm_schedule();
 u32			pm_create_thrd(thread_func entry, bool is_ready, bool is_user, u32 priority, void* p_args);
 void		pm_exit_thrd(u32 exit_code);
 void		pm_suspend_thrd(u32 thread_id);
+void		pm_int_disaptch_suspend();
 void		pm_resume_thrd(u32 thread_id);
 void		pm_sleep(u32 ms);
 u32			pm_get_crrnt_thrd_id();
@@ -75,6 +76,8 @@ bool		pm_should_break();
 
 bool		pm_get_thread_context(u32 id, pcontext p_cntxt);
 bool		pm_set_thread_context(u32 id, pcontext p_cntxt);
+
+u32			pm_int_get_thread_pdt();
 
 //Process
 s32			pm_fork();

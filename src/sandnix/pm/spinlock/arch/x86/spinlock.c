@@ -36,11 +36,8 @@ void pm_acqr_spn_lock(pspin_lock p_lock)
 
 	int_level = io_get_crrnt_int_level();
 
-	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
-
-	if(int_level > INT_LEVEL_DISPATCH) {
-		excpt_panic(EDEADLOCK,
-		            "Spining locks can only be used while interrupt level <= INT_LEVEL_DISPATCH\n");
+	if(int_level < INT_LEVEL_DISPATCH) {
+		io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
 	}
 
 	//Get ticket
@@ -86,15 +83,10 @@ bool pm_try_acqr_spn_lock(pspin_lock p_lock)
 
 	int_level = io_get_crrnt_int_level();
 
-	if(int_level > INT_LEVEL_DISPATCH) {
-		excpt_panic(EDEADLOCK,
-		            "Spining locks can only be used while interrupt level <= INT_LEVEL_DISPATCH\n");
+	if(int_level < INT_LEVEL_DISPATCH) {
+		//Increase interrupt level
+		io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
 	}
-
-
-	//Increase interrupt level
-	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
-	p_lock->int_level = int_level;
 
 	//Try to get lock
 	__asm__ __volatile__(
@@ -146,15 +138,6 @@ bool pm_try_acqr_raw_spn_lock(pspin_lock p_lock)
 
 void pm_rls_spn_lock(pspin_lock p_lock)
 {
-	u8 int_level;
-
-	int_level = io_get_crrnt_int_level();
-
-	if(int_level > INT_LEVEL_DISPATCH) {
-		excpt_panic(EDEADLOCK,
-		            "Spining locks can only be used while interrupt level <= INT_LEVEL_DISPATCH\n");
-	}
-
 	//Release spining lock
 	p_lock->owner++;
 

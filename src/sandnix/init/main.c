@@ -29,9 +29,10 @@ void test();
 void kernel_main()
 {
 	dbg_cls();
-	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
 
 	dbg_print("%s", "Sandnix 0.0.1 kernel loaded.\n");
+
+	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
 
 	//Initialize
 	get_kernel_param();
@@ -45,6 +46,7 @@ void kernel_main()
 	io_enable_interrupt();
 	dbg_print("Creating interrupt dispatcher thread...\n");
 	pm_create_thrd(io_dispatch_int, true, false, INT_LEVEL_EXCEPTION, NULL);
+	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST);
 
 	//Create driver_init process
 	test();
@@ -59,20 +61,51 @@ void kernel_main()
 
 void test()
 {
-
 	u32 pid;
+	char* p;
+	int j;
+	int *a;
+
+	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST / 5);
+
+	p = mm_virt_alloc(NULL, 4096, MEM_USER | MEM_COMMIT | MEM_RESERVE, PAGE_WRITEABLE);
+	rtl_strcpy_s(p, 4096, "123456789");
+	a = (int*)(p + 10);
 
 	pid = pm_fork();
 
 	if(pid > 0) {
 		dbg_print("I'm parent!,my child is %d!\n", pid);
+		*a = 0;
+
+		while(1) {
+			for(j = 0; j < 10000000; j++);
+
+			if(*a < 10) {
+				dbg_print("Parent p=\"%s\",\n", p);
+				(*a)++;
+			}
+		}
+
 
 	} else if(pid == 0) {
 		dbg_print("I'm child!\n");
+		rtl_strcpy_s(p, 4096, "abcdefg");
+		dbg_print("Child changed!\n", pid);
+		*a = 0;
 
-		while(1);
+		while(1) {
+			for(j = 0; j < 10000000; j++);
 
-	} else {
+			if(*a < 10) {
+				dbg_print("Child p=\"%s\",\n", p);
+				(*a)++;
+			}
+		}
+
+	}
+
+	else {
 		dbg_print("Failed!\n");
 	}
 

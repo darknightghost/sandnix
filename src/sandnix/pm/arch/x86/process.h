@@ -39,6 +39,7 @@ typedef struct _process_info {
 } process_info, *pprocess_info;
 
 void	init_process();
+u32		get_process_pdt(u32 process_id);
 void	switch_process(u32 process_id);
 void	add_proc_thrd(u32 thrd_id, u32 proc_id);
 void	zombie_proc_thrd(u32 thrd_id, u32 proc_id);

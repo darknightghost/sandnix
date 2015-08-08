@@ -28,7 +28,6 @@ spin_lock				mem_lock;
 
 static	void*			pdt_index_table[MAX_PROCESS_NUM];
 static	u32				current_pdt;
-static	u32				prev_pdt;
 static	char			pdt_copy_buf[sizeof(pde) * 1024];
 static	int_hndlr_info	pf_hndlr_info;
 
@@ -95,7 +94,6 @@ void init_paging()
 	}
 
 	current_pdt = 0;
-	prev_pdt = 0;
 
 	//Refresh TLB
 	REFRESH_TLB;
@@ -115,6 +113,10 @@ bool pf_hndlr(u32 int_num, u32 thread_id, u32 err_code)
 	u32 err_addr;
 	void* new_mem;
 	void* pt_addr;
+	u32 err_pdt;
+
+	err_pdt = pm_int_get_thread_pdt(thread_id);
+
 	pf_err_code err = *(ppf_err_code)(&err_code);
 
 
@@ -132,7 +134,7 @@ bool pf_hndlr(u32 int_num, u32 thread_id, u32 err_code)
 
 	if(err.present == 0) {
 		//The page does not present
-		map_phy_addr(pdt_index_table[prev_pdt]);
+		map_phy_addr(pdt_index_table[err_pdt]);
 		p_pde = (ppde)PT_MAPPING_ADDR + err_addr / 1024 / 4096;;
 
 		if(p_pde->present == PG_NP) {
@@ -165,7 +167,7 @@ bool pf_hndlr(u32 int_num, u32 thread_id, u32 err_code)
 	} else if(err.read_write == 1) {
 
 		//The page is not writeable
-		map_phy_addr(pdt_index_table[prev_pdt]);
+		map_phy_addr(pdt_index_table[err_pdt]);
 		p_pde = (ppde)PT_MAPPING_ADDR + err_addr / 1024 / 4096;
 		pt_addr = (void*)(p_pde->page_table_base_addr << 12);
 		map_phy_addr(pt_addr);
@@ -487,7 +489,6 @@ void mm_pg_tbl_switch(u32 pdt_id)
 
 	pm_acqr_raw_spn_lock(&mem_lock);
 
-	prev_pdt = current_pdt;
 	current_pdt = pdt_id;
 
 	//Load CR3
@@ -918,6 +919,7 @@ void fork_pdt(u32 dest, u32 src)
 
 			//Fork pages
 			fork_user_pages(new_pt, (void*)((u32)(p_pde->page_table_base_addr) << 12));
+			map_phy_addr(new_pdt);
 			p_pde->page_table_base_addr = (u32)new_pt >> 12;
 
 		} else if(p_pde->present == PG_NP
@@ -937,11 +939,12 @@ void fork_user_pages(void* pt_phy_addr, void* src_pt_phy_addr)
 {
 	ppte p_pte;
 
-	map_phy_addr(pt_phy_addr);
 
 	for(p_pte = (ppte)PT_MAPPING_ADDR;
 	    p_pte < (ppte)PT_MAPPING_ADDR + 1024;
 	    p_pte++) {
+		map_phy_addr(pt_phy_addr);
+
 		if(p_pte->present == PG_P) {
 			switch(p_pte->avail) {
 			case PG_NORMAL:
@@ -953,7 +956,6 @@ void fork_user_pages(void* pt_phy_addr, void* src_pt_phy_addr)
 					map_phy_addr(src_pt_phy_addr);
 					p_pte->avail = PG_CP_ON_W_RW;
 					p_pte->read_write = PG_RDONLY;
-					map_phy_addr(pt_phy_addr);
 
 				} else if(p_pte->read_write == PG_RDONLY) {
 					p_pte->avail = PG_CP_ON_W_RDONLY;
@@ -961,7 +963,6 @@ void fork_user_pages(void* pt_phy_addr, void* src_pt_phy_addr)
 					map_phy_addr(src_pt_phy_addr);
 					p_pte->avail = PG_CP_ON_W_RDONLY;
 					p_pte->read_write = PG_RDONLY;
-					map_phy_addr(pt_phy_addr);
 
 				}
 

@@ -45,7 +45,6 @@ static	u32				get_next_task();
 static	u32				get_free_thread_id();
 static	void			reset_time_slice();
 static	void			switch_to(u32 thread_id);
-static	void			adjust_int_level();
 static	void			user_thread_caller(u32 thread_id, void* p_args);
 
 static	task_queue		task_queues[INT_LEVEL_HIGHEST + 1];
@@ -584,6 +583,38 @@ void pm_suspend_thrd(u32 thread_id)
 	return;
 }
 
+void pm_int_disaptch_suspend()
+{
+	u32 level;
+
+	if(io_get_crrnt_int_level() < INT_LEVEL_EXCEPTION) {
+		excpt_panic(EDEADLK,
+		            "Function pm_int_disaptch_suspend() can be only used in thread io_dispatch_int().");
+	}
+
+	pm_acqr_raw_spn_lock(&thread_table_lock);
+
+	//Remove the thread from task queue
+	level = thread_table[current_thread].level;
+	pm_acqr_raw_spn_lock(&(task_queues[level].lock));
+	rtl_list_remove(
+	    &(task_queues[level].queue),
+	    thread_table[current_thread].p_task_queue_node,
+	    schedule_heap);
+	pm_rls_raw_spn_lock(&(task_queues[level].lock));
+	thread_table[current_thread].status = TASK_SUSPEND;
+	thread_table[current_thread].level = INT_LEVEL_EXCEPTION;
+
+	pm_rls_raw_spn_lock(&thread_table_lock);
+
+	pm_schedule();
+
+	pm_set_errno(ESUCCESS);
+
+	return;
+
+}
+
 void pm_resume_thrd(u32 thread_id)
 {
 	plist_node p_new_node;
@@ -801,6 +832,11 @@ bool pm_is_break(u32 thread_id)
 bool pm_should_break()
 {
 	return thread_table[current_thread].break_flag;
+}
+
+u32 pm_int_get_thread_pdt(u32 thread_id)
+{
+	return get_process_pdt(thread_table[thread_id].process_id);
 }
 
 void switch_to(u32 thread_id)

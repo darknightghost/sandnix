@@ -68,6 +68,7 @@ s32	pm_fork()
 	u32 new_pdt;
 	s32 new_thread;
 
+	adjust_int_level();
 	pm_acqr_spn_lock(&process_table_lock);
 
 	//Allocate process id
@@ -88,6 +89,8 @@ s32	pm_fork()
 		pm_set_errno(ENOMEM);
 		return -1;
 	}
+
+	process_table[new_id].pdt_id = new_pdt;
 
 	//Fork file descrpitors
 	if(fork_descrpitor_list(new_id, current_process) != ESUCCESS) {
@@ -373,6 +376,11 @@ void remove_proc_thrd(u32 thrd_id, u32 proc_id)
 	pm_rls_spn_lock(&process_table_lock);
 
 	return;
+}
+
+u32 get_process_pdt(u32 process_id)
+{
+	return process_table[process_id].pdt_id;
 }
 
 u32 get_free_proc_id()

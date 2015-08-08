@@ -139,6 +139,7 @@ extern	u32		current_process;
 
 void	init_schedule();
 s32		fork_thread(u32 new_proc_id);
+void	adjust_int_level();
 
 #endif	//!	SCHEDULE_H_INCLUDE
 
