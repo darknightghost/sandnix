@@ -36,7 +36,7 @@
 #define	EFAULT			14		//Bad address
 #define	ENOTBLK			15		//Block device required
 #define	EBUSY			16		//Device or resource busy
-#define	EEXIST			18		//File Exists
+#define	EEXIST			17		//File Exists
 #define	EXDEV			18		//Cross-device link
 #define	ENODEV			19		//No such device
 #define	ENOTDIR			20		//Not a directory
