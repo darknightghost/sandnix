@@ -23,6 +23,7 @@
 typedef struct _process_info {
 	bool		alloc_flag;			//Allocate flag
 	char*		process_name;		//Name
+	bool		wait_flag;			//Is been waited
 	u32			parent_id;			//Parent process
 	u32			pdt_id;				//Page table id
 	u32			exit_code;			//Exit code
@@ -38,7 +39,13 @@ typedef struct _process_info {
 	list		wait_list;			//Zombie children
 } process_info, *pprocess_info;
 
+
+extern	spin_lock		process_table_lock;
+extern	process_info	process_table[MAX_PROCESS_NUM];
+extern	void*			process_heap;
+
 void	init_process();
+void	set_exit_code(u32 process, u32 exit_code);
 u32		get_process_pdt(u32 process_id);
 void	switch_process(u32 process_id);
 void	add_proc_thrd(u32 thrd_id, u32 proc_id);

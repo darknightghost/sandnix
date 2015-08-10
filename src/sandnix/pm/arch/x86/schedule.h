@@ -110,8 +110,6 @@ typedef	struct {
 	u8					level;			//Interrupt level <=> thread priority
 	u32					exit_code;
 	plist_node			p_task_queue_node;
-	bool				join_flag;
-	u32					join_thread;
 	bool				break_flag;
 	u32					status;
 	thread_status_info	status_info;
@@ -135,11 +133,14 @@ typedef	struct {
 } usr_thread_info, *pusr_thread_info;
 
 
-extern	u32		current_process;
+extern	u32				current_process;
+extern	thread_info		thread_table[MAX_THREAD_NUM];
 
 void	init_schedule();
 s32		fork_thread(u32 new_proc_id);
 void	adjust_int_level();
+void	wait_thread();
+void	release_thread(u32 id);
 
 #endif	//!	SCHEDULE_H_INCLUDE
 

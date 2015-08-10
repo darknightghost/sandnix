@@ -31,6 +31,8 @@ void*			process_heap;
 static	u32			get_free_proc_id();
 static	u32			fork_descrpitor_list(u32 dest, u32 src);
 static	void		descriptor_destroy_callback(void* descriptor);
+static	u32			release_process(u32 process_id);
+static	void		awake_threads(list lst, u32 status);
 
 void init_process()
 {
@@ -134,28 +136,131 @@ s32	pm_fork()
 	return new_id;
 }
 
-void pm_exit(u32 exit_code)
+void pm_exec(char* cmd_line, char* image_path)
 {
 	//TODO:
 }
 
-void pm_exec(char* cmd_line)
+u32 pm_wait(u32 child_id, bool if_block)
 {
-	//TODO:
-}
+	plist_node p_node;
+	u32 ret;
 
-void switch_process(u32 process_id)
-{
-	u32 pdt_id;
+	pm_acqr_spn_lock(&process_table_lock);
 
-	if(process_table[process_id].alloc_flag == false) {
-		excpt_panic(ESRCH,
-		            "Unavailable process id!\n");
+	//Look for child
+	if(child_id == 0) {
+		if(process_table[current_process].child_list == NULL
+		   && process_table[current_process].wait_list == NULL) {
+			pm_rls_spn_lock(&process_table_lock);
+			pm_set_errno(ECHILD);
+			return 0;
+		}
+
+	} else {
+		//Child
+		p_node = process_table[current_process].child_list;
+
+		if(p_node != NULL) {
+			do {
+				if((u32)(p_node->p_item) == child_id) {
+					goto _HAS_CHILD;
+				}
+
+				p_node = p_node->p_next;
+			} while(p_node != process_table[current_process].child_list);
+		}
+
+		//Zombie
+		p_node = process_table[current_process].wait_list;
+
+		if(p_node != NULL) {
+			do {
+				if((u32)(p_node->p_item) == child_id) {
+					goto _HAS_CHILD;
+				}
+
+				p_node = p_node->p_next;
+			} while(p_node != process_table[current_process].wait_list);
+		}
+
+		pm_rls_spn_lock(&process_table_lock);
+		pm_set_errno(ECHILD);
+		return 0;
+_HAS_CHILD:
+		__asm__ __volatile__("");
 	}
 
-	pdt_id = process_table[process_id].pdt_id;
-	mm_pg_tbl_switch(pdt_id);
-	return;
+	//Wait
+	while(if_block) {
+		if(pm_should_break()) {
+			pm_rls_spn_lock(&process_table_lock);
+			pm_set_errno(EINTR);
+			return 0;
+		}
+
+		//Check if the thread is zombie
+		p_node = process_table[current_process].wait_list;
+
+		if(p_node != NULL) {
+			do {
+				if(child_id == 0 ||
+				   (u32)(p_node->p_item) != child_id) {
+					//Return
+					ret = release_process((u32)(p_node->p_item));
+					rtl_list_remove(&(process_table[current_process].wait_list),
+					                p_node,
+					                process_heap);
+					pm_rls_spn_lock(&process_table_lock);
+					pm_set_errno(ESUCCESS);
+					return ret;
+				}
+
+				p_node = p_node->p_next;
+			} while(p_node != process_table[current_process].wait_list);
+		}
+
+		if(process_table[current_process].child_list == NULL) {
+			pm_rls_spn_lock(&process_table_lock);
+			pm_set_errno(ECHILD);
+			return 0;
+
+		} else if(child_id != 0) {
+			//Check if the child process exisis
+			p_node = process_table[current_process].child_list;
+
+			if(p_node != NULL) {
+				do {
+					if((u32)(p_node->p_item) == child_id) {
+						goto _CHILD_EXISIS;
+					}
+
+					p_node = p_node->p_next;
+				} while(p_node != process_table[current_process].child_list);
+			}
+
+			pm_rls_spn_lock(&process_table_lock);
+			pm_set_errno(ECHILD);
+			return 0;
+_CHILD_EXISIS:
+			__asm__ __volatile__("");
+		}
+
+		//Set thread status
+		pm_rls_spn_lock(&process_table_lock);
+
+		if(!pm_should_break()) {
+			wait_thread();
+		}
+
+		pm_acqr_spn_lock(&process_table_lock);
+
+	}
+
+	//Clear zombie threads
+	pm_rls_spn_lock(&process_table_lock);
+
+	return 0;
 }
 
 bool pm_get_proc_uid(u32 process_id, u32* p_uid)
@@ -288,8 +393,6 @@ bool pm_remove_proc_file_descriptor(u32 process_id, u32 descriptor)
 
 void add_proc_thrd(u32 thrd_id, u32 proc_id)
 {
-	pm_acqr_spn_lock(&process_table_lock);
-
 	if(process_table[proc_id].alloc_flag == false) {
 		excpt_panic(ESRCH,
 		            "Unavailable process id!\n");
@@ -304,16 +407,12 @@ void add_proc_thrd(u32 thrd_id, u32 proc_id)
 		            "Failed to add thread!\n");
 	}
 
-	pm_rls_spn_lock(&process_table_lock);
-
 	return;
 }
 
 void zombie_proc_thrd(u32 thrd_id, u32 proc_id)
 {
 	plist_node p_node;
-
-	pm_acqr_spn_lock(&process_table_lock);
 
 	if(process_table[proc_id].alloc_flag == false) {
 		excpt_panic(ESRCH,
@@ -342,9 +441,23 @@ void zombie_proc_thrd(u32 thrd_id, u32 proc_id)
 		            "Failed to zombie thread!\n");
 	}
 
+	//Check if the process has any alive thread
+	if(process_table[proc_id].thread_list == NULL) {
+		//Zombie the process
+		process_table[proc_id].status = PROC_ZOMBIE;
 
+		//Awake waiting threads of parent process
+		awake_threads(process_table[
+		                  process_table[current_process].parent_id].wait_list,
+		              TASK_WAIT);
 
-	pm_rls_spn_lock(&process_table_lock);
+	} else {
+		//Awake joining threads
+		awake_threads(process_table[
+		                  process_table[current_process].parent_id].wait_list,
+		              TASK_JOIN);
+
+	}
 
 	return;
 }
@@ -352,8 +465,6 @@ void zombie_proc_thrd(u32 thrd_id, u32 proc_id)
 void remove_proc_thrd(u32 thrd_id, u32 proc_id)
 {
 	plist_node p_node;
-
-	pm_acqr_spn_lock(&process_table_lock);
 
 	if(process_table[proc_id].alloc_flag == false) {
 		excpt_panic(ESRCH,
@@ -373,8 +484,26 @@ void remove_proc_thrd(u32 thrd_id, u32 proc_id)
 	                p_node,
 	                process_heap);
 
-	pm_rls_spn_lock(&process_table_lock);
+	return;
+}
 
+void switch_process(u32 process_id)
+{
+	u32 pdt_id;
+
+	if(process_table[process_id].alloc_flag == false) {
+		excpt_panic(ESRCH,
+		            "Unavailable process id!\n");
+	}
+
+	pdt_id = process_table[process_id].pdt_id;
+	mm_pg_tbl_switch(pdt_id);
+	return;
+}
+
+void set_exit_code(u32 process, u32 exit_code)
+{
+	process_table[process].exit_code = exit_code;
 	return;
 }
 
@@ -395,6 +524,9 @@ u32 get_free_proc_id()
 			process_table[id].process_name = mm_hp_alloc(
 			                                     rtl_strlen(process_table[current_process].process_name) + 1,
 			                                     process_heap);
+			rtl_strcpy_s(process_table[id].process_name,
+			             rtl_strlen(process_table[id].process_name),
+			             process_table[id].process_name);
 			process_table[id].parent_id = current_process;
 			process_table[id].status = PROC_ALIVE;
 			process_table[id].priority = process_table[current_process].priority;
@@ -441,5 +573,94 @@ u32 fork_descrpitor_list(u32 dest, u32 src)
 void descriptor_destroy_callback(void* descriptor)
 {
 	vfs_close((u32)descriptor);
+	return;
+}
+
+u32 release_process(u32 process_id)
+{
+	u32 exit_code;
+	plist_node p_node;
+
+	//Release all zombie threads
+	p_node = process_table[current_process].zombie_list;
+
+	while(p_node != NULL) {
+		release_thread((u32)(p_node->p_item));
+		rtl_list_remove(&(process_table[process_id].zombie_list),
+		                p_node,
+		                process_heap);
+		p_node = process_table[current_process].zombie_list;
+	}
+
+	//Close all file descriptors
+	rtl_list_destroy(&(process_table[process_id].file_desc_list),
+	                 process_heap,
+	                 descriptor_destroy_callback);
+
+	//Copy child list
+	p_node = process_table[process_id].child_list;
+
+	while(p_node != NULL) {
+		if(rtl_list_insert_after(&(process_table[current_process].child_list),
+		                         NULL,
+		                         p_node->p_item,
+		                         process_heap) == NULL) {
+			excpt_panic(ENOMEM,
+			            "Copy child process list from process %d to process %d fault!\n",
+			            process_id,
+			            current_process);
+		}
+
+		rtl_list_remove(&(process_table[process_id].child_list),
+		                p_node,
+		                process_heap);
+		p_node = process_table[process_id].child_list;
+	}
+
+	//Copy wait list
+	p_node = process_table[process_id].wait_list;
+
+	while(p_node != NULL) {
+		if(rtl_list_insert_after(&(process_table[current_process].wait_list),
+		                         NULL,
+		                         p_node->p_item,
+		                         process_heap) == NULL) {
+			excpt_panic(ENOMEM,
+			            "Copy zombie process list from process %d to process %d fault!\n",
+			            process_id,
+			            current_process);
+		}
+
+		rtl_list_remove(&(process_table[process_id].wait_list),
+		                p_node,
+		                process_heap);
+		p_node = process_table[process_id].wait_list;
+	}
+
+	//Release process name
+	mm_hp_free(process_table[process_id].process_name, process_heap);
+
+	//Get exit code
+	exit_code = process_table[current_process].exit_code;
+
+	//Clear allocate flag
+	process_table[process_id].alloc_flag = false;
+	return exit_code;
+}
+
+void awake_threads(list lst, u32 status)
+{
+	plist_node p_node;
+
+	p_node = lst;
+
+	if(p_node != NULL) {
+		do {
+			if(thread_table[(u32)p_node->p_item].status == status) {
+				pm_resume_thrd((u32)p_node->p_item);
+			}
+		} while(p_node != lst);
+	}
+
 	return;
 }

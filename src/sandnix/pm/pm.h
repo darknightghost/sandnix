@@ -30,8 +30,10 @@
 #define		TASK_RUNNING		0x00
 #define		TASK_READY			0x01
 #define		TASK_SUSPEND		0x02
-#define		TASK_SLEEP			0x03
-#define		TASK_ZOMBIE			0x04
+#define		TASK_WAIT			0x03
+#define		TASK_JOIN			0x04
+#define		TASK_SLEEP			0x05
+#define		TASK_ZOMBIE			0x06
 
 #define		PROC_ALIVE			0x00
 #define		PROC_ZOMBIE			0x01
@@ -79,10 +81,13 @@ bool		pm_set_thread_context(u32 id, pcontext p_cntxt);
 
 u32			pm_int_get_thread_pdt();
 
+void		pm_enable_task_switch();
+void		pm_disable_task_switch();
+
 //Process
 s32			pm_fork();
-void		pm_exec(char* cmd_line);
-u32			pm_wait(u32 child_id);
+void		pm_exec(char* cmd_line, char* image_path);
+u32			pm_wait(u32 child_id, bool if_block);
 u32			pm_get_crrnt_process();
 bool		pm_get_proc_uid(u32 process_id, u32* p_uid);
 bool		pm_set_proc_euid(u32 process_id, u32 euid);

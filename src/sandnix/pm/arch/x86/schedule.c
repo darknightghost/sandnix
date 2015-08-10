@@ -46,12 +46,11 @@ static	u32				get_free_thread_id();
 static	void			reset_time_slice();
 static	void			switch_to(u32 thread_id);
 static	void			user_thread_caller(u32 thread_id, void* p_args);
+static	void			join_thread();
 
 static	task_queue		task_queues[INT_LEVEL_HIGHEST + 1];
 static	spin_lock		cpu0_schedule_lock;
-
-static	list			join_list;
-static	spin_lock		join_list_lock;
+static	bool			cpu0_task_switch_enabled = true;
 
 /*
 	It's safe to edit the information of a thread in thread_table if you'v got
@@ -124,10 +123,6 @@ void init_schedule()
 
 	thread_table[0].p_task_queue_node = p_new_node;
 
-	//Create recycler thread
-	pm_init_spn_lock(&join_list_lock);
-	join_list = NULL;
-
 	return;
 }
 
@@ -180,19 +175,21 @@ void pm_clock_schedule()
 void pm_task_schedule()
 {
 
-	if(pm_try_acqr_raw_spn_lock(&cpu0_schedule_lock)) {
-		adjust_int_level();
-		cpu0_tick = 0;
+	if(cpu0_task_switch_enabled) {
+		if(pm_try_acqr_raw_spn_lock(&cpu0_schedule_lock)) {
+			adjust_int_level();
+			cpu0_tick = 0;
 
-		__asm__ __volatile__(""::"i"(get_next_task));
-		__asm__ __volatile__(""::"i"(switch_to));
-		__asm__ __volatile__(
-		    "leave\n\t"
-		    "addl	$4,%%esp\n\t"
-		    "call	get_next_task\n\t"
-		    "pushl	%%eax\n\t"
-		    "call	switch_to\n\t"
-		    ::);
+			__asm__ __volatile__(""::"i"(get_next_task));
+			__asm__ __volatile__(""::"i"(switch_to));
+			__asm__ __volatile__(
+			    "leave\n\t"
+			    "addl	$4,%%esp\n\t"
+			    "call	get_next_task\n\t"
+			    "pushl	%%eax\n\t"
+			    "call	switch_to\n\t"
+			    ::);
+		}
 	}
 
 	__asm__ __volatile__(
@@ -272,6 +269,7 @@ u32 pm_create_thrd(thread_func entry,
 	pusr_thread_info p_usr_thread_info;
 	ret_regs regs;
 
+	pm_acqr_spn_lock(&process_table_lock);
 	pm_acqr_spn_lock(&thread_table_lock);
 
 	//Allocate a new id
@@ -279,6 +277,7 @@ u32 pm_create_thrd(thread_func entry,
 
 	if(new_id == 0) {
 		pm_rls_spn_lock(&thread_table_lock);
+		pm_rls_spn_lock(&process_table_lock);
 		pm_set_errno(EAGAIN);
 		return 0;
 	}
@@ -293,6 +292,7 @@ u32 pm_create_thrd(thread_func entry,
 	if(k_stack == NULL) {
 		thread_table[new_id].alloc_flag = false;
 		pm_rls_spn_lock(&thread_table_lock);
+		pm_rls_spn_lock(&process_table_lock);
 		pm_set_errno(ENOMEM);
 		return 0;
 	}
@@ -353,14 +353,15 @@ u32 pm_create_thrd(thread_func entry,
 	thread_table[new_id].ebp = (u32)((u8*)k_stack + KERNEL_STACK_SIZE);
 	thread_table[new_id].esp = (u32)p_stack;
 
-	pm_rls_spn_lock(&thread_table_lock);
-
 	if(is_user) {
 		add_proc_thrd(new_id, current_process);
 
 	} else {
 		add_proc_thrd(new_id, 0);
 	}
+
+	pm_rls_spn_lock(&thread_table_lock);
+	pm_rls_spn_lock(&process_table_lock);
 
 	if(is_ready) {
 		pm_resume_thrd(new_id);
@@ -486,59 +487,44 @@ s32 fork_thread(u32 new_proc_id)
 void pm_exit_thrd(u32 exit_code)
 {
 	u32 level;
-	list current_join_list = NULL;
-	plist_node p_node;
 
+	pm_acqr_spn_lock(&process_table_lock);
 	pm_acqr_spn_lock(&thread_table_lock);
 
 	//Check the status of the thread
 	if(thread_table[current_thread].alloc_flag == false
 	   || thread_table[current_thread].status == TASK_ZOMBIE) {
 		pm_rls_spn_lock(&thread_table_lock);
+		pm_rls_spn_lock(&process_table_lock);
 		excpt_panic(ESRCH,
 		            "Zombie thread running!");
 		return;
 	}
 
 	level = thread_table[current_thread].level;
-	pm_rls_spn_lock(&thread_table_lock);
+
+	zombie_proc_thrd(current_thread, current_process);
+	thread_table[current_thread].exit_code = exit_code;
+	set_exit_code(thread_table[current_thread].process_id, exit_code);
 
 	//Remove the thread from task queue
+	pm_disable_task_switch();
 	pm_acqr_spn_lock(&(task_queues[level].lock));
 	rtl_list_remove(
 	    &(task_queues[level].queue),
 	    thread_table[current_thread].p_task_queue_node,
 	    schedule_heap);
-
-	//Copy the list
-	pm_acqr_spn_lock(&join_list_lock);
-
-	p_node = join_list;
-
-	do {
-		rtl_list_insert_after(&current_join_list, NULL,
-		                      p_node->p_item, schedule_heap);
-		p_node = p_node->p_next;
-	} while(p_node != join_list);
-
-	pm_rls_spn_lock(&join_list_lock);
+	pm_rls_spn_lock(&(task_queues[level].lock));
 
 	//Set thread status
 	thread_table[current_thread].status = TASK_ZOMBIE;
-	thread_table[current_thread].exit_code = exit_code;
+	pm_rls_spn_lock(&thread_table_lock);
+
 	zombie_proc_thrd(current_thread, current_process);
-	pm_rls_spn_lock(&(task_queues[level].lock));
+	pm_enable_task_switch();
 
-	//Wake up all of the threads which are calling pm_join
-	p_node = current_join_list;
-
-	do {
-		pm_resume_thrd((u32)(p_node->p_item));
-		p_node = p_node->p_next;
-	} while(p_node != join_list);
-
-	rtl_list_destroy(&current_join_list, schedule_heap, NULL);
-
+	pm_rls_spn_lock(&process_table_lock);
+	pm_schedule();
 
 	return;
 }
@@ -547,6 +533,12 @@ void pm_suspend_thrd(u32 thread_id)
 {
 	u32 level;
 	u32 current_level;
+
+	//Check arguments
+	if(thread_id >= MAX_THREAD_NUM) {
+		pm_set_errno(EOVERFLOW);
+		return;
+	}
 
 	current_level = io_get_crrnt_int_level();
 	pm_acqr_spn_lock(&thread_table_lock);
@@ -563,6 +555,8 @@ void pm_suspend_thrd(u32 thread_id)
 
 	//Remove the thread from task queue
 	level = thread_table[thread_id].level;
+
+	pm_disable_task_switch();
 	pm_acqr_spn_lock(&(task_queues[level].lock));
 	rtl_list_remove(
 	    &(task_queues[level].queue),
@@ -570,6 +564,8 @@ void pm_suspend_thrd(u32 thread_id)
 	    schedule_heap);
 	pm_rls_spn_lock(&(task_queues[level].lock));
 	thread_table[thread_id].status = TASK_SUSPEND;
+	pm_enable_task_switch();
+
 	thread_table[thread_id].level = current_level;
 
 	pm_rls_spn_lock(&thread_table_lock);
@@ -596,12 +592,14 @@ void pm_int_disaptch_suspend()
 
 	//Remove the thread from task queue
 	level = thread_table[current_thread].level;
+	pm_disable_task_switch();
 	pm_acqr_raw_spn_lock(&(task_queues[level].lock));
 	rtl_list_remove(
 	    &(task_queues[level].queue),
 	    thread_table[current_thread].p_task_queue_node,
 	    schedule_heap);
 	pm_rls_raw_spn_lock(&(task_queues[level].lock));
+	pm_enable_task_switch();
 	thread_table[current_thread].status = TASK_SUSPEND;
 	thread_table[current_thread].level = INT_LEVEL_EXCEPTION;
 
@@ -620,10 +618,15 @@ void pm_resume_thrd(u32 thread_id)
 	plist_node p_new_node;
 	u32 int_level;
 
+	//Check arguments
+	if(thread_id >= MAX_THREAD_NUM) {
+		pm_set_errno(EOVERFLOW);
+		return;
+	}
+
 	pm_acqr_spn_lock(&thread_table_lock);
 
-	if(thread_table[thread_id].alloc_flag == false
-	   || thread_table[thread_id].status != TASK_SUSPEND) {
+	if(thread_table[thread_id].alloc_flag == false)  {
 		pm_rls_spn_lock(&thread_table_lock);
 		pm_set_errno(ESRCH);
 		return;
@@ -631,12 +634,34 @@ void pm_resume_thrd(u32 thread_id)
 
 	int_level = thread_table[thread_id].level;
 
+	if(thread_table[thread_id].status == TASK_SLEEP) {
+		//If the thread is sleeping
+		thread_table[thread_id].status_info.ready.time_slice = TIME_SLICE(int_level);
+		thread_table[thread_id].status = TASK_READY;
+		pm_rls_spn_lock(&thread_table_lock);
+		pm_set_errno(ESUCCESS);
+
+		if(int_level > io_get_crrnt_int_level()) {
+			pm_schedule();
+		}
+
+		return;
+
+	} else if(thread_table[thread_id].status != TASK_SUSPEND
+	          && thread_table[thread_id].status != TASK_WAIT
+	          && thread_table[thread_id].status != TASK_JOIN) {
+		pm_rls_spn_lock(&thread_table_lock);
+		pm_set_errno(ESRCH);
+		return;
+	}
+
 	//Set thread status and time slice
 	thread_table[thread_id].status = TASK_READY;
 	thread_table[thread_id].status_info.ready.time_slice
 	    = TIME_SLICE(int_level);
 
 	//Add thread to task queue
+	pm_disable_task_switch();
 	pm_acqr_spn_lock(&(task_queues[int_level].lock));
 	p_new_node = rtl_list_insert_before(
 	                 &(task_queues[int_level].queue),
@@ -652,9 +677,11 @@ void pm_resume_thrd(u32 thread_id)
 	thread_table[thread_id].p_task_queue_node = p_new_node;
 
 	pm_rls_spn_lock(&(task_queues[int_level].lock));
+	pm_enable_task_switch();
 	pm_rls_spn_lock(&thread_table_lock);
 
-	if(int_level > io_get_crrnt_int_level()) {
+	if(int_level > io_get_crrnt_int_level()
+	   && io_get_crrnt_int_level() <= INT_LEVEL_USR_HIGHEST) {
 		pm_schedule();
 	}
 
@@ -668,10 +695,12 @@ void pm_sleep(u32 ms)
 	u32 tick;
 
 	pm_acqr_spn_lock(&thread_table_lock);
+	pm_disable_task_switch();
 	thread_table[current_thread].status = TASK_SLEEP;
 	tick = io_get_tick_count();
 	thread_table[current_thread].status_info.sleep.start_tick = tick;
 	thread_table[current_thread].status_info.sleep.stop_tick = tick + ms * 10 / SYS_TICK;
+	pm_enable_task_switch();
 	pm_rls_spn_lock(&thread_table_lock);
 	pm_schedule();
 	return;
@@ -684,90 +713,143 @@ u32 pm_get_crrnt_thrd_id()
 
 u32 pm_join(u32 thread_id)
 {
-	int i;
-	bool flag = false;
 	u32 proc_id;
+	plist_node p_node;
+	u32 exit_code;
 
-	while(1) {
+	//Check arguments
+	if(thread_id >= MAX_THREAD_NUM) {
+		pm_set_errno(EOVERFLOW);
+		return 0;
+	}
+
+	proc_id = thread_table[current_process].process_id;
+
+	//Check the thread
+	if(thread_id != 0) {
 		pm_acqr_spn_lock(&thread_table_lock);
 
-		for(i = 0; i < MAX_THREAD_NUM; i++) {
-			if((thread_id == 0
-			    && thread_table[i].process_id == current_process)
-			   || thread_id == i) {
-
-				//Break
-				if(pm_should_break()) {
-					pm_rls_spn_lock(&thread_table_lock);
-					pm_set_errno(EAGAIN);
-					return 0;
-				}
-
-				//Avoid deadlock
-				if(thread_id != 0) {
-					if(thread_table[thread_id].join_flag) {
-						if(thread_table[thread_id].join_thread != current_thread) {
-							pm_rls_spn_lock(&thread_table_lock);
-							pm_set_errno(EDEADLK);
-							return 0;
-						}
-
-					} else {
-						thread_table[thread_id].join_flag = true;
-						thread_table[thread_id].join_thread = current_thread;
-					}
-				}
-
-				if(thread_table[i].alloc_flag
-				   && thread_table[i].status == TASK_ZOMBIE) {
-					thread_table[i].alloc_flag = false;
-
-					//Switch process
-					proc_id = current_process;
-					switch_process(thread_table[i].process_id);
-
-					//Release stacks
-					if(thread_table[i].kernel_stack != NULL) {
-						mm_virt_free(thread_table[i].kernel_stack,
-						             KERNEL_STACK_SIZE, MEM_UNCOMMIT | MEM_RELEASE);
-					}
-
-					if(thread_table[i].user_stack != NULL) {
-						mm_virt_free(thread_table[i].user_stack,
-						             USER_STACK_SIZE, MEM_UNCOMMIT | MEM_RELEASE);
-					}
-
-					//Switch back
-					switch_process(proc_id);
-
-					pm_rls_spn_lock(&thread_table_lock);
-					remove_proc_thrd(i, current_process);
-					pm_set_errno(ESUCCESS);
-					return thread_table[i].exit_code;
-
-				}
-			}
+		if(thread_table[thread_id].alloc_flag == false
+		   && thread_table[thread_id].process_id != proc_id) {
+			pm_rls_spn_lock(&thread_table_lock);
+			pm_set_errno(ESRCH);
+			return 0;
 		}
 
 		pm_rls_spn_lock(&thread_table_lock);
+	}
 
-		if(!flag) {
-			//Add current thread to the list
-			pm_acqr_spn_lock(&join_list_lock);
-			rtl_list_insert_after(&join_list, NULL,
-			                      (void*)thread_id, schedule_heap);
-			pm_rls_spn_lock(&join_list_lock);
-			flag = true;
+	//Join
+	while(1) {
+		pm_acqr_spn_lock(&process_table_lock);
+
+		if(process_table[proc_id].zombie_list == NULL) {
+			p_node = process_table[proc_id].thread_list;
+
+			//If current thread is the only thread in current process
+			if(p_node == p_node->p_next) {
+				pm_rls_spn_lock(&process_table_lock);
+				pm_set_errno(EDEADLK);
+				return 0;
+			}
+
+		} else {
+			if(thread_id == 0) {
+				pm_acqr_spn_lock(&thread_table_lock);
+
+				//Remove from zombie list
+				p_node = process_table[proc_id].zombie_list;
+
+				if(p_node != NULL) {
+					//Free memory
+					thread_id = (u32)(p_node->p_item);
+					rtl_list_remove(&(process_table[proc_id].zombie_list),
+					                p_node,
+					                process_heap);
+					mm_virt_free(thread_table[thread_id].kernel_stack,
+					             KERNEL_STACK_SIZE,
+					             MEM_UNCOMMIT | MEM_RELEASE);
+
+					if(thread_table[thread_id].user_stack != NULL) {
+						mm_virt_free(thread_table[thread_id].user_stack,
+						             thread_table[thread_id].user_stack_size,
+						             MEM_UNCOMMIT | MEM_RELEASE | MEM_USER);
+					}
+
+					exit_code = thread_table[thread_id].exit_code;
+					remove_proc_thrd(thread_id, proc_id);
+					pm_rls_spn_lock(&thread_table_lock);
+					pm_rls_spn_lock(&process_table_lock);
+					pm_set_errno(ESUCCESS);
+
+					return exit_code;
+
+				}
+
+				pm_rls_spn_lock(&thread_table_lock);
+
+			} else {
+				pm_acqr_spn_lock(&thread_table_lock);
+
+				//Remove from zombie list
+				p_node = process_table[proc_id].zombie_list;
+
+				if(p_node != NULL) {
+					do {
+						if((u32)(p_node->p_item) == thread_id) {
+							//Free memory
+							rtl_list_remove(&(process_table[proc_id].zombie_list),
+							                p_node,
+							                process_heap);
+							mm_virt_free(thread_table[thread_id].kernel_stack,
+							             KERNEL_STACK_SIZE,
+							             MEM_UNCOMMIT | MEM_RELEASE);
+
+							if(thread_table[thread_id].user_stack != NULL) {
+								mm_virt_free(thread_table[thread_id].user_stack,
+								             thread_table[thread_id].user_stack_size,
+								             MEM_UNCOMMIT | MEM_RELEASE | MEM_USER);
+							}
+
+							exit_code = thread_table[thread_id].exit_code;
+							remove_proc_thrd(thread_id, proc_id);
+							pm_rls_spn_lock(&thread_table_lock);
+							pm_rls_spn_lock(&process_table_lock);
+							pm_set_errno(ESUCCESS);
+
+							return exit_code;
+						}
+
+						p_node = p_node->p_next;
+					} while(p_node != process_table[proc_id].zombie_list);
+
+				}
+
+				pm_rls_spn_lock(&thread_table_lock);
+			}
 		}
 
-		pm_suspend_thrd(current_thread);
+		pm_rls_spn_lock(&process_table_lock);
+
+		if(pm_should_break()) {
+			pm_set_errno(EINTR);
+			return 0;
+		}
+
+		join_thread();
 	}
 
 	return 0;
 }
 
-bool  pm_get_proc_id(u32 thread_id, u32* p_proc_id)
+bool pm_get_proc_id(u32 thread_id, u32* p_proc_id)
 {
+	//Check arguments
+	if(thread_id >= MAX_THREAD_NUM) {
+		pm_set_errno(EOVERFLOW);
+		return false;
+	}
+
 	pm_acqr_spn_lock(&thread_table_lock);
 
 	if(thread_table[thread_id].alloc_flag == false) {
@@ -837,6 +919,18 @@ bool pm_should_break()
 u32 pm_int_get_thread_pdt(u32 thread_id)
 {
 	return get_process_pdt(thread_table[thread_id].process_id);
+}
+
+void pm_enable_task_switch()
+{
+	cpu0_task_switch_enabled = true;
+	return;
+}
+
+void pm_disable_task_switch()
+{
+	cpu0_task_switch_enabled = false;
+	return;
 }
 
 void switch_to(u32 thread_id)
@@ -1157,6 +1251,116 @@ void reset_time_slice()
 
 		pm_rls_spn_lock(&(task_queues[i].lock));
 	}
+
+	return;
+}
+
+void wait_thread()
+{
+	u32 level;
+	u32 current_level;
+
+	current_level = io_get_crrnt_int_level();
+	pm_acqr_spn_lock(&thread_table_lock);
+
+	//Check the status of the thread
+	if(thread_table[current_thread].alloc_flag == false
+	   || (thread_table[current_thread].status != TASK_READY
+	       && thread_table[current_thread].status != TASK_RUNNING
+	       && thread_table[current_thread].status != TASK_SLEEP)) {
+		pm_rls_spn_lock(&thread_table_lock);
+		pm_set_errno(ESRCH);
+		return;
+	}
+
+	//Change status
+	thread_table[current_thread].level = current_level;
+
+	//Remove the thread from task queue
+	level = thread_table[current_thread].level;
+
+	pm_disable_task_switch();
+	thread_table[current_thread].status = TASK_WAIT;
+	pm_acqr_spn_lock(&(task_queues[level].lock));
+	rtl_list_remove(
+	    &(task_queues[level].queue),
+	    thread_table[current_thread].p_task_queue_node,
+	    schedule_heap);
+	pm_rls_spn_lock(&(task_queues[level].lock));
+	pm_enable_task_switch();
+
+	pm_rls_spn_lock(&thread_table_lock);
+
+	pm_schedule();
+
+	pm_set_errno(ESUCCESS);
+
+	return;
+}
+
+void release_thread(u32 id)
+{
+	pm_acqr_spn_lock(&thread_table_lock);
+
+	if(thread_table[id].alloc_flag
+	   && thread_table[id].status == TASK_ZOMBIE) {
+		//Kernel stack
+		if(thread_table[id].kernel_stack != NULL) {
+			mm_virt_free(thread_table[id].kernel_stack,
+			             KERNEL_STACK_SIZE,
+			             MEM_UNCOMMIT | MEM_RELEASE);
+		}
+
+		thread_table[id].alloc_flag = false;
+
+	} else {
+		excpt_panic(EFAULT,
+		            "Process table or thread table broken!\n");
+	}
+
+	pm_rls_spn_lock(&thread_table_lock);
+	return;
+}
+
+void join_thread()
+{
+	u32 level;
+	u32 current_level;
+
+	current_level = io_get_crrnt_int_level();
+	pm_acqr_spn_lock(&thread_table_lock);
+
+	//Check the status of the thread
+	if(thread_table[current_thread].alloc_flag == false
+	   || (thread_table[current_thread].status != TASK_READY
+	       && thread_table[current_thread].status != TASK_RUNNING
+	       && thread_table[current_thread].status != TASK_SLEEP)) {
+		pm_rls_spn_lock(&thread_table_lock);
+		pm_set_errno(ESRCH);
+		return;
+	}
+
+	//Change status
+	thread_table[current_thread].level = current_level;
+
+	//Remove the thread from task queue
+	level = thread_table[current_thread].level;
+
+	pm_disable_task_switch();
+	thread_table[current_thread].status = TASK_JOIN;
+	pm_acqr_spn_lock(&(task_queues[level].lock));
+	rtl_list_remove(
+	    &(task_queues[level].queue),
+	    thread_table[current_thread].p_task_queue_node,
+	    schedule_heap);
+	pm_rls_spn_lock(&(task_queues[level].lock));
+	pm_enable_task_switch();
+
+	pm_rls_spn_lock(&thread_table_lock);
+
+	pm_schedule();
+
+	pm_set_errno(ESUCCESS);
 
 	return;
 }
