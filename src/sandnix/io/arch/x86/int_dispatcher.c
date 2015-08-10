@@ -112,7 +112,6 @@ void int_normal_dispatcher(u32 num, pret_regs p_regs)
 		pm_resume_thrd(dispatcher_thread);
 	}
 
-
 	//Schedule
 	__asm__ __volatile__(
 	    "leave\n\t"
