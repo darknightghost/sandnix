@@ -35,7 +35,7 @@ int_hndlr_entry		int_hndlr_tbl[256];
 bool				exception_handling_flag;
 u32					tick_count;
 u8					current_int_level;
-u32					new_int = 0;
+u32					new_int;
 static	u32			dispatcher_thread = 0;
 
 static	void		call_hndlr(u32 i);
@@ -61,6 +61,8 @@ void init_int_dispatcher()
 
 	}
 
+	new_int = 0;
+
 	return;
 }
 
@@ -81,7 +83,9 @@ void int_excpt_dispatcher(u32 num, pret_regs p_regs)
 
 	}
 
-	new_int = int_hndlr_tbl[num].level;
+	if(new_int < int_hndlr_tbl[num].level) {
+		new_int = int_hndlr_tbl[num].level;
+	}
 
 	//Resume interrupt dispatcher thread
 	if(dispatcher_thread != 0) {
@@ -184,7 +188,6 @@ void io_dispatch_int(u32 thread_id, void* p_args)
 
 	io_set_crrnt_int_level(INT_LEVEL_EXCEPTION);
 
-	new_int = 0;
 	dispatcher_thread = thread_id;
 
 	while(1) {

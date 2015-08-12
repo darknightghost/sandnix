@@ -445,16 +445,23 @@ void zombie_proc_thrd(u32 thrd_id, u32 proc_id)
 	if(process_table[proc_id].thread_list == NULL) {
 		//Zombie the process
 		process_table[proc_id].status = PROC_ZOMBIE;
+		process_table[proc_id].exit_code = thread_table[thrd_id].exit_code;
+
+		//Add process to wait list
+		rtl_list_insert_after(&(process_table[
+		                            process_table[proc_id].parent_id].wait_list),
+		                      NULL,
+		                      (void*)proc_id,
+		                      process_heap);
 
 		//Awake waiting threads of parent process
 		awake_threads(process_table[
-		                  process_table[current_process].parent_id].wait_list,
+		                  process_table[proc_id].parent_id].thread_list,
 		              TASK_WAIT);
 
 	} else {
 		//Awake joining threads
-		awake_threads(process_table[
-		                  process_table[current_process].parent_id].wait_list,
+		awake_threads(process_table[proc_id].child_list,
 		              TASK_JOIN);
 
 	}
@@ -515,18 +522,20 @@ u32 get_process_pdt(u32 process_id)
 u32 get_free_proc_id()
 {
 	u32 id;
+	size_t name_len;
 
 	for(id = 0; id < MAX_PROCESS_NUM; id++) {
 		if(process_table[id].alloc_flag == false) {
 			//Initialize process info
 			rtl_memset(&process_table[id], 0, sizeof(process_table[id]));
 			process_table[id].alloc_flag = true;
+			name_len = rtl_strlen(process_table[current_process].process_name) + 1;
 			process_table[id].process_name = mm_hp_alloc(
-			                                     rtl_strlen(process_table[current_process].process_name) + 1,
+			                                     name_len,
 			                                     process_heap);
 			rtl_strcpy_s(process_table[id].process_name,
-			             rtl_strlen(process_table[id].process_name),
-			             process_table[id].process_name);
+			             name_len,
+			             process_table[current_process].process_name);
 			process_table[id].parent_id = current_process;
 			process_table[id].status = PROC_ALIVE;
 			process_table[id].priority = process_table[current_process].priority;
@@ -637,11 +646,14 @@ u32 release_process(u32 process_id)
 		p_node = process_table[process_id].wait_list;
 	}
 
+	//Free pdt
+	mm_pg_tbl_free(process_table[process_id].pdt_id);
+
 	//Release process name
 	mm_hp_free(process_table[process_id].process_name, process_heap);
 
 	//Get exit code
-	exit_code = process_table[current_process].exit_code;
+	exit_code = process_table[process_id].exit_code;
 
 	//Clear allocate flag
 	process_table[process_id].alloc_flag = false;
@@ -659,6 +671,8 @@ void awake_threads(list lst, u32 status)
 			if(thread_table[(u32)p_node->p_item].status == status) {
 				pm_resume_thrd((u32)p_node->p_item);
 			}
+
+			p_node = p_node->p_next;
 		} while(p_node != lst);
 	}
 

@@ -47,6 +47,7 @@ static	void			reset_time_slice();
 static	void			switch_to(u32 thread_id);
 static	void			user_thread_caller(u32 thread_id, void* p_args);
 static	void			join_thread();
+static	void			adjust_child_thread_stack(u32 ebp, u32 offset);
 
 static	task_queue		task_queues[INT_LEVEL_HIGHEST + 1];
 static	spin_lock		cpu0_schedule_lock;
@@ -216,32 +217,40 @@ void adjust_int_level()
 	if(int_level != old_level) {
 
 		//If current thread was not been put in the correct task queue
-		pm_acqr_raw_spn_lock(&(task_queues[old_level].lock));
-		rtl_list_remove(&(task_queues[old_level].queue),
-		                thread_table[current_thread].p_task_queue_node,
-		                schedule_heap);
-		pm_rls_raw_spn_lock(&(task_queues[old_level].lock));
+		if(thread_table[current_thread].status == TASK_READY
+		   || thread_table[current_thread].status == TASK_RUNNING
+		   || thread_table[current_thread].status == TASK_SLEEP) {
 
-		pm_acqr_raw_spn_lock(&(task_queues[int_level].lock));
+			pm_acqr_raw_spn_lock(&(task_queues[old_level].lock));
+			rtl_list_remove(&(task_queues[old_level].queue),
+			                thread_table[current_thread].p_task_queue_node,
+			                schedule_heap);
+			pm_rls_raw_spn_lock(&(task_queues[old_level].lock));
 
-		if(thread_table[current_thread].status_info.ready.time_slice > 0) {
-			p_new_node = rtl_list_insert_before(
-			                 &(task_queues[int_level].queue),
-			                 NULL,
-			                 &thread_table[current_thread],
-			                 schedule_heap);
+			pm_acqr_raw_spn_lock(&(task_queues[int_level].lock));
+
+			if(thread_table[current_thread].status_info.ready.time_slice > 0) {
+				p_new_node = rtl_list_insert_before(
+				                 &(task_queues[int_level].queue),
+				                 NULL,
+				                 &thread_table[current_thread],
+				                 schedule_heap);
+
+			} else {
+				p_new_node = rtl_list_insert_after(
+				                 &(task_queues[int_level].queue),
+				                 NULL,
+				                 &thread_table[current_thread],
+				                 schedule_heap);
+			}
+
+			if(p_new_node == NULL) {
+				excpt_panic(EFAULT,
+				            "Failes to append new item to task queue!\n");
+			}
 
 		} else {
-			p_new_node = rtl_list_insert_after(
-			                 &(task_queues[int_level].queue),
-			                 NULL,
-			                 &thread_table[current_thread],
-			                 schedule_heap);
-		}
-
-		if(p_new_node == NULL) {
-			excpt_panic(EFAULT,
-			            "Failes to append new item to task queue!\n");
+			pm_acqr_raw_spn_lock(&(task_queues[int_level].lock));
 		}
 
 		//Set the interrupt level in the thread table
@@ -476,6 +485,8 @@ s32 fork_thread(u32 new_proc_id)
 	thread_table[new_id].kernel_stack = k_stack;
 	thread_table[new_id].ebp = ebp;
 	thread_table[new_id].esp = (u32)p_stack;
+	adjust_child_thread_stack(ebp,
+	                          (u32)k_stack - (u32)(thread_table[current_thread].kernel_stack));
 
 	pm_rls_spn_lock(&thread_table_lock);
 
@@ -503,7 +514,6 @@ void pm_exit_thrd(u32 exit_code)
 
 	level = thread_table[current_thread].level;
 
-	zombie_proc_thrd(current_thread, current_process);
 	thread_table[current_thread].exit_code = exit_code;
 	set_exit_code(thread_table[current_thread].process_id, exit_code);
 
@@ -525,6 +535,9 @@ void pm_exit_thrd(u32 exit_code)
 
 	pm_rls_spn_lock(&process_table_lock);
 	pm_schedule();
+
+	excpt_panic(EFAULT,
+	            "Zombie thread running after schedule!");
 
 	return;
 }
@@ -1287,6 +1300,7 @@ void wait_thread()
 	    thread_table[current_thread].p_task_queue_node,
 	    schedule_heap);
 	pm_rls_spn_lock(&(task_queues[level].lock));
+
 	pm_enable_task_switch();
 
 	pm_rls_spn_lock(&thread_table_lock);
@@ -1361,6 +1375,20 @@ void join_thread()
 	pm_schedule();
 
 	pm_set_errno(ESUCCESS);
+
+	return;
+}
+
+void adjust_child_thread_stack(u32 ebp, u32 offset)
+{
+	u32* p_ebp;
+	u32* p_esp;
+
+	p_esp = (u32*)ebp;
+	(*p_esp) += offset;
+
+	p_ebp = (u32*)(*p_esp);
+	(*p_ebp) += offset;
 
 	return;
 }

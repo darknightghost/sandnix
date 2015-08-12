@@ -15,6 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+.equ		KERNEL_STACK_SIZE,(4096*2)
+
 .section	.text
 .global		_start
 
@@ -118,7 +120,7 @@ _kernel_mem_entry:
 		movw	$SELECTOR_BASIC_VIDEO,%ax
 		movw	%ax,%gs
 		movl	$init_stack,%eax
-		addl	$0x1000,%eax
+		addl	$KERNEL_STACK_SIZE,%eax
 		movl	%eax,%esp
 		movl	%esp,%ebp
-		ljmpl	$SELECTOR_K_CODE,$kernel_main
+		lcalll	$SELECTOR_K_CODE,$kernel_main

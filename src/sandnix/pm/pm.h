@@ -85,7 +85,7 @@ void		pm_enable_task_switch();
 void		pm_disable_task_switch();
 
 //Process
-s32			pm_fork();
+s32			pm_fork();														//Can be only called as a system call
 void		pm_exec(char* cmd_line, char* image_path);
 u32			pm_wait(u32 child_id, bool if_block);
 u32			pm_get_crrnt_process();

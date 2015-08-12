@@ -63,45 +63,48 @@ void test()
 {
 	u32 pid;
 	char* p;
-	int j;
-	int *a;
+	u32 i;
+	u32 exit_code = 10;
 
 	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST / 5);
 
 	p = mm_virt_alloc(NULL, 4096, MEM_USER | MEM_COMMIT | MEM_RESERVE, PAGE_WRITEABLE);
 	rtl_strcpy_s(p, 4096, "123456789");
-	a = (int*)(p + 10);
 
 	pid = pm_fork();
 
 	if(pid > 0) {
 		dbg_print("I'm parent!,my child is %d!\n", pid);
-		*a = 0;
+		i = 0;
 
-		while(1) {
-			for(j = 0; j < 10000000; j++);
-
-			if(*a < 10) {
-				dbg_print("Parent p=\"%s\",\n", p);
-				(*a)++;
-			}
+		while(i < 4) {
+			dbg_print("Parent p=\"%s\",\n", p);
+			i++;
 		}
+
+		exit_code = 0;
+
+		dbg_print("Waiting...\n");
+		exit_code = pm_wait(0, true);
+		dbg_print("Exit code is %u\n", exit_code);
+
+		while(1);
 
 
 	} else if(pid == 0) {
-		dbg_print("I'm child!\n");
+		extern u32 current_process;
+		dbg_print("I'm child!I'm %u.\n", current_process);
 		rtl_strcpy_s(p, 4096, "abcdefg");
 		dbg_print("Child changed!\n", pid);
-		*a = 0;
+		i = 0;
 
-		while(1) {
-			for(j = 0; j < 10000000; j++);
-
-			if(*a < 10) {
-				dbg_print("Child p=\"%s\",\n", p);
-				(*a)++;
-			}
+		while(i < 10) {
+			dbg_print("Child p=\"%s\",\n", p);
+			i++;
 		}
+
+		dbg_print("Child exiting,exitcode = %u.\n", 10);
+		pm_exit_thrd(exit_code);
 
 	}
 
