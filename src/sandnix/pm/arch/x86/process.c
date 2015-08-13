@@ -443,6 +443,7 @@ void zombie_proc_thrd(u32 thrd_id, u32 proc_id)
 
 	//Check if the process has any alive thread
 	if(process_table[proc_id].thread_list == NULL) {
+
 		//Zombie the process
 		process_table[proc_id].status = PROC_ZOMBIE;
 		process_table[proc_id].exit_code = thread_table[thrd_id].exit_code;
@@ -454,6 +455,57 @@ void zombie_proc_thrd(u32 thrd_id, u32 proc_id)
 		                      (void*)proc_id,
 		                      process_heap);
 
+		//Close all file descriptors
+		rtl_list_destroy(&(process_table[proc_id].file_desc_list),
+		                 process_heap,
+		                 descriptor_destroy_callback);
+
+		//Copy child list
+		p_node = process_table[proc_id].child_list;
+
+		while(p_node != NULL) {
+			if(rtl_list_insert_after(&(process_table[
+			                               process_table[proc_id].parent_id].child_list),
+			                         NULL,
+			                         p_node->p_item,
+			                         process_heap) == NULL) {
+				excpt_panic(ENOMEM,
+				            "Copy child process list from process %d to process %d fault!\n",
+				            proc_id,
+				            process_table[proc_id].parent_id);
+			}
+
+			process_table[(u32)(p_node->p_item)].parent_id = process_table[proc_id].parent_id;
+
+			rtl_list_remove(&(process_table[proc_id].child_list),
+			                p_node,
+			                process_heap);
+			p_node = process_table[proc_id].child_list;
+		}
+
+		//Copy wait list
+		p_node = process_table[proc_id].wait_list;
+
+		while(p_node != NULL) {
+			if(rtl_list_insert_after(&(process_table[
+			                               process_table[proc_id].parent_id].wait_list),
+			                         NULL,
+			                         p_node->p_item,
+			                         process_heap) == NULL) {
+				excpt_panic(ENOMEM,
+				            "Copy zombie process list from process %d to process %d fault!\n",
+				            proc_id,
+				            process_table[proc_id].parent_id);
+			}
+
+			process_table[(u32)(p_node->p_item)].parent_id = process_table[proc_id].parent_id;
+
+			rtl_list_remove(&(process_table[proc_id].wait_list),
+			                p_node,
+			                process_heap);
+			p_node = process_table[proc_id].wait_list;
+		}
+
 		//Awake waiting threads of parent process
 		awake_threads(process_table[
 		                  process_table[proc_id].parent_id].thread_list,
@@ -461,35 +513,10 @@ void zombie_proc_thrd(u32 thrd_id, u32 proc_id)
 
 	} else {
 		//Awake joining threads
-		awake_threads(process_table[proc_id].child_list,
+		awake_threads(process_table[proc_id].thread_list,
 		              TASK_JOIN);
 
 	}
-
-	return;
-}
-
-void remove_proc_thrd(u32 thrd_id, u32 proc_id)
-{
-	plist_node p_node;
-
-	if(process_table[proc_id].alloc_flag == false) {
-		excpt_panic(ESRCH,
-		            "Unavailable process id!\n");
-	}
-
-	//Remove from zombie list
-	p_node = rtl_list_get_node_by_item(process_table[proc_id].zombie_list,
-	                                   (void*)thrd_id);
-
-	if(p_node == NULL) {
-		excpt_panic(EFAULT,
-		            "Failed to remove thread!\n");
-	}
-
-	rtl_list_remove(&(process_table[proc_id].zombie_list),
-	                p_node,
-	                process_heap);
 
 	return;
 }
@@ -599,51 +626,6 @@ u32 release_process(u32 process_id)
 		                p_node,
 		                process_heap);
 		p_node = process_table[current_process].zombie_list;
-	}
-
-	//Close all file descriptors
-	rtl_list_destroy(&(process_table[process_id].file_desc_list),
-	                 process_heap,
-	                 descriptor_destroy_callback);
-
-	//Copy child list
-	p_node = process_table[process_id].child_list;
-
-	while(p_node != NULL) {
-		if(rtl_list_insert_after(&(process_table[current_process].child_list),
-		                         NULL,
-		                         p_node->p_item,
-		                         process_heap) == NULL) {
-			excpt_panic(ENOMEM,
-			            "Copy child process list from process %d to process %d fault!\n",
-			            process_id,
-			            current_process);
-		}
-
-		rtl_list_remove(&(process_table[process_id].child_list),
-		                p_node,
-		                process_heap);
-		p_node = process_table[process_id].child_list;
-	}
-
-	//Copy wait list
-	p_node = process_table[process_id].wait_list;
-
-	while(p_node != NULL) {
-		if(rtl_list_insert_after(&(process_table[current_process].wait_list),
-		                         NULL,
-		                         p_node->p_item,
-		                         process_heap) == NULL) {
-			excpt_panic(ENOMEM,
-			            "Copy zombie process list from process %d to process %d fault!\n",
-			            process_id,
-			            current_process);
-		}
-
-		rtl_list_remove(&(process_table[process_id].wait_list),
-		                p_node,
-		                process_heap);
-		p_node = process_table[process_id].wait_list;
 	}
 
 	//Free pdt

@@ -50,6 +50,5 @@ u32		get_process_pdt(u32 process_id);
 void	switch_process(u32 process_id);
 void	add_proc_thrd(u32 thrd_id, u32 proc_id);
 void	zombie_proc_thrd(u32 thrd_id, u32 proc_id);
-void	remove_proc_thrd(u32 thrd_id, u32 proc_id);
 
 #endif	//!	PROCESS_H_INCLUDE

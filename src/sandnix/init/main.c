@@ -59,58 +59,26 @@ void kernel_main()
 	return;
 }
 
+void test_thread(u32 thread_id, void* p_args)
+{
+	dbg_print("I'm thread %u.\n", thread_id);
+	pm_exit_thrd(thread_id);
+	UNREFERRED_PARAMETER(p_args);
+}
+
 void test()
 {
-	u32 pid;
-	char* p;
-	u32 i;
-	u32 exit_code = 10;
+	u32 exit_code = 0;
 
 	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST / 5);
+	pm_create_thrd((thread_func)test_thread, true, false, INT_LEVEL_USR_HIGHEST / 5, NULL);
+	pm_create_thrd((thread_func)test_thread, true, false, INT_LEVEL_USR_HIGHEST / 5, NULL);
 
-	p = mm_virt_alloc(NULL, 4096, MEM_USER | MEM_COMMIT | MEM_RESERVE, PAGE_WRITEABLE);
-	rtl_strcpy_s(p, 4096, "123456789");
+	exit_code = pm_join(0);
+	dbg_print("Exit code %u.\n", exit_code);
+	exit_code = pm_join(0);
+	dbg_print("Exit code %u.\n", exit_code);
 
-	pid = pm_fork();
-
-	if(pid > 0) {
-		dbg_print("I'm parent!,my child is %d!\n", pid);
-		i = 0;
-
-		while(i < 4) {
-			dbg_print("Parent p=\"%s\",\n", p);
-			i++;
-		}
-
-		exit_code = 0;
-
-		dbg_print("Waiting...\n");
-		exit_code = pm_wait(0, true);
-		dbg_print("Exit code is %u\n", exit_code);
-
-		while(1);
-
-
-	} else if(pid == 0) {
-		extern u32 current_process;
-		dbg_print("I'm child!I'm %u.\n", current_process);
-		rtl_strcpy_s(p, 4096, "abcdefg");
-		dbg_print("Child changed!\n", pid);
-		i = 0;
-
-		while(i < 10) {
-			dbg_print("Child p=\"%s\",\n", p);
-			i++;
-		}
-
-		dbg_print("Child exiting,exitcode = %u.\n", 10);
-		pm_exit_thrd(exit_code);
-
-	}
-
-	else {
-		dbg_print("Failed!\n");
-	}
 
 	__asm__ __volatile__("nop\n\tnop\n\tnop\n\tnop\n\t");
 
