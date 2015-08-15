@@ -24,6 +24,7 @@
 	#include "paging/arch/x86/page_table.h"
 	#include "paging/arch/x86/paging.h"
 	#include "paging/arch/x86/physical_mem.h"
+	#include "paging/arch/x86/share.h"
 #endif	//X86
 
 #ifdef X86
@@ -61,10 +62,6 @@ void		mm_init();
 
 //Physical memory
 phy_page_state		mm_phy_mem_state_get(void* addr);
-void*				mm_phy_mem_aclloc();
-void				mm_phy_mem_free();
-void				mm_phy_mem_cnt_increase();
-void				mm_phy_mem_cnt_decrease();
 
 //Virtual memory
 void*				mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr);
@@ -87,10 +84,10 @@ void				mm_get_info(pmem_info p_info);
 
 //Share memories
 //PMO=Page mapping object
-u32					mm_pmo_create(void* base_addr, size_t size);
-void				mm_pmo_free(u32	pmo);
-void*				mm_pmo_map(void* address, u32 pmo);
-void				mm_pmo_unmap(void* address);
+ppmo				mm_pmo_create(size_t size);
+void				mm_pmo_free(ppmo p_pmo);
+void*				mm_pmo_map(void* address, ppmo p_pmo, bool is_user);
+void				mm_pmo_unmap(void* address, ppmo p_pmo, bool is_user);
 
 //Heap
 void*				mm_hp_create(size_t max_block_size, u32 attr);

@@ -19,6 +19,7 @@
 #define	VFS_H_INCLUDE
 
 #include "../../common/common.h"
+#include "./fs/fs.h"
 
 void			vfs_init();
 
@@ -27,18 +28,21 @@ bool			vfs_reg_filesystem();
 bool			vfs_unreg_filesystem();
 
 //Devices
-k_status		vfs_mount();
+k_status		vfs_mount(char *src, char *target,
+                          char *fs_type, u32 flags,
+                          char* args);
 k_status		vfs_mount_root();
 k_status		vfs_umount();
 
 //Files
-u32				vfs_open();
+u32				vfs_open(char* path, u32 flags);
 bool			vfs_inc_fdesc_reference(u32 file_descriptor);
-k_status		vfs_chmod();
-bool			vfs_access();
-void			vfs_close();
-size_t			vfs_read();
-size_t			vfs_write();
+k_status		vfs_chmod(u32 fd, u32 mode);
+bool			vfs_access(char* path, u32 mode);
+bool			vfs_close(u32 fd);
+size_t			vfs_read(int fd, void* buf, size_t count);
+size_t			vfs_write(int fd, void* buf, size_t count);
 void			vfs_sync();
+bool			vfs_syncfs(u32 fd);
 
 #endif	//!	VFS_H_INCLUDE

@@ -14,3 +14,10 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+#ifndef	FS_H_INCLUDE
+#define	FS_H_INCLUDE
+
+#include "../vfs.h"
+
+#endif	//!	FS_H_INCLUDE

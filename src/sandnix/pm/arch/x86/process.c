@@ -61,6 +61,7 @@ void init_process()
 	    (void*)0,
 	    process_heap);
 	process_table[0].process_name = "system";
+	process_table[0].root_path = "/";
 	return;
 }
 
@@ -391,6 +392,55 @@ bool pm_remove_proc_file_descriptor(u32 process_id, u32 descriptor)
 	return true;
 }
 
+bool pm_chroot(char* new_root)
+{
+	size_t path_len;
+
+	pm_acqr_spn_lock(&process_table_lock);
+
+	mm_hp_free(process_table[current_process].root_path, process_heap);
+
+	path_len = rtl_strlen(new_root) + 1;
+	process_table[current_process].root_path = mm_hp_alloc(
+	            path_len,
+	            process_heap);
+	rtl_strcpy_s(process_table[current_process].root_path,
+	             path_len,
+	             new_root);
+
+	pm_rls_spn_lock(&process_table_lock);
+
+	pm_set_errno(ESUCCESS);
+
+	return true;
+
+}
+
+size_t pm_get_root(u32 process_id, size_t buf_size, char* buf)
+{
+	size_t path_len;
+
+	pm_acqr_spn_lock(&process_table_lock);
+
+	//Check if the process exists
+	if(!process_table[process_id].alloc_flag) {
+		pm_rls_spn_lock(&process_table_lock);
+		pm_set_errno(ESRCH);
+		return 0;
+	}
+
+	path_len = rtl_strlen(process_table[current_process].root_path) + 1;
+	rtl_strcpy_s(buf,
+	             buf_size,
+	             process_table[current_process].root_path);
+	pm_rls_spn_lock(&process_table_lock);
+
+	pm_set_errno(ESUCCESS);
+
+	return path_len;
+
+}
+
 void add_proc_thrd(u32 thrd_id, u32 proc_id)
 {
 	if(process_table[proc_id].alloc_flag == false) {
@@ -550,6 +600,7 @@ u32 get_free_proc_id()
 {
 	u32 id;
 	size_t name_len;
+	size_t path_len;
 
 	for(id = 0; id < MAX_PROCESS_NUM; id++) {
 		if(process_table[id].alloc_flag == false) {
@@ -563,6 +614,13 @@ u32 get_free_proc_id()
 			rtl_strcpy_s(process_table[id].process_name,
 			             name_len,
 			             process_table[current_process].process_name);
+			path_len = rtl_strlen(process_table[current_process].root_path) + 1;
+			process_table[id].root_path = mm_hp_alloc(
+			                                  path_len,
+			                                  process_heap);
+			rtl_strcpy_s(process_table[id].root_path,
+			             path_len,
+			             process_table[current_process].root_path);
 			process_table[id].parent_id = current_process;
 			process_table[id].status = PROC_ALIVE;
 			process_table[id].priority = process_table[current_process].priority;
@@ -631,8 +689,9 @@ u32 release_process(u32 process_id)
 	//Free pdt
 	mm_pg_tbl_free(process_table[process_id].pdt_id);
 
-	//Release process name
+	//Release process name and root path
 	mm_hp_free(process_table[process_id].process_name, process_heap);
+	mm_hp_free(process_table[process_id].root_path, process_heap);
 
 	//Get exit code
 	exit_code = process_table[process_id].exit_code;

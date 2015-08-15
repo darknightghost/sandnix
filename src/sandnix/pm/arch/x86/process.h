@@ -23,6 +23,7 @@
 typedef struct _process_info {
 	bool		alloc_flag;			//Allocate flag
 	char*		process_name;		//Name
+	char*		root_path;			//Root path
 	bool		wait_flag;			//Is been waited
 	u32			parent_id;			//Parent process
 	u32			pdt_id;				//Page table id

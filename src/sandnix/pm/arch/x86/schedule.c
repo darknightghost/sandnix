@@ -35,8 +35,8 @@
 tss					sys_tss;
 
 void*				schedule_heap;
-u32					current_thread;
-u32					current_process;
+u32					current_thread = 0;
+u32					current_process = 0;
 thread_info			thread_table[MAX_THREAD_NUM];
 spin_lock			thread_table_lock;
 u32					free_thread_id_num;
@@ -942,6 +942,25 @@ void pm_disable_task_switch()
 {
 	cpu0_task_switch_enabled = false;
 	return;
+}
+
+u32 pm_get_thread_priority(u32 thread_id)
+{
+	u32 ret;
+	pm_acqr_spn_lock(&thread_table_lock);
+
+	if(thread_table[thread_id].alloc_flag == false) {
+		pm_rls_spn_lock(&thread_table_lock);
+		pm_set_errno(ESRCH);
+		return 0;
+	}
+
+	ret = thread_table[thread_id].level;
+
+	pm_rls_spn_lock(&thread_table_lock);
+	pm_set_errno(ESUCCESS);
+	return ret;
+
 }
 
 void switch_to(u32 thread_id)

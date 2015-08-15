@@ -21,9 +21,10 @@
 #include "paging.h"
 
 typedef	struct {
-	u32		phy_addr;
-	u32		count;
-} shared_pg_info, *pshared_pg_info;
+	u32			ref_count;
+	void*		phy_addr;
+	size_t		size;
+} pmo, *ppmo;
 
 
 #endif	//!	SHARE_H_INCLUDE

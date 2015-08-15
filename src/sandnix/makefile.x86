@@ -27,6 +27,7 @@ SOURCES += setup/arch/x86/setup.s \
 			pm/spinlock/arch/x86/spinlock.c \
 			mm/paging/arch/x86/physical_mem.c \
 			mm/paging/arch/x86/paging.c \
+			mm/paging/arch/x86/share.c \
 			rtl/string/arch/x86/string.c \
 			rtl/math/arch/x86/math.c \
 			vfs/vfs.c

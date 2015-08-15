@@ -24,7 +24,7 @@
 #include "semaphore/semaphore.h"
 #include "spinlock/arch/x86/spinlock.h"
 
-#define		MAX_PROCESS_NUM		32767
+#define		MAX_PROCESS_NUM		1000
 #define		MAX_THREAD_NUM		65535
 
 #define		TASK_RUNNING		0x00
@@ -79,7 +79,9 @@ bool		pm_should_break();
 bool		pm_get_thread_context(u32 id, pcontext p_cntxt);
 bool		pm_set_thread_context(u32 id, pcontext p_cntxt);
 
-u32			pm_int_get_thread_pdt();
+u32			pm_int_get_thread_pdt();										//Don't use
+
+u32			pm_get_thread_priority(u32 thread_id);
 
 void		pm_enable_task_switch();
 void		pm_disable_task_switch();
@@ -94,6 +96,8 @@ bool		pm_set_proc_euid(u32 process_id, u32 euid);
 bool		pm_get_proc_euid(u32 process_id, u32* p_euid);
 bool		pm_add_proc_file_descriptor(u32 process_id, u32 descriptor);
 bool		pm_remove_proc_file_descriptor(u32 process_id, u32 descriptor);
+bool		pm_chroot(char* new_root);
+size_t		pm_get_root(u32 process_id, size_t buf_size, char* buf);
 
 //Spin lock
 void		pm_init_spn_lock(pspin_lock p_lock);
@@ -106,14 +110,14 @@ void		pm_rls_raw_spn_lock(pspin_lock p_lock);
 
 //Mutex
 void		pm_init_mutex(pmutex p_mutex);
-void		pm_acqr_mutex(pmutex p_mutex);
-bool		pm_try_acqr_mutex(pmutex p_mutex);
+k_status	pm_acqr_mutex(pmutex p_mutex, u32 timeout);
+k_status	pm_try_acqr_mutex(pmutex p_mutex);
 void		pm_rls_mutex(pmutex p_mutex);
 
 //Semaphore
-void		pm_init_semaphore(psemaphore p_semaphore);
-void		pm_acqr_semaphore(psemaphore p_semaphore);
-bool		pm_try_acqr_semaphore(psemaphore p_semaphore);
+void		pm_init_semaphore(psemaphore p_semaphore, u32 max_num);
+k_status	pm_acqr_semaphore(psemaphore p_semaphore, u32 timeout);
+k_status	pm_try_acqr_semaphore(psemaphore p_semaphore);
 void		pm_rls_semaphore(psemaphore p_semaphore);
 
 #endif	//!	PM_H_INCLUDE
