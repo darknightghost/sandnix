@@ -15,28 +15,21 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	RTL_H_INCLUDE
-#define	RTL_H_INCLUDE
+#ifndef	QUEUE_H_INCLUDE
+#define	QUEUE_H_INCLUDE
 
-#ifdef	X86
-#include "../../common/arch/x86/types.h"
-//Variable Arguments
-typedef	char*			va_list;
+#include "../list/list.h"
 
-#define	va_start(ap,v)	((ap) = (va_list)&(v) + 4)
+typedef	struct	_queue {
+	list	data_list;
+	u32		data_num;
+} queue, *pqueue;
 
-#define	va_arg(ap,t)	(ap += 4 ,(\
-                                   sizeof(t) <= 4\
-                                   ? *((t*)(ap-4))\
-                                   : **((t**)(ap-4))))
+void	rtl_queue_init(pqueue p_q);
+bool	rtl_queue_push(pqueue p_q, void* p_item, void* heap);
+void*	rtl_queue_pop(pqueue p_q, void* heap);
+u32		rtl_queue_size(pqueue p_q);
+void*	rtl_queue_front(pqueue p_q);
+void*	rtl_queue_back(pqueue p_q);
 
-#define	va_end(ap)		(ap = (va_list)0)
-#endif	//!	X86
-
-#include "string/string.h"
-#include "math/math.h"
-#include "list/list.h"
-#include "queue/queue.h"
-#include "stack/stack.h"
-
-#endif	//!	RTL_H_INCLUDE
+#endif	//!	QUEUE_H_INCLUDE

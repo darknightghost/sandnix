@@ -21,21 +21,24 @@
 #include "../../common/common.h"
 #include "./fs/fs.h"
 
+typedef	struct	_fs_info {
+	char* fs_name;
+} fs_info, *pfs_info;
+
 void			vfs_init();
 
 //File system
-bool			vfs_reg_filesystem();
+k_status		vfs_reg_filesystem(pfs_info fs);
 bool			vfs_unreg_filesystem();
 
 //Devices
-k_status		vfs_mount(char *src, char *target,
-                          char *fs_type, u32 flags,
+k_status		vfs_mount(char* src, char* target,
+                          char* fs_type, u32 flags,
                           char* args);
-k_status		vfs_mount_root();
-k_status		vfs_umount();
+k_status		vfs_umount(char* path);
 
 //Files
-u32				vfs_open(char* path, u32 flags);
+u32				vfs_open(char* path, u32 flags, u32 mode);
 bool			vfs_inc_fdesc_reference(u32 file_descriptor);
 k_status		vfs_chmod(u32 fd, u32 mode);
 bool			vfs_access(char* path, u32 mode);
@@ -44,5 +47,6 @@ size_t			vfs_read(int fd, void* buf, size_t count);
 size_t			vfs_write(int fd, void* buf, size_t count);
 void			vfs_sync();
 bool			vfs_syncfs(u32 fd);
+s32				vfs_ioctl(u32 fd, u32 request, ...);
 
 #endif	//!	VFS_H_INCLUDE

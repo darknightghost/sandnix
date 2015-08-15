@@ -18,7 +18,7 @@
 #ifndef	LIST_H_INCLUDE
 #define	LIST_H_INCLUDE
 
-#include "../rtl.h"
+#include "../../../common/common.h"
 
 typedef		void	(*item_destroyer_callback)(void*);
 
@@ -42,4 +42,4 @@ void		rtl_list_remove(list* p_list, plist_node p_node, void* heap);
 plist_node	rtl_list_get_node_by_item(list lst, void* p_item);
 void		rtl_list_destroy(list* p_list, void* heap, item_destroyer_callback callback);
 
-#endif
+#endif	//!	LIST_H_INCLUDE

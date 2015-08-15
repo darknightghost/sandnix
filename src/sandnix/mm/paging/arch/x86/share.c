@@ -16,6 +16,7 @@
 */
 
 #include "share.h"
+#include "../../../mm.h"
 
 static	void		decrease_pmo_ref(ppmo p_pmo);
 
@@ -71,7 +72,7 @@ void* mm_pmo_map(void* address, ppmo p_pmo, bool is_user)
 	for(phy_addr = (u32)(p_pmo->phy_addr), virt_addr = (u32)(ret), i = 0;
 	    i < p_pmo->size;
 	    i += 4096, phy_addr += 4096, virt_addr += 4096) {
-		if(map_phy_addr((void*)virt_addr, (void*)phy_addr) == NULL) {
+		if(mm_virt_map((void*)virt_addr, (void*)phy_addr) == NULL) {
 			//Ummap pages
 			for(virt_addr -= 4096; i > 0; virt_addr -= 4096, i -= 4096) {
 				mm_virt_unmap((void*)virt_addr);
@@ -86,7 +87,7 @@ void* mm_pmo_map(void* address, ppmo p_pmo, bool is_user)
 	return ret;
 }
 
-void mm_pmo_unmap(void* address, ppmo p_pmo, bool is_user)
+void mm_pmo_unmap(void* address, ppmo p_pmo)
 {
 	u32 offset;
 

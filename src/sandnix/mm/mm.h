@@ -21,10 +21,10 @@
 #include "../../common/common.h"
 
 #ifdef	X86
+	#include "paging/arch/x86/share.h"
 	#include "paging/arch/x86/page_table.h"
 	#include "paging/arch/x86/paging.h"
 	#include "paging/arch/x86/physical_mem.h"
-	#include "paging/arch/x86/share.h"
 #endif	//X86
 
 #ifdef X86
@@ -87,7 +87,7 @@ void				mm_get_info(pmem_info p_info);
 ppmo				mm_pmo_create(size_t size);
 void				mm_pmo_free(ppmo p_pmo);
 void*				mm_pmo_map(void* address, ppmo p_pmo, bool is_user);
-void				mm_pmo_unmap(void* address, ppmo p_pmo, bool is_user);
+void				mm_pmo_unmap(void* address, ppmo p_pmo);
 
 //Heap
 void*				mm_hp_create(size_t max_block_size, u32 attr);

@@ -334,6 +334,76 @@ bool pm_get_proc_euid(u32 process_id, u32* p_euid)
 	return true;
 }
 
+bool pm_get_proc_gid(u32 process_id, u32* p_gid)
+{
+	pm_acqr_spn_lock(&process_table_lock);
+
+	//Check if the process exists
+	if(!process_table[process_id].alloc_flag) {
+		pm_rls_spn_lock(&process_table_lock);
+		pm_set_errno(ESRCH);
+		return false;
+	}
+
+	*p_gid = process_table[process_id].gid;
+	pm_rls_spn_lock(&process_table_lock);
+
+	pm_set_errno(ESUCCESS);
+
+	return true;
+}
+
+bool pm_set_proc_egid(u32 process_id, u32 egid)
+{
+	pm_acqr_spn_lock(&process_table_lock);
+
+	//Check if the process exists
+	if(!process_table[process_id].alloc_flag) {
+		pm_rls_spn_lock(&process_table_lock);
+		pm_set_errno(ESRCH);
+		return false;
+	}
+
+	if(egid != process_table[process_id].egid
+	   && egid != process_table[process_id].gid
+	   && egid != process_table[process_id].sgid) {
+		pm_rls_spn_lock(&process_table_lock);
+		pm_set_errno(EPERM);
+		return false;
+	}
+
+	if(process_table[process_id].euid == 0) {
+		process_table[process_id].gid = egid;
+	}
+
+	process_table[process_id].egid = egid;
+
+	pm_rls_spn_lock(&process_table_lock);
+
+	pm_set_errno(ESUCCESS);
+
+	return true;
+}
+
+bool pm_get_proc_egid(u32 process_id, u32* p_egid)
+{
+	pm_acqr_spn_lock(&process_table_lock);
+
+	//Check if the process exists
+	if(!process_table[process_id].alloc_flag) {
+		pm_rls_spn_lock(&process_table_lock);
+		pm_set_errno(ESRCH);
+		return false;
+	}
+
+	*p_egid = process_table[process_id].egid;
+	pm_rls_spn_lock(&process_table_lock);
+
+	pm_set_errno(ESUCCESS);
+
+	return true;
+}
+
 bool pm_add_proc_file_descriptor(u32 process_id, u32 descriptor)
 {
 	pm_acqr_spn_lock(&process_table_lock);

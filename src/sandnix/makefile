@@ -4,8 +4,10 @@ export SOURCES = init/main.c \
 					mm/mm.c \
 					rtl/list/list.c \
 					rtl/stack/stack.c \
+					rtl/queue/queue.c \
 					pm/pm.c \
-					init/parameters/parameters.c
+					init/parameters/parameters.c \
+					msg/msg.c
 
 x86_build :
 		$(MAKE) -f makefile.x86 all

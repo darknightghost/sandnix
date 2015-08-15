@@ -33,6 +33,9 @@ typedef struct _process_info {
 	u32			uid;				//Real uid
 	u32			suid;				//Saved uid
 	u32			euid;				//Effective uid
+	u32			gid;				//Real gid
+	u32			sgid;				//Saved gid
+	u32			egid;				//Effective gid
 	list		file_desc_list;		//File descriptors
 	list		child_list;			//Child processes
 	list		thread_list;		//Alive threads

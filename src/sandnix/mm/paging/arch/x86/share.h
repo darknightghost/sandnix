@@ -18,7 +18,7 @@
 #ifndef	SHARE_H_INCLUDE
 #define	SHARE_H_INCLUDE
 
-#include "paging.h"
+#include "../../../../../common/common.h"
 
 typedef	struct {
 	u32			ref_count;
