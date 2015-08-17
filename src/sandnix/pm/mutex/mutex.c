@@ -70,7 +70,7 @@ k_status  pm_acqr_mutex(pmutex p_mutex, u32 timeout)
 		//Wait for lock
 		pm_rls_spn_lock(&(p_mutex->lock));
 
-		if(timeout == 0) {
+		if(timeout == TIMEOUT_BLOCK) {
 			pm_suspend_thrd(pm_get_crrnt_thrd_id());
 
 		} else {

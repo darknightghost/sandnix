@@ -45,6 +45,10 @@
 #define		KERNEL_STACK_SIZE	(4096*2)
 #define		USER_STACK_SIZE		(2*1024*1024)
 
+#define		TIMEOUT_BLOCK		0
+
+#define		OPERATE_SUCCESS		(pm_get_errno() == ESUCCESS)
+
 //Thread function
 //void			thread_func(u32 thread_id,void* p_args);
 typedef	void	(*thread_func)(u32, void*);

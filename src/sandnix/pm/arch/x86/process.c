@@ -139,7 +139,9 @@ s32	pm_fork()
 
 void pm_exec(char* cmd_line, char* image_path)
 {
-	//TODO:
+	//TODO:exec
+	UNREFERRED_PARAMETER(cmd_line);
+	UNREFERRED_PARAMETER(image_path);
 }
 
 u32 pm_wait(u32 child_id, bool if_block)

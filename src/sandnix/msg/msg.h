@@ -22,15 +22,16 @@
 #include "../mm/mm.h"
 #include "../rtl/rtl.h"
 
-//Types
-typedef	u32		m_status;
+#define	MAX_MSG_QUEUE_NUM		65535
 
+//Types
 typedef	struct	_msg {
 	u32		message;
 	u32		status;
 	u32		msg_id;
-	u32		src_thrd_id;
-	u32		dest_thrd_id;
+	u32		src_thread;
+	u32		result_queue;
+	u32		driver_id;
 	union {
 		u32	flags;
 		struct {
@@ -41,10 +42,10 @@ typedef	struct	_msg {
 	} flags;
 	union {
 		struct {
-			void*	addr;
+			void*	addr;		//Don't too larger,slow,one direction only
 			size_t	size;
 		} buf;
-		ppmo	pmo_addr;
+		ppmo	pmo_addr;		//Fast,large buf should use this,can get return value
 	} buf;
 } msg, *pmsg;
 
@@ -53,7 +54,12 @@ typedef	struct {
 	queue	msgs;
 	mutex	lock;
 	u32		blocked_thread_id;
+	bool	destroy_flag;
 } msg_queue, *pmsg_queue;
+
+typedef	struct {
+	u32		msg_id;
+} msg_complete_info, *pmsg_complete_info, msg_cancel_info, *pmsg_cancel_info;
 
 //Flags
 #define		MFLAG_DIRECTBUF		0x00000001
@@ -63,20 +69,20 @@ typedef	struct {
 
 //Messages
 #define		MSG_COMPLETE		0x00000000
-#define		MSG_OPEN			0x00000001
-#define		MSG_READ			0x00000002
-#define		MSG_WRITE			0x00000003
-#define		MSG_CLOSE			0x00000004
-#define		MSG_DESTROY			0x00000005
-#define		MSG_IOCTRL			0x00000006
-#define		MSG_INTERRUPT		0x00000007
+#define		MSG_CANCEL			0x00000001
+#define		MSG_OPEN			0x00000002
+#define		MSG_READ			0x00000003
+#define		MSG_WRITE			0x00000004
+#define		MSG_CLOSE			0x00000005
+#define		MSG_DESTROY			0x00000006
+#define		MSG_IOCTRL			0x00000007
+#define		MSG_INTERRUPT		0x00000008
 
 
 //Status
 #define		MSTATUS_COMPLETE	0x00000000
-#define		MSTATUS_PENDING		0x00000001
-#define		MSTATUS_CANCEL		0x00000002
-#define		MSTATUS_FORWARD		0x00000003
+#define		MSTATUS_CANCEL		0x00000001
+#define		MSTATUS_FORWARD		0x00000002
 
 void		msg_init();
 
@@ -85,13 +91,12 @@ u32			msg_queue_create();
 void		msg_queue_destroy(u32 id);
 
 //Mesage send&recv
-k_status	msg_create(pmsg p_msg);
-m_status	msg_send(pmsg p_msg, u32 dest);
-m_status	msg_recv(pmsg buf, u32 dest);
+k_status	msg_create(pmsg *p_p_msg);
+k_status	msg_send(pmsg p_msg, u32 dest_queue, u32* p_result);
+k_status	msg_recv(pmsg* p_p_msg, u32 dest_queue, bool if_block);
 
 //Message dealing
-k_status	msg_forward(pmsg p_msg);
-k_status	msg_pending(pmsg p_msg);
+k_status	msg_forward(pmsg p_msg, u32 dest_queue);
 k_status	msg_complete(pmsg p_msg);
 k_status	msg_cancel(pmsg p_msg);
 

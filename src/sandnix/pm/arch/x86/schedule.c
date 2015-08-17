@@ -1412,5 +1412,8 @@ void adjust_child_thread_stack(u32 ebp, u32 offset)
 
 void user_thread_caller(u32 thread_id, void* p_args)
 {
+	//TODO:Allocate user stack and move to user space
+	UNREFERRED_PARAMETER(thread_id);
+	UNREFERRED_PARAMETER(p_args);
 	return;
 }
