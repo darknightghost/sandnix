@@ -36,11 +36,11 @@ typedef struct _process_info {
 	u32			gid;				//Real gid
 	u32			sgid;				//Saved gid
 	u32			egid;				//Effective gid
-	list		file_desc_list;		//File descriptors
-	list		child_list;			//Child processes
-	list		thread_list;		//Alive threads
-	list		zombie_list;		//Zombie threads
-	list		wait_list;			//Zombie children
+	list_t		file_desc_list;		//File descriptors
+	list_t		child_list;			//Child processes
+	list_t		thread_list;		//Alive threads
+	list_t		zombie_list;		//Zombie threads
+	list_t		wait_list;			//Zombie children
 } process_info_t, *pprocess_info_t;
 
 

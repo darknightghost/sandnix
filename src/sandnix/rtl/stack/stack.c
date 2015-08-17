@@ -17,7 +17,7 @@
 
 #include "stack.h"
 
-bool rtl_stack_push(stack* p_s, void* p_item, void* heap)
+bool rtl_stack_push(stack_t* p_s, void* p_item, void* heap)
 {
 	if(rtl_list_insert_after(
 	       p_s,
@@ -32,7 +32,7 @@ bool rtl_stack_push(stack* p_s, void* p_item, void* heap)
 }
 
 
-void*	rtl_stack_pop(stack* p_s, void* heap)
+void*	rtl_stack_pop(stack_t* p_s, void* heap)
 {
 	void* p_ret;
 

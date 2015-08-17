@@ -17,14 +17,14 @@
 
 #include "queue.h"
 
-void rtl_queue_init(pqueue p_q)
+void rtl_queue_init(pqueue_t p_q)
 {
 	p_q->data_list = NULL;
 	p_q->data_num = 0;
 	return;
 }
 
-bool rtl_queue_push(pqueue p_q, void* p_item, void* heap)
+bool rtl_queue_push(pqueue_t p_q, void* p_item, void* heap)
 {
 	if(rtl_list_insert_after(
 	       &(p_q->data_list),
@@ -38,7 +38,7 @@ bool rtl_queue_push(pqueue p_q, void* p_item, void* heap)
 	return true;
 }
 
-void* rtl_queue_pop(pqueue p_q, void* heap)
+void* rtl_queue_pop(pqueue_t p_q, void* heap)
 {
 	void* ret;
 
@@ -53,12 +53,12 @@ void* rtl_queue_pop(pqueue p_q, void* heap)
 	}
 }
 
-u32 rtl_queue_size(pqueue p_q)
+u32 rtl_queue_size(pqueue_t p_q)
 {
 	return p_q->data_num;
 }
 
-void* rtl_queue_front(pqueue p_q)
+void* rtl_queue_front(pqueue_t p_q)
 {
 	if(p_q->data_num == 0) {
 		return NULL;
@@ -68,7 +68,7 @@ void* rtl_queue_front(pqueue p_q)
 	}
 }
 
-void* rtl_queue_back(pqueue p_q)
+void* rtl_queue_back(pqueue_t p_q)
 {
 	if(p_q->data_num == 0) {
 		return NULL;

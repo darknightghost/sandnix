@@ -109,7 +109,7 @@ typedef	struct {
 	u32					process_id;
 	u8					level;			//Interrupt level <=> thread priority
 	u32					exit_code;
-	plist_node			p_task_queue_node;
+	plist_node_t			p_task_queue_node;
 	bool				break_flag;
 	u32					status;
 	thread_status_info_t	status_info;
@@ -122,7 +122,7 @@ typedef	struct {
 } thread_info_t, *pthread_info_t;
 
 typedef	struct	{
-	list		queue;
+	list_t		queue_t;
 	spinlock_t	lock;
 } task_queue_t, ptask_queue_t;
 

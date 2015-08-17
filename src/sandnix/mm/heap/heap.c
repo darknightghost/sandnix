@@ -419,7 +419,7 @@ void rebuild_empty_blocks_list(pheap_head_t p_head)
 
 	p_head->p_first_empty_block = NULL;
 
-	//Rebuild list
+	//Rebuild list_t
 	for(p_block = (pmem_block_head_t)(p_head + 1);
 	    (u8*)p_block < (u8*)p_head + p_head->scale;
 	    p_block = (pmem_block_head_t)(p_block->start_addr + p_block->size)) {
@@ -433,7 +433,7 @@ void rebuild_empty_blocks_list(pheap_head_t p_head)
 		}
 
 		if(!p_block->allocated_flag) {
-			//Add new block to the list
+			//Add new block to the list_t
 			if(p_head->p_first_empty_block == NULL) {
 				p_block->p_prev_empty_block = NULL;
 				p_block->p_next_empty_block = NULL;

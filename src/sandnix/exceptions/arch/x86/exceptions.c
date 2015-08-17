@@ -59,7 +59,7 @@ static	char*		excpt_tbl[] = {
 	"Interrupted system call",
 	"I/O error",
 	"No such device or address",
-	"Argument list too long",
+	"Argument list_t too long",
 	"Exec format error",
 	"Bad file number",
 	"No child processes",

@@ -28,8 +28,8 @@ void pm_init_mutex(pmutex_t p_mutex)
 
 k_status  pm_acqr_mutex(pmutex_t p_mutex, u32 timeout)
 {
-	plist_node p_node;
-	plist_node p_current_node;
+	plist_node_t p_node;
+	plist_node_t p_current_node;
 	u32 current_priority;
 
 	current_priority = io_get_crrnt_int_level();
@@ -39,7 +39,7 @@ k_status  pm_acqr_mutex(pmutex_t p_mutex, u32 timeout)
 
 	if(p_node != NULL || p_mutex->is_acquired) {
 		//If other thread has acquired the mutex_t
-		//Add current thread to the list
+		//Add current thread to the list_t
 		if(p_node != NULL) {
 			if(pm_get_thread_priority((u32)(p_node->p_item)) < current_priority) {
 				p_node = NULL;
@@ -124,7 +124,7 @@ k_status pm_try_acqr_mutex(pmutex_t p_mutex)
 
 void pm_rls_mutex(pmutex_t p_mutex)
 {
-	plist_node p_node;
+	plist_node_t p_node;
 
 	pm_acqr_spn_lock(&(p_mutex->lock));
 

@@ -26,20 +26,20 @@ typedef	struct _list_node {
 	struct _list_node*	p_prev;
 	struct _list_node*	p_next;
 	void*				p_item;
-} list_node, *plist_node, *list;
+} list_node_t, *plist_node_t, *list_t;
 
-plist_node		rtl_list_insert_before(
-    list* p_list,
-    plist_node position,		//Null if at the start of the list
+plist_node_t		rtl_list_insert_before(
+    list_t* p_list,
+    plist_node_t position,		//Null if at the start of the list_t
     void* p_item,
     void* heap);
-plist_node		rtl_list_insert_after(
-    list* p_list,
-    plist_node position,		//Null if at the end of the list
+plist_node_t		rtl_list_insert_after(
+    list_t* p_list,
+    plist_node_t position,		//Null if at the end of the list_t
     void* p_item,
     void* heap);
-void		rtl_list_remove(list* p_list, plist_node p_node, void* heap);
-plist_node	rtl_list_get_node_by_item(list lst, void* p_item);
-void		rtl_list_destroy(list* p_list, void* heap, item_destroyer_callback callback);
+void		rtl_list_remove(list_t* p_list, plist_node_t p_node, void* heap);
+plist_node_t	rtl_list_get_node_by_item(list_t lst, void* p_item);
+void		rtl_list_destroy(list_t* p_list, void* heap, item_destroyer_callback callback);
 
 #endif	//!	LIST_H_INCLUDE

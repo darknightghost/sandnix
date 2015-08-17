@@ -48,7 +48,7 @@ u32 msg_queue_create()
 	//Get new id
 	for(new_id = 0; new_id < MAX_MSG_QUEUE_NUM; new_id++) {
 		if(msg_queue_table[new_id] == NULL) {
-			//Allocate new message queue
+			//Allocate new message queue_t
 			msg_queue_table[new_id] = mm_hp_alloc(sizeof(msg_queue_t), NULL);
 
 			if(msg_queue_table[new_id] == NULL) {
@@ -98,7 +98,7 @@ void msg_queue_destroy(u32 id)
 	msg_queue_table[id] = NULL;
 	pm_rls_mutex(&msg_queue_table_lock);
 
-	//Destroy the queue
+	//Destroy the queue_t
 	if(p_queue->blocked_thread_id == 0) {
 		p_queue->destroy_flag = true;
 		pm_resume_thrd(p_queue->blocked_thread_id);
@@ -148,7 +148,7 @@ k_status msg_send(pmsg_t p_msg, u32 dest_queue, u32* p_result)
 {
 	pm_acqr_mutex(&msg_queue_table_lock, TIMEOUT_BLOCK);
 
-	//Check if the queue exists
+	//Check if the queue_t exists
 	if(msg_queue_table[dest_queue] == NULL) {
 		pm_rls_mutex(&msg_queue_table_lock);
 		pm_set_errno(EFAULT);
@@ -201,7 +201,7 @@ k_status msg_recv(pmsg_t* p_p_msg, u32 dest_queue, bool if_block)
 
 	pm_acqr_mutex(&msg_queue_table_lock, TIMEOUT_BLOCK);
 
-	//Check if the queue exists
+	//Check if the queue_t exists
 	if(msg_queue_table[dest_queue] == NULL) {
 		pm_rls_mutex(&msg_queue_table_lock);
 		pm_set_errno(EFAULT);
@@ -231,7 +231,7 @@ k_status msg_recv(pmsg_t* p_p_msg, u32 dest_queue, bool if_block)
 			pm_enable_task_switch();
 			pm_schedule();
 
-			//Check if the queue is being destroyed
+			//Check if the queue_t is being destroyed
 			pm_acqr_mutex(&(p_queue->lock), TIMEOUT_BLOCK);
 
 			if(p_queue->destroy_flag) {
@@ -274,7 +274,7 @@ k_status msg_forward(pmsg_t p_msg, u32 dest_queue)
 
 	pm_acqr_mutex(&msg_queue_table_lock, TIMEOUT_BLOCK);
 
-	//Check if the queue exists
+	//Check if the queue_t exists
 	if(msg_queue_table[dest_queue] == NULL) {
 		pm_rls_mutex(&msg_queue_table_lock);
 		pm_set_errno(EFAULT);

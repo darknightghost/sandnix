@@ -21,15 +21,15 @@
 #include "../list/list.h"
 
 typedef	struct	_queue {
-	list	data_list;
+	list_t	data_list;
 	u32		data_num;
-} queue, *pqueue;
+} queue_t, *pqueue_t;
 
-void	rtl_queue_init(pqueue p_q);
-bool	rtl_queue_push(pqueue p_q, void* p_item, void* heap);
-void*	rtl_queue_pop(pqueue p_q, void* heap);
-u32		rtl_queue_size(pqueue p_q);
-void*	rtl_queue_front(pqueue p_q);
-void*	rtl_queue_back(pqueue p_q);
+void	rtl_queue_init(pqueue_t p_q);
+bool	rtl_queue_push(pqueue_t p_q, void* p_item, void* heap);
+void*	rtl_queue_pop(pqueue_t p_q, void* heap);
+u32		rtl_queue_size(pqueue_t p_q);
+void*	rtl_queue_front(pqueue_t p_q);
+void*	rtl_queue_back(pqueue_t p_q);
 
 #endif	//!	QUEUE_H_INCLUDE

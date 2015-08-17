@@ -32,7 +32,7 @@ static	u32			get_free_proc_id();
 static	u32			fork_descrpitor_list(u32 dest, u32 src);
 static	void		descriptor_destroy_callback(void* descriptor);
 static	u32			release_process(u32 process_id);
-static	void		awake_threads(list lst, u32 status);
+static	void		awake_threads(list_t lst, u32 status);
 
 void init_process()
 {
@@ -146,7 +146,7 @@ void pm_exec(char* cmd_line, char* image_path)
 
 u32 pm_wait(u32 child_id, bool if_block)
 {
-	plist_node p_node;
+	plist_node_t p_node;
 	u32 ret;
 
 	pm_acqr_spn_lock(&process_table_lock);
@@ -434,7 +434,7 @@ bool pm_add_proc_file_descriptor(u32 process_id, u32 descriptor)
 
 bool pm_remove_proc_file_descriptor(u32 process_id, u32 descriptor)
 {
-	plist_node p_node;
+	plist_node_t p_node;
 
 	pm_acqr_spn_lock(&process_table_lock);
 
@@ -444,7 +444,7 @@ bool pm_remove_proc_file_descriptor(u32 process_id, u32 descriptor)
 		return false;
 	}
 
-	//Remove from descriptor list
+	//Remove from descriptor list_t
 	p_node = rtl_list_get_node_by_item(process_table[process_id].file_desc_list,
 	                                   (void*)descriptor);
 
@@ -520,7 +520,7 @@ void add_proc_thrd(u32 thrd_id, u32 proc_id)
 		            "Unavailable process id!\n");
 	}
 
-	//Add new thread to thread list
+	//Add new thread to thread list_t
 	if(rtl_list_insert_after(&(process_table[proc_id].thread_list),
 	                         NULL,
 	                         (void*)thrd_id,
@@ -534,14 +534,14 @@ void add_proc_thrd(u32 thrd_id, u32 proc_id)
 
 void zombie_proc_thrd(u32 thrd_id, u32 proc_id)
 {
-	plist_node p_node;
+	plist_node_t p_node;
 
 	if(process_table[proc_id].alloc_flag == false) {
 		excpt_panic(ESRCH,
 		            "Unavailable process id!\n");
 	}
 
-	//Remove from thread list
+	//Remove from thread list_t
 	p_node = rtl_list_get_node_by_item(process_table[proc_id].thread_list,
 	                                   (void*)thrd_id);
 
@@ -554,7 +554,7 @@ void zombie_proc_thrd(u32 thrd_id, u32 proc_id)
 	                p_node,
 	                process_heap);
 
-	//Add to zombie list
+	//Add to zombie list_t
 	if(rtl_list_insert_after(&(process_table[proc_id].zombie_list),
 	                         NULL,
 	                         (void*)thrd_id,
@@ -570,7 +570,7 @@ void zombie_proc_thrd(u32 thrd_id, u32 proc_id)
 		process_table[proc_id].status = PROC_ZOMBIE;
 		process_table[proc_id].exit_code = thread_table[thrd_id].exit_code;
 
-		//Add process to wait list
+		//Add process to wait list_t
 		rtl_list_insert_after(&(process_table[
 		                            process_table[proc_id].parent_id].wait_list),
 		                      NULL,
@@ -582,7 +582,7 @@ void zombie_proc_thrd(u32 thrd_id, u32 proc_id)
 		                 process_heap,
 		                 descriptor_destroy_callback);
 
-		//Copy child list
+		//Copy child list_t
 		p_node = process_table[proc_id].child_list;
 
 		while(p_node != NULL) {
@@ -592,7 +592,7 @@ void zombie_proc_thrd(u32 thrd_id, u32 proc_id)
 			                         p_node->p_item,
 			                         process_heap) == NULL) {
 				excpt_panic(ENOMEM,
-				            "Copy child process list from process %d to process %d fault!\n",
+				            "Copy child process list_t from process %d to process %d fault!\n",
 				            proc_id,
 				            process_table[proc_id].parent_id);
 			}
@@ -605,7 +605,7 @@ void zombie_proc_thrd(u32 thrd_id, u32 proc_id)
 			p_node = process_table[proc_id].child_list;
 		}
 
-		//Copy wait list
+		//Copy wait list_t
 		p_node = process_table[proc_id].wait_list;
 
 		while(p_node != NULL) {
@@ -615,7 +615,7 @@ void zombie_proc_thrd(u32 thrd_id, u32 proc_id)
 			                         p_node->p_item,
 			                         process_heap) == NULL) {
 				excpt_panic(ENOMEM,
-				            "Copy zombie process list from process %d to process %d fault!\n",
+				            "Copy zombie process list_t from process %d to process %d fault!\n",
 				            proc_id,
 				            process_table[proc_id].parent_id);
 			}
@@ -708,7 +708,7 @@ u32 get_free_proc_id()
 
 u32 fork_descrpitor_list(u32 dest, u32 src)
 {
-	plist_node p_node;
+	plist_node_t p_node;
 
 	p_node = process_table[src].file_desc_list;
 
@@ -717,7 +717,7 @@ u32 fork_descrpitor_list(u32 dest, u32 src)
 			//Increase reference count
 			vfs_inc_fdesc_reference((u32)(p_node->p_item));
 
-			//Add to child's descriptor list
+			//Add to child's descriptor list_t
 			if(rtl_list_insert_after(&(process_table[dest].file_desc_list),
 			                         NULL,
 			                         p_node->p_item,
@@ -745,7 +745,7 @@ void descriptor_destroy_callback(void* descriptor)
 u32 release_process(u32 process_id)
 {
 	u32 exit_code;
-	plist_node p_node;
+	plist_node_t p_node;
 
 	//Release all zombie threads
 	p_node = process_table[current_process].zombie_list;
@@ -773,9 +773,9 @@ u32 release_process(u32 process_id)
 	return exit_code;
 }
 
-void awake_threads(list lst, u32 status)
+void awake_threads(list_t lst, u32 status)
 {
-	plist_node p_node;
+	plist_node_t p_node;
 
 	p_node = lst;
 
