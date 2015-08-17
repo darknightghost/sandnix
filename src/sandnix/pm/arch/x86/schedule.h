@@ -67,7 +67,7 @@ typedef	struct _tss {
 	u16		trap: 1;
 	u16		reserved: 7;
 	u16		io_map_base_addr;
-} tss, *ptss;
+} tss_t, *ptss_t;
 
 #pragma	pack()
 
@@ -88,21 +88,21 @@ typedef	struct _context {
 	u16		ds;
 	u16		fs;
 	u16		gs;
-} context, *pcontext;
+} context_t, *pcontext_t;
 
 typedef	struct {
 	u32		start_tick;
 	u32		stop_tick;
-} sleep_thread_info, *psleep_thread_info;
+} sleep_thread_info_t, *psleep_thread_info_t;
 
 typedef	struct {
 	s32		time_slice;
-} ready_thread_info, *pready_thread_info;
+} ready_thread_info_t, *pready_thread_info_t;
 
 typedef	union {
-	ready_thread_info	ready;
-	sleep_thread_info 	sleep;
-} thread_status_info, pthread_status_info;
+	ready_thread_info_t	ready;
+	sleep_thread_info_t 	sleep;
+} thread_status_info_t, pthread_status_info_t;
 
 typedef	struct {
 	bool				alloc_flag;
@@ -112,29 +112,29 @@ typedef	struct {
 	plist_node			p_task_queue_node;
 	bool				break_flag;
 	u32					status;
-	thread_status_info	status_info;
+	thread_status_info_t	status_info;
 	void*				kernel_stack;
 	void*				user_stack;
 	size_t				user_stack_size;
 	u32					errno;
 	u32					ebp;			//Ring0
 	u32					esp;			//Ring0
-} thread_info, *pthread_info;
+} thread_info_t, *pthread_info_t;
 
 typedef	struct	{
 	list		queue;
-	spin_lock	lock;
-} task_queue, ptask_queue;
+	spinlock_t	lock;
+} task_queue_t, ptask_queue_t;
 
 typedef	struct {
 	thread_func		func;
 	size_t			usr_stack_size;
 	void*			p_args;
-} usr_thread_info, *pusr_thread_info;
+} usr_thread_info_t, *pusr_thread_info_t;
 
 
 extern	u32				current_process;
-extern	thread_info		thread_table[MAX_THREAD_NUM];
+extern	thread_info_t		thread_table[MAX_THREAD_NUM];
 
 void	init_schedule();
 s32		fork_thread(u32 new_proc_id);

@@ -52,7 +52,7 @@ static	unsigned short	current_cursor_row = 0;
 static	void		print_string(char* str, u8 color, u8 bg_color);
 static	void		set_cursor_pos(u16 line, u16 row);
 static	void		scroll_down(u16 line, u16 color);
-static	spin_lock	print_lock;
+static	spinlock_t	print_lock;
 
 void dbg_init()
 {

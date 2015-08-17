@@ -24,7 +24,7 @@
 #include "../../../../pm/pm.h"
 #include "../../../../io/io.h"
 
-spin_lock				mem_lock;
+spinlock_t				mem_lock;
 
 static	void*			pdt_index_table[MAX_PROCESS_NUM];
 static	u32				current_pdt;

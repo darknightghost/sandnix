@@ -41,11 +41,11 @@ typedef struct _process_info {
 	list		thread_list;		//Alive threads
 	list		zombie_list;		//Zombie threads
 	list		wait_list;			//Zombie children
-} process_info, *pprocess_info;
+} process_info_t, *pprocess_info_t;
 
 
-extern	spin_lock		process_table_lock;
-extern	process_info	process_table[MAX_PROCESS_NUM];
+extern	spinlock_t		process_table_lock;
+extern	process_info_t	process_table[MAX_PROCESS_NUM];
 extern	void*			process_heap;
 
 void	init_process();

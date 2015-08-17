@@ -23,11 +23,11 @@
 #include "../../rtl/rtl.h"
 
 typedef	struct {
-	spin_lock	lock;
+	spinlock_t	lock;
 	bool		is_acquired;
 	u32			next_thread;
 	list		acquire_list;
-} mutex, *pmutex;
+} mutex_t, *pmutex_t;
 
 
 #endif	//!	MUTEX_H_INCLUDE

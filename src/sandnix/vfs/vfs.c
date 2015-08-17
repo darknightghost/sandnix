@@ -23,3 +23,8 @@ bool vfs_inc_fdesc_reference(u32 file_descriptor)
 	return true;
 }
 
+bool vfs_close(u32 fd)
+{
+	return true;
+}
+

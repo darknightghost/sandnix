@@ -71,7 +71,7 @@ void* mm_hp_alloc(size_t size, void* heap_addr)
 {
 	pheap_head_t p_head, p_new_head;
 	pmem_block_head_t p_block, p_new_block;
-	pspin_lock p_lock;
+	pspinlock_t p_lock;
 
 	//Get heap address
 	if(heap_addr == NULL) {
@@ -219,7 +219,7 @@ void mm_hp_free(void* addr, void* heap_addr)
 {
 	pheap_head_t p_head;
 	pmem_block_head_t p_block;
-	pspin_lock p_lock;
+	pspinlock_t p_lock;
 
 	//Get heap address
 	if(heap_addr == NULL) {
@@ -296,7 +296,7 @@ void mm_hp_check(void* heap_addr)
 {
 	pheap_head_t p_head;
 	pmem_block_head_t p_block;
-	pspin_lock p_lock;
+	pspinlock_t p_lock;
 
 	//Get heap address
 	if(heap_addr == NULL) {

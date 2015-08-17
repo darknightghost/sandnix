@@ -21,15 +21,15 @@
 #include "../exceptions/exceptions.h"
 #include "../debug/debug.h"
 
-static	pmsg_queue		msg_queue_table[MAX_MSG_QUEUE_NUM];
-static	mutex			msg_queue_table_lock;
+static	pmsg_queue_t		msg_queue_table[MAX_MSG_QUEUE_NUM];
+static	mutex_t			msg_queue_table_lock;
 static	u32				current_id;
-static	spin_lock		id_lock;
+static	spinlock_t		id_lock;
 
 
 void msg_init()
 {
-	dbg_print("\nInitializing msg...\n");
+	dbg_print("\nInitializing msg_t...\n");
 
 	rtl_memset(msg_queue_table, 0, sizeof(msg_queue_table));
 	pm_init_mutex(&msg_queue_table_lock);
@@ -49,7 +49,7 @@ u32 msg_queue_create()
 	for(new_id = 0; new_id < MAX_MSG_QUEUE_NUM; new_id++) {
 		if(msg_queue_table[new_id] == NULL) {
 			//Allocate new message queue
-			msg_queue_table[new_id] = mm_hp_alloc(sizeof(msg_queue), NULL);
+			msg_queue_table[new_id] = mm_hp_alloc(sizeof(msg_queue_t), NULL);
 
 			if(msg_queue_table[new_id] == NULL) {
 
@@ -82,8 +82,8 @@ u32 msg_queue_create()
 
 void msg_queue_destroy(u32 id)
 {
-	pmsg_queue p_queue;
-	pmsg p_msg;
+	pmsg_queue_t p_queue;
+	pmsg_t p_msg;
 
 	pm_acqr_mutex(&msg_queue_table_lock, TIMEOUT_BLOCK);
 
@@ -120,16 +120,16 @@ void msg_queue_destroy(u32 id)
 	return;
 }
 
-k_status msg_create(pmsg* p_p_msg)
+k_status msg_create(pmsg_t* p_p_msg)
 {
-	*p_p_msg = mm_hp_alloc(sizeof(msg), NULL);
+	*p_p_msg = mm_hp_alloc(sizeof(msg_t), NULL);
 
 	if(*p_p_msg == NULL) {
 		pm_set_errno(EFAULT);
 		return EFAULT;
 	}
 
-	rtl_memset(*p_p_msg, 0, sizeof(msg));
+	rtl_memset(*p_p_msg, 0, sizeof(msg_t));
 
 	//status
 	(*p_p_msg)->status = MSTATUS_FORWARD;
@@ -144,7 +144,7 @@ k_status msg_create(pmsg* p_p_msg)
 	return ESUCCESS;
 }
 
-k_status msg_send(pmsg p_msg, u32 dest_queue, u32* p_result)
+k_status msg_send(pmsg_t p_msg, u32 dest_queue, u32* p_result)
 {
 	pm_acqr_mutex(&msg_queue_table_lock, TIMEOUT_BLOCK);
 
@@ -195,9 +195,9 @@ k_status msg_send(pmsg p_msg, u32 dest_queue, u32* p_result)
 	return ESUCCESS;
 }
 
-k_status msg_recv(pmsg* p_p_msg, u32 dest_queue, bool if_block)
+k_status msg_recv(pmsg_t* p_p_msg, u32 dest_queue, bool if_block)
 {
-	pmsg_queue p_queue;
+	pmsg_queue_t p_queue;
 
 	pm_acqr_mutex(&msg_queue_table_lock, TIMEOUT_BLOCK);
 
@@ -268,7 +268,7 @@ k_status msg_recv(pmsg* p_p_msg, u32 dest_queue, bool if_block)
 	return ESUCCESS;
 }
 
-k_status msg_forward(pmsg p_msg, u32 dest_queue)
+k_status msg_forward(pmsg_t p_msg, u32 dest_queue)
 {
 	p_msg->status = MSTATUS_FORWARD;
 
@@ -301,11 +301,11 @@ k_status msg_forward(pmsg p_msg, u32 dest_queue)
 	return ESUCCESS;
 }
 
-k_status msg_complete(pmsg p_msg)
+k_status msg_complete(pmsg_t p_msg)
 {
-	pmsg p_complete_msg;
+	pmsg_t p_complete_msg;
 	k_status status;
-	pmsg_complete_info p_complete_info;
+	pmsg_complete_info_t p_complete_info;
 
 	if(p_msg->flags.flags | MFLAG_ASYNC) {
 
@@ -328,7 +328,7 @@ k_status msg_complete(pmsg p_msg)
 			p_complete_msg->message = MSG_COMPLETE;
 			p_complete_msg->flags.flags = MFLAG_DIRECTBUF | MFLAG_ASYNC;
 
-			p_complete_info = mm_hp_alloc(sizeof(msg_complete_info), NULL);
+			p_complete_info = mm_hp_alloc(sizeof(msg_complete_info_t), NULL);
 
 			if(p_complete_info == NULL) {
 				mm_hp_free(p_complete_msg, NULL);
@@ -339,7 +339,7 @@ k_status msg_complete(pmsg p_msg)
 			p_complete_info->msg_id = p_msg->msg_id;
 
 			p_complete_msg->buf.buf.addr = p_complete_info;
-			p_complete_msg->buf.buf.size = sizeof(msg_complete_info);
+			p_complete_msg->buf.buf.size = sizeof(msg_complete_info_t);
 
 			status = msg_send(p_complete_msg, p_msg->result_queue, NULL);
 
@@ -358,11 +358,11 @@ k_status msg_complete(pmsg p_msg)
 	}
 }
 
-k_status	msg_cancel(pmsg p_msg)
+k_status	msg_cancel(pmsg_t p_msg)
 {
-	pmsg p_cancel_msg;
+	pmsg_t p_cancel_msg;
 	k_status status;
-	pmsg_cancel_info p_cancel_info;
+	pmsg_cancel_info_t p_cancel_info;
 
 	if(p_msg->flags.flags | MFLAG_ASYNC) {
 
@@ -385,7 +385,7 @@ k_status	msg_cancel(pmsg p_msg)
 			p_cancel_msg->message = MSG_CANCEL;
 			p_cancel_msg->flags.flags = MFLAG_DIRECTBUF | MFLAG_ASYNC;
 
-			p_cancel_info = mm_hp_alloc(sizeof(msg_cancel_info), NULL);
+			p_cancel_info = mm_hp_alloc(sizeof(msg_cancel_info_t), NULL);
 
 			if(p_cancel_info == NULL) {
 				mm_hp_free(p_cancel_msg, NULL);
@@ -396,7 +396,7 @@ k_status	msg_cancel(pmsg p_msg)
 			p_cancel_info->msg_id = p_msg->msg_id;
 
 			p_cancel_msg->buf.buf.addr = p_cancel_info;
-			p_cancel_msg->buf.buf.size = sizeof(msg_cancel_info);
+			p_cancel_msg->buf.buf.size = sizeof(msg_cancel_info_t);
 
 			status = msg_send(p_cancel_msg, p_msg->result_queue, NULL);
 

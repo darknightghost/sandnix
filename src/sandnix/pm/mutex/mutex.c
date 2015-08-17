@@ -17,7 +17,7 @@
 
 #include "../pm.h"
 
-void pm_init_mutex(pmutex p_mutex)
+void pm_init_mutex(pmutex_t p_mutex)
 {
 	pm_init_spn_lock(&(p_mutex->lock));
 	p_mutex->is_acquired = false;
@@ -26,7 +26,7 @@ void pm_init_mutex(pmutex p_mutex)
 	return;
 }
 
-k_status  pm_acqr_mutex(pmutex p_mutex, u32 timeout)
+k_status  pm_acqr_mutex(pmutex_t p_mutex, u32 timeout)
 {
 	plist_node p_node;
 	plist_node p_current_node;
@@ -38,7 +38,7 @@ k_status  pm_acqr_mutex(pmutex p_mutex, u32 timeout)
 	p_node = p_mutex->acquire_list;
 
 	if(p_node != NULL || p_mutex->is_acquired) {
-		//If other thread has acquired the mutex
+		//If other thread has acquired the mutex_t
 		//Add current thread to the list
 		if(p_node != NULL) {
 			if(pm_get_thread_priority((u32)(p_node->p_item)) < current_priority) {
@@ -95,7 +95,7 @@ k_status  pm_acqr_mutex(pmutex p_mutex, u32 timeout)
 
 
 	} else {
-		//Acquired the mutex
+		//Acquired the mutex_t
 		p_mutex->is_acquired = true;
 		pm_rls_spn_lock(&(p_mutex->lock));
 		pm_set_errno(ESUCCESS);
@@ -103,7 +103,7 @@ k_status  pm_acqr_mutex(pmutex p_mutex, u32 timeout)
 	}
 }
 
-k_status pm_try_acqr_mutex(pmutex p_mutex)
+k_status pm_try_acqr_mutex(pmutex_t p_mutex)
 {
 	pm_acqr_spn_lock(&(p_mutex->lock));
 
@@ -122,13 +122,13 @@ k_status pm_try_acqr_mutex(pmutex p_mutex)
 
 }
 
-void pm_rls_mutex(pmutex p_mutex)
+void pm_rls_mutex(pmutex_t p_mutex)
 {
 	plist_node p_node;
 
 	pm_acqr_spn_lock(&(p_mutex->lock));
 
-	//Release the mutex
+	//Release the mutex_t
 	p_mutex->is_acquired == false;
 	p_node = p_mutex->acquire_list;
 

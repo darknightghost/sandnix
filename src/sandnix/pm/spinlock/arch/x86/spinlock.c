@@ -20,7 +20,7 @@
 #include "../../../../io/io.h"
 #include "../../../../exceptions/exceptions.h"
 
-void pm_init_spn_lock(pspin_lock p_lock)
+void pm_init_spn_lock(pspinlock_t p_lock)
 {
 	p_lock->owner = 0;
 	p_lock->next = 0;
@@ -29,7 +29,7 @@ void pm_init_spn_lock(pspin_lock p_lock)
 	return;
 }
 
-void pm_acqr_spn_lock(pspin_lock p_lock)
+void pm_acqr_spn_lock(pspinlock_t p_lock)
 {
 	u8 int_level;
 	u32 ticket;
@@ -57,7 +57,7 @@ void pm_acqr_spn_lock(pspin_lock p_lock)
 	return;
 }
 
-void pm_acqr_raw_spn_lock(pspin_lock p_lock)
+void pm_acqr_raw_spn_lock(pspinlock_t p_lock)
 {
 	u32 ticket;
 
@@ -75,7 +75,7 @@ void pm_acqr_raw_spn_lock(pspin_lock p_lock)
 	return;
 }
 
-bool pm_try_acqr_spn_lock(pspin_lock p_lock)
+bool pm_try_acqr_spn_lock(pspinlock_t p_lock)
 {
 
 	u8 int_level;
@@ -114,7 +114,7 @@ bool pm_try_acqr_spn_lock(pspin_lock p_lock)
 	return ret;
 }
 
-bool pm_try_acqr_raw_spn_lock(pspin_lock p_lock)
+bool pm_try_acqr_raw_spn_lock(pspinlock_t p_lock)
 {
 	bool ret;
 
@@ -136,7 +136,7 @@ bool pm_try_acqr_raw_spn_lock(pspin_lock p_lock)
 	return ret;
 }
 
-void pm_rls_spn_lock(pspin_lock p_lock)
+void pm_rls_spn_lock(pspinlock_t p_lock)
 {
 	//Release spining lock
 	p_lock->owner++;
@@ -148,7 +148,7 @@ void pm_rls_spn_lock(pspin_lock p_lock)
 
 }
 
-void pm_rls_raw_spn_lock(pspin_lock p_lock)
+void pm_rls_raw_spn_lock(pspinlock_t p_lock)
 {
 	//Release spining lock
 	p_lock->owner++;

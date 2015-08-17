@@ -209,7 +209,7 @@ void excpt_init()
 
 bool unhndld_excpt_call(u32 int_num, u32 thread_id, u32 err_code)
 {
-	//context thrd_cntxt;
+	//context_t thrd_cntxt;
 	u32 cr2;
 
 	//if(pm_get_thread_context(thread_id, &thrd_cntxt)

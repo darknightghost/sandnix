@@ -23,8 +23,8 @@
 #include "../../../exceptions/exceptions.h"
 #include "../../../vfs/vfs.h"
 
-spin_lock		process_table_lock;
-process_info	process_table[MAX_PROCESS_NUM];
+spinlock_t		process_table_lock;
+process_info_t	process_table[MAX_PROCESS_NUM];
 void*			process_heap;
 
 

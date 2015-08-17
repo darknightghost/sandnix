@@ -84,10 +84,10 @@ void				mm_get_info(pmem_info_t p_info);
 
 //Share memories
 //PMO=Page mapping object
-ppmo				mm_pmo_create(size_t size);
-void				mm_pmo_free(ppmo p_pmo);
-void*				mm_pmo_map(void* address, ppmo p_pmo, bool is_user);
-void				mm_pmo_unmap(void* address, ppmo p_pmo);
+ppmo_t				mm_pmo_create(size_t size);
+void				mm_pmo_free(ppmo_t p_pmo);
+void*				mm_pmo_map(void* address, ppmo_t p_pmo, bool is_user);
+void				mm_pmo_unmap(void* address, ppmo_t p_pmo);
 
 //Heap
 void*				mm_hp_create(size_t max_block_size, u32 attr);

@@ -24,7 +24,7 @@ typedef	struct {
 	u32			ref_count;
 	void*		phy_addr;
 	size_t		size;
-} pmo_t, *ppmo;
+} pmo_t, *ppmo_t;
 
 
 #endif	//!	SHARE_H_INCLUDE

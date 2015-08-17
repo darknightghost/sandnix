@@ -18,11 +18,11 @@
 #include "share.h"
 #include "../../../mm.h"
 
-static	void		decrease_pmo_ref(ppmo p_pmo);
+static	void		decrease_pmo_ref(ppmo_t p_pmo);
 
-ppmo mm_pmo_create(size_t size)
+ppmo_t mm_pmo_create(size_t size)
 {
-	ppmo ret;
+	ppmo_t ret;
 
 	//Allocate memory
 	ret = mm_hp_alloc(sizeof(pmo_t), NULL);
@@ -41,13 +41,13 @@ ppmo mm_pmo_create(size_t size)
 	return ret;
 }
 
-void mm_pmo_free(ppmo p_pmo)
+void mm_pmo_free(ppmo_t p_pmo)
 {
 	decrease_pmo_ref(p_pmo);
 	return;
 }
 
-void* mm_pmo_map(void* address, ppmo p_pmo, bool is_user)
+void* mm_pmo_map(void* address, ppmo_t p_pmo, bool is_user)
 {
 	void* ret;
 	u32 flags;
@@ -87,7 +87,7 @@ void* mm_pmo_map(void* address, ppmo p_pmo, bool is_user)
 	return ret;
 }
 
-void mm_pmo_unmap(void* address, ppmo p_pmo)
+void mm_pmo_unmap(void* address, ppmo_t p_pmo)
 {
 	u32 offset;
 
@@ -104,7 +104,7 @@ void mm_pmo_unmap(void* address, ppmo p_pmo)
 	return;
 }
 
-void decrease_pmo_ref(ppmo p_pmo)
+void decrease_pmo_ref(ppmo_t p_pmo)
 {
 	(p_pmo->ref_count)--;
 

@@ -45,21 +45,21 @@ typedef	struct	_msg {
 			void*	addr;		//Don't too larger,slow,one direction only
 			size_t	size;
 		} buf;
-		ppmo	pmo_addr;		//Fast,large buf should use this,can get return value
+		ppmo_t	pmo_addr;		//Fast,large buf should use this,can get return value
 	} buf;
-} msg, *pmsg;
+} msg_t, *pmsg_t;
 
 
 typedef	struct {
 	queue	msgs;
-	mutex	lock;
+	mutex_t	lock;
 	u32		blocked_thread_id;
 	bool	destroy_flag;
-} msg_queue, *pmsg_queue;
+} msg_queue_t, *pmsg_queue_t;
 
 typedef	struct {
 	u32		msg_id;
-} msg_complete_info, *pmsg_complete_info, msg_cancel_info, *pmsg_cancel_info;
+} msg_complete_info_t, *pmsg_complete_info_t, msg_cancel_info_t, *pmsg_cancel_info_t;
 
 //Flags
 #define		MFLAG_DIRECTBUF		0x00000001
@@ -86,19 +86,19 @@ typedef	struct {
 
 void		msg_init();
 
-//msg_queue
+//msg_queue_t
 u32			msg_queue_create();
 void		msg_queue_destroy(u32 id);
 
 //Mesage send&recv
-k_status	msg_create(pmsg *p_p_msg);
-k_status	msg_send(pmsg p_msg, u32 dest_queue, u32* p_result);
-k_status	msg_recv(pmsg* p_p_msg, u32 dest_queue, bool if_block);
+k_status	msg_create(pmsg_t *p_p_msg);
+k_status	msg_send(pmsg_t p_msg, u32 dest_queue, u32* p_result);
+k_status	msg_recv(pmsg_t* p_p_msg, u32 dest_queue, bool if_block);
 
 //Message dealing
-k_status	msg_forward(pmsg p_msg, u32 dest_queue);
-k_status	msg_complete(pmsg p_msg);
-k_status	msg_cancel(pmsg p_msg);
+k_status	msg_forward(pmsg_t p_msg, u32 dest_queue);
+k_status	msg_complete(pmsg_t p_msg);
+k_status	msg_cancel(pmsg_t p_msg);
 
 
 

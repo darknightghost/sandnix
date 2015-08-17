@@ -80,8 +80,8 @@ void		pm_set_break(u32 thread_id, bool if_break);
 bool		pm_is_break(u32 thread_id);
 bool		pm_should_break();
 
-bool		pm_get_thread_context(u32 id, pcontext p_cntxt);
-bool		pm_set_thread_context(u32 id, pcontext p_cntxt);
+bool		pm_get_thread_context(u32 id, pcontext_t p_cntxt);
+bool		pm_set_thread_context(u32 id, pcontext_t p_cntxt);
 
 u32			pm_int_get_thread_pdt();										//Don't use
 
@@ -107,25 +107,25 @@ bool		pm_chroot(char* new_root);
 size_t		pm_get_root(u32 process_id, size_t buf_size, char* buf);
 
 //Spin lock
-void		pm_init_spn_lock(pspin_lock p_lock);
-void		pm_acqr_spn_lock(pspin_lock p_lock);
-void		pm_acqr_raw_spn_lock(pspin_lock p_lock);
-bool		pm_try_acqr_spn_lock(pspin_lock p_lock);
-bool		pm_try_acqr_raw_spn_lock(pspin_lock p_lock);
-void		pm_rls_spn_lock(pspin_lock p_lock);
-void		pm_rls_raw_spn_lock(pspin_lock p_lock);
+void		pm_init_spn_lock(pspinlock_t p_lock);
+void		pm_acqr_spn_lock(pspinlock_t p_lock);
+void		pm_acqr_raw_spn_lock(pspinlock_t p_lock);
+bool		pm_try_acqr_spn_lock(pspinlock_t p_lock);
+bool		pm_try_acqr_raw_spn_lock(pspinlock_t p_lock);
+void		pm_rls_spn_lock(pspinlock_t p_lock);
+void		pm_rls_raw_spn_lock(pspinlock_t p_lock);
 
 //Mutex
-void		pm_init_mutex(pmutex p_mutex);
-k_status	pm_acqr_mutex(pmutex p_mutex, u32 timeout);
-k_status	pm_try_acqr_mutex(pmutex p_mutex);
-void		pm_rls_mutex(pmutex p_mutex);
+void		pm_init_mutex(pmutex_t p_mutex);
+k_status	pm_acqr_mutex(pmutex_t p_mutex, u32 timeout);
+k_status	pm_try_acqr_mutex(pmutex_t p_mutex);
+void		pm_rls_mutex(pmutex_t p_mutex);
 
 //Semaphore
-void		pm_init_semaphore(psemaphore p_semaphore, u32 max_num);
-k_status	pm_acqr_semaphore(psemaphore p_semaphore, u32 timeout);
-k_status	pm_try_acqr_semaphore(psemaphore p_semaphore);
-void		pm_rls_semaphore(psemaphore p_semaphore);
+void		pm_init_semaphore(psemaphore_t p_semaphore, u32 max_num);
+k_status	pm_acqr_semaphore(psemaphore_t p_semaphore, u32 timeout);
+k_status	pm_try_acqr_semaphore(psemaphore_t p_semaphore);
+void		pm_rls_semaphore(psemaphore_t p_semaphore);
 
 #endif	//!	PM_H_INCLUDE
 

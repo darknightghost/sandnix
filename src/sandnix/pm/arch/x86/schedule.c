@@ -32,13 +32,13 @@
                                          )+1\
                           )
 
-tss					sys_tss;
+tss_t					sys_tss;
 
 void*				schedule_heap;
 u32					current_thread = 0;
 u32					current_process = 0;
-thread_info			thread_table[MAX_THREAD_NUM];
-spin_lock			thread_table_lock;
+thread_info_t			thread_table[MAX_THREAD_NUM];
+spinlock_t			thread_table_lock;
 u32					free_thread_id_num;
 
 static	u32				get_next_task();
@@ -49,8 +49,8 @@ static	void			user_thread_caller(u32 thread_id, void* p_args);
 static	void			join_thread();
 static	void			adjust_child_thread_stack(u32 ebp, u32 offset);
 
-static	task_queue		task_queues[INT_LEVEL_HIGHEST + 1];
-static	spin_lock		cpu0_schedule_lock;
+static	task_queue_t		task_queues[INT_LEVEL_HIGHEST + 1];
+static	spinlock_t		cpu0_schedule_lock;
 static	bool			cpu0_task_switch_enabled = true;
 
 /*
@@ -275,7 +275,7 @@ u32 pm_create_thrd(thread_func entry,
 	void* k_stack;
 	u32 new_id;
 	u8* p_stack;
-	pusr_thread_info p_usr_thread_info;
+	pusr_thread_info_t p_usr_thread_info;
 	ret_regs_t regs;
 
 	pm_acqr_spn_lock(&process_table_lock);
@@ -311,12 +311,12 @@ u32 pm_create_thrd(thread_func entry,
 
 	//Prepare parameters
 	if(is_user) {
-		p_stack -= sizeof(usr_thread_info);
-		p_usr_thread_info = (pusr_thread_info)p_stack;
+		p_stack -= sizeof(usr_thread_info_t);
+		p_usr_thread_info = (pusr_thread_info_t)p_stack;
 		p_usr_thread_info->func = entry;
 		p_usr_thread_info->p_args = p_args;
 		p_stack -= 4;
-		*(pusr_thread_info*)p_stack = p_usr_thread_info;
+		*(pusr_thread_info_t*)p_stack = p_usr_thread_info;
 		p_stack -= 4;
 		*(u32*)p_stack = new_id;
 
@@ -1036,7 +1036,7 @@ u32 get_next_task()
 	u32 i;
 	plist_node p_node;
 	plist_node p_new_node;
-	pthread_info p_info;
+	pthread_info_t p_info;
 	bool idle_flag;
 	u32 current_tick;
 	u32 ret_id;
@@ -1059,14 +1059,14 @@ u32 get_next_task()
 					p_node = task_queues[i].queue;
 
 					do {
-						p_info = (pthread_info)(p_node->p_item);
+						p_info = (pthread_info_t)(p_node->p_item);
 						current_tick = io_get_tick_count();
 
 						if(p_info->status == TASK_READY
 						   || p_info->status == TASK_RUNNING) {
 							p_info->status = TASK_RUNNING;
 							pm_rls_raw_spn_lock(&(task_queues[i].lock));
-							ret_id = ((u32)p_info - (u32)thread_table) / sizeof(thread_info);
+							ret_id = ((u32)p_info - (u32)thread_table) / sizeof(thread_info_t);
 							return ret_id;
 
 						} else if(p_info->status == TASK_SLEEP
@@ -1096,7 +1096,7 @@ u32 get_next_task()
 					p_node = task_queues[i].queue;
 
 					do {
-						p_info = (pthread_info)(p_node->p_item);
+						p_info = (pthread_info_t)(p_node->p_item);
 						current_tick = io_get_tick_count();
 
 						if(p_info->status == TASK_READY
@@ -1129,7 +1129,7 @@ u32 get_next_task()
 								}
 
 								pm_rls_raw_spn_lock(&(task_queues[i].lock));
-								ret_id = ((u32)p_info - (u32)thread_table) / sizeof(thread_info);
+								ret_id = ((u32)p_info - (u32)thread_table) / sizeof(thread_info_t);
 								return ret_id;
 							}
 
@@ -1160,7 +1160,7 @@ u32 get_next_task()
 					p_node = task_queues[INT_LEVEL_IDLE].queue;
 
 					do {
-						p_info = (pthread_info)(p_node->p_item);
+						p_info = (pthread_info_t)(p_node->p_item);
 						current_tick = io_get_tick_count();
 
 						if(p_info->status == TASK_READY
@@ -1193,7 +1193,7 @@ u32 get_next_task()
 								}
 
 								pm_rls_raw_spn_lock(&(task_queues[INT_LEVEL_IDLE].lock));
-								ret_id = ((u32)p_info - (u32)thread_table) / sizeof(thread_info);
+								ret_id = ((u32)p_info - (u32)thread_table) / sizeof(thread_info_t);
 								return ret_id;
 							}
 
@@ -1242,19 +1242,19 @@ void reset_time_slice()
 {
 	u32 i;
 	plist_node p_node;
-	pthread_info p_info;
+	pthread_info_t p_info;
 
 	//IDLE threads
 	pm_acqr_raw_spn_lock(&(task_queues[INT_LEVEL_IDLE].lock));
 	p_node = task_queues[INT_LEVEL_IDLE].queue;
 
 	if(p_node != NULL) {
-		p_info = (pthread_info)(p_node->p_item);
+		p_info = (pthread_info_t)(p_node->p_item);
 
 		if(p_info->status_info.ready.time_slice == 0) {
 			//Reset time slice
 			do {
-				p_info = (pthread_info)(p_node->p_item);
+				p_info = (pthread_info_t)(p_node->p_item);
 				p_info->status_info.ready.time_slice = 1;
 				p_node = p_node->p_next;
 			} while(p_node != task_queues[INT_LEVEL_IDLE].queue);
@@ -1269,11 +1269,11 @@ void reset_time_slice()
 		p_node = task_queues[i].queue;
 
 		if(p_node != NULL) {
-			p_info = (pthread_info)(p_node->p_item);
+			p_info = (pthread_info_t)(p_node->p_item);
 
 			//Reset time slice
 			do {
-				p_info = (pthread_info)(p_node->p_item);
+				p_info = (pthread_info_t)(p_node->p_item);
 				p_info->status_info.ready.time_slice = TIME_SLICE(i);
 				p_node = p_node->p_next;
 			} while(p_node != task_queues[i].queue);
