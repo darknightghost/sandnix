@@ -49,7 +49,7 @@ static	void		scroll_down(u16 line, u16 color);
 static	void		cls();
 
 static	char		panic_buf[1024];
-static	int_hndlr_info	unhndld_info;
+static	int_hndlr_info_t	unhndld_info;
 
 static	char*		excpt_tbl[] = {
 	"Succeed",

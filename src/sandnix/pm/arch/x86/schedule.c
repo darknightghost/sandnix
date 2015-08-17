@@ -276,7 +276,7 @@ u32 pm_create_thrd(thread_func entry,
 	u32 new_id;
 	u8* p_stack;
 	pusr_thread_info p_usr_thread_info;
-	ret_regs regs;
+	ret_regs_t regs;
 
 	pm_acqr_spn_lock(&process_table_lock);
 	pm_acqr_spn_lock(&thread_table_lock);
@@ -350,12 +350,12 @@ u32 pm_create_thrd(thread_func entry,
 	}
 
 	//pushal
-	rtl_memset(&regs, 0, sizeof(ret_regs));
+	rtl_memset(&regs, 0, sizeof(ret_regs_t));
 	regs.ebp = (u32)((u8*)k_stack + KERNEL_STACK_SIZE);
 	regs.esp = (u32)p_stack;
 
-	p_stack -= sizeof(ret_regs);
-	rtl_memcpy(p_stack, &regs, sizeof(ret_regs));
+	p_stack -= sizeof(ret_regs_t);
+	rtl_memcpy(p_stack, &regs, sizeof(ret_regs_t));
 
 	//Set stack
 	thread_table[new_id].kernel_stack = k_stack;
@@ -387,7 +387,7 @@ s32 fork_thread(u32 new_proc_id)
 	void* k_stack;
 	u32 new_id;
 	u8* p_stack;
-	ret_regs regs;
+	ret_regs_t regs;
 	u32	esp;
 	u32 ebp;
 
@@ -478,8 +478,8 @@ s32 fork_thread(u32 new_proc_id)
 	regs.ebp = ebp;
 	regs.esp = (u32)p_stack;
 
-	p_stack -= sizeof(ret_regs);
-	rtl_memcpy(p_stack, &regs, sizeof(ret_regs));
+	p_stack -= sizeof(ret_regs_t);
+	rtl_memcpy(p_stack, &regs, sizeof(ret_regs_t));
 
 	//Set stack
 	thread_table[new_id].kernel_stack = k_stack;

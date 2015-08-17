@@ -29,7 +29,7 @@ spin_lock				mem_lock;
 static	void*			pdt_index_table[MAX_PROCESS_NUM];
 static	u32				current_pdt;
 static	char			pdt_copy_buf[sizeof(pde) * 1024];
-static	int_hndlr_info	pf_hndlr_info;
+static	int_hndlr_info_t	pf_hndlr_info;
 
 //memory allocation
 static	void*	kernel_mem_reserve(u32 base, u32 num);
