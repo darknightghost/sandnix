@@ -28,7 +28,7 @@ spin_lock				mem_lock;
 
 static	void*			pdt_index_table[MAX_PROCESS_NUM];
 static	u32				current_pdt;
-static	char			pdt_copy_buf[sizeof(pde) * 1024];
+static	char			pdt_copy_buf[sizeof(pde_t) * 1024];
 static	int_hndlr_info_t	pf_hndlr_info;
 
 //memory allocation
@@ -48,7 +48,7 @@ static	void	fork_pdt(u32 dest, u32 src);
 static	void	fork_user_pages(void* pt_phy_addr, void* src_pt_phy_addr);
 static	void	free_usr_pdt(u32 id);
 
-static	ppte	get_pte(u32 pdt, u32 index);
+static	ppte_t	get_pte(u32 pdt, u32 index);
 static	void	unused_pde_recycle(bool is_kernel);
 
 static	void	map_phy_addr(void* phy_addr);
@@ -61,7 +61,7 @@ static	bool	pf_hndlr(u32 int_num, u32 thread_id, u32 err_code);
 
 void init_paging()
 {
-	ppde p_pde;
+	ppde_t p_pde;
 	u32 i;
 
 	dbg_print("Initializing paging...\n");
@@ -74,7 +74,7 @@ void init_paging()
 	//Initialize PDT of process 0
 	dbg_print("Initializing  page table of process 0...\n");
 
-	for(i = 0, p_pde = (ppde)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET);
+	for(i = 0, p_pde = (ppde_t)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET);
 	    i < 1024;
 	    i++, p_pde++) {
 		if(i * 4096 * 1024 < KERNEL_MEM_BASE) {
@@ -108,8 +108,8 @@ void init_paging()
 
 bool pf_hndlr(u32 int_num, u32 thread_id, u32 err_code)
 {
-	ppde p_pde;
-	ppte p_pte;
+	ppde_t p_pde;
+	ppte_t p_pte;
 	u32 err_addr;
 	void* new_mem;
 	void* pt_addr;
@@ -117,7 +117,7 @@ bool pf_hndlr(u32 int_num, u32 thread_id, u32 err_code)
 
 	err_pdt = pm_int_get_thread_pdt(thread_id);
 
-	pf_err_code err = *(ppf_err_code)(&err_code);
+	pf_err_code_t err = *(ppf_err_code_t)(&err_code);
 
 
 	if(mem_lock.owner != mem_lock.next) {
@@ -135,7 +135,7 @@ bool pf_hndlr(u32 int_num, u32 thread_id, u32 err_code)
 	if(err.present == 0) {
 		//The page does not present
 		map_phy_addr(pdt_index_table[err_pdt]);
-		p_pde = (ppde)PT_MAPPING_ADDR + err_addr / 1024 / 4096;;
+		p_pde = (ppde_t)PT_MAPPING_ADDR + err_addr / 1024 / 4096;;
 
 		if(p_pde->present == PG_NP) {
 			switch_back();
@@ -143,7 +143,7 @@ bool pf_hndlr(u32 int_num, u32 thread_id, u32 err_code)
 		}
 
 		map_phy_addr((void*)(p_pde->page_table_base_addr << 12));
-		p_pte = (ppte)PT_MAPPING_ADDR + err_addr % (1024 * 4096) / 4096;
+		p_pte = (ppte_t)PT_MAPPING_ADDR + err_addr % (1024 * 4096) / 4096;
 
 		switch(p_pte->avail) {
 		case PG_SWAPPED:
@@ -168,10 +168,10 @@ bool pf_hndlr(u32 int_num, u32 thread_id, u32 err_code)
 
 		//The page is not writeable
 		map_phy_addr(pdt_index_table[err_pdt]);
-		p_pde = (ppde)PT_MAPPING_ADDR + err_addr / 1024 / 4096;
+		p_pde = (ppde_t)PT_MAPPING_ADDR + err_addr / 1024 / 4096;
 		pt_addr = (void*)(p_pde->page_table_base_addr << 12);
 		map_phy_addr(pt_addr);
-		p_pte = (ppte)PT_MAPPING_ADDR + err_addr % (1024 * 4096) / 4096;
+		p_pte = (ppte_t)PT_MAPPING_ADDR + err_addr % (1024 * 4096) / 4096;
 
 		switch(p_pte->avail) {
 		case PG_CP_ON_W_RW:
@@ -356,7 +356,7 @@ void mm_virt_free(void* start_addr, size_t size, u32 options)
 
 void* mm_virt_map(void* virt_addr, void* phy_addr)
 {
-	ppte p_pte;
+	ppte_t p_pte;
 	u32 base;
 
 	base = (u32)virt_addr / 4096;
@@ -404,7 +404,7 @@ void* mm_virt_map(void* virt_addr, void* phy_addr)
 
 void mm_virt_unmap(void* virt_addr)
 {
-	ppte p_pte;
+	ppte_t p_pte;
 	u32 base;
 
 	base = (u32)virt_addr / 4096;
@@ -522,7 +522,7 @@ void mm_get_info(pmem_info_t p_info)
 
 void* kernel_mem_reserve(u32 base, u32 num)
 {
-	ppte p_pte;
+	ppte_t p_pte;
 	u32 i;
 	u32 page_count;
 
@@ -614,7 +614,7 @@ void* kernel_mem_reserve(u32 base, u32 num)
 
 void* usr_mem_reserve(u32 base, u32 num)
 {
-	ppte p_pte;
+	ppte_t p_pte;
 	u32 i;
 	u32 page_count;
 
@@ -703,7 +703,7 @@ void* usr_mem_reserve(u32 base, u32 num)
 
 void* kernel_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr)
 {
-	ppte p_pte;
+	ppte_t p_pte;
 	u32 i;
 	void* phy_mem_addr;
 
@@ -757,7 +757,7 @@ void* kernel_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr)
 
 void* usr_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr)
 {
-	ppte p_pte;
+	ppte_t p_pte;
 	u32 i;
 	void* phy_mem_addr;
 
@@ -810,9 +810,9 @@ void* usr_mem_commit(u32 base, u32 num, bool dma_flag, u32 attr)
 
 void map_phy_addr(void* phy_addr)
 {
-	ppte p_pte;
+	ppte_t p_pte;
 
-	p_pte = (ppte)PT_MAPPING_PAGE;
+	p_pte = (ppte_t)PT_MAPPING_PAGE;
 	p_pte->present = PG_P;
 	p_pte->read_write = PG_RW;
 	p_pte->user_supervisor = PG_SUPERVISOR;
@@ -840,9 +840,9 @@ void sync_kernel_pdt()
 	for(i = 1; i < MAX_PROCESS_NUM; i++) {
 		if(pdt_index_table[i] != NULL) {
 			map_phy_addr(pdt_index_table[i]);
-			rtl_memcpy((void*)(PT_MAPPING_ADDR + sizeof(pde) * (KERNEL_MEM_BASE / 4096 / 1024)),
-			           (void*)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET + sizeof(pde) * (KERNEL_MEM_BASE / 4096 / 1024)),
-			           4096 - sizeof(pde) * (KERNEL_MEM_BASE / 4096 / 1024));
+			rtl_memcpy((void*)(PT_MAPPING_ADDR + sizeof(pde_t) * (KERNEL_MEM_BASE / 4096 / 1024)),
+			           (void*)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET + sizeof(pde_t) * (KERNEL_MEM_BASE / 4096 / 1024)),
+			           4096 - sizeof(pde_t) * (KERNEL_MEM_BASE / 4096 / 1024));
 		}
 	}
 
@@ -864,20 +864,20 @@ u32 get_free_pdt()
 
 void fork_pdt(u32 dest, u32 src)
 {
-	ppde p_pde;
+	ppde_t p_pde;
 	void* new_pdt;
 	void* new_pt;
 
 	//Copy kernel page directory table
-	rtl_memcpy((void*)(pdt_copy_buf + KERNEL_MEM_BASE / 4096 / 1024 * sizeof(pde)),
-	           (void*)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET + KERNEL_MEM_BASE / 4096 / 1024 * sizeof(pde)),
-	           4096 - KERNEL_MEM_BASE / 4096 / 1024 * sizeof(pde));
+	rtl_memcpy((void*)(pdt_copy_buf + KERNEL_MEM_BASE / 4096 / 1024 * sizeof(pde_t)),
+	           (void*)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET + KERNEL_MEM_BASE / 4096 / 1024 * sizeof(pde_t)),
+	           4096 - KERNEL_MEM_BASE / 4096 / 1024 * sizeof(pde_t));
 
 	//Copy user space page directory table
 	map_phy_addr(pdt_index_table[src]);
 	rtl_memcpy(pdt_copy_buf,
 	           (void*)(PT_MAPPING_ADDR),
-	           KERNEL_MEM_BASE / 4096 / 1024 * sizeof(pde));
+	           KERNEL_MEM_BASE / 4096 / 1024 * sizeof(pde_t));
 
 	//Allocate memory
 	new_pdt = alloc_physcl_page(NULL, 1);
@@ -895,8 +895,8 @@ void fork_pdt(u32 dest, u32 src)
 	           4096);
 
 	//Copy user space page tables
-	for(p_pde = (ppde)PT_MAPPING_ADDR;
-	    p_pde < (ppde)(PT_MAPPING_ADDR) + KERNEL_MEM_BASE / 4096 / 1024;
+	for(p_pde = (ppde_t)PT_MAPPING_ADDR;
+	    p_pde < (ppde_t)(PT_MAPPING_ADDR) + KERNEL_MEM_BASE / 4096 / 1024;
 	    p_pde++) {
 		map_phy_addr(new_pdt);
 
@@ -937,11 +937,11 @@ void fork_pdt(u32 dest, u32 src)
 
 void fork_user_pages(void* pt_phy_addr, void* src_pt_phy_addr)
 {
-	ppte p_pte;
+	ppte_t p_pte;
 
 
-	for(p_pte = (ppte)PT_MAPPING_ADDR;
-	    p_pte < (ppte)PT_MAPPING_ADDR + 1024;
+	for(p_pte = (ppte_t)PT_MAPPING_ADDR;
+	    p_pte < (ppte_t)PT_MAPPING_ADDR + 1024;
 	    p_pte++) {
 		map_phy_addr(pt_phy_addr);
 
@@ -995,8 +995,8 @@ void fork_user_pages(void* pt_phy_addr, void* src_pt_phy_addr)
 
 void free_usr_pdt(u32 id)
 {
-	ppde p_pde;
-	ppte p_pte;
+	ppde_t p_pde;
+	ppte_t p_pte;
 
 	//Check arguments
 	if(pdt_index_table[id] == NULL) {
@@ -1010,16 +1010,16 @@ void free_usr_pdt(u32 id)
 	rtl_memcpy(pdt_copy_buf, (void*)PT_MAPPING_ADDR, 4096);
 
 	//Free userspace memory
-	for(p_pde = (ppde)pdt_copy_buf;
-	    p_pde < (ppde)pdt_copy_buf + KERNEL_MEM_BASE / 1024 / 4096;
+	for(p_pde = (ppde_t)pdt_copy_buf;
+	    p_pde < (ppde_t)pdt_copy_buf + KERNEL_MEM_BASE / 1024 / 4096;
 	    p_pde++) {
 		if(p_pde->present == PG_P
 		   && p_pde->avail == PG_NORMAL) {
 			//Free page table
 			map_phy_addr((void*)((u32)(p_pde->page_table_base_addr) << 12));
 
-			for(p_pte = (ppte)PT_MAPPING_ADDR;
-			    p_pte < (ppte)PT_MAPPING_ADDR + 1024;
+			for(p_pte = (ppte_t)PT_MAPPING_ADDR;
+			    p_pte < (ppte_t)PT_MAPPING_ADDR + 1024;
 			    p_pte++) {
 				if(p_pte->present == PG_NP
 				   && p_pte->avail == PG_SWAPPED) {
@@ -1069,18 +1069,18 @@ void free_usr_pdt(u32 id)
 	return;
 }
 
-ppte get_pte(u32 pdt, u32 index)
+ppte_t get_pte(u32 pdt, u32 index)
 {
-	ppde p_pde;
-	ppte p_pte;
+	ppde_t p_pde;
+	ppte_t p_pte;
 	void* phy_mem_addr;
 
 	if(index >= KERNEL_MEM_BASE / 4096) {
-		p_pde = (ppde)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET);
+		p_pde = (ppde_t)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET);
 
 	} else {
 		map_phy_addr(pdt_index_table[pdt]);
-		p_pde = (ppde)(PT_MAPPING_ADDR);
+		p_pde = (ppde_t)(PT_MAPPING_ADDR);
 	}
 
 	p_pde += index / 1024;
@@ -1122,7 +1122,7 @@ ppte get_pte(u32 pdt, u32 index)
 		map_phy_addr((void*)(p_pde->page_table_base_addr << 12));
 	}
 
-	p_pte = (ppte)(PT_MAPPING_ADDR);
+	p_pte = (ppte_t)(PT_MAPPING_ADDR);
 	p_pte += index % 1024;
 
 	return p_pte;
@@ -1131,21 +1131,21 @@ ppte get_pte(u32 pdt, u32 index)
 
 void unused_pde_recycle(bool is_kernel)
 {
-	ppte p_pte;
-	ppde p_pde;
+	ppte_t p_pte;
+	ppde_t p_pde;
 	u32 i, j;
 	bool recycle_flag;
 
 	if(is_kernel) {
 
-		for(i = KERNEL_MEM_BASE / 4096 / 1024, p_pde = (ppde)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET) + i;
+		for(i = KERNEL_MEM_BASE / 4096 / 1024, p_pde = (ppde_t)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET) + i;
 		    i < 1024;
 		    i++, p_pde++) {
 			if(p_pde->present == PG_P) {
 				map_phy_addr((void*)(p_pde->page_table_base_addr << 12));
 
-				//Check if the pde should be recycled
-				for(j = 0, p_pte = (ppte)(PT_MAPPING_ADDR), recycle_flag = true;
+				//Check if the pde_t should be recycled
+				for(j = 0, p_pte = (ppte_t)(PT_MAPPING_ADDR), recycle_flag = true;
 				    j < 1024;
 				    j++, p_pte++) {
 					if(p_pte->present == PG_P
@@ -1164,7 +1164,7 @@ void unused_pde_recycle(bool is_kernel)
 		}
 
 	} else {
-		for(i = 0, p_pde = (ppde)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET);
+		for(i = 0, p_pde = (ppde_t)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET);
 		    i < KERNEL_MEM_BASE / 1024 / 4096;
 		    i++, p_pde++) {
 			map_phy_addr(pdt_index_table[current_pdt]);
@@ -1172,8 +1172,8 @@ void unused_pde_recycle(bool is_kernel)
 			if(p_pde->present == PG_P) {
 				map_phy_addr((void*)(p_pde->page_table_base_addr << 12));
 
-				//Check if the pde should be recycled
-				for(j = 0, p_pte = (ppte)(PT_MAPPING_ADDR), recycle_flag = true;
+				//Check if the pde_t should be recycled
+				for(j = 0, p_pte = (ppte_t)(PT_MAPPING_ADDR), recycle_flag = true;
 				    j < 1024;
 				    j++, p_pte++) {
 					if(p_pte->present == PG_P
@@ -1197,7 +1197,7 @@ void unused_pde_recycle(bool is_kernel)
 
 void kernel_mem_uncommit(u32 base, u32 num)
 {
-	ppte p_pte;
+	ppte_t p_pte;
 	u32 i;
 
 	//Check arguments
@@ -1243,7 +1243,7 @@ void kernel_mem_uncommit(u32 base, u32 num)
 
 void usr_mem_uncommit(u32 base, u32 num)
 {
-	ppte p_pte;
+	ppte_t p_pte;
 	u32 i;
 
 	//Check arguments
@@ -1289,7 +1289,7 @@ void usr_mem_uncommit(u32 base, u32 num)
 
 void kernel_mem_unreserve(u32 base, u32 num)
 {
-	ppte p_pte;
+	ppte_t p_pte;
 	u32 i;
 
 	//Check arguments
@@ -1328,7 +1328,7 @@ void kernel_mem_unreserve(u32 base, u32 num)
 
 void usr_mem_unreserve(u32 base, u32 num)
 {
-	ppte p_pte;
+	ppte_t p_pte;
 	u32 i;
 
 	//Check arguments

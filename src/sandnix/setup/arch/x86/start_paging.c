@@ -23,12 +23,12 @@ void start_paging()
 {
 	u32 i;
 	u32 mapped_size;
-	ppde p_pde;
-	ppte p_pte;
+	ppde_t p_pde;
+	ppte_t p_pte;
 
 	//Initialize PTE
 	//These pages should be mapped
-	for(mapped_size = 0, p_pte = (ppte)TMP_PAGE_TABLE_BASE;
+	for(mapped_size = 0, p_pte = (ppte_t)TMP_PAGE_TABLE_BASE;
 	    mapped_size < TMP_PAGED_MEM_SIZE;
 	    mapped_size += 4 * 1024, p_pte++) {
 		p_pte->present = PG_P;
@@ -45,7 +45,7 @@ void start_paging()
 	}
 
 	//These pages should not mapped
-	while(p_pte < (ppte)(TMP_PAGE_TABLE_BASE + TMP_PAGE_SIZE)) {
+	while(p_pte < (ppte_t)(TMP_PAGE_TABLE_BASE + TMP_PAGE_SIZE)) {
 		p_pte->present = PG_NP;
 		p_pte->read_write = PG_RW;
 		p_pte->user_supervisor = PG_SUPERVISOR;
@@ -61,7 +61,7 @@ void start_paging()
 	}
 
 	//Initialize PDE
-	for(i = 0, p_pde = (ppde)TMP_PDT_BASE;
+	for(i = 0, p_pde = (ppde_t)TMP_PDT_BASE;
 	    i < 1024;
 	    i++, p_pde++) {
 		if(i * 4096 * 1024 < TMP_PAGED_MEM_SIZE) {
