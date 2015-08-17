@@ -23,12 +23,12 @@
 
 typedef	struct	_fs_info {
 	char* fs_name;
-} fs_info, *pfs_info;
+} fs_info_t, *pfs_info_t;
 
 void			vfs_init();
 
 //File system
-k_status		vfs_reg_filesystem(pfs_info fs);
+k_status		vfs_reg_filesystem(pfs_info_t fs);
 bool			vfs_unreg_filesystem();
 
 //Devices

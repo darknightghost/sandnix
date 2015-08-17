@@ -15,9 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	MEMSET_H_INCLUDE
-#define	MEMSET_H_INCLUDE
+/*
+	Don't compile,only used to get kernel base address while compiling.
+*/
 
-extern char mem_info[500 + 4];
+#include "kernel_image.h"
 
-#endif	//!	MEMSET_H_INCLUDE
+KERNEL_BASE
