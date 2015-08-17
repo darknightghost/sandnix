@@ -39,7 +39,7 @@ typedef	struct	{
 	u32		pde_table_num;
 	u32		pte_table_num;
 	u32		shared_pages;
-} mem_info, *pmem_info;
+} mem_info_t, *pmem_info_t;
 
 #endif	//X86
 
@@ -80,7 +80,7 @@ void				mm_pg_tbl_switch(u32 pdt_id);				//pm only
 void				mm_pg_tbl_usr_spc_clear(u32 pdt_id);
 
 //Status
-void				mm_get_info(pmem_info p_info);
+void				mm_get_info(pmem_info_t p_info);
 
 //Share memories
 //PMO=Page mapping object

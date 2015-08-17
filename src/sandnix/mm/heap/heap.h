@@ -35,16 +35,16 @@ typedef	struct _mem_block_head {
 	u8*							start_addr;
 	int							allocated_flag;
 	size_t						size;
-} mem_block_head, *pmem_block_head;
+} mem_block_head_t, *pmem_block_head_t;
 
 typedef	struct _heap_head {
 	struct _heap_head*			p_prev;
 	struct _heap_head*			p_next;
-	pmem_block_head				p_first_empty_block;
+	pmem_block_head_t				p_first_empty_block;
 	size_t						scale;
 	u32							attr;
 	spin_lock					lock;
-} heap_head, *pheap_head;
+} heap_head_t, *pheap_head_t;
 
 #pragma pack()
 

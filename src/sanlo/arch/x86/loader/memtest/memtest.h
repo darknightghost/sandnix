@@ -18,6 +18,6 @@
 #ifndef	MEMSET_H_INCLUDE
 #define	MEMSET_H_INCLUDE
 
-extern char mem_info[500 + 4];
+extern char mem_info_t[500 + 4];
 
 #endif	//!	MEMSET_H_INCLUDE

@@ -107,7 +107,7 @@ bool load_os_kernel(char* path, char* parameters)
 	*(char**)KERNEL_PARAMETER_PHYSICAL = parameters;
 
 	//Copy memory info address
-	*(void**)KERNEL_MEM_INFO_PHYSICAL = GET_REAL_ADDR(mem_info);
+	*(void**)KERNEL_MEM_INFO_PHYSICAL = GET_REAL_ADDR(mem_info_t);
 
 	print_string(
 	    GET_REAL_ADDR("Loading ramdisk...\n"),

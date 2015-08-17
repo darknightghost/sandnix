@@ -25,9 +25,9 @@ typedef	struct _param_info {
 	char*	root_partition;
 	char*	driver_init;
 	char*	init;
-} param_info, *pparam_info;
+} param_info_t, *pparam_info_t;
 
-extern	param_info		kernel_param;
+extern	param_info_t		kernel_param;
 
 void	get_kernel_param();
 

@@ -515,7 +515,7 @@ void mm_pg_tbl_usr_spc_clear(u32 pdt_id)
 }
 
 //Status
-void mm_get_info(pmem_info p_info)
+void mm_get_info(pmem_info_t p_info)
 {
 	//TODO:Return memory info
 }

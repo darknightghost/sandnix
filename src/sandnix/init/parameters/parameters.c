@@ -25,7 +25,7 @@ static	bool	get_parameter_name(char* buf, char** p);
 static	bool	get_parameter_value(char* buf, char** p);
 static	void	check_kernel_param();
 
-param_info		kernel_param;
+param_info_t		kernel_param;
 
 
 void get_kernel_param()
@@ -33,7 +33,7 @@ void get_kernel_param()
 	char* p_param;
 	char* buf;
 
-	rtl_memset(&kernel_param, 0, sizeof(param_info));
+	rtl_memset(&kernel_param, 0, sizeof(param_info_t));
 	p_param = *(char**)(KERNEL_PARAMETER);
 	buf = mm_hp_alloc(512, NULL);
 
