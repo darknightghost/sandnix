@@ -21,14 +21,14 @@
 #include "../../../exceptions/exceptions.h"
 #include "../../../debug/debug.h"
 
-static	idt			idt_table[256];
+static	idt_t			idt_table[256];
 static	void		setup_8259A();
 static	void		setup_clock();
 extern	u32			tick_count;
 
 void init_idt()
 {
-	idt_reg idt;
+	idt_reg_t idt_t;
 
 	dbg_print("%s", "Setting up 8259A...\n");
 	setup_8259A();
@@ -297,11 +297,11 @@ void init_idt()
 	SET_NORMAL_IDT(idt_table, 0xFF);
 
 	//Load IDT
-	idt.base = (u32)idt_table;
-	idt.limit = 256 * sizeof(idt) - 1;
+	idt_t.base = (u32)idt_table;
+	idt_t.limit = 256 * sizeof(idt_t) - 1;
 	__asm__ __volatile__(
 	    "lidt		%0\n\t"
-	    ::"m"(idt));
+	    ::"m"(idt_t));
 
 	//Set IOPL
 	__asm__ __volatile__(

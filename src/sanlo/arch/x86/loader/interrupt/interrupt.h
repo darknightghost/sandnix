@@ -23,10 +23,10 @@
 
 #pragma	pack(1)
 
-typedef struct idt_reg {
+typedef struct idt_reg_t {
 	u16		limit;
 	u32		base;
-} idt_reg, *pidt_reg;
+} idt_reg_t, *pidt_reg_t;
 
 typedef	struct	_idt {
 	u16		offset1;			//0-15 bits of offset
@@ -40,7 +40,7 @@ typedef	struct	_idt {
 		u16		p: 1;			//Segment present flag
 	} attr;
 	u16		offset2;			//16-32 bits of offset
-} idt, *pidt;
+} idt_t, *pidt_t;
 #pragma	pack()
 
 #define		TYPE_TRAP			0x0F
@@ -48,7 +48,7 @@ typedef	struct	_idt {
 
 #define		INTERRUPT_MAX_NUM		256
 #define		IDT_BASE_ADDR			0x00000100
-#define		GET_IDT(num)			((pidt)(IDT_BASE_ADDR+(num)*sizeof(idt)))
+#define		GET_IDT(num)			((pidt_t)(IDT_BASE_ADDR+(num)*sizeof(idt_t)))
 #define		SET_IDT(num,func,cs_selector,d_type,d_s,d_dpl,s_p) {\
 		GET_IDT((num))->offset1=(u32)GET_REAL_ADDR((func))&0x0000FFFF;\
 		GET_IDT((num))->offset2=(((u32)GET_REAL_ADDR((func))&0xFFFF0000)>>16);\
