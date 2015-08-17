@@ -25,7 +25,7 @@ ppmo mm_pmo_create(size_t size)
 	ppmo ret;
 
 	//Allocate memory
-	ret = mm_hp_alloc(sizeof(pmo), NULL);
+	ret = mm_hp_alloc(sizeof(pmo_t), NULL);
 
 	//Allocate physical memory
 	ret->size = ((size % 4096 ? 1 : 0) + size / 4096) * 4096;
@@ -109,7 +109,7 @@ void decrease_pmo_ref(ppmo p_pmo)
 	(p_pmo->ref_count)--;
 
 	if(p_pmo->ref_count == 0) {
-		//Destroy the pmo
+		//Destroy the pmo_t
 		free_physcl_page(p_pmo->phy_addr, p_pmo->size / 4096);
 		mm_hp_free(p_pmo, NULL);
 	}

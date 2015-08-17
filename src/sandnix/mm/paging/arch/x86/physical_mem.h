@@ -40,12 +40,12 @@ typedef struct _e820_table {
 	u32		len_l;
 	u32		len_h;
 	u32		type;
-} e820_table, *pe820_table;
+} e820_table_t, *pe820_table_t;
 
 typedef	struct	_phy_page_state {
 	u8	status;
 	u16	ref_count;
-} phy_page_state, pphy_page_state;
+} phy_page_state_t, pphy_page_state_t;
 #pragma pack()
 
 void		init_phy_mem();

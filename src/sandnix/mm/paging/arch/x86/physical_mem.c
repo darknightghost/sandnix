@@ -25,7 +25,7 @@
 
 #define	PHY_PAGE_INFO(addr)	phy_mem_info[(addr)/4/1024]
 
-static	phy_page_state	phy_mem_info[1024 * 1024];
+static	phy_page_state_t	phy_mem_info[1024 * 1024];
 
 static	void			print_phy_mem();
 static	void			print_e820();
@@ -36,7 +36,7 @@ void init_phy_mem()
 {
 	u32 num;
 	u32 i, base, end;
-	pe820_table p_table;
+	pe820_table_t p_table;
 
 	print_e820();
 
@@ -45,7 +45,7 @@ void init_phy_mem()
 	rtl_memset(phy_mem_info, 0, sizeof(phy_mem_info));
 	num = **(u32**)KERNEL_MEM_INFO;
 
-	for(p_table = (pe820_table)(*(u32**)KERNEL_MEM_INFO + 1), i = 0;
+	for(p_table = (pe820_table_t)(*(u32**)KERNEL_MEM_INFO + 1), i = 0;
 	    i < num && p_table->base_addr_h == 0;
 	    i++, p_table++) {
 		base = p_table->base_addr_l / 4096;
@@ -327,7 +327,7 @@ void get_phy_mem_info(u32* phy_mem_num, u32* usable_num)
 }
 
 
-phy_page_state mm_phy_mem_state_get(void* addr)
+phy_page_state_t mm_phy_mem_state_get(void* addr)
 {
 	return phy_mem_info[(u32)addr / 4096];
 }
@@ -335,7 +335,7 @@ phy_page_state mm_phy_mem_state_get(void* addr)
 void print_e820()
 {
 	u32 i;
-	pe820_table p_table;
+	pe820_table_t p_table;
 	u32 num;
 
 	dbg_print("Bios e820 info:\n");
@@ -343,7 +343,7 @@ void print_e820()
 
 	num = **(u32**)KERNEL_MEM_INFO;
 
-	for(p_table = (pe820_table)(*(u32**)KERNEL_MEM_INFO + 1), i = 0;
+	for(p_table = (pe820_table_t)(*(u32**)KERNEL_MEM_INFO + 1), i = 0;
 	    i < num && p_table->base_addr_h == 0;
 	    i++, p_table++) {
 		dbg_print("%-p-->%-12p",

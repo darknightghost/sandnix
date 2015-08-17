@@ -61,7 +61,7 @@ typedef	struct	{
 void		mm_init();
 
 //Physical memory
-phy_page_state		mm_phy_mem_state_get(void* addr);
+phy_page_state_t		mm_phy_mem_state_get(void* addr);
 
 //Virtual memory
 void*				mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr);
