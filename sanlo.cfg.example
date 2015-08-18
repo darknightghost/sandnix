@@ -1,6 +1,6 @@
 sanlo_version 0.0.1
 
 menu_entry "Sandnix default"
-kernel (hd0,0)/boot/sandnix_0.0.1 root="(hd0,0)" driver_init="/driver/init" init="/sbin/init"
+kernel	(hd0,0)/boot/sandnix_0.0.1 root="(hd0,0)" driver_init="/driver/init" init="/sbin/init"
 initrd	(hd0,0)/boot/initrd
 

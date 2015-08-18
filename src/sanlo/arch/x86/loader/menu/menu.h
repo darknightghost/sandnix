@@ -26,6 +26,7 @@ typedef	struct	_menu_item {
 	char*				name;
 	char*				kernel_path;
 	char*				parameter;
+	char*				initrd;
 } menu_item, *pmenu_item, *menu_item_list;
 
 typedef	struct	_menu {
