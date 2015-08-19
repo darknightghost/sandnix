@@ -20,6 +20,7 @@
 
 #include "../../common/common.h"
 #include "./fs/fs.h"
+#include "./om/om.h"
 
 typedef	struct	_fs_info {
 	char* fs_name;
@@ -43,10 +44,19 @@ bool			vfs_inc_fdesc_reference(u32 file_descriptor);
 k_status		vfs_chmod(u32 fd, u32 mode);
 bool			vfs_access(char* path, u32 mode);
 bool			vfs_close(u32 fd);
-size_t			vfs_read(int fd, void* buf, size_t count);
-size_t			vfs_write(int fd, void* buf, size_t count);
+size_t			vfs_read(u32 fd, void* buf, size_t count);
+size_t			vfs_write(u32 fd, void* buf, size_t count);
+size_t			vfs_seek(u32 fd, u32 pos, size_t offset);
 void			vfs_sync();
 bool			vfs_syncfs(u32 fd);
 s32				vfs_ioctl(u32 fd, u32 request, ...);
+
+//Objects
+void	vfs_create_object();
+void	vfs_inc_obj_reference();
+void	vfs_dec_obj_reference();
+
+//Dirver Objects
+//Device objects
 
 #endif	//!	VFS_H_INCLUDE

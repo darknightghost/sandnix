@@ -214,11 +214,13 @@ bool load_initrd(char* path)
 		return false;
 	}
 
-	if(fp->size > RAMDISK_SIZE) {
+	*(u32*)(RAMDISK_PHYSICAL) = fp->size;
+
+	if(fp->size > RAMDISK_SIZE - 4) {
 		panic(EXCEPTION_RAMDISK_TOO_LARGE);
 	}
 
-	if(read(fp, (u8*)RAMDISK_PHYSICAL, fp->size) != fp->size) {
+	if(read(fp, (u8*)(RAMDISK_PHYSICAL + 4), fp->size) != fp->size) {
 		return false;
 	}
 
