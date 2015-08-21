@@ -21,17 +21,18 @@
 #include "../../common/common.h"
 #include "../mm/mm.h"
 #include "../rtl/rtl.h"
+#include "../vfs/vfs.h"
 
 #define	MAX_MSG_QUEUE_NUM		65535
 
 //Types
 typedef	struct	_msg {
-	u32		message;
-	u32		status;
-	u32		msg_id;
-	u32		src_thread;
-	u32		result_queue;
-	u32		driver_id;
+	u32				message;
+	u32				status;
+	u32				msg_id;
+	u32				src_thread;
+	u32				result_queue;
+	pdriver_obj_t	src_driver;
 	union {
 		u32	flags;
 		struct {

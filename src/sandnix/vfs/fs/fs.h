@@ -20,4 +20,7 @@
 
 #include "../vfs.h"
 
+k_status		regist_fs_driver(pdevice_obj_t p_fs_obj);
+k_status		unregist_fs_driver(pdevice_obj_t p_fs_obj);
+
 #endif	//!	FS_H_INCLUDE

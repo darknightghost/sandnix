@@ -21,16 +21,9 @@
 #include "../../common/common.h"
 #include "./fs/fs.h"
 #include "./om/om.h"
-
-typedef	struct	_fs_info {
-	char* fs_name;
-} fs_info_t, *pfs_info_t;
+#include "../msg/msg.h"
 
 void			vfs_init();
-
-//File system
-k_status		vfs_reg_filesystem(pfs_info_t fs);
-bool			vfs_unreg_filesystem();
 
 //Devices
 k_status		vfs_mount(char* src, char* target,
@@ -39,24 +32,29 @@ k_status		vfs_mount(char* src, char* target,
 k_status		vfs_umount(char* path);
 
 //Files
-u32				vfs_open(char* path, u32 flags, u32 mode);
-bool			vfs_inc_fdesc_reference(u32 file_descriptor);
-k_status		vfs_chmod(u32 fd, u32 mode);
+pfile_obj_t		vfs_open(char* path, u32 flags, u32 mode);
+k_status		vfs_chmod(pfile_obj_t fo fd, u32 mode);
 bool			vfs_access(char* path, u32 mode);
-bool			vfs_close(u32 fd);
-size_t			vfs_read(u32 fd, void* buf, size_t count);
-size_t			vfs_write(u32 fd, void* buf, size_t count);
-size_t			vfs_seek(u32 fd, u32 pos, size_t offset);
+bool			vfs_close(pfile_obj_t fo);
+size_t			vfs_read(pfile_obj_t fo, void* buf, size_t offset, size_t count);
+size_t			vfs_write(pfile_obj_t fo, void* buf, size_t offset, size_t count);
 void			vfs_sync();
-bool			vfs_syncfs(u32 fd);
-s32				vfs_ioctl(u32 fd, u32 request, ...);
+bool			vfs_syncfs(pfile_obj_t fo);
+s32				vfs_ioctl(pfile_obj_t fo, u32 request, ...);
 
 //Objects
-void	vfs_create_object();
-void	vfs_inc_obj_reference();
-void	vfs_dec_obj_reference();
+void			vfs_inc_obj_reference(pkobject_t p_object);
+void			vfs_dec_obj_reference(pkobject_t p_object);
 
-//Dirver Objects
+//Driver Objects
+k_status		vfs_regist_driver(pdriver_obj_t p_driver);
+k_status		vfs_send_drv_message(pdriver_obj_t p_src_driver,
+                                     pdriver_obj_t p_dest_driver,
+                                     pmsg_t p_msg);
+k_status		vfs_recv_drv_message(pdriver_obj_t p_driver, pmsg_t	buf);
+
 //Device objects
+void			vfs_add_device();
+void			vfs_remove_device();
 
 #endif	//!	VFS_H_INCLUDE
