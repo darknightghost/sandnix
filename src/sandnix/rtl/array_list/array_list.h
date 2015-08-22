@@ -24,13 +24,20 @@ typedef	struct	_array_list_node {
 	size_t	scale;
 	size_t	remains;
 	void**	p_datas;
-} array_list_node_t, *parray_list_node_t, *array_list_t;
+} array_list_node_t, *parray_list_node_t;
 
-k_status		rtl_array_list_init(array_list_t* p_array,	//Which array
+typedef	struct {
+	u32					num;
+	u32					size;
+	parray_list_node_t*	p_nodes;
+} array_list_t, *parray_list_t;
+
+k_status		rtl_array_list_init(parray_list_t p_array,	//Which array
                                     void* heap,				//Which heap
                                     size_t size);			//How many items
-void*			rtl_array_list_get(array_list_t array, u32 index, void* heap);
-k_status		rtl_array_list_set(array_list_t array, u32 index, void* value, void* heap);
-void			rtl_array_list_release(array_list_t array, u32 index, void* heap);
+void*			rtl_array_list_get(parray_list_t p_array, u32 index);
+k_status		rtl_array_list_set(parray_list_t p_array, u32 index, void* p_item, void* heap);
+void			rtl_array_list_release(parray_list_t p_array, u32 index, void* heap);
+u32				rtl_array_list_get_free_index(parray_list_t p_array);
 
 #endif	//!	ARRAY_LIST_H_INCLUDE

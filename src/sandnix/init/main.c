@@ -22,6 +22,7 @@
 #include "../io/io.h"
 #include "../mm/mm.h"
 #include "../pm/pm.h"
+#include "../rtl/rtl.h"
 
 
 void test();
@@ -61,24 +62,35 @@ void kernel_main()
 
 void test_thread(u32 thread_id, void* p_args)
 {
+	u32 i, j;
 	dbg_print("I'm thread %u.\n", thread_id);
-	pm_exit_thrd(thread_id);
+
+	for(i = 0; i < 10; i++) {
+		dbg_print("c\n");
+
+		for(j = 0; j < 1000000; j++);
+	}
+
+	dbg_print("sqrt(10000) is %u.\n", (u32)rtl_sqrt(10000.0));
+
+	pm_exit_thrd(1234);
 	UNREFERRED_PARAMETER(p_args);
 }
 
 void test()
 {
-	u32 exit_code = 0;
+	u32 i, j;
 
 	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST / 5);
-	pm_create_thrd((thread_func)test_thread, true, false, INT_LEVEL_USR_HIGHEST / 5, NULL);
-	pm_create_thrd((thread_func)test_thread, true, false, INT_LEVEL_USR_HIGHEST / 5, NULL);
+	pm_create_thrd(test_thread, true, false, INT_LEVEL_USR_HIGHEST / 5, NULL);
 
-	exit_code = pm_join(0);
-	dbg_print("Exit code %u.\n", exit_code);
-	exit_code = pm_join(0);
-	dbg_print("Exit code %u.\n", exit_code);
+	for(i = 0; i < 10; i++) {
+		dbg_print("p\n");
 
+		for(j = 0; j < 1000000; j++);
+	}
+
+	dbg_print("Child thread exited with %u.\n", pm_join(0));
 
 	__asm__ __volatile__("nop\n\tnop\n\tnop\n\tnop\n\t");
 

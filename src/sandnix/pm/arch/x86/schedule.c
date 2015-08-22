@@ -93,7 +93,7 @@ void init_schedule()
 	sys_tss.io_map_base_addr = sizeof(sys_tss);
 
 	//Initialize task queue_t
-	dbg_print("Initializing task queue_t...\n");
+	dbg_print("Initializing task queue...\n");
 	current_thread = 0;
 	current_process = 0;
 	pm_init_spn_lock(&cpu0_schedule_lock);
@@ -119,7 +119,7 @@ void init_schedule()
 
 	if(p_new_node == NULL) {
 		excpt_panic(EFAULT,
-		            "Unable to initialize task queue_t!\n");
+		            "Unable to initialize task queue!\n");
 	}
 
 	thread_table[0].p_task_queue_node = p_new_node;
@@ -1024,7 +1024,7 @@ void switch_to(u32 thread_id)
 	__asm__ __volatile__(
 	    "fnsave	(%0)\n\t"
 	    "frstor	(%1)\n\t"
-	    ::"r"(&thread_table[current_thread]), "r"(&thread_table[thread_id]));
+	    ::"r"(&(thread_table[current_thread].fpu_data)), "r"(&(thread_table[thread_id].fpu_data)));
 
 	current_thread = thread_id;
 	current_process = proc_id;

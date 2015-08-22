@@ -90,5 +90,20 @@ u64 rtl_mod64(u64 dividend, u32 divisor)
 
 double rtl_sqrt(double num)
 {
+	double ret;
 
+	if(num >= 0) {
+		num = num;
+
+	} else {
+		num = -num;
+	}
+
+	__asm__ __volatile__(
+	    "fldl	(%0)\n\t"
+	    "fsqrt\n\t"
+	    "fstl	(%1)\n\t"
+	    ::"r"(&num), "r"(&ret));
+
+	return ret;
 }

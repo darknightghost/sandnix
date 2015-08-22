@@ -5,6 +5,7 @@ export SOURCES = init/main.c \
 					rtl/list/list.c \
 					rtl/stack/stack.c \
 					rtl/queue/queue.c \
+					rtl/array_list/array_list.c \
 					pm/pm.c \
 					init/parameters/parameters.c \
 					msg/msg.c
