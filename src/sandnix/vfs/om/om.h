@@ -21,6 +21,7 @@
 #include "../vfs.h"
 #include "../../pm/pm.h"
 #include "../../rtl/rtl.h"
+#include "sys/sys.h"
 
 typedef	struct	_kobject	kobject_t, *pkobject_t;
 
@@ -67,6 +68,11 @@ struct	_driver_obj {
 struct	_file_obj {
 	kobject_t		obj;
 	pdriver_obj_t	p_driver;
+	pdevice_obj_t	p_parent_dev;
+	list_t			child_list;
+	mutex_t			child_list_lock;
+	list_t			refered_proc_list;
+	mutex_t			refered_proc_list_lock;
 };
 
 struct	_device_obj {

@@ -715,7 +715,8 @@ u32 fork_descrpitor_list(u32 dest, u32 src)
 	if(p_node != NULL) {
 		do {
 			//Increase reference count
-			vfs_inc_fdesc_reference((u32)(p_node->p_item));
+			//TODO:
+			//	vfs_inc_fdesc_reference((u32)(p_node->p_item));
 
 			//Add to child's descriptor list_t
 			if(rtl_list_insert_after(&(process_table[dest].file_desc_list),
@@ -738,7 +739,9 @@ u32 fork_descrpitor_list(u32 dest, u32 src)
 
 void descriptor_destroy_callback(void* descriptor)
 {
-	vfs_close((u32)descriptor);
+	//TODO:
+	//	vfs_close((u32)descriptor);
+	UNREFERRED_PARAMETER(descriptor);
 	return;
 }
 

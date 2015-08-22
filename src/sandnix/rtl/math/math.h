@@ -22,5 +22,6 @@
 
 u64		rtl_div64(u64 dividend, u32 divisor);
 u64		rtl_mod64(u64 dividend, u32 divisor);
+double	rtl_sqrt(double num);
 
 #endif	//!	MATH_H_INCLUDE

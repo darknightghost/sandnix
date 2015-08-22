@@ -88,3 +88,7 @@ u64 rtl_mod64(u64 dividend, u32 divisor)
 	return tmp.part.high;
 }
 
+double rtl_sqrt(double num)
+{
+
+}

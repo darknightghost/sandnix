@@ -123,4 +123,15 @@ _kernel_mem_entry:
 		addl	$KERNEL_STACK_SIZE,%eax
 		movl	%eax,%esp
 		movl	%esp,%ebp
+		//Initialize fpu environment
+		fninit
+		movl	%cr0,%eax
+		//NE
+		bts		$5,%eax
+		//EM
+		btr		$2,%eax
+		//TS
+		btr		$3,%eax
+		//MP
+		btr		$1,%eax
 		lcalll	$SELECTOR_K_CODE,$kernel_main

@@ -90,6 +90,45 @@ typedef	struct _context {
 	u16		gs;
 } context_t, *pcontext_t;
 
+#pragma pack(1)
+typedef	struct {
+	u8		byte0;
+	u8		byte1;
+	u8		byte2;
+	u8		byte3;
+	u8		byte4;
+	u8		byte5;
+	u8		byte6;
+	u8		byte7;
+	u8		byte8;
+	u8		byte9;
+} fpu_data_reg_t, *pfpu_data_reg_t;
+typedef	struct {
+	struct {
+		u16		control_word;
+		u16		undefined0;
+		u16		status_word;
+		u16		undefined1;
+		u16		tag_word;
+		u16		undefined2;
+		u32		eip;
+		u16		cs_selector;
+		u16		op_code;
+		u32		operand;
+		u16		operand_selector;
+		u16		undefined3;
+	} environment;
+	fpu_data_reg_t		st0;
+	fpu_data_reg_t		st1;
+	fpu_data_reg_t		st2;
+	fpu_data_reg_t		st3;
+	fpu_data_reg_t		st4;
+	fpu_data_reg_t		st5;
+	fpu_data_reg_t		st6;
+	fpu_data_reg_t		st7;
+} fpu_env_t, *pfpu_env_t;
+#pragma pack()
+
 typedef	struct {
 	u32		start_tick;
 	u32		stop_tick;
@@ -105,20 +144,21 @@ typedef	union {
 } thread_status_info_t, pthread_status_info_t;
 
 typedef	struct {
-	bool				alloc_flag;
-	u32					process_id;
-	u8					level;			//Interrupt level <=> thread priority
-	u32					exit_code;
+	bool					alloc_flag;
+	u32						process_id;
+	u8						level;			//Interrupt level <=> thread priority
+	u32						exit_code;
 	plist_node_t			p_task_queue_node;
-	bool				break_flag;
-	u32					status;
+	bool					break_flag;
+	u32						status;
 	thread_status_info_t	status_info;
-	void*				kernel_stack;
-	void*				user_stack;
-	size_t				user_stack_size;
-	u32					errno;
-	u32					ebp;			//Ring0
-	u32					esp;			//Ring0
+	void*					kernel_stack;
+	void*					user_stack;
+	size_t					user_stack_size;
+	u32						errno;
+	u32						ebp;			//Ring0
+	u32						esp;			//Ring0
+	fpu_env_t				fpu_data;
 } thread_info_t, *pthread_info_t;
 
 typedef	struct	{
@@ -132,9 +172,8 @@ typedef	struct {
 	void*			p_args;
 } usr_thread_info_t, *pusr_thread_info_t;
 
-
 extern	u32				current_process;
-extern	thread_info_t		thread_table[MAX_THREAD_NUM];
+extern	thread_info_t	thread_table[MAX_THREAD_NUM];
 
 void	init_schedule();
 s32		fork_thread(u32 new_proc_id);

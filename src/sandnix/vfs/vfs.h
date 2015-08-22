@@ -19,9 +19,11 @@
 #define	VFS_H_INCLUDE
 
 #include "../../common/common.h"
-#include "./fs/fs.h"
 #include "./om/om.h"
+#include "./fs/fs.h"
 #include "../msg/msg.h"
+
+typedef	struct	_msg	msg_t, *pmsg_t;
 
 void			vfs_init();
 
@@ -33,7 +35,7 @@ k_status		vfs_umount(char* path);
 
 //Files
 pfile_obj_t		vfs_open(char* path, u32 flags, u32 mode);
-k_status		vfs_chmod(pfile_obj_t fo fd, u32 mode);
+k_status		vfs_chmod(pfile_obj_t fo, u32 mode);
 bool			vfs_access(char* path, u32 mode);
 bool			vfs_close(pfile_obj_t fo);
 size_t			vfs_read(pfile_obj_t fo, void* buf, size_t offset, size_t count);
@@ -54,7 +56,7 @@ k_status		vfs_send_drv_message(pdriver_obj_t p_src_driver,
 k_status		vfs_recv_drv_message(pdriver_obj_t p_driver, pmsg_t	buf);
 
 //Device objects
-void			vfs_add_device();
-void			vfs_remove_device();
+k_status		vfs_add_device(pdevice_obj_t p_device, pdriver_obj_t p_driver);
+void			vfs_remove_device(pdevice_obj_t p_device, pdriver_obj_t p_driver);
 
 #endif	//!	VFS_H_INCLUDE

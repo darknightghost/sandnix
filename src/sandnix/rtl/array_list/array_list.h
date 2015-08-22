@@ -15,31 +15,22 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	RTL_H_INCLUDE
-#define	RTL_H_INCLUDE
+#ifndef	ARRAY_LIST_H_INCLUDE
+#define	ARRAY_LIST_H_INCLUDE
 
-#include "../../common/common.h"
+#include "../rtl.h"
 
-#ifdef	X86
+typedef	struct	_array_list_node {
+	size_t	scale;
+	size_t	remains;
+	void**	p_datas;
+} array_list_node_t, *parray_list_node_t, *array_list_t;
 
-//Variable Arguments
-typedef	u8*				va_list;
+k_status		rtl_array_list_init(array_list_t* p_array,	//Which array
+                                    void* heap,				//Which heap
+                                    size_t size);			//How many items
+void*			rtl_array_list_get(array_list_t array, u32 index, void* heap);
+k_status		rtl_array_list_set(array_list_t array, u32 index, void* value, void* heap);
+void			rtl_array_list_release(array_list_t array, u32 index, void* heap);
 
-#define	va_start(ap,v)	((ap) = (va_list)&(v) + 4)
-
-#define	va_arg(ap,t)	((ap) += 4 ,(\
-                                     sizeof(t) <= 4\
-                                     ? *((t*)((ap)-4))\
-                                     : **((t**)((ap)-4))))
-
-#define	va_end(ap)		((ap) = (va_list)0)
-#endif	//!	X86
-
-#include "string/string.h"
-#include "math/math.h"
-#include "list/list.h"
-#include "queue/queue.h"
-#include "stack/stack.h"
-#include "array_list/array_list.h"
-
-#endif	//!	RTL_H_INCLUDE
+#endif	//!	ARRAY_LIST_H_INCLUDE

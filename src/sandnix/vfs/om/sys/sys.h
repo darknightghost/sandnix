@@ -15,31 +15,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	RTL_H_INCLUDE
-#define	RTL_H_INCLUDE
+#ifndef	SYS_H_INCLUDE
+#define	SYS_H_INCLUDE
 
-#include "../../common/common.h"
+#include "../../vfs.h"
 
-#ifdef	X86
-
-//Variable Arguments
-typedef	u8*				va_list;
-
-#define	va_start(ap,v)	((ap) = (va_list)&(v) + 4)
-
-#define	va_arg(ap,t)	((ap) += 4 ,(\
-                                     sizeof(t) <= 4\
-                                     ? *((t*)((ap)-4))\
-                                     : **((t**)((ap)-4))))
-
-#define	va_end(ap)		((ap) = (va_list)0)
-#endif	//!	X86
-
-#include "string/string.h"
-#include "math/math.h"
-#include "list/list.h"
-#include "queue/queue.h"
-#include "stack/stack.h"
-#include "array_list/array_list.h"
-
-#endif	//!	RTL_H_INCLUDE
+#endif	//!	SYS_H_INCLUDE

@@ -293,7 +293,7 @@ u32 pm_create_thrd(thread_func entry,
 
 	thread_table[new_id].level = priority;
 
-	//Allocate kernel stack_t
+	//Allocate kernel stack
 	k_stack = mm_virt_alloc(NULL, KERNEL_STACK_SIZE,
 	                        MEM_RESERVE | MEM_COMMIT,
 	                        PAGE_WRITEABLE);
@@ -306,7 +306,7 @@ u32 pm_create_thrd(thread_func entry,
 		return 0;
 	}
 
-	//Prepare kernel stack_t
+	//Prepare kernel stack
 	p_stack = (u8*)k_stack + KERNEL_STACK_SIZE;
 
 	//Prepare parameters
@@ -357,10 +357,17 @@ u32 pm_create_thrd(thread_func entry,
 	p_stack -= sizeof(ret_regs_t);
 	rtl_memcpy(p_stack, &regs, sizeof(ret_regs_t));
 
-	//Set stack_t
+	//Set stack
 	thread_table[new_id].kernel_stack = k_stack;
 	thread_table[new_id].ebp = (u32)((u8*)k_stack + KERNEL_STACK_SIZE);
 	thread_table[new_id].esp = (u32)p_stack;
+
+	//Initialize fpu
+	rtl_memset(&(thread_table[new_id].fpu_data),
+	           0,
+	           sizeof(thread_table[new_id].fpu_data));
+	thread_table[new_id].fpu_data.environment.control_word = 0x037F;
+	thread_table[new_id].fpu_data.environment.tag_word = 0xFFFF;
 
 	if(is_user) {
 		add_proc_thrd(new_id, current_process);
@@ -1013,8 +1020,15 @@ void switch_to(u32 thread_id)
 		thread_table[current_thread].status = TASK_READY;
 	}
 
+	//Save&load fpu status
+	__asm__ __volatile__(
+	    "fnsave	(%0)\n\t"
+	    "frstor	(%1)\n\t"
+	    ::"r"(&thread_table[current_thread]), "r"(&thread_table[thread_id]));
+
 	current_thread = thread_id;
 	current_process = proc_id;
+
 	pm_rls_raw_spn_lock(&cpu0_schedule_lock);
 
 	//Set esp,ebp

@@ -15,31 +15,33 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	RTL_H_INCLUDE
-#define	RTL_H_INCLUDE
+#include "array_list.h"
+#include "../../mm/mm.h"
+#include "../../pm/pm.h"
+#include "../../exceptions/exceptions.h"
 
-#include "../../common/common.h"
+static	void	destroy_array_list(array_list_t array);
 
-#ifdef	X86
+k_status rtl_array_list_init(array_list_t* p_array,
+                             void* heap,
+                             size_t size)
+{
+	return 0;
+}
 
-//Variable Arguments
-typedef	u8*				va_list;
+void* rtl_array_list_get(array_list_t array, u32 index, void* heap)
+{
+	return NULL;
+}
 
-#define	va_start(ap,v)	((ap) = (va_list)&(v) + 4)
+k_status rtl_array_list_set(array_list_t array, u32 index, void* value, void* heap)
+{
+	return 0;
+}
 
-#define	va_arg(ap,t)	((ap) += 4 ,(\
-                                     sizeof(t) <= 4\
-                                     ? *((t*)((ap)-4))\
-                                     : **((t**)((ap)-4))))
+void rtl_array_list_release(array_list_t array, u32 index, void* heap);
 
-#define	va_end(ap)		((ap) = (va_list)0)
-#endif	//!	X86
-
-#include "string/string.h"
-#include "math/math.h"
-#include "list/list.h"
-#include "queue/queue.h"
-#include "stack/stack.h"
-#include "array_list/array_list.h"
-
-#endif	//!	RTL_H_INCLUDE
+void destroy_array_list(array_list_t array)
+{
+	return;
+}

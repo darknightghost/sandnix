@@ -38,8 +38,8 @@ plist_node_t		rtl_list_insert_after(
     plist_node_t position,		//Null if at the end of the list_t
     void* p_item,
     void* heap);
-void		rtl_list_remove(list_t* p_list, plist_node_t p_node, void* heap);
-plist_node_t	rtl_list_get_node_by_item(list_t lst, void* p_item);
-void		rtl_list_destroy(list_t* p_list, void* heap, item_destroyer_callback callback);
+void				rtl_list_remove(list_t* p_list, plist_node_t p_node, void* heap);
+plist_node_t		rtl_list_get_node_by_item(list_t lst, void* p_item);
+void				rtl_list_destroy(list_t* p_list, void* heap, item_destroyer_callback callback);
 
 #endif	//!	LIST_H_INCLUDE
