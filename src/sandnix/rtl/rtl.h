@@ -41,5 +41,6 @@ typedef	u8*				va_list;
 #include "queue/queue.h"
 #include "stack/stack.h"
 #include "array_list/array_list.h"
+#include "hash_table/hash_table.h"
 
 #endif	//!	RTL_H_INCLUDE

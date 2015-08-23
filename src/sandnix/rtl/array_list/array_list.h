@@ -18,7 +18,8 @@
 #ifndef	ARRAY_LIST_H_INCLUDE
 #define	ARRAY_LIST_H_INCLUDE
 
-#include "../rtl.h"
+#include "../../../common/common.h"
+#include "../list/list.h"
 
 typedef	struct	_array_list_node {
 	size_t	scale;				//Maxium iterms in the node
