@@ -32,7 +32,9 @@ typedef	struct	_msg {
 	u32				msg_id;
 	u32				src_thread;
 	u32				result_queue;
-	pdriver_obj_t	src_driver;
+	u32				src_dev;
+	u32				dev_num;
+	size_t			size;
 	union {
 		u32	flags;
 		struct {
@@ -92,7 +94,7 @@ u32			msg_queue_create();
 void		msg_queue_destroy(u32 id);
 
 //Mesage send&recv
-k_status	msg_create(pmsg_t *p_p_msg);
+k_status	msg_create(pmsg_t *p_p_msg, size_t size);
 k_status	msg_send(pmsg_t p_msg, u32 dest_queue, u32* p_result);
 k_status	msg_recv(pmsg_t* p_p_msg, u32 dest_queue, bool if_block);
 

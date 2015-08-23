@@ -21,23 +21,26 @@
 #include "../rtl.h"
 
 typedef	struct	_array_list_node {
-	size_t	scale;
-	size_t	remains;
-	void**	p_datas;
+	size_t	scale;				//Maxium iterms in the node
+	size_t	remains;			//How many iterms can be addded
+	void**	p_datas;			//Iterm table
 } array_list_node_t, *parray_list_node_t;
 
 typedef	struct {
-	u32					num;
-	u32					size;
-	parray_list_node_t*	p_nodes;
+	u32					num;		//Number of nodes
+	u32					size;		//Maxium iterms
+	parray_list_node_t*	p_nodes;	//Node table
 } array_list_t, *parray_list_t;
 
 k_status		rtl_array_list_init(parray_list_t p_array,	//Which array
-                                    void* heap,				//Which heap
-                                    size_t size);			//How many items
+                                    size_t size,			//How many items
+                                    void* heap);			//Which heap
 void*			rtl_array_list_get(parray_list_t p_array, u32 index);
 k_status		rtl_array_list_set(parray_list_t p_array, u32 index, void* p_item, void* heap);
 void			rtl_array_list_release(parray_list_t p_array, u32 index, void* heap);
 u32				rtl_array_list_get_free_index(parray_list_t p_array);
+void			rtl_array_list_destroy(parray_list_t p_array,
+                                       item_destroyer_callback callback,
+                                       void* heap);
 
 #endif	//!	ARRAY_LIST_H_INCLUDE

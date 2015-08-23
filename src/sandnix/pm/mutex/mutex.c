@@ -16,6 +16,7 @@
 */
 
 #include "../pm.h"
+#include "../../io/io.h"
 
 void pm_init_mutex(pmutex_t p_mutex)
 {
@@ -128,8 +129,8 @@ void pm_rls_mutex(pmutex_t p_mutex)
 
 	pm_acqr_spn_lock(&(p_mutex->lock));
 
-	//Release the mutex_t
-	p_mutex->is_acquired == false;
+	//Release the mutex
+	p_mutex->is_acquired = false;
 	p_node = p_mutex->acquire_list;
 
 	if(p_node == NULL) {
@@ -142,6 +143,7 @@ void pm_rls_mutex(pmutex_t p_mutex)
 	p_mutex->next_thread = (u32)(p_node->p_item);
 	pm_resume_thrd((u32)(p_node->p_item));
 	pm_rls_spn_lock(&(p_mutex->lock));
+
 	pm_set_errno(ESUCCESS);
 	return;
 }

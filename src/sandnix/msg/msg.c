@@ -21,7 +21,7 @@
 #include "../exceptions/exceptions.h"
 #include "../debug/debug.h"
 
-static	pmsg_queue_t		msg_queue_table[MAX_MSG_QUEUE_NUM];
+static	pmsg_queue_t	msg_queue_table[MAX_MSG_QUEUE_NUM];
 static	mutex_t			msg_queue_table_lock;
 static	u32				current_id;
 static	spinlock_t		id_lock;
@@ -29,7 +29,7 @@ static	spinlock_t		id_lock;
 
 void msg_init()
 {
-	dbg_print("\nInitializing msg_t...\n");
+	dbg_print("\nInitializing msg...\n");
 
 	rtl_memset(msg_queue_table, 0, sizeof(msg_queue_table));
 	pm_init_mutex(&msg_queue_table_lock);
@@ -120,19 +120,20 @@ void msg_queue_destroy(u32 id)
 	return;
 }
 
-k_status msg_create(pmsg_t* p_p_msg)
+k_status msg_create(pmsg_t* p_p_msg, size_t size)
 {
-	*p_p_msg = mm_hp_alloc(sizeof(msg_t), NULL);
+	*p_p_msg = mm_hp_alloc(size, NULL);
 
 	if(*p_p_msg == NULL) {
 		pm_set_errno(EFAULT);
 		return EFAULT;
 	}
 
-	rtl_memset(*p_p_msg, 0, sizeof(msg_t));
+	rtl_memset(*p_p_msg, 0, size);
 
 	//status
 	(*p_p_msg)->status = MSTATUS_FORWARD;
+	(*p_p_msg)->size = size;
 
 	//msg_id
 	pm_acqr_spn_lock(&id_lock);
@@ -319,7 +320,7 @@ k_status msg_complete(pmsg_t p_msg)
 
 		} else {
 			//Send complete message
-			status = msg_create(&p_complete_msg);
+			status = msg_create(&p_complete_msg, sizeof(msg_t));
 
 			if(status != ESUCCESS) {
 				return status;
@@ -376,7 +377,7 @@ k_status	msg_cancel(pmsg_t p_msg)
 
 		} else {
 			//Send cancel message
-			status = msg_create(&p_cancel_msg);
+			status = msg_create(&p_cancel_msg, sizeof(msg_t));
 
 			if(status != ESUCCESS) {
 				return status;

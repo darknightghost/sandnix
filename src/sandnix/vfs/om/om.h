@@ -49,11 +49,7 @@ struct	_kobject {
 
 //Files
 #define	OBJ_MN_NORMAL				0x00000001
-#define	OBJ_MN_BUS					0x00000002
-#define	OBJ_MN_DMA					0x00000003
-#define	OBJ_MN_CHAR					0x00000004
-#define	OBJ_MN_BLOCK				0x00000005
-#define	OBJ_MN_VIDEO				0x00000006
+#define	OBJ_MN_DEVICE				0x00000002
 
 typedef	struct	_driver_obj			driver_obj_t, *pdriver_obj_t;
 typedef	struct	_file_obj			file_obj_t, *pfile_obj_t;
@@ -61,6 +57,7 @@ typedef	struct	_device_obj			device_obj_t, *pdevice_obj_t;
 
 struct	_driver_obj {
 	kobject_t		obj;
+	u32				process_id;
 	list_t			file_list;
 	mutex_t			file_list_lock;
 };
@@ -77,8 +74,19 @@ struct	_file_obj {
 
 struct	_device_obj {
 	file_obj_t		file_obj;
+	u32				device_number;
 };
 
+#define	DEV_MJ_NUM_MAX		1024
+#define	DEV_MN_NUM_MAX		1024
+
+#define	DEV_NUM_MJ(dev_mun)	((0xFFFF0000 & (dev_num)) >> 16)
+#define	DEV_NUM_MN(dev_num)	(0x0000FFFF & (dev_num))
+#define	MK_DEV(mj,mn)		(((mj) << 16) | (0x0000FFFF & (mn)))
+
+typedef	struct	{
+	char*	name;
+} dev_mj_info_t, *pdev_mj_info_t;
 void		om_init();
 
 #endif	//!	OM_H_INCLUDE

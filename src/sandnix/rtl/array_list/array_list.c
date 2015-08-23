@@ -20,9 +20,10 @@
 #include "../../pm/pm.h"
 #include "../../exceptions/exceptions.h"
 
-k_status rtl_array_list_init(array_list_t* p_array,
-                             void* heap,
-                             size_t size)
+k_status rtl_array_list_init(parray_list_t p_array,
+                             size_t size,
+                             void* heap)
+
 {
 	if(size < 4) {
 		pm_set_errno(EINVAL);
@@ -37,6 +38,7 @@ k_status rtl_array_list_init(array_list_t* p_array,
 		(p_array->num)--;
 	}
 
+	//Allocate memory for node table
 	p_array->p_nodes = mm_hp_alloc(sizeof(void*) * (p_array->num), heap);
 
 	if(p_array->p_nodes == NULL) {
@@ -80,9 +82,11 @@ k_status rtl_array_list_set(parray_list_t p_array, u32 index, void* p_item, void
 		return EINVAL;
 	}
 
+	//Get the node
 	p_p_node = p_array->p_nodes + index / ((p_array->size) / (p_array->num));
 
 	if(*p_p_node == NULL) {
+		//Allocate memory for new node
 		*p_p_node = mm_hp_alloc(sizeof(array_list_node_t), heap);
 
 		if(*p_p_node == NULL) {
@@ -132,6 +136,7 @@ void rtl_array_list_release(parray_list_t p_array, u32 index, void* heap)
 		return;
 	}
 
+	//Get the node
 	p_p_node = p_array->p_nodes + index / ((p_array->size) / (p_array->num));
 
 	if(*p_p_node == NULL) {
@@ -147,6 +152,7 @@ void rtl_array_list_release(parray_list_t p_array, u32 index, void* heap)
 	}
 
 	if(p_node->scale == p_node->remains) {
+		//Release the node
 		mm_hp_free(p_node, heap);
 		*p_p_node = NULL;
 
@@ -168,6 +174,7 @@ u32 rtl_array_list_get_free_index(parray_list_t p_array)
 	p_p_node = p_array->p_nodes;
 
 	for(index = 0; index < p_array->size;) {
+		//Search for empty item
 		p_p_node = p_array->p_nodes + index / ((p_array->size) / (p_array->num));
 
 		if(*p_p_node == NULL) {
@@ -194,3 +201,35 @@ u32 rtl_array_list_get_free_index(parray_list_t p_array)
 	return 0;
 }
 
+void rtl_array_list_destroy(parray_list_t p_array,
+                            item_destroyer_callback callback,
+                            void* heap)
+{
+	parray_list_node_t* p_p_node;
+	u32 i, j;
+	void** p_p_item;
+
+	for(i = 0, p_p_node = p_array->p_nodes;
+	    i < p_array->num;
+	    i++, p_p_node++) {
+		if(*p_p_node != NULL) {
+			if(callback != NULL) {
+				for(j = 0, p_p_item = (*p_p_node)->p_datas;
+				    j < (*p_p_node)->scale;
+				    j++, p_p_item++) {
+					if(*p_p_item != NULL) {
+						callback(*p_p_item);
+					}
+				}
+			}
+
+			mm_hp_free((*p_p_node)->p_datas, heap);
+			mm_hp_free(*p_p_node, heap);
+		}
+	}
+
+	mm_hp_free(p_array->p_nodes, heap);
+
+	pm_set_errno(ESUCCESS);
+	return;
+}

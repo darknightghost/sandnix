@@ -16,5 +16,12 @@
 */
 
 #include "../vfs.h"
+#include "../../rtl/rtl.h"
 
-void		om_init();
+array_list_t		drivers_list;
+array_list_t		devices_list;
+
+void om_init()
+{
+
+}

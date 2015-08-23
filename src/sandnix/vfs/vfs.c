@@ -17,5 +17,7 @@
 
 #include "vfs.h"
 
-
-
+void vfs_init()
+{
+	om_init();
+}
