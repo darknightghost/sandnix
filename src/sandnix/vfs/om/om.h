@@ -77,8 +77,8 @@ struct	_device_obj {
 	u32				device_number;
 };
 
-#define	DEV_MJ_NUM_MAX		1024
-#define	DEV_MN_NUM_MAX		1024
+#define	DEV_MJ_NUM_MAX		512
+#define	DEV_MN_NUM_MAX		512
 
 #define	DEV_NUM_MJ(dev_mun)	((0xFFFF0000 & (dev_num)) >> 16)
 #define	DEV_NUM_MN(dev_num)	(0x0000FFFF & (dev_num))

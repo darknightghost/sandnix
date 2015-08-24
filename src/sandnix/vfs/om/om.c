@@ -22,7 +22,32 @@ array_list_t		drivers_list;
 array_list_t		devices_list;
 hash_table_t		dev_mj_index;
 
+static	u32			dev_mj_hash(char* name);
+static	bool		dev_mj_name_cmp(pdev_mj_info_t p_dev1, pdev_mj_info_t p_dev2);
+
 void om_init()
 {
+	rtl_array_list_init(&drivers_list, DEV_MJ_NUM_MAX, NULL);
+	rtl_array_list_init(&devices_list, DEV_MJ_NUM_MAX * DEV_MN_NUM_MAX, NULL);
+	rtl_hash_table_init(&dev_mj_index,
+	                    0,
+	                    0x0000FFFF / 2,
+	                    (hash_func_t)dev_mj_hash,
+	                    (compare_func_t)dev_mj_name_cmp,
+	                    NULL);
+}
 
+u32 dev_mj_hash(char* name)
+{
+	UNREFERRED_PARAMETER(name);
+	return 0;
+}
+
+bool dev_mj_name_cmp(pdev_mj_info_t p_dev1, pdev_mj_info_t p_dev2)
+{
+	if(rtl_strcmp(p_dev1->name, p_dev2->name) == 0) {
+		return true;
+	}
+
+	return false;
 }
