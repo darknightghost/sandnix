@@ -85,6 +85,7 @@ struct	_device_obj {
 #define	MK_DEV(mj,mn)		(((mj) << 16) | (0x0000FFFF & (mn)))
 
 typedef	struct	{
+	u32		mj_num;
 	char*	name;
 } dev_mj_info_t, *pdev_mj_info_t;
 void		om_init();

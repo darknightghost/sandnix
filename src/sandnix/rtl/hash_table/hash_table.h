@@ -21,17 +21,25 @@
 #include "../rtl.h"
 
 typedef	u32(*hash_func_t)(void*);
+typedef	bool(*compare_func_t)(void*, void*);
 typedef	struct {
 	u32				base;
 	u32				max;
 	array_list_t	table;
 	hash_func_t		hash_func;
+	compare_func_t	compare_func;
 } hash_table_t, *phash_table_t;
+
+typedef	struct	{
+	void*	index;
+	void*	p_item;
+} hash_table_index_node_t, *phash_table_index_node_t;
 
 k_status	rtl_hash_table_init(phash_table_t p_table,
                                 u32 base,
                                 u32 max,
                                 hash_func_t hash_func,
+                                compare_func_t compare_func,
                                 void* heap);
 k_status	rtl_hash_table_set(phash_table_t p_table,
                                void* index,
@@ -43,7 +51,6 @@ void		rtl_hash_table_remove(phash_table_t p_table,
                                   void* index,
                                   void* heap);
 void		rtl_hash_table_destroy(phash_table_t p_table,
-                                   item_destroyer_callback callback,
                                    void* heap);
 
 #endif	//!	HASH_TABLE_H_INCLUDE

@@ -203,6 +203,7 @@ u32 rtl_array_list_get_free_index(parray_list_t p_array)
 
 void rtl_array_list_destroy(parray_list_t p_array,
                             item_destroyer_callback callback,
+                            void* p_arg,
                             void* heap)
 {
 	parray_list_node_t* p_p_node;
@@ -218,7 +219,7 @@ void rtl_array_list_destroy(parray_list_t p_array,
 				    j < (*p_p_node)->scale;
 				    j++, p_p_item++) {
 					if(*p_p_item != NULL) {
-						callback(*p_p_item);
+						callback(*p_p_item, p_arg);
 					}
 				}
 			}

@@ -141,11 +141,11 @@ plist_node_t rtl_list_get_node_by_item(list_t lst, void* p_item)
 	return NULL;
 }
 
-void rtl_list_destroy(list_t* p_list, void* heap, item_destroyer_callback callback)
+void rtl_list_destroy(list_t* p_list, void* heap, item_destroyer_callback callback, void* p_arg)
 {
 	while(*p_list != NULL) {
 		if(callback != NULL) {
-			callback((*p_list)->p_item);
+			callback((*p_list)->p_item, p_arg);
 		}
 
 		rtl_list_remove(p_list, *p_list, heap);

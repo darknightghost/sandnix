@@ -30,7 +30,7 @@ void*			process_heap;
 
 static	u32			get_free_proc_id();
 static	u32			fork_descrpitor_list(u32 dest, u32 src);
-static	void		descriptor_destroy_callback(void* descriptor);
+static	void		descriptor_destroy_callback(void* descriptor, void* p_arg);
 static	u32			release_process(u32 process_id);
 static	void		awake_threads(list_t lst, u32 status);
 
@@ -110,7 +110,8 @@ s32	pm_fork()
 	if(new_thread < 0) {
 		rtl_list_destroy(&(process_table[new_id].file_desc_list),
 		                 process_heap,
-		                 descriptor_destroy_callback);
+		                 descriptor_destroy_callback,
+		                 NULL);
 		process_table[new_id].alloc_flag = false;
 		mm_pg_tbl_free(new_pdt);
 		pm_rls_spn_lock(&process_table_lock);
@@ -580,7 +581,8 @@ void zombie_proc_thrd(u32 thrd_id, u32 proc_id)
 		//Close all file descriptors
 		rtl_list_destroy(&(process_table[proc_id].file_desc_list),
 		                 process_heap,
-		                 descriptor_destroy_callback);
+		                 descriptor_destroy_callback,
+		                 NULL);
 
 		//Copy child list_t
 		p_node = process_table[proc_id].child_list;
@@ -725,7 +727,8 @@ u32 fork_descrpitor_list(u32 dest, u32 src)
 			                         process_heap) == NULL) {
 				rtl_list_destroy(&(process_table[dest].file_desc_list),
 				                 process_heap,
-				                 descriptor_destroy_callback);
+				                 descriptor_destroy_callback,
+				                 NULL);
 				return EAGAIN;
 
 			}
@@ -737,11 +740,12 @@ u32 fork_descrpitor_list(u32 dest, u32 src)
 	return ESUCCESS;
 }
 
-void descriptor_destroy_callback(void* descriptor)
+void descriptor_destroy_callback(void* descriptor, void* p_arg)
 {
 	//TODO:
 	//	vfs_close((u32)descriptor);
 	UNREFERRED_PARAMETER(descriptor);
+	UNREFERRED_PARAMETER(p_arg);
 	return;
 }
 

@@ -20,6 +20,7 @@
 
 array_list_t		drivers_list;
 array_list_t		devices_list;
+hash_table_t		dev_mj_index;
 
 void om_init()
 {

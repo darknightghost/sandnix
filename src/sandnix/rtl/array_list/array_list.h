@@ -42,6 +42,7 @@ void			rtl_array_list_release(parray_list_t p_array, u32 index, void* heap);
 u32				rtl_array_list_get_free_index(parray_list_t p_array);
 void			rtl_array_list_destroy(parray_list_t p_array,
                                        item_destroyer_callback callback,
+                                       void* p_arg,
                                        void* heap);
 
 #endif	//!	ARRAY_LIST_H_INCLUDE
