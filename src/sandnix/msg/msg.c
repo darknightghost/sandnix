@@ -29,7 +29,7 @@ static	spinlock_t		id_lock;
 
 void msg_init()
 {
-	dbg_print("\nInitializing msg...\n");
+	dbg_print("\nInitializing Message Manager module...\n");
 
 	rtl_memset(msg_queue_table, 0, sizeof(msg_queue_table));
 	pm_init_mutex(&msg_queue_table_lock);

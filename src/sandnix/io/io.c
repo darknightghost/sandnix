@@ -20,7 +20,7 @@
 
 void io_init()
 {
-	dbg_print("%s", "\nInitializing io module...\n");
+	dbg_print("%s", "\nInitializing IO module...\n");
 	#ifdef	X86
 	init_idt();
 	#endif	//X86.

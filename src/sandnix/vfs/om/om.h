@@ -22,6 +22,7 @@
 #include "../../pm/pm.h"
 #include "../../rtl/rtl.h"
 #include "sys/sys.h"
+#include "../../msg/msg.h"
 
 typedef	struct	_kobject	kobject_t, *pkobject_t;
 
@@ -58,6 +59,7 @@ typedef	struct	_device_obj			device_obj_t, *pdevice_obj_t;
 struct	_driver_obj {
 	kobject_t		obj;
 	u32				process_id;
+	u32				msg_queue;
 	list_t			file_list;
 	mutex_t			file_list_lock;
 };
@@ -85,8 +87,10 @@ struct	_device_obj {
 #define	MK_DEV(mj,mn)		(((mj) << 16) | (0x0000FFFF & (mn)))
 
 typedef	struct	{
-	u32		mj_num;
-	char*	name;
+	u32				mj_num;
+	char*			name;
+	char*			short_name;
+	array_list_t	devices;
 } dev_mj_info_t, *pdev_mj_info_t;
 void		om_init();
 

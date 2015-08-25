@@ -45,22 +45,24 @@ bool			vfs_syncfs(pfile_obj_t fo);
 s32				vfs_ioctl(pfile_obj_t fo, u32 request, ...);
 
 //Objects
+void			vfs_initialize_object(pkobject_t p_object);
 void			vfs_inc_obj_reference(pkobject_t p_object);
 void			vfs_dec_obj_reference(pkobject_t p_object);
 
 //Driver Objects
+pdriver_obj_t	vfs_create_drv_object(char* drv_name);
 u32				vfs_reg_driver(pdriver_obj_t p_driver);
-void			vfs_unreg_driver(u32 driver_id);
 k_status		vfs_send_drv_message(u32 dest_driver,
                                      pmsg_t p_msg);
 k_status		vfs_recv_drv_message(pmsg_t buf);
 
 //Device objects
+pdevice_obj_t	vfs_create_dev_object(char* dev_name);
 u32				vfs_add_device(pdevice_obj_t p_device, u32 driver);
 void			vfs_remove_device(u32 device);
 
 k_status		vfs_send_dev_message(u32 dest_dev,
                                      pmsg_t p_msg);
-u32				vfs_get_dev_major(char* major_name);
+u32				vfs_get_dev_major_by_name(char* major_name);
 
 #endif	//!	VFS_H_INCLUDE

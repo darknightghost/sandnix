@@ -16,8 +16,10 @@
 */
 
 #include "vfs.h"
+#include "../debug/debug.h"
 
 void vfs_init()
 {
+	dbg_print("\nInitializing Virtual Filesystem module...\n");
 	om_init();
 }
