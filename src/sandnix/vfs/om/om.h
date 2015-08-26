@@ -59,6 +59,7 @@ typedef	struct	_device_obj			device_obj_t, *pdevice_obj_t;
 struct	_driver_obj {
 	kobject_t		obj;
 	u32				process_id;
+	u32				driver_id;
 	u32				msg_queue;
 	list_t			file_list;
 	mutex_t			file_list_lock;
@@ -67,9 +68,8 @@ struct	_driver_obj {
 struct	_file_obj {
 	kobject_t		obj;
 	pdriver_obj_t	p_driver;
-	pdevice_obj_t	p_parent_dev;
-	list_t			child_list;
-	mutex_t			child_list_lock;
+	bool			has_parent;
+	u32				parent_dev;
 	list_t			refered_proc_list;
 	mutex_t			refered_proc_list_lock;
 };
@@ -77,20 +77,25 @@ struct	_file_obj {
 struct	_device_obj {
 	file_obj_t		file_obj;
 	u32				device_number;
+	list_t			child_list;
+	mutex_t			child_list_lock;
 };
 
 #define	DEV_MJ_NUM_MAX		512
 #define	DEV_MN_NUM_MAX		512
 
-#define	DEV_NUM_MJ(dev_mun)	((0xFFFF0000 & (dev_num)) >> 16)
+#define	DEV_NUM_MJ(dev_num)	((0xFFFF0001 & (dev_num)) >> 16)
 #define	DEV_NUM_MN(dev_num)	(0x0000FFFF & (dev_num))
 #define	MK_DEV(mj,mn)		(((mj) << 16) | (0x0000FFFF & (mn)))
+
+#define	INVALID_DEV			0xFFFFFFFF
+#define	INVALID_DRV			0xFFFFFFFF
 
 typedef	struct	{
 	u32				mj_num;
 	char*			name;
-	char*			short_name;
 	array_list_t	devices;
+	mutex_t			lock;
 } dev_mj_info_t, *pdev_mj_info_t;
 void		om_init();
 

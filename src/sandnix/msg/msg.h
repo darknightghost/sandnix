@@ -32,7 +32,6 @@ typedef	struct	_msg {
 	u32				msg_id;
 	u32				src_thread;
 	u32				result_queue;
-	u32				src_dev;
 	u32				dev_num;
 	size_t			size;
 	union {

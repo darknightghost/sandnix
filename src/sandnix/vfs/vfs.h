@@ -52,17 +52,22 @@ void			vfs_dec_obj_reference(pkobject_t p_object);
 //Driver Objects
 pdriver_obj_t	vfs_create_drv_object(char* drv_name);
 u32				vfs_reg_driver(pdriver_obj_t p_driver);
-k_status		vfs_send_drv_message(u32 dest_driver,
-                                     pmsg_t p_msg);
-k_status		vfs_recv_drv_message(pmsg_t buf);
+k_status		vfs_send_drv_message(u32 src_driver,
+                                     u32 dest_driver,
+                                     pmsg_t p_msg,
+                                     u32* p_result);
+k_status		vfs_recv_drv_message(u32 drv_num, pmsg_t* p_p_msg, bool if_block);
 
 //Device objects
 pdevice_obj_t	vfs_create_dev_object(char* dev_name);
 u32				vfs_add_device(pdevice_obj_t p_device, u32 driver);
 void			vfs_remove_device(u32 device);
-
-k_status		vfs_send_dev_message(u32 dest_dev,
-                                     pmsg_t p_msg);
+k_status		vfs_set_dev_filename(u32 device, char* name);
+k_status		vfs_send_dev_message(u32 src_driver,
+                                     u32 dest_dev,
+                                     pmsg_t p_msg,
+                                     u32* p_result);
 u32				vfs_get_dev_major_by_name(char* major_name);
+k_status		vfs_msg_forward(pmsg_t p_msg);
 
 #endif	//!	VFS_H_INCLUDE

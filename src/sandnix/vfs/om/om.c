@@ -27,10 +27,12 @@ static	array_list_t	devices_list;
 static	hash_table_t	dev_mj_index;
 static	mutex_t			devices_list_lock;
 
-static	u32			dev_mj_hash(char* name);
-static	bool		dev_mj_name_cmp(pdev_mj_info_t p_dev1, pdev_mj_info_t p_dev2);
-static	void		driver_destroyer(pdriver_obj_t p_obj);
-static	void		device_destroyer(pdevice_obj_t p_dev);
+static	u32				dev_mj_hash(char* name);
+static	bool			dev_mj_name_cmp(pdev_mj_info_t p_dev1, pdev_mj_info_t p_dev2);
+static	void			driver_destroyer(pdriver_obj_t p_obj);
+static	void			device_destroyer(pdevice_obj_t p_dev);
+static	pdevice_obj_t	get_dev(u32 dev_num);
+static	pdriver_obj_t	get_driver(u32 driver_id);
 
 void om_init()
 {
@@ -54,6 +56,7 @@ void om_init()
 void vfs_initialize_object(pkobject_t p_object)
 {
 	p_object->ref_count = 1;
+	p_object->name = NULL;
 	pm_init_mutex(&(p_object->ref_count_lock));
 	return;
 }
@@ -153,13 +156,50 @@ u32 vfs_reg_driver(pdriver_obj_t p_driver)
 		return 0;
 	}
 
+	p_driver->driver_id = new_id;
+
 	pm_rls_mutex(&drivers_list_lock);
 	return new_id;
 }
 
-k_status		vfs_send_drv_message(u32 dest_driver,
-                                     pmsg_t p_msg);
-k_status		vfs_recv_drv_message(pmsg_t buf);
+k_status vfs_send_drv_message(u32 src_driver,
+                              u32 dest_driver,
+                              pmsg_t p_msg,
+                              u32* p_result)
+{
+	pdriver_obj_t p_dest_drv, p_src_drv;
+
+	p_src_drv = get_driver(src_driver);
+
+	if(!OPERATE_SUCCESS) {
+		return pm_get_errno();
+	}
+
+	p_dest_drv = get_driver(dest_driver);
+
+	if(!OPERATE_SUCCESS) {
+		return pm_get_errno();
+	}
+
+	p_msg->dev_num = INVALID_DEV;
+	p_msg->src_thread = pm_get_crrnt_thrd_id();
+	p_msg->result_queue = p_src_drv->msg_queue;
+
+	return msg_send(p_msg, p_dest_drv->msg_queue, p_result);
+}
+
+k_status vfs_recv_drv_message(u32 drv_num, pmsg_t* p_p_msg, bool if_block)
+{
+	pdriver_obj_t p_drv;
+
+	p_drv = get_driver(drv_num);
+
+	if(!OPERATE_SUCCESS) {
+		return pm_get_errno();
+	}
+
+	return msg_recv(p_p_msg, p_drv->msg_queue, if_block);
+}
 
 //Device objects
 pdevice_obj_t	vfs_create_dev_object(char* dev_name)
@@ -192,20 +232,360 @@ pdevice_obj_t	vfs_create_dev_object(char* dev_name)
 	ret->file_obj.obj.destroy_callback = (obj_destroyer)device_destroyer;
 
 	//File object
-	ret->file_obj.child_list = NULL;
+	ret->child_list = NULL;
 	ret->file_obj.refered_proc_list = NULL;
-	pm_init_mutex(&(ret->file_obj.child_list_lock));
+	ret->file_obj.has_parent = false;
+	pm_init_mutex(&(ret->child_list_lock));
 	pm_init_mutex(&(ret->file_obj.refered_proc_list_lock));
 
 	return ret;
 }
 
-u32				vfs_add_device(pdevice_obj_t p_device, u32 driver);
-void			vfs_remove_device(u32 device);
+u32 vfs_add_device(pdevice_obj_t p_device, u32 driver)
+{
+	u32 new_dev_num;
+	pdriver_obj_t p_drv_obj;
+	pdev_mj_info_t p_mj_info;
+	u32	minor_num;
+	pdevice_obj_t p_parent_dev;
+	plist_node_t p_lst_node;
 
-k_status		vfs_send_dev_message(u32 dest_dev,
-                                     pmsg_t p_msg);
-u32				vfs_get_dev_major_by_name(char* major_name);
+	//Get the driver
+	p_drv_obj = get_driver(driver);
+
+	if(p_drv_obj == NULL) {
+		pm_set_errno(EINVAL);
+		return 0;
+	}
+
+	pm_acqr_mutex(&devices_list_lock, TIMEOUT_BLOCK);
+
+	//Get major number exists
+	p_mj_info = rtl_array_list_get(&devices_list,
+	                               DEV_NUM_MJ(p_device->device_number));
+
+	if(p_mj_info == NULL) {
+		vfs_dec_obj_reference((pkobject_t)p_drv_obj);
+		pm_rls_mutex(&devices_list_lock);
+		pm_set_errno(EINVAL);
+		return 0;
+	}
+
+	pm_rls_mutex(&devices_list_lock);
+
+	pm_acqr_mutex(&(p_mj_info->lock), TIMEOUT_BLOCK);
+
+	//Add device
+	minor_num = rtl_array_list_get_free_index(&(p_mj_info->devices));
+
+	if(!OPERATE_SUCCESS) {
+		vfs_dec_obj_reference((pkobject_t)p_drv_obj);
+		pm_rls_mutex(&(p_mj_info->lock));
+		pm_set_errno(ENOMEM);
+		return 0;
+	}
+
+	new_dev_num = MK_DEV(DEV_NUM_MJ(p_device->device_number), minor_num);
+	p_device->device_number = new_dev_num;
+
+
+	rtl_array_list_set(&(p_mj_info->devices), minor_num, p_device, NULL);
+
+	if(!OPERATE_SUCCESS) {
+		vfs_dec_obj_reference((pkobject_t)p_drv_obj);
+		pm_rls_mutex(&(p_mj_info->lock));
+		pm_set_errno(ENOMEM);
+		return 0;
+	}
+
+	pm_rls_mutex(&(p_mj_info->lock));
+
+	//Add to driver
+	pm_acqr_mutex(&(p_drv_obj->file_list_lock), TIMEOUT_BLOCK);
+
+	p_lst_node = rtl_list_insert_after(&(p_drv_obj->file_list),
+	                                   NULL,
+	                                   p_device,
+	                                   NULL);
+
+	if(p_lst_node == NULL) {
+		pm_rls_mutex(&(p_drv_obj->file_list_lock));
+
+		pm_acqr_mutex(&(p_mj_info->lock), TIMEOUT_BLOCK);
+		rtl_array_list_release(&(p_mj_info->devices), minor_num, NULL);
+		pm_rls_mutex(&(p_mj_info->lock));
+
+		vfs_dec_obj_reference((pkobject_t)p_drv_obj);
+		pm_set_errno(EFAULT);
+		return 0;
+	}
+
+	pm_rls_mutex(&(p_drv_obj->file_list_lock));
+
+	if(p_device->file_obj.has_parent) {
+		//Get parent device
+		p_parent_dev = get_dev(p_device->file_obj.parent_dev);
+
+		if(p_parent_dev == NULL) {
+			pm_acqr_mutex(&(p_drv_obj->file_list_lock), TIMEOUT_BLOCK);
+			rtl_list_remove(&(p_drv_obj->file_list), p_lst_node, NULL);
+			pm_rls_mutex(&(p_drv_obj->file_list_lock));
+
+			pm_acqr_mutex(&(p_mj_info->lock), TIMEOUT_BLOCK);
+			rtl_array_list_release(&(p_mj_info->devices), minor_num, NULL);
+			pm_rls_mutex(&(p_mj_info->lock));
+
+			vfs_dec_obj_reference((pkobject_t)p_drv_obj);
+			pm_set_errno(EFAULT);
+			return 0;
+		}
+
+		//Add to parent
+		pm_acqr_mutex(&(p_parent_dev->child_list_lock), TIMEOUT_BLOCK);
+
+		if(rtl_list_insert_after(&(p_parent_dev->child_list),
+		                         NULL,
+		                         p_device,
+		                         NULL) == NULL) {
+			pm_rls_mutex(&(p_parent_dev->child_list_lock));
+
+			pm_acqr_mutex(&(p_drv_obj->file_list_lock), TIMEOUT_BLOCK);
+			rtl_list_remove(&(p_drv_obj->file_list), p_lst_node, NULL);
+			pm_rls_mutex(&(p_drv_obj->file_list_lock));
+
+			pm_acqr_mutex(&(p_mj_info->lock), TIMEOUT_BLOCK);
+			rtl_array_list_release(&(p_mj_info->devices), minor_num, NULL);
+			pm_rls_mutex(&(p_mj_info->lock));
+
+			vfs_dec_obj_reference((pkobject_t)p_drv_obj);
+			pm_set_errno(EFAULT);
+			return 0;
+		}
+
+		pm_rls_mutex(&(p_parent_dev->child_list_lock));
+	}
+
+	return new_dev_num;
+}
+
+void vfs_remove_device(u32 device)
+{
+	pdevice_obj_t p_dev, p_parent_dev;
+	plist_node_t p_node;
+
+	p_dev = get_dev(device);
+
+	if(!OPERATE_SUCCESS) {
+		return;
+	}
+
+	if(p_dev->file_obj.has_parent) {
+		//Parent
+		p_parent_dev = get_dev(p_dev->file_obj.parent_dev);
+
+		if(!OPERATE_SUCCESS) {
+			return;
+		}
+
+		pm_acqr_mutex(&(p_parent_dev->child_list_lock), TIMEOUT_BLOCK);
+		p_node = p_parent_dev->child_list;
+
+		if(p_node != NULL) {
+			do {
+				if(p_node->p_item == p_dev) {
+					rtl_list_remove(&(p_parent_dev->child_list),
+					                p_node,
+					                NULL);
+					break;
+				}
+			} while(p_node != p_parent_dev->child_list);
+		}
+
+		pm_rls_mutex(&(p_parent_dev->child_list_lock));
+	}
+
+	//Childs
+	for(p_node = p_dev->child_list;
+	    p_node != NULL;
+	    p_node = p_dev->child_list) {
+		vfs_remove_device(((pdevice_obj_t)(p_node->p_item))->device_number);
+	}
+
+	p_dev->file_obj.obj.destroy_callback((pkobject_t)p_dev);
+	return;
+}
+
+k_status vfs_set_dev_filename(u32 device, char* name)
+{
+	size_t len;
+	pdevice_obj_t p_dev;
+
+	len = rtl_strlen(name) + 1;
+	p_dev = get_dev(device);
+
+	if(p_dev == NULL) {
+		return pm_get_errno();
+	}
+
+	//Free old filename
+	if(p_dev->file_obj.obj.name != NULL) {
+		mm_hp_free(p_dev->file_obj.obj.name, NULL);
+	}
+
+	//Allocate memory for new name
+	p_dev->file_obj.obj.name = mm_hp_alloc(len,
+	                                       NULL);
+
+	if(p_dev->file_obj.obj.name == NULL) {
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+
+	rtl_strcpy_s(p_dev->file_obj.obj.name, len , name);
+
+	pm_set_errno(ESUCCESS);
+	return ESUCCESS;
+}
+
+k_status vfs_send_dev_message(u32 src_driver,
+                              u32 dest_dev,
+                              pmsg_t p_msg,
+                              u32* p_result)
+{
+	pdriver_obj_t p_src_drv;
+	pdevice_obj_t p_dest_dev;
+
+	p_src_drv = get_driver(src_driver);
+
+	if(!OPERATE_SUCCESS) {
+		return pm_get_errno();
+	}
+
+	p_dest_dev = get_dev(dest_dev);
+
+	if(!OPERATE_SUCCESS) {
+		return pm_get_errno();
+	}
+
+	p_msg->dev_num = dest_dev;
+	p_msg->src_thread = pm_get_crrnt_thrd_id();
+	p_msg->result_queue = p_src_drv->msg_queue;
+
+	return msg_send(p_msg,
+	                p_dest_dev->file_obj.p_driver->msg_queue,
+	                p_result);
+}
+
+u32 vfs_get_dev_major_by_name(char* major_name)
+{
+	pdev_mj_info_t p_info;
+	u32 major;
+	size_t len;
+
+	len = rtl_strlen(major_name) + 1;
+
+	pm_acqr_mutex(&devices_list_lock, TIMEOUT_BLOCK);
+	p_info = rtl_hash_table_get(&dev_mj_index, major_name);
+
+	if(p_info == NULL) {
+		//If the major number not exists
+		//Allocate new dev_mj_info_t
+		p_info = mm_hp_alloc(sizeof(dev_mj_info_t), NULL);
+
+		if(p_info == NULL) {
+			pm_rls_mutex(&devices_list_lock);
+			pm_set_errno(EFAULT);
+			return 0;
+		}
+
+		p_info->name = mm_hp_alloc(len, NULL);
+
+		if(p_info->name == NULL) {
+			pm_rls_mutex(&devices_list_lock);
+			mm_hp_free(p_info, NULL);
+			pm_set_errno(EFAULT);
+			return 0;
+		}
+
+		rtl_strcpy_s(p_info->name, len, major_name);
+
+		rtl_array_list_init((&p_info->devices), DEV_MN_NUM_MAX, NULL);
+
+		if(!OPERATE_SUCCESS) {
+			pm_rls_mutex(&devices_list_lock);
+			mm_hp_free(p_info->name, NULL);
+			mm_hp_free(p_info, NULL);
+			pm_set_errno(EFAULT);
+			return 0;
+		}
+
+		pm_init_mutex(&p_info->lock);
+
+		//Get new major
+		major = rtl_array_list_get_free_index(&devices_list);
+
+		p_info->mj_num = major;
+
+		//Add to devices_list
+		rtl_array_list_set(&devices_list, major, p_info, NULL);
+
+		if(!OPERATE_SUCCESS) {
+			pm_rls_mutex(&devices_list_lock);
+			rtl_array_list_destroy(&(p_info->devices), NULL, NULL, NULL);
+			mm_hp_free(p_info->name, NULL);
+			mm_hp_free(p_info, NULL);
+			pm_set_errno(EFAULT);
+			return 0;
+		}
+
+		//Add to hash table
+		rtl_hash_table_set(&dev_mj_index,
+		                   p_info->name,
+		                   p_info,
+		                   NULL);
+
+		if(!OPERATE_SUCCESS) {
+			rtl_array_list_release(&devices_list, major, NULL);
+			pm_rls_mutex(&devices_list_lock);
+			rtl_array_list_destroy(&(p_info->devices), NULL, NULL, NULL);
+			mm_hp_free(p_info->name, NULL);
+			mm_hp_free(p_info, NULL);
+			pm_set_errno(EFAULT);
+			return 0;
+		}
+	}
+
+	pm_rls_mutex(&devices_list_lock);
+
+	pm_set_errno(ESUCCESS);
+	return major;
+}
+
+k_status vfs_msg_forward(pmsg_t p_msg)
+{
+	pdevice_obj_t p_dev_obj, p_parent_dev;
+
+	p_dev_obj = get_dev(p_msg->dev_num);
+
+	if(!OPERATE_SUCCESS) {
+		pm_set_errno(EINVAL);
+		return EINVAL;
+	}
+
+	if(!p_dev_obj->file_obj.has_parent) {
+		pm_set_errno(ENODEV);
+		return ENODEV;
+	}
+
+	p_parent_dev = get_dev(p_dev_obj->file_obj.parent_dev);
+
+	if(!OPERATE_SUCCESS) {
+		pm_set_errno(ENODEV);
+		return ENODEV;
+	}
+
+	return msg_forward(p_msg, p_parent_dev->file_obj.p_driver->msg_queue);
+}
 
 u32 dev_mj_hash(char* name)
 {
@@ -233,12 +613,127 @@ bool dev_mj_name_cmp(pdev_mj_info_t p_dev1, pdev_mj_info_t p_dev2)
 
 void driver_destroyer(pdriver_obj_t p_obj)
 {
-	//TODO:
-	UNREFERRED_PARAMETER(p_obj);
+	plist_node_t p_node;
+
+	for(p_node = p_obj->file_list;
+	    p_node != NULL;
+	    p_node = p_obj->file_list) {
+		vfs_remove_device(((pdevice_obj_t)(p_node->p_item))->device_number);
+	}
+
+	pm_acqr_mutex(&drivers_list_lock, TIMEOUT_BLOCK);
+
+	rtl_array_list_release(&drivers_list, p_obj->driver_id, NULL);
+
+	pm_rls_mutex(&drivers_list_lock);
+	msg_queue_destroy(p_obj->msg_queue);
+	mm_hp_free(p_obj, NULL);
+
+	return;
 }
 
 void device_destroyer(pdevice_obj_t p_dev)
 {
-	//TODO:
-	UNREFERRED_PARAMETER(p_dev);
+	pdev_mj_info_t p_info;
+	pdriver_obj_t p_drv;
+	plist_node_t p_node;
+
+	//Remove devices
+	//Major
+	pm_acqr_mutex(&devices_list_lock, TIMEOUT_BLOCK);
+	p_info = rtl_array_list_get(&devices_list, DEV_NUM_MJ(p_dev->device_number));
+
+	if(!OPERATE_SUCCESS) {
+		pm_rls_mutex(&devices_list_lock);
+		mm_hp_free(p_dev, NULL);
+		return;
+	}
+
+	pm_rls_mutex(&devices_list_lock);
+
+	//Minor
+	pm_acqr_mutex(&(p_info->lock), TIMEOUT_BLOCK);
+
+	rtl_array_list_release(&(p_info->devices),
+	                       DEV_NUM_MN(p_dev->device_number),
+	                       NULL);
+
+	//Remove from driver
+	p_drv = p_dev->file_obj.p_driver;
+	pm_acqr_mutex(&(p_drv->file_list_lock), TIMEOUT_BLOCK);
+	p_node = p_drv->file_list;
+
+	if(p_node != NULL) {
+		do {
+			if(p_node->p_item == p_dev) {
+				rtl_list_remove(&(p_drv->file_list),
+				                p_node,
+				                NULL);
+				break;
+			}
+		} while(p_node != p_drv->file_list);
+	}
+
+	pm_rls_mutex(&(p_drv->file_list_lock));
+
+	if(p_dev->file_obj.obj.name != NULL) {
+		mm_hp_free(p_dev->file_obj.obj.name, NULL);
+	}
+
+	mm_hp_free(p_dev, NULL);
+
+	pm_rls_mutex(&(p_info->lock));
+
+	return;
+
+}
+
+pdevice_obj_t get_dev(u32 dev_num)
+{
+	pdev_mj_info_t p_info;
+	pdevice_obj_t p_dev;
+
+	//Major
+	pm_acqr_mutex(&devices_list_lock, TIMEOUT_BLOCK);
+	p_info = rtl_array_list_get(&devices_list, DEV_NUM_MJ(dev_num));
+
+	if(!OPERATE_SUCCESS) {
+		pm_rls_mutex(&devices_list_lock);
+		return NULL;
+	}
+
+	pm_rls_mutex(&devices_list_lock);
+
+	//Minor
+	pm_acqr_mutex(&(p_info->lock), TIMEOUT_BLOCK);
+
+	p_dev = rtl_array_list_get(&(p_info->devices), TIMEOUT_BLOCK);
+
+	if(!OPERATE_SUCCESS) {
+		pm_rls_mutex(&(p_info->lock));
+		return NULL;
+	}
+
+	pm_rls_mutex(&(p_info->lock));
+
+	pm_set_errno(ESUCCESS);
+	return p_dev;
+}
+
+pdriver_obj_t get_driver(u32 driver_id)
+{
+	pdriver_obj_t p_drv_obj;
+
+	pm_acqr_mutex(&drivers_list_lock, TIMEOUT_BLOCK);
+	p_drv_obj = rtl_array_list_get(&drivers_list, driver_id);
+
+	if(p_drv_obj == NULL) {
+		pm_rls_mutex(&drivers_list_lock);
+		pm_set_errno(EINVAL);
+		return 0;
+	}
+
+	pm_rls_mutex(&drivers_list_lock);
+
+	return p_drv_obj;
 }
