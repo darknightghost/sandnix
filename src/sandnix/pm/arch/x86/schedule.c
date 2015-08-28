@@ -941,11 +941,10 @@ void pm_clear_kernel_stack(thread_func entry, void* p_args)
 	__asm__ __volatile__(
 	    "movl	%0,%%esp\n\t"
 	    "movl	%0,%%ebp\n\t"
+	    "pushl	%2\n\t"
 	    "pushl	%3\n\t"
-	    "pushl	%4\n\t"
-	    "lcalll	%1,%2\n\t"
+	    "call	*%1\n\t"
 	    ::"edx"(thread_table[current_thread].kernel_stack+KERNEL_STACK_SIZE),
-	    "i"(SELECTOR_K_CODE),
 	    "eax"(entry),
 	    "ebx"(p_args),
 	    "ecx"(current_thread));
