@@ -34,6 +34,8 @@ typedef	struct	_vfs_proc_info {
 
 typedef	struct {
 	path_t		path;
+	u32			access;
+	u32			fs_dev;
 	u32			volume_dev;
 	list_t		mount_points;
 } mount_point_t, *pmount_point_t;

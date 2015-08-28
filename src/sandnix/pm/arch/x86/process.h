@@ -35,6 +35,7 @@ typedef struct _process_info {
 	u32			gid;				//Real gid
 	u32			sgid;				//Saved gid
 	u32			egid;				//Effective gid
+	u32			is_driver;			//The process is a driver when it is set
 	list_t		child_list;			//Child processes
 	list_t		thread_list;		//Alive threads
 	list_t		zombie_list;		//Zombie threads

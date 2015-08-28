@@ -19,6 +19,9 @@
 #include "../../pm/pm.h"
 #include "../../rtl/rtl.h"
 #include "../../exceptions/exceptions.h"
+#include "ramdisk/ramdisk.h"
+#include "tarfs/tarfs.h"
+#include "../../debug/debug.h"
 
 static	array_list_t	file_desc_info_table;
 static	mutex_t			file_desc_info_table_lock;
@@ -27,8 +30,25 @@ static	mutex_t			mount_point_lock;
 
 void fs_init()
 {
+	k_status status;
+	dbg_print("Initializing filesystem...\n");
+
 	//Initialize file descriptors table
-	//Initialize ramdisk
+	status = rtl_array_list_init(&file_desc_info_table,
+	                             MAX_PROCESS_NUM,
+	                             NULL);
+
+	if(status != ESUCCESS) {
+		excpt_panic(status, "Failed to initialize file_desc_info_table.");
+	}
+
+	pm_init_mutex(&file_desc_info_table_lock);
+	pm_init_mutex(&mount_point_lock);
+
+	//Initialize ramdisk and tarfs
+	ramdisk_init();
+	tarfs_init();
+
 	//Mount ramdisk as root filesytem
 }
 
@@ -43,8 +63,17 @@ k_status		vfs_chroot(char* path);
 k_status		vfs_chdir(char* path);
 
 //File descriptors
-k_status		vfs_fork(u32 dest_process);
-void			vfs_clean(u32 process_id);
+k_status vfs_fork(u32 dest_process)
+{
+	UNREFERRED_PARAMETER(dest_process);
+	return ESUCCESS;
+}
+
+void vfs_clean(u32 process_id)
+{
+	UNREFERRED_PARAMETER(process_id);
+	return;
+}
 
 //Files
 u32				vfs_open(char* path, u32 flags, u32 mode);

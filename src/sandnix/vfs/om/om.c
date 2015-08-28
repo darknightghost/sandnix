@@ -36,7 +36,7 @@ static	pdriver_obj_t	get_driver(u32 driver_id);
 
 void om_init()
 {
-	dbg_print("\nInitializing Object Manager...\n");
+	dbg_print("Initializing Object Manager...\n");
 
 	rtl_array_list_init(&drivers_list, DEV_MJ_NUM_MAX, NULL);
 	rtl_array_list_init(&devices_list, DEV_MJ_NUM_MAX, NULL);

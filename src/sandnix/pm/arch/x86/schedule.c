@@ -934,6 +934,24 @@ bool pm_should_break()
 	return thread_table[current_thread].break_flag;
 }
 
+void pm_clear_kernel_stack(thread_func entry, void* p_args)
+{
+	pm_disable_task_switch();
+
+	__asm__ __volatile__(
+	    "movl	%0,%%esp\n\t"
+	    "movl	%0,%%ebp\n\t"
+	    "pushl	%3\n\t"
+	    "pushl	%4\n\t"
+	    "lcalll	%1,%2\n\t"
+	    ::"edx"(thread_table[current_thread].kernel_stack+KERNEL_STACK_SIZE),
+	    "i"(SELECTOR_K_CODE),
+	    "eax"(entry),
+	    "ebx"(p_args),
+	    "ecx"(current_thread));
+	excpt_panic(EFAULT, "The thread should call pm_exit_thrd() when it want to exit,but it just returned.");
+}
+
 u32 pm_int_get_thread_pdt(u32 thread_id)
 {
 	return get_process_pdt(thread_table[thread_id].process_id);

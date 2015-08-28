@@ -59,6 +59,7 @@ void init_process()
 	    (void*)0,
 	    process_heap);
 	process_table[0].process_name = "system";
+	process_table[0].is_driver = true;
 	return;
 }
 
@@ -134,9 +135,24 @@ s32	pm_fork()
 
 void pm_exec(char* cmd_line, char* image_path)
 {
+	size_t name_len;
+
 	//TODO:exec
-	UNREFERRED_PARAMETER(cmd_line);
-	UNREFERRED_PARAMETER(image_path);
+	if(image_path == NULL) {
+		//Just change the name of process
+		name_len = rtl_strlen(cmd_line) + 1;
+		pm_acqr_spn_lock(&process_table_lock);
+		mm_hp_free(process_table[current_process].process_name,
+		           process_heap);
+		process_table[current_process].process_name = mm_hp_alloc(name_len,
+		        process_heap);
+		rtl_strcpy_s(process_table[current_process].process_name,
+		             name_len,
+		             cmd_line);
+		pm_rls_spn_lock(&process_table_lock);
+		pm_set_errno(ESUCCESS);
+		return;
+	}
 }
 
 u32 pm_wait(u32 child_id, bool if_block)
@@ -401,6 +417,13 @@ bool pm_get_proc_egid(u32 process_id, u32* p_egid)
 	return true;
 }
 
+void pm_change_to_usr_process()
+{
+	process_table[current_process].is_driver = false;
+	pm_set_errno(ESUCCESS);
+	return;
+}
+
 void add_proc_thrd(u32 thrd_id, u32 proc_id)
 {
 	if(process_table[proc_id].alloc_flag == false) {
@@ -577,6 +600,7 @@ u32 get_free_proc_id()
 			process_table[id].uid = process_table[current_process].uid;
 			process_table[id].suid = process_table[current_process].suid;
 			process_table[id].euid = process_table[current_process].euid;
+			process_table[id].is_driver = process_table[current_process].is_driver;
 			return id;
 		}
 	}

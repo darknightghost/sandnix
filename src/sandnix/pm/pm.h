@@ -80,8 +80,7 @@ void		pm_set_break(u32 thread_id, bool if_break);
 bool		pm_is_break(u32 thread_id);
 bool		pm_should_break();
 
-bool		pm_get_thread_context(u32 id, pcontext_t p_cntxt);
-bool		pm_set_thread_context(u32 id, pcontext_t p_cntxt);
+void		pm_clear_kernel_stack(thread_func entry, void* p_args);
 
 u32			pm_int_get_thread_pdt();										//Don't use
 
@@ -101,6 +100,7 @@ bool		pm_get_proc_euid(u32 process_id, u32* p_euid);
 bool		pm_get_proc_gid(u32 process_id, u32* p_gid);
 bool		pm_set_proc_egid(u32 process_id, u32 egid);
 bool		pm_get_proc_egid(u32 process_id, u32* p_egid);
+void		pm_change_to_usr_process();
 
 //Spin lock
 void		pm_init_spn_lock(pspinlock_t p_lock);
