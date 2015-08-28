@@ -14,13 +14,3 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
-#include "vfs.h"
-#include "../debug/debug.h"
-
-void vfs_init()
-{
-	dbg_print("\nInitializing Virtual Filesystem module...\n");
-	om_init();
-	fs_init();
-}

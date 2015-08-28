@@ -48,6 +48,17 @@ void om_init()
 	                    NULL);
 	pm_init_mutex(&drivers_list_lock);
 	pm_init_mutex(&devices_list_lock);
+	vfs_get_dev_major_by_name("bus");
+	vfs_get_dev_major_by_name("dma");
+	vfs_get_dev_major_by_name("memory");
+	vfs_get_dev_major_by_name("ramdisk");
+	vfs_get_dev_major_by_name("tty");
+	vfs_get_dev_major_by_name("floppy");
+	vfs_get_dev_major_by_name("ata");
+	vfs_get_dev_major_by_name("sata");
+	vfs_get_dev_major_by_name("console");
+	vfs_get_dev_major_by_name("partition");
+	vfs_get_dev_major_by_name("volume");
 
 	return;
 }
@@ -235,6 +246,7 @@ pdevice_obj_t	vfs_create_dev_object(char* dev_name)
 	ret->child_list = NULL;
 	ret->file_obj.refered_proc_list = NULL;
 	ret->file_obj.has_parent = false;
+	ret->is_mounted = false;
 	pm_init_mutex(&(ret->child_list_lock));
 	pm_init_mutex(&(ret->file_obj.refered_proc_list_lock));
 

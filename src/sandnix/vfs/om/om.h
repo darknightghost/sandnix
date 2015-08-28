@@ -77,9 +77,14 @@ struct	_file_obj {
 struct	_device_obj {
 	file_obj_t		file_obj;
 	u32				device_number;
+	u32				device_type;
 	list_t			child_list;
 	mutex_t			child_list_lock;
+	bool			is_mounted;
 };
+
+#define	DEV_TYPE_CHAR		0x01
+#define	DEV_TYPE_BLOCK		0x02
 
 #define	DEV_MJ_NUM_MAX		512
 #define	DEV_MN_NUM_MAX		512
@@ -97,6 +102,7 @@ typedef	struct	{
 	array_list_t	devices;
 	mutex_t			lock;
 } dev_mj_info_t, *pdev_mj_info_t;
+
 void		om_init();
 
 #endif	//!	OM_H_INCLUDE

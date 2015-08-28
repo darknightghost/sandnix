@@ -12,7 +12,8 @@ export SOURCES = init/main.c \
 					init/parameters/parameters.c \
 					msg/msg.c \
 					vfs/vfs.c \
-					vfs/om/om.c
+					vfs/om/om.c \
+					vfs/fs/fs.c
 
 x86_build :
 		$(MAKE) -f makefile.x86 all

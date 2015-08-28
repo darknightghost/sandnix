@@ -15,18 +15,22 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	VFS_H_INCLUDE
-#define	VFS_H_INCLUDE
+#include "fs.h"
+#include "../../pm/pm.h"
+#include "../../rtl/rtl.h"
+#include "../../exceptions/exceptions.h"
 
-#include "../../common/common.h"
-#include "./om/om.h"
-#include "./fs/fs.h"
-#include "../msg/msg.h"
-#include "fs/fs.h"
+static	array_list_t	file_desc_info_table;
+static	mutex_t			file_desc_info_table_lock;
+static	mount_point_t	root_info;
+static	mutex_t			mount_point_lock;
 
-typedef	struct	_msg	msg_t, *pmsg_t;
-
-void			vfs_init();
+void fs_init()
+{
+	//Initialize file descriptors table
+	//Initialize ramdisk
+	//Mount ramdisk as root filesytem
+}
 
 //Volumes
 k_status		vfs_mount(char* src, char* target,
@@ -52,31 +56,3 @@ size_t			vfs_write(u32 fd, void* buf, size_t count);
 void			vfs_sync();
 bool			vfs_syncfs(u32 volume_dev);
 //s32			vfs_ioctl(u32 fd, u32 request, ...);
-
-//Objects
-void			vfs_initialize_object(pkobject_t p_object);
-void			vfs_inc_obj_reference(pkobject_t p_object);
-void			vfs_dec_obj_reference(pkobject_t p_object);
-
-//Driver Objects
-pdriver_obj_t	vfs_create_drv_object(char* drv_name);
-u32				vfs_reg_driver(pdriver_obj_t p_driver);
-k_status		vfs_send_drv_message(u32 src_driver,
-                                     u32 dest_driver,
-                                     pmsg_t p_msg,
-                                     u32* p_result);
-k_status		vfs_recv_drv_message(u32 drv_num, pmsg_t* p_p_msg, bool if_block);
-
-//Device objects
-pdevice_obj_t	vfs_create_dev_object(char* dev_name);
-u32				vfs_add_device(pdevice_obj_t p_device, u32 driver);
-void			vfs_remove_device(u32 device);
-k_status		vfs_set_dev_filename(u32 device, char* name);
-k_status		vfs_send_dev_message(u32 src_driver,
-                                     u32 dest_dev,
-                                     pmsg_t p_msg,
-                                     u32* p_result);
-u32				vfs_get_dev_major_by_name(char* major_name);
-k_status		vfs_msg_forward(pmsg_t p_msg);
-
-#endif	//!	VFS_H_INCLUDE

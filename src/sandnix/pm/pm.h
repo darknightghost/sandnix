@@ -101,10 +101,6 @@ bool		pm_get_proc_euid(u32 process_id, u32* p_euid);
 bool		pm_get_proc_gid(u32 process_id, u32* p_gid);
 bool		pm_set_proc_egid(u32 process_id, u32 egid);
 bool		pm_get_proc_egid(u32 process_id, u32* p_egid);
-bool		pm_add_proc_file_descriptor(u32 process_id, u32 descriptor);
-bool		pm_remove_proc_file_descriptor(u32 process_id, u32 descriptor);
-bool		pm_chroot(char* new_root);
-size_t		pm_get_root(u32 process_id, size_t buf_size, char* buf);
 
 //Spin lock
 void		pm_init_spn_lock(pspinlock_t p_lock);

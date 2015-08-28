@@ -29,8 +29,6 @@ void*			process_heap;
 
 
 static	u32			get_free_proc_id();
-static	u32			fork_descrpitor_list(u32 dest, u32 src);
-static	void		descriptor_destroy_callback(void* descriptor, void* p_arg);
 static	u32			release_process(u32 process_id);
 static	void		awake_threads(list_t lst, u32 status);
 
@@ -61,7 +59,6 @@ void init_process()
 	    (void*)0,
 	    process_heap);
 	process_table[0].process_name = "system";
-	process_table[0].root_path = "/";
 	return;
 }
 
@@ -96,7 +93,7 @@ s32	pm_fork()
 	process_table[new_id].pdt_id = new_pdt;
 
 	//Fork file descrpitors
-	if(fork_descrpitor_list(new_id, current_process) != ESUCCESS) {
+	if(vfs_fork(new_id) != OPERATE_SUCCESS) {
 		process_table[new_id].alloc_flag = false;
 		mm_pg_tbl_free(new_pdt);
 		pm_rls_spn_lock(&process_table_lock);
@@ -108,10 +105,7 @@ s32	pm_fork()
 	new_thread = fork_thread(new_id);
 
 	if(new_thread < 0) {
-		rtl_list_destroy(&(process_table[new_id].file_desc_list),
-		                 process_heap,
-		                 descriptor_destroy_callback,
-		                 NULL);
+		vfs_clean(new_id);
 		process_table[new_id].alloc_flag = false;
 		mm_pg_tbl_free(new_pdt);
 		pm_rls_spn_lock(&process_table_lock);
@@ -407,113 +401,6 @@ bool pm_get_proc_egid(u32 process_id, u32* p_egid)
 	return true;
 }
 
-bool pm_add_proc_file_descriptor(u32 process_id, u32 descriptor)
-{
-	pm_acqr_spn_lock(&process_table_lock);
-
-	if(process_table[process_id].alloc_flag == false) {
-		pm_rls_spn_lock(&process_table_lock);
-		pm_set_errno(ESRCH);
-		return false;
-	}
-
-	//Add new file descriptor
-	if(rtl_list_insert_after(&(process_table[process_id].file_desc_list),
-	                         NULL,
-	                         (void*)descriptor,
-	                         process_heap) == NULL) {
-		pm_rls_spn_lock(&process_table_lock);
-		pm_set_errno(EFAULT);
-		return false;
-	}
-
-	pm_rls_spn_lock(&process_table_lock);
-
-	pm_set_errno(ESUCCESS);
-	return true;
-}
-
-bool pm_remove_proc_file_descriptor(u32 process_id, u32 descriptor)
-{
-	plist_node_t p_node;
-
-	pm_acqr_spn_lock(&process_table_lock);
-
-	if(process_table[process_id].alloc_flag == false) {
-		pm_rls_spn_lock(&process_table_lock);
-		pm_set_errno(ESRCH);
-		return false;
-	}
-
-	//Remove from descriptor list_t
-	p_node = rtl_list_get_node_by_item(process_table[process_id].file_desc_list,
-	                                   (void*)descriptor);
-
-	if(p_node == NULL) {
-		pm_rls_spn_lock(&process_table_lock);
-		pm_set_errno(EFAULT);
-		return false;
-	}
-
-	rtl_list_remove(&(process_table[process_id].file_desc_list),
-	                p_node,
-	                process_heap);
-
-	pm_rls_spn_lock(&process_table_lock);
-	pm_set_errno(ESUCCESS);
-
-	return true;
-}
-
-bool pm_chroot(char* new_root)
-{
-	size_t path_len;
-
-	pm_acqr_spn_lock(&process_table_lock);
-
-	mm_hp_free(process_table[current_process].root_path, process_heap);
-
-	path_len = rtl_strlen(new_root) + 1;
-	process_table[current_process].root_path = mm_hp_alloc(
-	            path_len,
-	            process_heap);
-	rtl_strcpy_s(process_table[current_process].root_path,
-	             path_len,
-	             new_root);
-
-	pm_rls_spn_lock(&process_table_lock);
-
-	pm_set_errno(ESUCCESS);
-
-	return true;
-
-}
-
-size_t pm_get_root(u32 process_id, size_t buf_size, char* buf)
-{
-	size_t path_len;
-
-	pm_acqr_spn_lock(&process_table_lock);
-
-	//Check if the process exists
-	if(!process_table[process_id].alloc_flag) {
-		pm_rls_spn_lock(&process_table_lock);
-		pm_set_errno(ESRCH);
-		return 0;
-	}
-
-	path_len = rtl_strlen(process_table[current_process].root_path) + 1;
-	rtl_strcpy_s(buf,
-	             buf_size,
-	             process_table[current_process].root_path);
-	pm_rls_spn_lock(&process_table_lock);
-
-	pm_set_errno(ESUCCESS);
-
-	return path_len;
-
-}
-
 void add_proc_thrd(u32 thrd_id, u32 proc_id)
 {
 	if(process_table[proc_id].alloc_flag == false) {
@@ -579,10 +466,7 @@ void zombie_proc_thrd(u32 thrd_id, u32 proc_id)
 		                      process_heap);
 
 		//Close all file descriptors
-		rtl_list_destroy(&(process_table[proc_id].file_desc_list),
-		                 process_heap,
-		                 descriptor_destroy_callback,
-		                 NULL);
+		vfs_clean(proc_id);
 
 		//Copy child list_t
 		p_node = process_table[proc_id].child_list;
@@ -674,7 +558,6 @@ u32 get_free_proc_id()
 {
 	u32 id;
 	size_t name_len;
-	size_t path_len;
 
 	for(id = 0; id < MAX_PROCESS_NUM; id++) {
 		if(process_table[id].alloc_flag == false) {
@@ -688,13 +571,6 @@ u32 get_free_proc_id()
 			rtl_strcpy_s(process_table[id].process_name,
 			             name_len,
 			             process_table[current_process].process_name);
-			path_len = rtl_strlen(process_table[current_process].root_path) + 1;
-			process_table[id].root_path = mm_hp_alloc(
-			                                  path_len,
-			                                  process_heap);
-			rtl_strcpy_s(process_table[id].root_path,
-			             path_len,
-			             process_table[current_process].root_path);
 			process_table[id].parent_id = current_process;
 			process_table[id].status = PROC_ALIVE;
 			process_table[id].priority = process_table[current_process].priority;
@@ -706,47 +582,6 @@ u32 get_free_proc_id()
 	}
 
 	return 0;
-}
-
-u32 fork_descrpitor_list(u32 dest, u32 src)
-{
-	plist_node_t p_node;
-
-	p_node = process_table[src].file_desc_list;
-
-	if(p_node != NULL) {
-		do {
-			//Increase reference count
-			//TODO:
-			//	vfs_inc_fdesc_reference((u32)(p_node->p_item));
-
-			//Add to child's descriptor list_t
-			if(rtl_list_insert_after(&(process_table[dest].file_desc_list),
-			                         NULL,
-			                         p_node->p_item,
-			                         process_heap) == NULL) {
-				rtl_list_destroy(&(process_table[dest].file_desc_list),
-				                 process_heap,
-				                 descriptor_destroy_callback,
-				                 NULL);
-				return EAGAIN;
-
-			}
-
-			p_node = p_node->p_next;
-		} while(p_node != process_table[src].file_desc_list);
-	}
-
-	return ESUCCESS;
-}
-
-void descriptor_destroy_callback(void* descriptor, void* p_arg)
-{
-	//TODO:
-	//	vfs_close((u32)descriptor);
-	UNREFERRED_PARAMETER(descriptor);
-	UNREFERRED_PARAMETER(p_arg);
-	return;
 }
 
 u32 release_process(u32 process_id)
@@ -770,7 +605,6 @@ u32 release_process(u32 process_id)
 
 	//Release process name and root path
 	mm_hp_free(process_table[process_id].process_name, process_heap);
-	mm_hp_free(process_table[process_id].root_path, process_heap);
 
 	//Get exit code
 	exit_code = process_table[process_id].exit_code;

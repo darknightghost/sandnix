@@ -19,7 +19,33 @@
 #define	FS_H_INCLUDE
 
 #include "../vfs.h"
+#include "../../rtl/rtl.h"
 
+typedef	struct	_path {
+	u32			volume_dev;
+	char*		path;
+} path_t, *ppath_t;
+
+typedef	struct	_vfs_proc_info {
+	path_t			root;
+	path_t			pwd;
+	array_list_t	file_descs;
+} vfs_proc_info, *pvfs_proc_info;
+
+typedef	struct {
+	path_t		path;
+	u32			volume_dev;
+	list_t		mount_points;
+} mount_point_t, *pmount_point_t;
+
+typedef	struct {
+	path_t		path;
+	u32			file_obj;
+	size_t		offset;
+	size_t		size;
+} file_desc_t, *pfile_desc_t;
+
+void			fs_init();
 k_status		regist_fs_driver(pdevice_obj_t p_fs_obj);
 k_status		unregist_fs_driver(pdevice_obj_t p_fs_obj);
 
