@@ -65,7 +65,8 @@ k_status		vfs_send_drv_message(u32 src_driver,
                                      u32 dest_driver,
                                      pmsg_t p_msg,
                                      u32* p_result);
-k_status		vfs_recv_drv_message(u32 drv_num, pmsg_t* p_p_msg, bool if_block);
+k_status		vfs_recv_drv_message(u32 drv_num, pmsg_t* p_p_msg,
+                                     bool if_block);
 
 //Device objects
 pdevice_obj_t	vfs_create_dev_object(char* dev_name);

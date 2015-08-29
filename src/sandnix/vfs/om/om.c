@@ -48,6 +48,7 @@ void om_init()
 	                    NULL);
 	pm_init_mutex(&drivers_list_lock);
 	pm_init_mutex(&devices_list_lock);
+	vfs_get_dev_major_by_name("normal_file");
 	vfs_get_dev_major_by_name("bus");
 	vfs_get_dev_major_by_name("dma");
 	vfs_get_dev_major_by_name("memory");
@@ -245,7 +246,7 @@ pdevice_obj_t	vfs_create_dev_object(char* dev_name)
 	//File object
 	ret->child_list = NULL;
 	ret->file_obj.refered_proc_list = NULL;
-	ret->file_obj.has_parent = false;
+	ret->has_parent = false;
 	ret->is_mounted = false;
 	pm_init_mutex(&(ret->child_list_lock));
 	pm_init_mutex(&(ret->file_obj.refered_proc_list_lock));
@@ -334,9 +335,9 @@ u32 vfs_add_device(pdevice_obj_t p_device, u32 driver)
 
 	pm_rls_mutex(&(p_drv_obj->file_list_lock));
 
-	if(p_device->file_obj.has_parent) {
+	if(p_device->has_parent) {
 		//Get parent device
-		p_parent_dev = get_dev(p_device->file_obj.parent_dev);
+		p_parent_dev = get_dev(p_device->parent_dev);
 
 		if(p_parent_dev == NULL) {
 			pm_acqr_mutex(&(p_drv_obj->file_list_lock), TIMEOUT_BLOCK);
@@ -391,9 +392,9 @@ void vfs_remove_device(u32 device)
 		return;
 	}
 
-	if(p_dev->file_obj.has_parent) {
+	if(p_dev->has_parent) {
 		//Parent
-		p_parent_dev = get_dev(p_dev->file_obj.parent_dev);
+		p_parent_dev = get_dev(p_dev->parent_dev);
 
 		if(!OPERATE_SUCCESS) {
 			return;
@@ -584,12 +585,12 @@ k_status vfs_msg_forward(pmsg_t p_msg)
 		return EINVAL;
 	}
 
-	if(!p_dev_obj->file_obj.has_parent) {
+	if(!p_dev_obj->has_parent) {
 		pm_set_errno(ENODEV);
 		return ENODEV;
 	}
 
-	p_parent_dev = get_dev(p_dev_obj->file_obj.parent_dev);
+	p_parent_dev = get_dev(p_dev_obj->parent_dev);
 
 	if(!OPERATE_SUCCESS) {
 		pm_set_errno(ENODEV);

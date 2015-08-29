@@ -25,7 +25,7 @@
 
 static	array_list_t	file_desc_info_table;
 static	mutex_t			file_desc_info_table_lock;
-static	mount_point_t	root_info;
+//static	mount_point_t	root_info;
 static	mutex_t			mount_point_lock;
 
 void fs_init()
@@ -45,6 +45,7 @@ void fs_init()
 	pm_init_mutex(&file_desc_info_table_lock);
 	pm_init_mutex(&mount_point_lock);
 
+	//Initialize file descriptor for process 0
 	//Initialize ramdisk and tarfs
 	ramdisk_init();
 	tarfs_init();

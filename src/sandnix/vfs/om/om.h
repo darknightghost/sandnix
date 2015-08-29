@@ -68,8 +68,7 @@ struct	_driver_obj {
 struct	_file_obj {
 	kobject_t		obj;
 	pdriver_obj_t	p_driver;
-	bool			has_parent;
-	u32				parent_dev;
+	u32				file_id;
 	list_t			refered_proc_list;
 	mutex_t			refered_proc_list_lock;
 };
@@ -78,9 +77,11 @@ struct	_device_obj {
 	file_obj_t		file_obj;
 	u32				device_number;
 	u32				device_type;
+	bool			has_parent;
+	u32				parent_dev;
+	bool			is_mounted;
 	list_t			child_list;
 	mutex_t			child_list_lock;
-	bool			is_mounted;
 };
 
 #define	DEV_TYPE_CHAR		0x01
