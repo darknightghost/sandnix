@@ -30,6 +30,7 @@ typedef	struct	_vfs_proc_info {
 	path_t			root;
 	path_t			pwd;
 	u32				driver_obj;
+	mutex_t			lock;
 	array_list_t	file_descs;
 } vfs_proc_info, *pvfs_proc_info;
 
@@ -49,6 +50,7 @@ typedef	struct {
 } file_desc_t, *pfile_desc_t;
 
 void			fs_init();
-k_status		add_file_obj(pfile_obj_t file_obj);
+k_status		add_file_obj(pfile_obj_t p_file_obj);
+void			remove_file_obj(pfile_obj_t p_file_obj);
 
 #endif	//!	FS_H_INCLUDE

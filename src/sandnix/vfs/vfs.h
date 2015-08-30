@@ -24,6 +24,8 @@
 #include "../msg/msg.h"
 #include "fs/fs.h"
 
+#define	MAX_FILEOBJ_NUM		2048
+
 typedef	struct	_msg	msg_t, *pmsg_t;
 
 void			vfs_init();
