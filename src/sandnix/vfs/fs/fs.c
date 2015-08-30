@@ -32,6 +32,9 @@ static	mount_point_t	root_info;
 static	mutex_t			mount_point_lock;
 
 static	pvfs_proc_info	get_proc_fs_info();
+static	void			ref_proc_destroy_callback(pfile_obj_ref_t p_item,
+        pfile_obj_t p_file_object);
+
 void fs_init()
 {
 	k_status status;
@@ -136,11 +139,32 @@ bool			vfs_syncfs(u32 volume_dev);
 
 k_status add_file_obj(pfile_obj_t p_file_obj)
 {
-	pvfs_proc_info p_proc_info;
+	u32 index;
+	k_status status;
 
-	p_proc_info = get_proc_fs_info();
-	pm_acqr_mutex(&(p_proc_info->lock), TIMEOUT_BLOCK);
-	pm_rls_mutex(&(p_proc_info->lock));
+	pm_acqr_mutex(&(file_obj_table_lock), TIMEOUT_BLOCK);
+
+	index = rtl_array_list_get_free_index(&file_obj_table);
+
+	if(!OPERATE_SUCCESS) {
+		status = pm_get_errno();
+		pm_rls_mutex(&(file_obj_table_lock));
+		pm_set_errno(status);
+		return status;
+	}
+
+	rtl_array_list_set(&file_obj_table, index, p_file_obj, NULL);
+
+	if(!OPERATE_SUCCESS) {
+		status = pm_get_errno();
+		pm_rls_mutex(&(file_obj_table_lock));
+		pm_set_errno(status);
+		return status;
+	}
+
+	p_file_obj->file_id = index;
+
+	pm_rls_mutex(&(file_obj_table_lock));
 
 	pm_set_errno(ESUCCESS);
 	return ESUCCESS;
@@ -148,7 +172,26 @@ k_status add_file_obj(pfile_obj_t p_file_obj)
 
 void remove_file_obj(pfile_obj_t p_file_obj)
 {
+	//Release file id
+	vfs_inc_obj_reference((pkobject_t)p_file_obj);
 
+	pm_acqr_mutex(&file_obj_table_lock, TIMEOUT_BLOCK);
+
+	rtl_array_list_release(&file_obj_table, p_file_obj->file_id, NULL);
+
+	pm_rls_mutex(&file_obj_table_lock);
+
+	pm_acqr_mutex(&(p_file_obj->refered_proc_list_lock), TIMEOUT_BLOCK);
+
+	rtl_list_destroy(&(pfile_obj_t->refered_proc_list),
+	                 NULL,
+	                 ref_proc_destroy_callback,
+	                 p_file_obj);
+
+	pm_rls_mutex(&(p_file_obj->refered_proc_list_lock));
+
+	vfs_dec_obj_reference((pkobject_t)p_file_obj);
+	return;
 }
 
 pvfs_proc_info get_proc_fs_info()
@@ -166,4 +209,44 @@ pvfs_proc_info get_proc_fs_info()
 
 	pm_rls_mutex(&file_desc_info_table_lock);
 	return ret;
+}
+
+void ref_proc_destroy_callback(pfile_obj_ref_t p_item,
+                               pfile_obj_t p_file_object)
+{
+	pvfs_proc_info p_info;
+	pfile_desc_t p_fd;
+
+	//Release file descriptor
+	pm_acqr_mutex(&file_desc_info_table_lock, TIMEOUT_BLOCK);
+	p_info = rtl_array_list_get(&file_desc_info_table, p_item->process_id);
+
+	if(p_info == NULL) {
+		excpt_panic(EFAULT,
+		            "VFS data structure broken!");
+	}
+
+	pm_rls_mutex(&file_desc_info_table_lock);
+
+	pm_acqr_mutex(&(p_info->lock), TIMEOUT_BLOCK);
+
+	p_fd = rtl_array_list_get(&(p_info->file_descs), p_item->fd);
+
+	if(p_fd == NULL) {
+		excpt_panic(EFAULT,
+		            "VFS data structure broken!");
+	}
+
+	mm_hp_free(p_fd, NULL);
+
+	rtl_array_list_release(&(p_info->file_descs), p_item->fd, NULL);
+
+	pm_rls_mutex(&(p_info->lock));
+
+	mm_hp_free(p_item, NULL);
+
+	//Decrease reference counnt
+	vfs_dec_obj_reference((pkobject_t)p_file_object);
+
+	return;
 }

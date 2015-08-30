@@ -378,6 +378,8 @@ u32 vfs_add_device(pdevice_obj_t p_device, u32 driver)
 		pm_rls_mutex(&(p_parent_dev->child_list_lock));
 	}
 
+	add_file_obj((pfile_obj_t)p_device);
+
 	return new_dev_num;
 }
 
@@ -424,7 +426,8 @@ void vfs_remove_device(u32 device)
 		vfs_remove_device(((pdevice_obj_t)(p_node->p_item))->device_number);
 	}
 
-	p_dev->file_obj.obj.destroy_callback((pkobject_t)p_dev);
+	remove_file_obj((pfile_obj_t)p_dev);
+	vfs_dec_obj_reference((pkobject_t)p_dev);
 	return;
 }
 

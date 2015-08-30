@@ -55,6 +55,9 @@ void			vfs_sync();
 bool			vfs_syncfs(u32 volume_dev);
 //s32			vfs_ioctl(u32 fd, u32 request, ...);
 
+//File object
+u32				vfs_create_file_object();
+
 //Objects
 void			vfs_initialize_object(pkobject_t p_object);
 void			vfs_inc_obj_reference(pkobject_t p_object);

@@ -49,8 +49,14 @@ typedef	struct {
 	size_t		size;
 } file_desc_t, *pfile_desc_t;
 
+typedef	struct {
+	u32		process_id;
+	u32		fd;
+} file_obj_ref_t, *pfile_obj_ref_t;
+
 void			fs_init();
 k_status		add_file_obj(pfile_obj_t p_file_obj);
 void			remove_file_obj(pfile_obj_t p_file_obj);
+void			send_file_obj_destroy_msg();
 
 #endif	//!	FS_H_INCLUDE
