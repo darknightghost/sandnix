@@ -42,9 +42,11 @@ void ramdisk_init()
 void kdriver_main(u32 thread_id, void* p_null)
 {
 	//Create driver
-	//	pdriver_obj_t p_driver;
+	pdriver_obj_t p_driver;
 
-	//	p_driver = vfs_create_drv_object("initrd");
+	p_driver = vfs_create_drv_object("initrd");
+	p_driver->process = pm_get_crrnt_process();
+
 	//Create device
 	//Awake thread 0
 	pm_resume_thrd(0);

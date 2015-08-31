@@ -60,6 +60,7 @@ struct	_driver_obj {
 	kobject_t		obj;
 	u32				process_id;
 	u32				driver_id;
+	bool			destroy_flag;
 	u32				msg_queue;
 	list_t			file_list;
 	mutex_t			file_list_lock;
@@ -79,7 +80,8 @@ struct	_device_obj {
 	u32				device_type;
 	bool			has_parent;
 	u32				parent_dev;
-	bool			is_mounted;
+	void*			p_additional;
+	obj_destroyer	additional_destroyer;
 	list_t			child_list;
 	mutex_t			child_list_lock;
 };
@@ -105,5 +107,7 @@ typedef	struct	{
 } dev_mj_info_t, *pdev_mj_info_t;
 
 void		om_init();
+
+pdriver_obj_t	get_driver(u32 driver_id);
 
 #endif	//!	OM_H_INCLUDE

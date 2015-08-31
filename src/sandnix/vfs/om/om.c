@@ -32,7 +32,6 @@ static	bool			dev_mj_name_cmp(pdev_mj_info_t p_dev1, pdev_mj_info_t p_dev2);
 static	void			driver_destroyer(pdriver_obj_t p_obj);
 static	void			device_destroyer(pdevice_obj_t p_dev);
 static	pdevice_obj_t	get_dev(u32 dev_num);
-static	pdriver_obj_t	get_driver(u32 driver_id);
 
 void om_init()
 {
@@ -142,6 +141,8 @@ pdriver_obj_t vfs_create_drv_object(char* drv_name)
 		return NULL;
 	}
 
+	ret->destroy_flag = false;
+
 	pm_set_errno(ESUCCESS);
 	return ret;
 }
@@ -149,6 +150,12 @@ pdriver_obj_t vfs_create_drv_object(char* drv_name)
 u32 vfs_reg_driver(pdriver_obj_t p_driver)
 {
 	u32 new_id;
+
+	if(has_drv_object()) {
+		pm_set_errno(EEXIST);
+		return 0;
+	}
+
 	pm_acqr_mutex(&drivers_list_lock, TIMEOUT_BLOCK);
 
 	//Get id
@@ -171,6 +178,7 @@ u32 vfs_reg_driver(pdriver_obj_t p_driver)
 	p_driver->driver_id = new_id;
 
 	pm_rls_mutex(&drivers_list_lock);
+	set_drv_obj(new_id);
 	return new_id;
 }
 
@@ -193,7 +201,7 @@ k_status vfs_send_drv_message(u32 src_driver,
 		return pm_get_errno();
 	}
 
-	p_msg->dev_num = INVALID_DEV;
+	p_msg->file_id = INVALID_FILEID;
 	p_msg->src_thread = pm_get_crrnt_thrd_id();
 	p_msg->result_queue = p_src_drv->msg_queue;
 
@@ -214,7 +222,7 @@ k_status vfs_recv_drv_message(u32 drv_num, pmsg_t* p_p_msg, bool if_block)
 }
 
 //Device objects
-pdevice_obj_t	vfs_create_dev_object(char* dev_name)
+pdevice_obj_t vfs_create_dev_object(char* dev_name)
 {
 	pdevice_obj_t ret;
 	size_t len;
@@ -247,9 +255,11 @@ pdevice_obj_t	vfs_create_dev_object(char* dev_name)
 	ret->child_list = NULL;
 	ret->file_obj.refered_proc_list = NULL;
 	ret->has_parent = false;
-	ret->is_mounted = false;
 	pm_init_mutex(&(ret->child_list_lock));
 	pm_init_mutex(&(ret->file_obj.refered_proc_list_lock));
+
+	ret->p_additional = NULL;
+	ret->additional_destroyer = NULL;
 
 	return ret;
 }
@@ -483,7 +493,7 @@ k_status vfs_send_dev_message(u32 src_driver,
 		return pm_get_errno();
 	}
 
-	p_msg->dev_num = dest_dev;
+	p_msg->file_id = p_dest_dev->file_obj.file_id;
 	p_msg->src_thread = pm_get_crrnt_thrd_id();
 	p_msg->result_queue = p_src_drv->msg_queue;
 
@@ -581,7 +591,13 @@ k_status vfs_msg_forward(pmsg_t p_msg)
 {
 	pdevice_obj_t p_dev_obj, p_parent_dev;
 
-	p_dev_obj = get_dev(p_msg->dev_num);
+	p_dev_obj = (pdevice_obj_t)get_file_obj(p_msg->file_id);
+
+	if(p_dev_obj->file_obj.obj.class !=
+	   (OBJ_MJ_FILE | OBJ_MN_DEVICE)) {
+		pm_set_errno(ENXIO);
+		return ENXIO;
+	}
 
 	if(!OPERATE_SUCCESS) {
 		pm_set_errno(EINVAL);
@@ -653,6 +669,15 @@ void device_destroyer(pdevice_obj_t p_dev)
 	pdev_mj_info_t p_info;
 	pdriver_obj_t p_drv;
 	plist_node_t p_node;
+
+	//Send message
+	if(!p_dev->file_obj.p_driver->destroy_flag) {
+		send_file_obj_destroy_msg((pfile_obj_t)p_dev);
+	}
+
+	if(p_dev->additional_destroyer != NULL) {
+		p_dev->additional_destroyer(p_dev);
+	}
 
 	//Remove devices
 	//Major

@@ -137,6 +137,38 @@ void			vfs_sync();
 bool			vfs_syncfs(u32 volume_dev);
 //s32			vfs_ioctl(u32 fd, u32 request, ...);
 
+//File object
+u32				vfs_create_file_object(u32 driver);
+
+k_status vfs_send_file_message(u32 src_driver,
+                               u32 dest_file,
+                               pmsg_t p_msg,
+                               u32* p_result)
+{
+	pdriver_obj_t p_src_drv;
+	pfile_obj_t p_dest_file;
+
+	p_src_drv = get_driver(src_driver);
+
+	if(!OPERATE_SUCCESS) {
+		return pm_get_errno();
+	}
+
+	p_dest_file = get_file_obj(dest_file);
+
+	if(!OPERATE_SUCCESS) {
+		return pm_get_errno();
+	}
+
+	p_msg->file_id = dest_file;
+	p_msg->src_thread = pm_get_crrnt_thrd_id();
+	p_msg->result_queue = p_src_drv->msg_queue;
+
+	return msg_send(p_msg,
+	                p_dest_file->p_driver->msg_queue,
+	                p_result);
+}
+
 k_status add_file_obj(pfile_obj_t p_file_obj)
 {
 	u32 index;
@@ -183,9 +215,9 @@ void remove_file_obj(pfile_obj_t p_file_obj)
 
 	pm_acqr_mutex(&(p_file_obj->refered_proc_list_lock), TIMEOUT_BLOCK);
 
-	rtl_list_destroy(&(pfile_obj_t->refered_proc_list),
+	rtl_list_destroy(&(p_file_obj->refered_proc_list),
 	                 NULL,
-	                 ref_proc_destroy_callback,
+	                 (item_destroyer_callback)ref_proc_destroy_callback,
 	                 p_file_obj);
 
 	pm_rls_mutex(&(p_file_obj->refered_proc_list_lock));
@@ -209,6 +241,30 @@ pvfs_proc_info get_proc_fs_info()
 
 	pm_rls_mutex(&file_desc_info_table_lock);
 	return ret;
+}
+
+void set_drv_obj(u32 driver_id)
+{
+	pvfs_proc_info p_info;
+
+	p_info = get_proc_fs_info();
+
+	p_info->driver_obj = driver_id;
+
+	return;
+}
+
+bool has_drv_object()
+{
+	pvfs_proc_info p_info;
+
+	p_info = get_proc_fs_info();
+
+	if(p_info->driver_obj != INVALID_DRV) {
+		return false;
+	}
+
+	return true;
 }
 
 void ref_proc_destroy_callback(pfile_obj_ref_t p_item,
@@ -249,4 +305,21 @@ void ref_proc_destroy_callback(pfile_obj_ref_t p_item,
 	vfs_dec_obj_reference((pkobject_t)p_file_object);
 
 	return;
+}
+
+pfile_obj_t get_file_obj(u32 id)
+{
+	pfile_obj_t ret;
+	k_status status;
+
+	pm_acqr_mutex(&file_obj_table_lock, TIMEOUT_BLOCK);
+
+	ret = rtl_array_list_get(&file_desc_info_table, id);
+	status = pm_get_errno();
+
+	pm_rls_mutex(&file_obj_table_lock);
+
+	pm_set_errno(status);
+
+	return ret;
 }

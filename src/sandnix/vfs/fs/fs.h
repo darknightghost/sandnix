@@ -21,6 +21,8 @@
 #include "../vfs.h"
 #include "../../rtl/rtl.h"
 
+#define	INVALID_FILEID		0xFFFFFFFF
+
 typedef	struct	_path {
 	u32			volume_dev;
 	char*		path;
@@ -54,9 +56,18 @@ typedef	struct {
 	u32		fd;
 } file_obj_ref_t, *pfile_obj_ref_t;
 
+typedef	struct {
+	char*	name;
+	bool	multi_mount;
+	bool	mounted;
+} volume_info, *pvolume_info;
+
 void			fs_init();
 k_status		add_file_obj(pfile_obj_t p_file_obj);
 void			remove_file_obj(pfile_obj_t p_file_obj);
-void			send_file_obj_destroy_msg();
+void			send_file_obj_destroy_msg(pfile_obj_t p_file_obj);
+pfile_obj_t		get_file_obj(u32 id);
+void			set_drv_obj(u32 driver_id);
+bool			has_drv_object();
 
 #endif	//!	FS_H_INCLUDE
