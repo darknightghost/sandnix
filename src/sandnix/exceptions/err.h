@@ -154,13 +154,13 @@
 #define	EOWNERDEAD		130		//Owner died
 #define	ENOTRECOVERABLE	131		//State not recoverable
 #define	ERFKILL			132		//Operation not possible due to RF-kill
-#define	EHWPOISON		133		//Memory page has hardware	Error
+#define	EHWPOISON		133		//Memory page has hardware Error
 #define	ENOTSUP			134		//Not supported
 
 
 //Kernel excepions
 #define	EKERNELARG		135		//Kernel argument error
-
+#define	EASSERT			136		//Assert
 
 
 

@@ -47,18 +47,17 @@ void om_init()
 	                    NULL);
 	pm_init_mutex(&drivers_list_lock);
 	pm_init_mutex(&devices_list_lock);
-	vfs_get_dev_major_by_name("normal_file");
-	vfs_get_dev_major_by_name("bus");
-	vfs_get_dev_major_by_name("dma");
-	vfs_get_dev_major_by_name("memory");
-	vfs_get_dev_major_by_name("ramdisk");
-	vfs_get_dev_major_by_name("tty");
-	vfs_get_dev_major_by_name("floppy");
-	vfs_get_dev_major_by_name("ata");
-	vfs_get_dev_major_by_name("sata");
-	vfs_get_dev_major_by_name("console");
-	vfs_get_dev_major_by_name("partition");
-	vfs_get_dev_major_by_name("volume");
+	vfs_get_dev_major_by_name("bus", DEV_TYPE_CHAR);
+	vfs_get_dev_major_by_name("dma", DEV_TYPE_CHAR);
+	vfs_get_dev_major_by_name("memory", DEV_TYPE_CHAR);
+	vfs_get_dev_major_by_name("ramdisk", DEV_TYPE_BLOCK);
+	vfs_get_dev_major_by_name("tty", DEV_TYPE_CHAR);
+	vfs_get_dev_major_by_name("floppy", DEV_TYPE_BLOCK);
+	vfs_get_dev_major_by_name("ata", DEV_TYPE_BLOCK);
+	vfs_get_dev_major_by_name("sata", DEV_TYPE_BLOCK);
+	vfs_get_dev_major_by_name("console", DEV_TYPE_CHAR);
+	vfs_get_dev_major_by_name("partition", DEV_TYPE_BLOCK);
+	vfs_get_dev_major_by_name("volume", DEV_TYPE_CHAR);
 
 	return;
 }
@@ -502,7 +501,7 @@ k_status vfs_send_dev_message(u32 src_driver,
 	                p_result);
 }
 
-u32 vfs_get_dev_major_by_name(char* major_name)
+u32 vfs_get_dev_major_by_name(char* major_name, u32 type)
 {
 	pdev_mj_info_t p_info;
 	u32 major;
@@ -551,6 +550,7 @@ u32 vfs_get_dev_major_by_name(char* major_name)
 		major = rtl_array_list_get_free_index(&devices_list);
 
 		p_info->mj_num = major;
+		p_info->device_type = type;
 
 		//Add to devices_list
 		rtl_array_list_set(&devices_list, major, p_info, NULL);
@@ -676,7 +676,7 @@ void device_destroyer(pdevice_obj_t p_dev)
 	}
 
 	if(p_dev->additional_destroyer != NULL) {
-		p_dev->additional_destroyer(p_dev);
+		p_dev->additional_destroyer((pkobject_t)p_dev);
 	}
 
 	//Remove devices
@@ -726,7 +726,6 @@ void device_destroyer(pdevice_obj_t p_dev)
 	pm_rls_mutex(&(p_info->lock));
 
 	return;
-
 }
 
 pdevice_obj_t get_dev(u32 dev_num)

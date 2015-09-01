@@ -63,6 +63,12 @@ typedef	struct {
 	u32		msg_id;
 } msg_complete_info_t, *pmsg_complete_info_t, msg_cancel_info_t, *pmsg_cancel_info_t;
 
+typedef	struct {
+	u32			msg_id;
+	k_status	reason;
+} msg_failed_info_t, *pmsg_failed_info_t;
+
+
 //Flags
 #define		MFLAG_DIRECTBUF		0x00000001
 #define		MFLAG_PMO			0x00000002
@@ -72,19 +78,21 @@ typedef	struct {
 //Messages
 #define		MSG_COMPLETE		0x00000000
 #define		MSG_CANCEL			0x00000001
-#define		MSG_OPEN			0x00000002
-#define		MSG_READ			0x00000003
-#define		MSG_WRITE			0x00000004
-#define		MSG_CLOSE			0x00000005
-#define		MSG_DESTROY			0x00000006
-#define		MSG_IOCTRL			0x00000007
-#define		MSG_INTERRUPT		0x00000008
+#define		MSG_FAILED			0x00000002
+#define		MSG_OPEN			0x00000003
+#define		MSG_READ			0x00000004
+#define		MSG_WRITE			0x00000005
+#define		MSG_CLOSE			0x00000006
+#define		MSG_DESTROY			0x00000007
+#define		MSG_IOCTRL			0x00000008
+#define		MSG_INTERRUPT		0x00000009
 
 
 //Status
 #define		MSTATUS_COMPLETE	0x00000000
 #define		MSTATUS_CANCEL		0x00000001
 #define		MSTATUS_FORWARD		0x00000002
+#define		MSTATUS_FAILED		0x00000003
 
 void		msg_init();
 
@@ -101,6 +109,7 @@ k_status	msg_recv(pmsg_t* p_p_msg, u32 dest_queue, bool if_block);
 k_status	msg_forward(pmsg_t p_msg, u32 dest_queue);
 k_status	msg_complete(pmsg_t p_msg);
 k_status	msg_cancel(pmsg_t p_msg);
+k_status	msg_failed(pmsg_t p_msg, k_status reason);
 
 
 

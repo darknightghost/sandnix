@@ -85,7 +85,7 @@ k_status		vfs_send_dev_message(u32 src_driver,
                                      u32 dest_dev,
                                      pmsg_t p_msg,
                                      u32* p_result);
-u32				vfs_get_dev_major_by_name(char* major_name);
+u32				vfs_get_dev_major_by_name(char* major_name, u32 type);
 k_status		vfs_msg_forward(pmsg_t p_msg);
 
 #endif	//!	VFS_H_INCLUDE

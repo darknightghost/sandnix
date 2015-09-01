@@ -185,9 +185,10 @@ static	char*		excpt_tbl[] = {
 	"Owner died",
 	"State not recoverable",
 	"Operation not possible due to RF-kill",
-	"Memory page has hardware	Error",
+	"Memory page has hardware Error",
 	"Not supported",
-	"Kernel argument error"
+	"Kernel argument error",
+	"Assert"
 };
 
 void excpt_init()

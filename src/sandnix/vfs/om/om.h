@@ -77,7 +77,6 @@ struct	_file_obj {
 struct	_device_obj {
 	file_obj_t		file_obj;
 	u32				device_number;
-	u32				device_type;
 	bool			has_parent;
 	u32				parent_dev;
 	void*			p_additional;
@@ -103,6 +102,7 @@ typedef	struct	{
 	u32				mj_num;
 	char*			name;
 	array_list_t	devices;
+	u32				device_type;
 	mutex_t			lock;
 } dev_mj_info_t, *pdev_mj_info_t;
 

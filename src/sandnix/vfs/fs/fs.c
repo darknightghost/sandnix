@@ -32,6 +32,8 @@ static	mount_point_t	root_info;
 static	mutex_t			mount_point_lock;
 
 static	pvfs_proc_info	get_proc_fs_info();
+static	void			set_proc_fs_info(u32 process_id,
+        pvfs_proc_info p_new_info);
 static	void			ref_proc_destroy_callback(pfile_obj_ref_t p_item,
         pfile_obj_t p_file_object);
 
@@ -116,13 +118,62 @@ k_status		vfs_chdir(char* path);
 //File descriptors
 k_status vfs_fork(u32 dest_process)
 {
-	UNREFERRED_PARAMETER(dest_process);
+	pvfs_proc_info p_src_info, p_dest_info;
+	u32 i;
+	pfile_desc_t p_src_fd, p_dest_fd;
+
+	p_src_info = get_proc_fs_info();
+
+	//Allocate memory for new info
+	p_dest_info = mm_hp_alloc(sizeof(vfs_proc_info), NULL);
+
+	if(p_dest_info == NULL) {
+		pm_set_errno(ENOMEM);
+		return ENOMEM;
+	}
+
+	rtl_memcpy(p_dest_info, p_src_info, sizeof(vfs_proc_info));
+	pm_init_mutex(&(p_dest_info->lock));
+
+	pm_set_errno(ESUCCESS);
+
+	pm_acqr_mutex(&(p_src_info->lock), TIMEOUT_BLOCK);
+	rtl_array_list_init(&(p_dest_info->file_descs),
+	                    p_src_info->file_descs.size,
+	                    NULL);
+
+	for(i = 0;
+	    OPERATE_SUCCESS;
+	    i = rtl_array_list_get_next_index(&(p_src_info->file_descs), i + 1)) {
+
+		//Get source file descriptor
+		p_src_fd = rtl_array_list_get(&(p_src_info->file_descs), i);
+		ASSERT(p_src_fd != NULL);
+
+		//Duplicate file descriptor
+		p_dest_fd = mm_hp_alloc(sizeof(file_desc_t), NULL);
+		ASSERT(p_dest_fd != NULL);
+		rtl_memcpy(p_dest_fd, p_src_fd, sizeof(file_desc_t));
+		vfs_inc_obj_reference((pkobject_t)(p_dest_fd->file_obj));
+
+		rtl_array_list_set(&(p_dest_info->file_descs), i, p_dest_fd, NULL);
+		ASSERT(OPERATE_SUCCESS);
+	}
+
+	pm_rls_mutex(&(p_src_info->lock));
+
+	//Add new info
+	pm_acqr_mutex(&file_desc_info_table_lock, TIMEOUT_BLOCK);
+	rtl_array_list_set(&file_desc_info_table, dest_process, p_dest_info, NULL);
+	ASSERT(OPERATE_SUCCESS);
+	pm_rls_mutex(&file_desc_info_table_lock);
+
 	return ESUCCESS;
 }
 
 void vfs_clean(u32 process_id)
 {
-	UNREFERRED_PARAMETER(process_id);
+	pvfs_proc_info p_info;
 	return;
 }
 

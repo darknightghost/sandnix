@@ -201,6 +201,34 @@ u32 rtl_array_list_get_free_index(parray_list_t p_array)
 	return 0;
 }
 
+u32 rtl_array_list_get_next_index(parray_list_t p_array, u32 index)
+{
+	parray_list_node_t p_node;
+	size_t scale;
+
+	scale = p_array->size / p_array->num;
+
+	while(index < p_array->size) {
+		p_node = *(p_array->p_nodes + scale);
+
+		if(p_node == NULL) {
+			//Jump to next node
+			index = (index / scale + 1) * scale;
+			continue;
+		}
+
+		if(*(p_node->p_datas + index % scale) != NULL) {
+			pm_set_errno(ESUCCESS);
+			return index;
+		}
+
+		index++;
+	}
+
+	pm_set_errno(EOVERFLOW);
+	return index;
+}
+
 void rtl_array_list_destroy(parray_list_t p_array,
                             item_destroyer_callback callback,
                             void* p_arg,

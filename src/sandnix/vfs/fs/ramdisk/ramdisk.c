@@ -21,6 +21,11 @@
 #include "../../../pm/pm.h"
 
 static	void	kdriver_main(u32 thread_id, void* p_null);
+static	bool	dispatch_message(pmsg_t p_msg);
+static	void	on_open(pmsg_t p_msg);
+static	void	on_read(pmsg_t p_msg);
+static	void	on_close(pmsg_t p_msg);
+static	void	on_destroy(pmsg_t p_msg);
 
 void ramdisk_init()
 {
@@ -41,20 +46,79 @@ void ramdisk_init()
 
 void kdriver_main(u32 thread_id, void* p_null)
 {
+	pdevice_obj_t p_device;
+	pmsg_t p_msg;
+
 	//Create driver
 	pdriver_obj_t p_driver;
 
 	p_driver = vfs_create_drv_object("initrd");
-	p_driver->process = pm_get_crrnt_process();
+	p_driver->process_id = pm_get_crrnt_process();
+	vfs_reg_driver(p_driver);
 
 	//Create device
+	p_device = vfs_create_dev_object("initrd");
+	p_device->device_number = MK_DEV(vfs_get_dev_major_by_name("ramdisk",
+	                                 DEV_TYPE_BLOCK),
+	                                 0);
+	vfs_add_device(p_device, p_driver->driver_id);
+
 	//Awake thread 0
 	pm_resume_thrd(0);
 
 	//Message loop
+	do {
+		vfs_recv_drv_message(p_driver->driver_id, &p_msg, true);
+	} while(dispatch_message(p_msg));
 
 	pm_exit_thrd(0);
 	UNREFERRED_PARAMETER(thread_id);
 	UNREFERRED_PARAMETER(p_null);
 	return;
+}
+
+bool dispatch_message(pmsg_t p_msg)
+{
+	switch(p_msg->message) {
+	case MSG_OPEN:
+		on_open(p_msg);
+		break;
+
+	case MSG_READ:
+		on_read(p_msg);
+		break;
+
+	case MSG_CLOSE:
+		on_close(p_msg);
+		break;
+
+	case MSG_DESTROY:
+		on_destroy(p_msg);
+		return false;
+
+	default:
+		msg_failed(p_msg, EACCES);
+	}
+
+	return true;
+}
+
+void on_open(pmsg_t p_msg)
+{
+
+}
+
+void on_read(pmsg_t p_msg)
+{
+
+}
+
+void on_close(pmsg_t p_msg)
+{
+
+}
+
+void on_destroy(pmsg_t p_msg)
+{
+
 }

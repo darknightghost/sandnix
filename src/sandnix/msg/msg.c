@@ -311,7 +311,8 @@ k_status msg_complete(pmsg_t p_msg)
 	if(p_msg->flags.flags | MFLAG_ASYNC) {
 
 		if(p_msg->message == MSG_COMPLETE
-		   || p_msg->message == MSG_CANCEL) {
+		   || p_msg->message == MSG_CANCEL
+		   || p_msg->message == MSG_FAILED) {
 			mm_hp_free(p_msg->buf.buf.addr, NULL);
 			mm_hp_free(p_msg, NULL);
 
@@ -359,7 +360,7 @@ k_status msg_complete(pmsg_t p_msg)
 	}
 }
 
-k_status	msg_cancel(pmsg_t p_msg)
+k_status msg_cancel(pmsg_t p_msg)
 {
 	pmsg_t p_cancel_msg;
 	k_status status;
@@ -368,7 +369,8 @@ k_status	msg_cancel(pmsg_t p_msg)
 	if(p_msg->flags.flags | MFLAG_ASYNC) {
 
 		if(p_msg->message == MSG_COMPLETE
-		   || p_msg->message == MSG_CANCEL) {
+		   || p_msg->message == MSG_CANCEL
+		   || p_msg->message == MSG_FAILED) {
 			mm_hp_free(p_msg->buf.buf.addr, NULL);
 			mm_hp_free(p_msg, NULL);
 
@@ -407,6 +409,65 @@ k_status	msg_cancel(pmsg_t p_msg)
 	} else {
 		//Set status
 		p_msg->status = MSTATUS_CANCEL;
+
+		//Awake thread
+		pm_resume_thrd(p_msg->src_thread);
+
+		pm_set_errno(ESUCCESS);
+		return ESUCCESS;
+	}
+}
+
+k_status msg_failed(pmsg_t p_msg, k_status reason)
+{
+	pmsg_t p_failed_msg;
+	k_status status;
+	pmsg_failed_info_t p_failed_info;
+
+	if(p_msg->flags.flags | MFLAG_ASYNC) {
+
+		if(p_msg->message == MSG_COMPLETE
+		   || p_msg->message == MSG_CANCEL
+		   || p_msg->message == MSG_FAILED) {
+			mm_hp_free(p_msg->buf.buf.addr, NULL);
+			mm_hp_free(p_msg, NULL);
+
+			pm_set_errno(ESUCCESS);
+			return ESUCCESS;
+
+		} else {
+			//Send failed message
+			status = msg_create(&p_failed_msg, sizeof(msg_t));
+
+			if(status != ESUCCESS) {
+				return status;
+			}
+
+			p_failed_msg->message = MSG_FAILED;
+			p_failed_msg->flags.flags = MFLAG_DIRECTBUF | MFLAG_ASYNC;
+
+			p_failed_info = mm_hp_alloc(sizeof(msg_failed_info_t), NULL);
+
+			if(p_failed_info == NULL) {
+				mm_hp_free(p_failed_info, NULL);
+				pm_set_errno(EFAULT);
+				return EFAULT;
+			}
+
+			p_failed_info->msg_id = p_msg->msg_id;
+			p_failed_info->reason = reason;
+
+			p_failed_msg->buf.buf.addr = p_failed_info;
+			p_failed_msg->buf.buf.size = sizeof(msg_failed_info_t);
+
+			status = msg_send(p_failed_msg, p_msg->result_queue, NULL);
+
+			return status;
+		}
+
+	} else {
+		//Set status
+		p_msg->status = MSTATUS_FAILED;
 
 		//Awake thread
 		pm_resume_thrd(p_msg->src_thread);
