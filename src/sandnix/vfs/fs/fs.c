@@ -36,6 +36,8 @@ static	void			set_proc_fs_info(u32 process_id,
         pvfs_proc_info p_new_info);
 static	void			ref_proc_destroy_callback(pfile_obj_ref_t p_item,
         pfile_obj_t p_file_object);
+static	void			file_desc_destroy_callback(pfile_desc_t p_fd,
+        void* p_null);
 
 void fs_init()
 {
@@ -163,10 +165,7 @@ k_status vfs_fork(u32 dest_process)
 	pm_rls_mutex(&(p_src_info->lock));
 
 	//Add new info
-	pm_acqr_mutex(&file_desc_info_table_lock, TIMEOUT_BLOCK);
-	rtl_array_list_set(&file_desc_info_table, dest_process, p_dest_info, NULL);
-	ASSERT(OPERATE_SUCCESS);
-	pm_rls_mutex(&file_desc_info_table_lock);
+	set_proc_fs_info(dest_process, p_dest_info);
 
 	return ESUCCESS;
 }
@@ -174,6 +173,29 @@ k_status vfs_fork(u32 dest_process)
 void vfs_clean(u32 process_id)
 {
 	pvfs_proc_info p_info;
+
+	//Get info
+	p_info = get_proc_fs_info(process_id);
+
+	if(p_info == NULL) {
+		pm_rls_mutex(&file_desc_info_table_lock);
+		pm_set_errno(EFAULT);
+		return;
+	}
+
+	pm_acqr_mutex(&file_desc_info_table_lock, TIMEOUT_BLOCK);
+
+	rtl_array_list_release(&file_desc_info_table,
+	                       process_id,
+	                       NULL);
+	pm_rls_mutex(&file_desc_info_table_lock);
+
+	//Release info
+	rtl_array_list_destroy(&(p_info->file_descs),
+	                       (item_destroyer_callback)file_desc_destroy_callback,
+	                       NULL,
+	                       NULL);
+	pm_set_errno(ESUCCESS);
 	return;
 }
 
@@ -294,6 +316,21 @@ pvfs_proc_info get_proc_fs_info()
 	return ret;
 }
 
+void set_proc_fs_info(u32 process_id,
+                      pvfs_proc_info p_new_info)
+{
+	pm_acqr_mutex(&file_desc_info_table_lock, TIMEOUT_BLOCK);
+
+	ASSERT((rtl_array_list_get(&file_desc_info_table, process_id),
+	        !OPERATE_SUCCESS));
+
+	rtl_array_list_set(&file_desc_info_table, process_id, p_new_info, NULL);
+
+	pm_rls_mutex(&file_desc_info_table_lock);
+
+	return;
+}
+
 void set_drv_obj(u32 driver_id)
 {
 	pvfs_proc_info p_info;
@@ -373,4 +410,17 @@ pfile_obj_t get_file_obj(u32 id)
 	pm_set_errno(status);
 
 	return ret;
+}
+
+void file_desc_destroy_callback(pfile_desc_t p_fd,
+                                void* p_null)
+{
+	pkobject_t p_file_obj;
+
+	p_file_obj = (pkobject_t)get_file_obj(p_fd->file_obj);
+	vfs_dec_obj_reference(p_file_obj);
+	mm_hp_free(p_fd, NULL);
+
+	UNREFERRED_PARAMETER(p_null);
+	return;
 }
