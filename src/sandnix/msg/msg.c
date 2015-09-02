@@ -145,13 +145,17 @@ k_status msg_create(pmsg_t* p_p_msg, size_t size)
 	return ESUCCESS;
 }
 
-k_status msg_send(pmsg_t p_msg, u32 dest_queue, u32* p_result)
+k_status msg_send(pmsg_t p_msg,
+                  u32 dest_queue,
+                  u32* p_result,
+                  k_status* p_complete_result)
 {
 	pm_acqr_mutex(&msg_queue_table_lock, TIMEOUT_BLOCK);
 
 	//Check if the queue_t exists
 	if(msg_queue_table[dest_queue] == NULL) {
 		pm_rls_mutex(&msg_queue_table_lock);
+		mm_hp_free(p_msg, NULL);
 		pm_set_errno(EFAULT);
 		return EFAULT;
 	}
@@ -167,6 +171,7 @@ k_status msg_send(pmsg_t p_msg, u32 dest_queue, u32* p_result)
 	                   NULL)) {
 		pm_rls_mutex(&(msg_queue_table[dest_queue]->lock));
 		pm_rls_mutex(&msg_queue_table_lock);
+		mm_hp_free(p_msg, NULL);
 
 		pm_set_errno(EFAULT);
 		return EFAULT;
@@ -175,6 +180,9 @@ k_status msg_send(pmsg_t p_msg, u32 dest_queue, u32* p_result)
 	if(p_msg->flags.flags | MFLAG_ASYNC) {
 		pm_rls_mutex(&(msg_queue_table[dest_queue]->lock));
 		pm_rls_mutex(&msg_queue_table_lock);
+
+		pm_set_errno(ESUCCESS);
+		return ESUCCESS;
 
 	} else {
 		pm_disable_task_switch();
@@ -187,13 +195,19 @@ k_status msg_send(pmsg_t p_msg, u32 dest_queue, u32* p_result)
 		pm_enable_task_switch();
 		pm_schedule();
 
-		*p_result = p_msg->status;
+		if(p_result != NULL) {
+			*p_result = p_msg->status;
+		}
+
+		if(p_complete_result != NULL) {
+			*p_complete_result = p_msg->result;
+		}
+
 		mm_hp_free(p_msg, NULL);
 
+		pm_set_errno(p_msg->result);
+		return p_msg->result;
 	}
-
-	pm_set_errno(ESUCCESS);
-	return ESUCCESS;
 }
 
 k_status msg_recv(pmsg_t* p_p_msg, u32 dest_queue, bool if_block)
@@ -302,7 +316,7 @@ k_status msg_forward(pmsg_t p_msg, u32 dest_queue)
 	return ESUCCESS;
 }
 
-k_status msg_complete(pmsg_t p_msg)
+k_status msg_complete(pmsg_t p_msg, k_status result)
 {
 	pmsg_t p_complete_msg;
 	k_status status;
@@ -311,9 +325,7 @@ k_status msg_complete(pmsg_t p_msg)
 	if(p_msg->flags.flags | MFLAG_ASYNC) {
 
 		if(p_msg->message == MSG_COMPLETE
-		   || p_msg->message == MSG_CANCEL
-		   || p_msg->message == MSG_FAILED) {
-			mm_hp_free(p_msg->buf.buf.addr, NULL);
+		   || p_msg->message == MSG_CANCEL) {
 			mm_hp_free(p_msg, NULL);
 
 			pm_set_errno(ESUCCESS);
@@ -321,7 +333,8 @@ k_status msg_complete(pmsg_t p_msg)
 
 		} else {
 			//Send complete message
-			status = msg_create(&p_complete_msg, sizeof(msg_t));
+			status = msg_create(&p_complete_msg, sizeof(msg_t)
+			                    + sizeof(msg_complete_info_t));
 
 			if(status != ESUCCESS) {
 				return status;
@@ -330,20 +343,14 @@ k_status msg_complete(pmsg_t p_msg)
 			p_complete_msg->message = MSG_COMPLETE;
 			p_complete_msg->flags.flags = MFLAG_DIRECTBUF | MFLAG_ASYNC;
 
-			p_complete_info = mm_hp_alloc(sizeof(msg_complete_info_t), NULL);
-
-			if(p_complete_info == NULL) {
-				mm_hp_free(p_complete_msg, NULL);
-				pm_set_errno(EFAULT);
-				return EFAULT;
-			}
+			p_complete_info = (pmsg_complete_info_t)(p_complete_msg + 1);
 
 			p_complete_info->msg_id = p_msg->msg_id;
+			p_complete_info->result = result;
 
-			p_complete_msg->buf.buf.addr = p_complete_info;
-			p_complete_msg->buf.buf.size = sizeof(msg_complete_info_t);
+			p_complete_msg->buf.addr = p_complete_info;
 
-			status = msg_send(p_complete_msg, p_msg->result_queue, NULL);
+			status = msg_send(p_complete_msg, p_msg->result_queue, NULL, NULL);
 
 			return status;
 		}
@@ -351,6 +358,7 @@ k_status msg_complete(pmsg_t p_msg)
 	} else {
 		//Set status
 		p_msg->status = MSTATUS_COMPLETE;
+		p_msg->result = result;
 
 		//Awake thread
 		pm_resume_thrd(p_msg->src_thread);
@@ -369,9 +377,7 @@ k_status msg_cancel(pmsg_t p_msg)
 	if(p_msg->flags.flags | MFLAG_ASYNC) {
 
 		if(p_msg->message == MSG_COMPLETE
-		   || p_msg->message == MSG_CANCEL
-		   || p_msg->message == MSG_FAILED) {
-			mm_hp_free(p_msg->buf.buf.addr, NULL);
+		   || p_msg->message == MSG_CANCEL) {
 			mm_hp_free(p_msg, NULL);
 
 			pm_set_errno(ESUCCESS);
@@ -379,7 +385,7 @@ k_status msg_cancel(pmsg_t p_msg)
 
 		} else {
 			//Send cancel message
-			status = msg_create(&p_cancel_msg, sizeof(msg_t));
+			status = msg_create(&p_cancel_msg, sizeof(msg_t) + sizeof(msg_cancel_info_t));
 
 			if(status != ESUCCESS) {
 				return status;
@@ -388,20 +394,13 @@ k_status msg_cancel(pmsg_t p_msg)
 			p_cancel_msg->message = MSG_CANCEL;
 			p_cancel_msg->flags.flags = MFLAG_DIRECTBUF | MFLAG_ASYNC;
 
-			p_cancel_info = mm_hp_alloc(sizeof(msg_cancel_info_t), NULL);
-
-			if(p_cancel_info == NULL) {
-				mm_hp_free(p_cancel_msg, NULL);
-				pm_set_errno(EFAULT);
-				return EFAULT;
-			}
+			p_cancel_info = (pmsg_cancel_info_t)(p_cancel_msg + 1);
 
 			p_cancel_info->msg_id = p_msg->msg_id;
 
-			p_cancel_msg->buf.buf.addr = p_cancel_info;
-			p_cancel_msg->buf.buf.size = sizeof(msg_cancel_info_t);
+			p_cancel_msg->buf.addr = p_cancel_info;
 
-			status = msg_send(p_cancel_msg, p_msg->result_queue, NULL);
+			status = msg_send(p_cancel_msg, p_msg->result_queue, NULL, NULL);
 
 			return status;
 		}
@@ -409,65 +408,6 @@ k_status msg_cancel(pmsg_t p_msg)
 	} else {
 		//Set status
 		p_msg->status = MSTATUS_CANCEL;
-
-		//Awake thread
-		pm_resume_thrd(p_msg->src_thread);
-
-		pm_set_errno(ESUCCESS);
-		return ESUCCESS;
-	}
-}
-
-k_status msg_failed(pmsg_t p_msg, k_status reason)
-{
-	pmsg_t p_failed_msg;
-	k_status status;
-	pmsg_failed_info_t p_failed_info;
-
-	if(p_msg->flags.flags | MFLAG_ASYNC) {
-
-		if(p_msg->message == MSG_COMPLETE
-		   || p_msg->message == MSG_CANCEL
-		   || p_msg->message == MSG_FAILED) {
-			mm_hp_free(p_msg->buf.buf.addr, NULL);
-			mm_hp_free(p_msg, NULL);
-
-			pm_set_errno(ESUCCESS);
-			return ESUCCESS;
-
-		} else {
-			//Send failed message
-			status = msg_create(&p_failed_msg, sizeof(msg_t));
-
-			if(status != ESUCCESS) {
-				return status;
-			}
-
-			p_failed_msg->message = MSG_FAILED;
-			p_failed_msg->flags.flags = MFLAG_DIRECTBUF | MFLAG_ASYNC;
-
-			p_failed_info = mm_hp_alloc(sizeof(msg_failed_info_t), NULL);
-
-			if(p_failed_info == NULL) {
-				mm_hp_free(p_failed_info, NULL);
-				pm_set_errno(EFAULT);
-				return EFAULT;
-			}
-
-			p_failed_info->msg_id = p_msg->msg_id;
-			p_failed_info->reason = reason;
-
-			p_failed_msg->buf.buf.addr = p_failed_info;
-			p_failed_msg->buf.buf.size = sizeof(msg_failed_info_t);
-
-			status = msg_send(p_failed_msg, p_msg->result_queue, NULL);
-
-			return status;
-		}
-
-	} else {
-		//Set status
-		p_msg->status = MSTATUS_FAILED;
 
 		//Awake thread
 		pm_resume_thrd(p_msg->src_thread);

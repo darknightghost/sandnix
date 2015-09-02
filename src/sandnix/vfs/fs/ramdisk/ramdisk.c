@@ -95,9 +95,6 @@ bool dispatch_message(pmsg_t p_msg)
 	case MSG_DESTROY:
 		on_destroy(p_msg);
 		return false;
-
-	default:
-		msg_failed(p_msg, EACCES);
 	}
 
 	return true;

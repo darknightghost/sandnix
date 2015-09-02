@@ -22,6 +22,7 @@
 #include "../../rtl/rtl.h"
 
 #define	INVALID_FILEID		0xFFFFFFFF
+#define	INVALID_FD			0xFFFFFFFF
 
 typedef	struct	_path {
 	u32			volume_dev;

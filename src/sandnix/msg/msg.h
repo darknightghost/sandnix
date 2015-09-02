@@ -33,6 +33,7 @@ typedef	struct	_msg {
 	u32				src_thread;
 	u32				result_queue;
 	u32				file_id;
+	k_status		result;
 	size_t			size;
 	union {
 		u32	flags;
@@ -43,11 +44,8 @@ typedef	struct	_msg {
 		} properties;
 	} flags;
 	union {
-		struct {
-			void*	addr;		//Don't too larger,slow,one direction only
-			size_t	size;
-		} buf;
-		ppmo_t	pmo_addr;		//Fast,large buf should use this,can get return value
+		void*	addr;		//Don't too large,slow,one direction only
+		ppmo_t	pmo_addr;	//Fast,large buf should use this,can get return value
 	} buf;
 } msg_t, *pmsg_t;
 
@@ -60,14 +58,23 @@ typedef	struct {
 } msg_queue_t, *pmsg_queue_t;
 
 typedef	struct {
-	u32		msg_id;
-} msg_complete_info_t, *pmsg_complete_info_t, msg_cancel_info_t, *pmsg_cancel_info_t;
+	u32			msg_id;
+	k_status	result;
+} msg_complete_info_t, *pmsg_complete_info_t;
 
 typedef	struct {
-	u32			msg_id;
-	k_status	reason;
-} msg_failed_info_t, *pmsg_failed_info_t;
+	u32		msg_id;
+} msg_cancel_info_t, *pmsg_cancel_info_t;
 
+
+typedef	struct {
+	u32			process;
+	u32			flags;
+	u32			mode;
+	u32			file_object;
+	size_t		file_size;
+	char		path_begin;
+} msg_open_info_t, *pmsg_open_info_t;
 
 //Flags
 #define		MFLAG_DIRECTBUF		0x00000001
@@ -92,7 +99,6 @@ typedef	struct {
 #define		MSTATUS_COMPLETE	0x00000000
 #define		MSTATUS_CANCEL		0x00000001
 #define		MSTATUS_FORWARD		0x00000002
-#define		MSTATUS_FAILED		0x00000003
 
 void		msg_init();
 
@@ -102,14 +108,16 @@ void		msg_queue_destroy(u32 id);
 
 //Mesage send&recv
 k_status	msg_create(pmsg_t *p_p_msg, size_t size);
-k_status	msg_send(pmsg_t p_msg, u32 dest_queue, u32* p_result);
+k_status	msg_send(pmsg_t p_msg,
+                     u32 dest_queue,
+                     u32* p_result,
+                     k_status* p_complete_status);
 k_status	msg_recv(pmsg_t* p_p_msg, u32 dest_queue, bool if_block);
 
 //Message dealing
 k_status	msg_forward(pmsg_t p_msg, u32 dest_queue);
-k_status	msg_complete(pmsg_t p_msg);
+k_status	msg_complete(pmsg_t p_msg, k_status result);
 k_status	msg_cancel(pmsg_t p_msg);
-k_status	msg_failed(pmsg_t p_msg, k_status reason);
 
 
 

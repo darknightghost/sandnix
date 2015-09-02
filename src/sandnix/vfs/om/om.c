@@ -184,7 +184,8 @@ u32 vfs_reg_driver(pdriver_obj_t p_driver)
 k_status vfs_send_drv_message(u32 src_driver,
                               u32 dest_driver,
                               pmsg_t p_msg,
-                              u32* p_result)
+                              u32* p_result,
+                              k_status* p_complete_result)
 {
 	pdriver_obj_t p_dest_drv, p_src_drv;
 
@@ -204,7 +205,7 @@ k_status vfs_send_drv_message(u32 src_driver,
 	p_msg->src_thread = pm_get_crrnt_thrd_id();
 	p_msg->result_queue = p_src_drv->msg_queue;
 
-	return msg_send(p_msg, p_dest_drv->msg_queue, p_result);
+	return msg_send(p_msg, p_dest_drv->msg_queue, p_result, p_complete_result);
 }
 
 k_status vfs_recv_drv_message(u32 drv_num, pmsg_t* p_p_msg, bool if_block)
@@ -475,7 +476,8 @@ k_status vfs_set_dev_filename(u32 device, char* name)
 k_status vfs_send_dev_message(u32 src_driver,
                               u32 dest_dev,
                               pmsg_t p_msg,
-                              u32* p_result)
+                              u32* p_result,
+                              k_status* p_complete_result)
 {
 	pdriver_obj_t p_src_drv;
 	pdevice_obj_t p_dest_dev;
@@ -498,7 +500,8 @@ k_status vfs_send_dev_message(u32 src_driver,
 
 	return msg_send(p_msg,
 	                p_dest_dev->file_obj.p_driver->msg_queue,
-	                p_result);
+	                p_result,
+	                p_complete_result);
 }
 
 u32 vfs_get_dev_major_by_name(char* major_name, u32 type)

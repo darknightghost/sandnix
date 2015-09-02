@@ -31,6 +31,8 @@ static	mutex_t			file_obj_table_lock;
 static	mount_point_t	root_info;
 static	mutex_t			mount_point_lock;
 
+static	u32				kernel_drv_num;
+
 static	pvfs_proc_info	get_proc_fs_info();
 static	void			set_proc_fs_info(u32 process_id,
         pvfs_proc_info p_new_info);
@@ -38,6 +40,7 @@ static	void			ref_proc_destroy_callback(pfile_obj_ref_t p_item,
         pfile_obj_t p_file_object);
 static	void			file_desc_destroy_callback(pfile_desc_t p_fd,
         void* p_null);
+static	k_status		analyse_path(char* path, ppath_t ret);
 
 void fs_init()
 {
@@ -92,7 +95,7 @@ void fs_init()
 
 	p_drv->process_id = 0;
 
-	vfs_reg_driver(p_drv);
+	kernel_drv_num = vfs_reg_driver(p_drv);
 
 	if(!OPERATE_SUCCESS) {
 		excpt_panic(status, "Failed to regist kernel driver object.");
@@ -200,7 +203,123 @@ void vfs_clean(u32 process_id)
 }
 
 //Files
-u32				vfs_open(char* path, u32 flags, u32 mode);
+u32 vfs_open(char* path, u32 flags, u32 mode)
+{
+	path_t k_path;
+	pmsg_t p_msg;
+	k_status status, complete_result;
+	ppmo_t p_pmo;
+	pmsg_open_info_t p_info;
+	u32 send_result;
+	pfile_desc_t p_fd;
+	pvfs_proc_info p_proc_fd_info;
+	u32 ret;
+
+	//Analyse path
+	status = analyse_path(path, &k_path);
+
+	if(status != ESUCCESS) {
+		return INVALID_FD;
+	}
+
+	//Create buffer
+	p_pmo = mm_pmo_create(sizeof(pmsg_open_info_t) + PATH_MAX);
+	p_info = mm_pmo_map(NULL, p_pmo, false);
+
+	if(p_info == NULL) {
+		mm_pmo_free(p_pmo);
+		pm_set_errno(EFAULT);
+		return INVALID_FD;
+	}
+
+	if(p_pmo == NULL) {
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+
+	p_fd = mm_hp_alloc(sizeof(file_desc_t), NULL);
+
+	if(p_fd == NULL) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
+		return EFAULT;
+	}
+
+	//Create message
+	status = msg_create(&p_msg,
+	                    sizeof(msg_t));
+
+	if(status != ESUCCESS) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
+		mm_hp_free(p_fd, NULL);
+		return INVALID_FD;
+	}
+
+	p_msg->message = MSG_OPEN;
+	p_msg->flags.flags = MFLAG_PMO;
+	p_msg->buf.pmo_addr = p_pmo;
+
+	p_info->process = pm_get_crrnt_process();
+	p_info->mode = mode;
+	p_info->flags = flags;
+
+	rtl_strcpy_s(&(p_info->path_begin), PATH_MAX, k_path.path);
+
+	//Send message
+	status = vfs_send_dev_message(kernel_drv_num,
+	                              k_path.volume_dev,
+	                              p_msg,
+	                              &send_result,
+	                              &complete_result);
+
+	if(status != ESUCCESS) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
+		mm_hp_free(p_fd, NULL);
+		return INVALID_FD;
+	}
+
+	if(send_result != MSTATUS_COMPLETE) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
+		mm_hp_free(p_fd, NULL);
+		pm_set_errno(EACCES);
+		return INVALID_FD;
+	}
+
+	if(complete_result != ESUCCESS) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
+		mm_hp_free(p_fd, NULL);
+		pm_set_errno(complete_result);
+		return INVALID_FD;
+	}
+
+	//Create file descriptor
+	p_fd->file_obj = p_info->file_object;
+	p_fd->offset = 0;
+	p_fd->size = p_info->file_size;
+	rtl_memcpy(&(p_fd->path), &k_path, sizeof(path_t));
+
+	//Add file descriptor
+	p_proc_fd_info = get_proc_fs_info();
+
+	pm_acqr_mutex(&(p_proc_fd_info->lock), TIMEOUT_BLOCK);
+
+	ret = rtl_array_list_get_free_index(&(p_proc_fd_info->file_descs));
+	rtl_array_list_set(&(p_proc_fd_info->file_descs), ret, p_fd, NULL);
+	ASSERT(OPERATE_SUCCESS);
+
+	pm_rls_mutex(&(p_proc_fd_info->lock));
+
+	mm_pmo_unmap(p_info, p_pmo);
+	mm_pmo_free(p_pmo);
+	pm_set_errno(ESUCCESS);
+
+	return ret;
+}
+
 k_status		vfs_chmod(u32 fd, u32 mode);
 bool			vfs_access(char* path, u32 mode);
 bool			vfs_close(u32 fd);
@@ -216,7 +335,8 @@ u32				vfs_create_file_object(u32 driver);
 k_status vfs_send_file_message(u32 src_driver,
                                u32 dest_file,
                                pmsg_t p_msg,
-                               u32* p_result)
+                               u32* p_result,
+                               k_status* p_complete_result)
 {
 	pdriver_obj_t p_src_drv;
 	pfile_obj_t p_dest_file;
@@ -239,7 +359,8 @@ k_status vfs_send_file_message(u32 src_driver,
 
 	return msg_send(p_msg,
 	                p_dest_file->p_driver->msg_queue,
-	                p_result);
+	                p_result,
+	                p_complete_result);
 }
 
 k_status add_file_obj(pfile_obj_t p_file_obj)
@@ -423,4 +544,9 @@ void file_desc_destroy_callback(pfile_desc_t p_fd,
 
 	UNREFERRED_PARAMETER(p_null);
 	return;
+}
+
+k_status analyse_path(char* path, ppath_t ret)
+{
+
 }

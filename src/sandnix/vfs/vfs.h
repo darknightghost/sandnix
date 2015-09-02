@@ -25,6 +25,8 @@
 #include "fs/fs.h"
 
 #define	MAX_FILEOBJ_NUM		2048
+#define	NAME_MAX			255
+#define	PATH_MAX			2048
 
 typedef	struct	_msg	msg_t, *pmsg_t;
 
@@ -60,7 +62,8 @@ u32				vfs_create_file_object(u32 driver);
 k_status		vfs_send_file_message(u32 src_driver,
                                       u32 dest_file_object,
                                       pmsg_t p_msg,
-                                      u32* p_result);
+                                      u32* p_result,
+                                      k_status* p_complete_result);
 //Objects
 void			vfs_initialize_object(pkobject_t p_object);
 void			vfs_inc_obj_reference(pkobject_t p_object);
@@ -72,7 +75,8 @@ u32				vfs_reg_driver(pdriver_obj_t p_driver);
 k_status		vfs_send_drv_message(u32 src_driver,
                                      u32 dest_driver,
                                      pmsg_t p_msg,
-                                     u32* p_result);
+                                     u32* p_result,
+                                     k_status* p_complete_result);
 k_status		vfs_recv_drv_message(u32 drv_num, pmsg_t* p_p_msg,
                                      bool if_block);
 
@@ -84,7 +88,8 @@ k_status		vfs_set_dev_filename(u32 device, char* name);
 k_status		vfs_send_dev_message(u32 src_driver,
                                      u32 dest_dev,
                                      pmsg_t p_msg,
-                                     u32* p_result);
+                                     u32* p_result,
+                                     k_status* p_complete_result);
 u32				vfs_get_dev_major_by_name(char* major_name, u32 type);
 k_status		vfs_msg_forward(pmsg_t p_msg);
 
