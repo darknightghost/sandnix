@@ -50,6 +50,7 @@ typedef	struct {
 	u32			file_obj;
 	size_t		offset;
 	size_t		size;
+	u32			flags;
 } file_desc_t, *pfile_desc_t;
 
 typedef	struct {

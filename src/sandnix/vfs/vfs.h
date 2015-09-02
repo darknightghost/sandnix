@@ -28,6 +28,44 @@
 #define	NAME_MAX			255
 #define	PATH_MAX			2048
 
+//Open flags
+#define	O_RDONLY	0x00000000
+#define	O_WRONLY	0x00000001
+#define	O_RDWR		0x00000002
+
+#define	O_APPEND	0x00000400
+#define	O_CLOEXEC	0x00080000
+#define	O_CREAT		0x00000040
+#define	O_EXCL		0x00000080
+#define	O_TRUNC		0x00000200
+#define	O_NOCTTY	0x00000100
+#define	O_NONBLOCK	0x00000800
+
+#define	O_DSYNC		0x00001000
+#define	O_RSYNC		0x00101000
+#define	O_SYNC		0x00101000
+
+//Modes
+#define	S_ISUID	0x00000800		//Set user ID
+#define	S_ISGID	0x00000400		//Set group ID
+
+#define	S_ISVTX	0x00000200		//Sticky bit
+
+#define	S_IRWXU	0x000001c0		//Owner has read,write&execute permissions
+#define	S_IRUSR	0x00000100		//Owner has read permission
+#define	S_IWUSR	0x00000080		//Owner has write permission
+#define	S_IXUSR	0x00000040		//Owner has execute permission
+
+#define	S_IRWXG	0x00000038		//Group has read,write&execute permissions
+#define	S_IRGRP	0x00000020		//Group has read permission
+#define	S_IWGRP	0x00000010		//Group has write permission
+#define	S_IXGRP	0x00000008		//Group has execute permission
+
+#define	S_IRWXO	0x00000007		//Others has read,write&execute permissions
+#define	S_IROTH	0x00000004		//Others has read permission
+#define	S_IWOTH	0x00000002		//Others has write permission
+#define	S_IXOTH	0x00000001		//Others has execute permission
+
 typedef	struct	_msg	msg_t, *pmsg_t;
 
 void			vfs_init();
@@ -50,9 +88,9 @@ void			vfs_clean(u32 process_id);
 u32				vfs_open(char* path, u32 flags, u32 mode);
 k_status		vfs_chmod(u32 fd, u32 mode);
 bool			vfs_access(char* path, u32 mode);
-bool			vfs_close(u32 fd);
-size_t			vfs_read(u32 fd, void* buf, size_t count);
-size_t			vfs_write(u32 fd, void* buf, size_t count);
+void			vfs_close(u32 fd);
+k_status		vfs_read(u32 fd, ppmo_t buf, size_t count);
+size_t			vfs_write(u32 fd, ppmo_t buf, size_t count);
 void			vfs_sync();
 bool			vfs_syncfs(u32 volume_dev);
 //s32			vfs_ioctl(u32 fd, u32 request, ...);

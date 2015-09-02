@@ -76,6 +76,21 @@ typedef	struct {
 	char		path_begin;
 } msg_open_info_t, *pmsg_open_info_t;
 
+typedef	struct {
+	u32		file_obj_id;
+} msg_close_info_t, *pmsg_close_info_t;
+
+typedef	struct {
+	u32		file_obj;
+	size_t	offset;
+	size_t	len;
+} msg_read_info_t, *pmsg_read_info_t;
+
+typedef	struct {
+	size_t	len;
+	u8		data;
+} msg_read_data_t, *pmsg_read_data_t;
+
 //Flags
 #define		MFLAG_DIRECTBUF		0x00000001
 #define		MFLAG_PMO			0x00000002

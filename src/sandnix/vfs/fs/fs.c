@@ -41,6 +41,8 @@ static	void			ref_proc_destroy_callback(pfile_obj_ref_t p_item,
 static	void			file_desc_destroy_callback(pfile_desc_t p_fd,
         void* p_null);
 static	k_status		analyse_path(char* path, ppath_t ret);
+static	pfile_desc_t	get_file_descriptor(u32 fd);
+static	void			file_objecj_release_callback(pfile_obj_t p_fo);
 
 void fs_init()
 {
@@ -300,6 +302,7 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 	p_fd->file_obj = p_info->file_object;
 	p_fd->offset = 0;
 	p_fd->size = p_info->file_size;
+	p_fd->flags = flags;
 	rtl_memcpy(&(p_fd->path), &k_path, sizeof(path_t));
 
 	//Add file descriptor
@@ -322,9 +325,111 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 
 k_status		vfs_chmod(u32 fd, u32 mode);
 bool			vfs_access(char* path, u32 mode);
-bool			vfs_close(u32 fd);
-size_t			vfs_read(u32 fd, void* buf, size_t count);
-size_t			vfs_write(u32 fd, void* buf, size_t count);
+
+void vfs_close(u32 fd)
+{
+	pvfs_proc_info p_info;
+	pfile_desc_t p_desc;
+
+	p_info = get_proc_fs_info();
+
+	//Get file descriptor
+	pm_acqr_mutex(&(p_info->lock), TIMEOUT_BLOCK);
+
+	p_desc = rtl_array_list_get(&(p_info->file_descs), fd);
+
+	if(p_desc == NULL) {
+		pm_rls_mutex(&(p_info->lock));
+
+		pm_set_errno(ESUCCESS);
+		return;
+	}
+
+	//Release file descriptor
+	rtl_array_list_release(&(p_info->file_descs), fd, NULL);
+	pm_rls_mutex(&(p_info->lock));
+
+	//Decrease reference count of file object
+	vfs_dec_obj_reference((pkobject_t)get_file_obj(p_desc->file_obj));
+
+	mm_hp_free(p_desc, NULL);
+
+	pm_set_errno(ESUCCESS);
+	return;
+}
+
+k_status vfs_read(u32 fd, ppmo_t buf, size_t count)
+{
+	pfile_desc_t p_fd;
+	pmsg_t p_msg;
+	k_status status;
+	pmsg_read_info_t p_info;
+	k_status complete_state;
+	u32 msg_state;
+
+	//Get file descriptor
+	p_fd = get_file_descriptor(fd);
+
+	if(p_fd->flags | O_WRONLY) {
+		pm_set_errno(EBADF);
+		return EBADF;
+	}
+
+	//Check buffer size
+	if(buf->size < count + sizeof(msg_read_data_t) - sizeof(u8)) {
+		pm_set_errno(EOVERFLOW);
+		return EOVERFLOW;
+	}
+
+	//Map buffer
+	p_info = mm_pmo_map(NULL, buf, false);
+
+	if(p_info == NULL) {
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+
+	//Create message
+	status = msg_create(&p_msg, sizeof(msg_t));
+
+	if(status != ESUCCESS) {
+		mm_pmo_unmap(p_info, buf);
+		return status;
+	}
+
+	p_msg->message = MSG_READ;
+	p_msg->flags.flags = MFLAG_PMO;
+	p_msg->buf.pmo_addr = buf;
+
+	p_info->file_obj = p_fd->file_obj;
+	p_info->len = count;
+	p_info->offset = p_fd->offset;
+
+	//Send message
+	status = vfs_send_file_message(kernel_drv_num,
+	                               p_fd->file_obj,
+	                               p_msg,
+	                               &msg_state,
+	                               &complete_state);
+
+	if(status != ESUCCESS) {
+		mm_pmo_unmap(p_info, buf);
+		pm_set_errno(status);
+		return status;
+	}
+
+	if(msg_state != MSTATUS_COMPLETE) {
+		mm_pmo_unmap(p_info, buf);
+		pm_set_errno(EACCES);
+		return EACCES;
+	}
+
+	mm_pmo_unmap(p_info, buf);
+	pm_set_errno(complete_state);
+	return complete_state;
+}
+
+size_t			vfs_write(u32 fd, ppmo_t buf, size_t count);
 void			vfs_sync();
 bool			vfs_syncfs(u32 volume_dev);
 //s32			vfs_ioctl(u32 fd, u32 request, ...);
@@ -548,5 +653,72 @@ void file_desc_destroy_callback(pfile_desc_t p_fd,
 
 k_status analyse_path(char* path, ppath_t ret)
 {
+}
 
+pfile_desc_t get_file_descriptor(u32 fd)
+{
+	pfile_desc_t ret;
+	pvfs_proc_info p_info;
+
+	p_info = get_proc_fs_info();
+
+	pm_acqr_mutex(&(p_info->lock), TIMEOUT_BLOCK);
+
+	ret = rtl_array_list_get(&(p_info->file_descs), fd);
+
+	pm_rls_mutex(&(p_info->lock));
+
+	return ret;
+}
+
+void file_objecj_release_callback(pfile_obj_t p_fo)
+{
+	//Send message
+	send_file_obj_destroy_msg(p_fo);
+
+	//Remove file object
+	pm_acqr_mutex(&file_obj_table_lock, TIMEOUT_BLOCK);
+
+	rtl_array_list_release(&file_obj_table, p_fo->file_id, NULL);
+
+	pm_rls_mutex(&file_obj_table_lock);
+
+	pm_acqr_mutex(&(p_fo->refered_proc_list_lock), TIMEOUT_BLOCK);
+
+	rtl_list_destroy(&(p_fo->refered_proc_list),
+	                 NULL,
+	                 (item_destroyer_callback)ref_proc_destroy_callback,
+	                 p_fo);
+
+	pm_rls_mutex(&(p_fo->refered_proc_list_lock));
+
+	//Free memory
+	mm_hp_free(p_fo, NULL);
+
+	return;
+}
+
+void send_file_obj_destroy_msg(pfile_obj_t p_file_obj)
+{
+	pmsg_t p_msg;
+	pmsg_close_info_t p_info;
+	k_status status;
+
+	//Create message
+	status = msg_create(&p_msg, sizeof(msg_t) + sizeof(msg_close_info_t));
+
+	if(status != ESUCCESS) {
+		return;
+	}
+
+	p_msg->message = MSG_CLOSE;
+	p_info = (pmsg_close_info_t)(p_msg + 1);
+	p_msg->buf.addr = p_info;
+	p_info->file_obj_id = p_file_obj->file_id;
+	p_msg->flags.flags = MFLAG_DIRECTBUF;
+
+	//Send message
+	vfs_send_file_message(kernel_drv_num, p_file_obj->file_id, p_msg, NULL, NULL);
+
+	return;
 }
