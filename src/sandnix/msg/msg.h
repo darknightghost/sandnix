@@ -83,8 +83,15 @@ typedef	struct {
 typedef	struct {
 	u32		file_obj;
 	size_t	offset;
-	size_t	len;
+	size_t	len;		//Caller should fill
 } msg_read_info_t, *pmsg_read_info_t;
+
+typedef	struct {
+	u32		file_obj;
+	size_t	offset;
+	size_t	len;		//Caller should fill
+	u8		data;
+} msg_write_info_t, *pmsg_write_info_t;
 
 typedef	struct {
 	size_t	len;

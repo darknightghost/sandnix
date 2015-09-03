@@ -52,11 +52,7 @@ struct	_kobject {
 #define	OBJ_MN_NORMAL				0x00000001
 #define	OBJ_MN_DEVICE				0x00000002
 
-typedef	struct	_driver_obj			driver_obj_t, *pdriver_obj_t;
-typedef	struct	_file_obj			file_obj_t, *pfile_obj_t;
-typedef	struct	_device_obj			device_obj_t, *pdevice_obj_t;
-
-struct	_driver_obj {
+typedef	struct	_driver_obj {
 	kobject_t		obj;
 	u32				process_id;
 	u32				driver_id;
@@ -64,17 +60,17 @@ struct	_driver_obj {
 	u32				msg_queue;
 	list_t			file_list;
 	mutex_t			file_list_lock;
-};
+} driver_obj_t, *pdriver_obj_t;
 
-struct	_file_obj {
+typedef	struct	_file_obj {
 	kobject_t		obj;
 	pdriver_obj_t	p_driver;
 	u32				file_id;
 	list_t			refered_proc_list;
 	mutex_t			refered_proc_list_lock;
-};
+} file_obj_t, *pfile_obj_t;
 
-struct	_device_obj {
+typedef	struct	_device_obj {
 	file_obj_t		file_obj;
 	u32				device_number;
 	bool			has_parent;
@@ -83,7 +79,7 @@ struct	_device_obj {
 	obj_destroyer	additional_destroyer;
 	list_t			child_list;
 	mutex_t			child_list_lock;
-};
+} device_obj_t, *pdevice_obj_t;
 
 #define	DEV_TYPE_CHAR		0x01
 #define	DEV_TYPE_BLOCK		0x02

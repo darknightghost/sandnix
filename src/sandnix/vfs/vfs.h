@@ -89,14 +89,13 @@ u32				vfs_open(char* path, u32 flags, u32 mode);
 k_status		vfs_chmod(u32 fd, u32 mode);
 bool			vfs_access(char* path, u32 mode);
 void			vfs_close(u32 fd);
-k_status		vfs_read(u32 fd, ppmo_t buf, size_t count);
-size_t			vfs_write(u32 fd, ppmo_t buf, size_t count);
-void			vfs_sync();
-bool			vfs_syncfs(u32 volume_dev);
+k_status		vfs_read(u32 fd, ppmo_t buf);
+size_t			vfs_write(u32 fd, ppmo_t buf);
+void			vfs_sync(u32 dev_num);
 //s32			vfs_ioctl(u32 fd, u32 request, ...);
 
 //File object
-u32				vfs_create_file_object(u32 driver);
+u32				vfs_create_file_object();
 k_status		vfs_send_file_message(u32 src_driver,
                                       u32 dest_file_object,
                                       pmsg_t p_msg,
@@ -130,5 +129,6 @@ k_status		vfs_send_dev_message(u32 src_driver,
                                      k_status* p_complete_result);
 u32				vfs_get_dev_major_by_name(char* major_name, u32 type);
 k_status		vfs_msg_forward(pmsg_t p_msg);
+void			vfs_sync(u32 dev_num);
 
 #endif	//!	VFS_H_INCLUDE

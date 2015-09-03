@@ -216,6 +216,8 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 	pfile_desc_t p_fd;
 	pvfs_proc_info p_proc_fd_info;
 	u32 ret;
+	pfile_obj_t p_file_obj;
+	pfile_obj_ref_t p_ref;
 
 	//Analyse path
 	status = analyse_path(path, &k_path);
@@ -226,6 +228,12 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 
 	//Create buffer
 	p_pmo = mm_pmo_create(sizeof(pmsg_open_info_t) + PATH_MAX);
+
+	if(p_pmo == NULL) {
+		pm_set_errno(EFAULT);
+		return INVALID_FD;
+	}
+
 	p_info = mm_pmo_map(NULL, p_pmo, false);
 
 	if(p_info == NULL) {
@@ -234,17 +242,23 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 		return INVALID_FD;
 	}
 
-	if(p_pmo == NULL) {
-		pm_set_errno(EFAULT);
-		return EFAULT;
-	}
-
 	p_fd = mm_hp_alloc(sizeof(file_desc_t), NULL);
 
 	if(p_fd == NULL) {
 		mm_pmo_unmap(p_info, p_pmo);
 		mm_pmo_free(p_pmo);
-		return EFAULT;
+		mm_pmo_free(p_pmo);
+		return INVALID_FD;
+	}
+
+	p_ref = mm_hp_alloc(sizeof(file_obj_ref_t), NULL);
+
+	if(p_ref == NULL) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
+		mm_hp_free(p_fd, NULL);
+		pm_set_errno(EFAULT);
+		return INVALID_FD;
 	}
 
 	//Create message
@@ -252,9 +266,11 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 	                    sizeof(msg_t));
 
 	if(status != ESUCCESS) {
+		mm_hp_free(p_ref, NULL);
 		mm_pmo_unmap(p_info, p_pmo);
 		mm_pmo_free(p_pmo);
 		mm_hp_free(p_fd, NULL);
+		pm_set_errno(EFAULT);
 		return INVALID_FD;
 	}
 
@@ -279,6 +295,8 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 		mm_pmo_unmap(p_info, p_pmo);
 		mm_pmo_free(p_pmo);
 		mm_hp_free(p_fd, NULL);
+		mm_hp_free(p_ref, NULL);
+		pm_set_errno(status);
 		return INVALID_FD;
 	}
 
@@ -286,6 +304,7 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 		mm_pmo_unmap(p_info, p_pmo);
 		mm_pmo_free(p_pmo);
 		mm_hp_free(p_fd, NULL);
+		mm_hp_free(p_ref, NULL);
 		pm_set_errno(EACCES);
 		return INVALID_FD;
 	}
@@ -294,6 +313,7 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 		mm_pmo_unmap(p_info, p_pmo);
 		mm_pmo_free(p_pmo);
 		mm_hp_free(p_fd, NULL);
+		mm_hp_free(p_ref, NULL);
 		pm_set_errno(complete_result);
 		return INVALID_FD;
 	}
@@ -318,6 +338,21 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 
 	mm_pmo_unmap(p_info, p_pmo);
 	mm_pmo_free(p_pmo);
+
+	p_file_obj = get_file_obj(p_fd->file_obj);
+	vfs_inc_obj_reference((pkobject_t)p_file_obj);
+
+	//Add process
+	p_ref->fd = ret;
+	p_ref->process_id = pm_get_crrnt_process();
+
+	pm_acqr_mutex(&(p_file_obj->refered_proc_list_lock), TIMEOUT_BLOCK);
+	rtl_list_insert_after(&(p_file_obj->refered_proc_list),
+	                      NULL,
+	                      p_ref,
+	                      NULL);
+	pm_rls_mutex(&(p_file_obj->refered_proc_list_lock));
+
 	pm_set_errno(ESUCCESS);
 
 	return ret;
@@ -358,7 +393,7 @@ void vfs_close(u32 fd)
 	return;
 }
 
-k_status vfs_read(u32 fd, ppmo_t buf, size_t count)
+k_status vfs_read(u32 fd, ppmo_t buf)
 {
 	pfile_desc_t p_fd;
 	pmsg_t p_msg;
@@ -375,18 +410,19 @@ k_status vfs_read(u32 fd, ppmo_t buf, size_t count)
 		return EBADF;
 	}
 
-	//Check buffer size
-	if(buf->size < count + sizeof(msg_read_data_t) - sizeof(u8)) {
-		pm_set_errno(EOVERFLOW);
-		return EOVERFLOW;
-	}
-
 	//Map buffer
 	p_info = mm_pmo_map(NULL, buf, false);
 
 	if(p_info == NULL) {
 		pm_set_errno(EFAULT);
 		return EFAULT;
+	}
+
+	//Check buffer size
+	if(buf->size < p_info->len + sizeof(msg_read_data_t) - sizeof(u8)) {
+		mm_pmo_unmap(p_info, buf);
+		pm_set_errno(EOVERFLOW);
+		return EOVERFLOW;
 	}
 
 	//Create message
@@ -402,7 +438,6 @@ k_status vfs_read(u32 fd, ppmo_t buf, size_t count)
 	p_msg->buf.pmo_addr = buf;
 
 	p_info->file_obj = p_fd->file_obj;
-	p_info->len = count;
 	p_info->offset = p_fd->offset;
 
 	//Send message
@@ -429,13 +464,112 @@ k_status vfs_read(u32 fd, ppmo_t buf, size_t count)
 	return complete_state;
 }
 
-size_t			vfs_write(u32 fd, ppmo_t buf, size_t count);
-void			vfs_sync();
-bool			vfs_syncfs(u32 volume_dev);
+size_t vfs_write(u32 fd, ppmo_t buf)
+{
+	pfile_desc_t p_fd;
+	pmsg_t p_msg;
+	k_status status;
+	pmsg_write_info_t p_info;
+	k_status complete_state;
+	u32 msg_state;
+
+	//Get file descriptor
+	p_fd = get_file_descriptor(fd);
+
+	if(!((p_fd->flags | O_WRONLY) || (p_fd->flags | O_RDWR))) {
+		pm_set_errno(EBADF);
+		return EBADF;
+	}
+
+	//Map buffer
+	p_info = mm_pmo_map(NULL, buf, false);
+
+	if(p_info == NULL) {
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+
+	//Check buffer size
+	if(buf->size < p_info->len + sizeof(msg_write_info_t) - sizeof(u8)) {
+		mm_pmo_unmap(p_info, buf);
+		pm_set_errno(EOVERFLOW);
+		return EOVERFLOW;
+	}
+
+	//Create message
+	status = msg_create(&p_msg, sizeof(msg_t));
+
+	if(status != ESUCCESS) {
+		mm_pmo_unmap(p_info, buf);
+		return status;
+	}
+
+	p_msg->message = MSG_WRITE;
+	p_msg->flags.flags = MFLAG_PMO;
+	p_msg->buf.pmo_addr = buf;
+
+	p_info->file_obj = p_fd->file_obj;
+	p_info->offset = p_fd->offset;
+
+	//Send message
+	status = vfs_send_file_message(kernel_drv_num,
+	                               p_fd->file_obj,
+	                               p_msg,
+	                               &msg_state,
+	                               &complete_state);
+
+	if(status != ESUCCESS) {
+		mm_pmo_unmap(p_info, buf);
+		pm_set_errno(status);
+		return status;
+	}
+
+	if(msg_state != MSTATUS_COMPLETE) {
+		mm_pmo_unmap(p_info, buf);
+		pm_set_errno(EACCES);
+		return EACCES;
+	}
+
+	mm_pmo_unmap(p_info, buf);
+	pm_set_errno(complete_state);
+	return complete_state;
+
+}
+
 //s32			vfs_ioctl(u32 fd, u32 request, ...);
 
 //File object
-u32				vfs_create_file_object(u32 driver);
+u32 vfs_create_file_object()
+{
+	pfile_obj_t p_file_obj;
+
+	//Allocate memory
+	p_file_obj = mm_hp_alloc(sizeof(file_obj_t), NULL);
+
+	if(p_file_obj == NULL) {
+		pm_set_errno(EFAULT);
+		return INVALID_FILEID;
+	}
+
+
+	//Initialize object
+	vfs_initialize_object(&p_file_obj);
+
+	p_file_obj->p_driver = get_driver(get_proc_fs_info().driver_obj);
+	p_file_obj->refered_proc_list = NULL;
+	pm_init_mutex(&(p_file_obj->refered_proc_list_lock), NULL);
+
+	//Regist object
+	if(add_file_obj(p_file_obj) != ESUCCESS) {
+		mm_hp_free(p_file_obj, NULL);
+		return INVALID_FILEID;
+	}
+
+	p_file_obj->obj.ref_count = 0;
+
+	pm_set_errno(ESUCCESS);
+	return p_file_obj->file_id;
+}
 
 k_status vfs_send_file_message(u32 src_driver,
                                u32 dest_file,

@@ -622,6 +622,8 @@ k_status vfs_msg_forward(pmsg_t p_msg)
 	return msg_forward(p_msg, p_parent_dev->file_obj.p_driver->msg_queue);
 }
 
+void			vfs_sync(u32 dev_num);
+
 u32 dev_mj_hash(char* name)
 {
 	u32 hash = 0;
