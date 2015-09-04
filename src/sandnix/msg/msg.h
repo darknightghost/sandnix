@@ -87,6 +87,22 @@ typedef	struct {
 } msg_read_info_t, *pmsg_read_info_t;
 
 typedef	struct {
+	size_t	len;
+	u8		data;
+} msg_read_data_t, *pmsg_read_data_t;
+
+typedef	struct {
+	u32		file_obj;
+	size_t	offset;
+	size_t	count;		//Caller should fill
+} msg_readdir_info_t, *pmsg_readdir_info_t;
+
+typedef	struct {
+	size_t		count;
+	dirent_t	data;
+} msg_readdir_data_t, *pmsg_readdir_data_t;
+
+typedef	struct {
 	u32		file_obj;
 	size_t	offset;
 	size_t	len;		//Caller should fill
@@ -94,9 +110,15 @@ typedef	struct {
 } msg_write_info_t, *pmsg_write_info_t;
 
 typedef	struct {
-	size_t	len;
-	u8		data;
-} msg_read_data_t, *pmsg_read_data_t;
+	u32		mode;
+	u32		process;
+	char	path;
+} msg_access_info_t, *pmsg_access_info_t;
+
+typedef	struct {
+	u32		mode;
+	u32		process;
+} msg_chmod_info_t, *pmsg_chmod_info_t;
 
 //Flags
 #define		MFLAG_DIRECTBUF		0x00000001
@@ -109,12 +131,16 @@ typedef	struct {
 #define		MSG_CANCEL			0x00000001
 #define		MSG_FAILED			0x00000002
 #define		MSG_OPEN			0x00000003
-#define		MSG_READ			0x00000004
-#define		MSG_WRITE			0x00000005
-#define		MSG_CLOSE			0x00000006
-#define		MSG_DESTROY			0x00000007
-#define		MSG_IOCTRL			0x00000008
-#define		MSG_INTERRUPT		0x00000009
+#define		MSG_MKDIR			0x00000004
+#define		MSG_READ			0x00000005
+#define		MSG_READDIR			0x00000006
+#define		MSG_WRITE			0x00000007
+#define		MSG_CLOSE			0x00000008
+#define		MSG_DESTROY			0x00000009
+#define		MSG_ACCESS			0x0000000A
+#define		MSG_CHOMD			0x0000000B
+#define		MSG_IOCTRL			0x0000000C
+#define		MSG_INTERRUPT		0x0000000D
 
 
 //Status

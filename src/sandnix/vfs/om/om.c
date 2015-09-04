@@ -20,6 +20,7 @@
 #include "../../debug/debug.h"
 #include "../../exceptions/exceptions.h"
 #include "../../pm/pm.h"
+#include "devfs/devfs.h"
 
 static	array_list_t	drivers_list;
 static	mutex_t			drivers_list_lock;
@@ -28,7 +29,8 @@ static	hash_table_t	dev_mj_index;
 static	mutex_t			devices_list_lock;
 
 static	u32				dev_mj_hash(char* name);
-static	bool			dev_mj_name_cmp(pdev_mj_info_t p_dev1, pdev_mj_info_t p_dev2);
+static	bool			dev_mj_name_cmp(pdev_mj_info_t p_dev1,
+                                        pdev_mj_info_t p_dev2);
 static	void			driver_destroyer(pdriver_obj_t p_obj);
 static	void			device_destroyer(pdevice_obj_t p_dev);
 static	pdevice_obj_t	get_dev(u32 dev_num);
@@ -47,6 +49,9 @@ void om_init()
 	                    NULL);
 	pm_init_mutex(&drivers_list_lock);
 	pm_init_mutex(&devices_list_lock);
+
+	devfs_init();
+
 	vfs_get_dev_major_by_name("bus", DEV_TYPE_CHAR);
 	vfs_get_dev_major_by_name("dma", DEV_TYPE_CHAR);
 	vfs_get_dev_major_by_name("memory", DEV_TYPE_CHAR);
@@ -58,6 +63,7 @@ void om_init()
 	vfs_get_dev_major_by_name("console", DEV_TYPE_CHAR);
 	vfs_get_dev_major_by_name("partition", DEV_TYPE_BLOCK);
 	vfs_get_dev_major_by_name("volume", DEV_TYPE_CHAR);
+
 
 	return;
 }
@@ -590,36 +596,18 @@ u32 vfs_get_dev_major_by_name(char* major_name, u32 type)
 	return major;
 }
 
-k_status vfs_msg_forward(pmsg_t p_msg)
+k_status vfs_msg_forward(pmsg_t p_msg, u32 dev_num)
 {
-	pdevice_obj_t p_dev_obj, p_parent_dev;
+	pdevice_obj_t p_dev_obj;
 
-	p_dev_obj = (pdevice_obj_t)get_file_obj(p_msg->file_id);
-
-	if(p_dev_obj->file_obj.obj.class !=
-	   (OBJ_MJ_FILE | OBJ_MN_DEVICE)) {
-		pm_set_errno(ENXIO);
-		return ENXIO;
-	}
+	p_dev_obj = (pdevice_obj_t)get_dev(dev_num);
 
 	if(!OPERATE_SUCCESS) {
 		pm_set_errno(EINVAL);
 		return EINVAL;
 	}
 
-	if(!p_dev_obj->has_parent) {
-		pm_set_errno(ENODEV);
-		return ENODEV;
-	}
-
-	p_parent_dev = get_dev(p_dev_obj->parent_dev);
-
-	if(!OPERATE_SUCCESS) {
-		pm_set_errno(ENODEV);
-		return ENODEV;
-	}
-
-	return msg_forward(p_msg, p_parent_dev->file_obj.p_driver->msg_queue);
+	return msg_forward(p_msg, p_dev_obj->file_obj.p_driver->msg_queue);
 }
 
 void			vfs_sync(u32 dev_num);

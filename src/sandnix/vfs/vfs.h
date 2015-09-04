@@ -68,6 +68,13 @@
 
 typedef	struct	_msg	msg_t, *pmsg_t;
 
+typedef	struct	_dirent {
+	long		d_ino;		//Inode number
+	size_t		d_off;		//Offset to this dirent
+	size_t		d_reclen;	//length of this d_name
+	char		d_name;		//filename (null-terminated)
+} dirent_t, *pdirent_t;
+
 void			vfs_init();
 
 //Volumes
@@ -87,9 +94,10 @@ void			vfs_clean(u32 process_id);
 //Files
 u32				vfs_open(char* path, u32 flags, u32 mode);
 k_status		vfs_chmod(u32 fd, u32 mode);
-bool			vfs_access(char* path, u32 mode);
+k_status		vfs_access(char* path, u32 mode);
 void			vfs_close(u32 fd);
 k_status		vfs_read(u32 fd, ppmo_t buf);
+k_status		vfs_readdir(u32 fd, ppmo_t buf);
 size_t			vfs_write(u32 fd, ppmo_t buf);
 void			vfs_sync(u32 dev_num);
 //s32			vfs_ioctl(u32 fd, u32 request, ...);
@@ -128,7 +136,7 @@ k_status		vfs_send_dev_message(u32 src_driver,
                                      u32* p_result,
                                      k_status* p_complete_result);
 u32				vfs_get_dev_major_by_name(char* major_name, u32 type);
-k_status		vfs_msg_forward(pmsg_t p_msg);
+k_status		vfs_msg_forward(pmsg_t p_msg, u32 dev_num);
 void			vfs_sync(u32 dev_num);
 
 #endif	//!	VFS_H_INCLUDE

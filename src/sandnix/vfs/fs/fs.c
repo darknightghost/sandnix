@@ -230,6 +230,7 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 	p_pmo = mm_pmo_create(sizeof(pmsg_open_info_t) + PATH_MAX);
 
 	if(p_pmo == NULL) {
+		mm_hp_free(k_path.path, NULL);
 		pm_set_errno(EFAULT);
 		return INVALID_FD;
 	}
@@ -238,6 +239,7 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 
 	if(p_info == NULL) {
 		mm_pmo_free(p_pmo);
+		mm_hp_free(k_path.path, NULL);
 		pm_set_errno(EFAULT);
 		return INVALID_FD;
 	}
@@ -247,7 +249,9 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 	if(p_fd == NULL) {
 		mm_pmo_unmap(p_info, p_pmo);
 		mm_pmo_free(p_pmo);
+		mm_hp_free(k_path.path, NULL);
 		mm_pmo_free(p_pmo);
+		pm_set_errno(EFAULT);
 		return INVALID_FD;
 	}
 
@@ -257,6 +261,7 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 		mm_pmo_unmap(p_info, p_pmo);
 		mm_pmo_free(p_pmo);
 		mm_hp_free(p_fd, NULL);
+		mm_hp_free(k_path.path, NULL);
 		pm_set_errno(EFAULT);
 		return INVALID_FD;
 	}
@@ -270,6 +275,7 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 		mm_pmo_unmap(p_info, p_pmo);
 		mm_pmo_free(p_pmo);
 		mm_hp_free(p_fd, NULL);
+		mm_hp_free(k_path.path, NULL);
 		pm_set_errno(EFAULT);
 		return INVALID_FD;
 	}
@@ -294,6 +300,7 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 	if(status != ESUCCESS) {
 		mm_pmo_unmap(p_info, p_pmo);
 		mm_pmo_free(p_pmo);
+		mm_hp_free(k_path.path, NULL);
 		mm_hp_free(p_fd, NULL);
 		mm_hp_free(p_ref, NULL);
 		pm_set_errno(status);
@@ -305,6 +312,7 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 		mm_pmo_free(p_pmo);
 		mm_hp_free(p_fd, NULL);
 		mm_hp_free(p_ref, NULL);
+		mm_hp_free(k_path.path, NULL);
 		pm_set_errno(EACCES);
 		return INVALID_FD;
 	}
@@ -313,6 +321,7 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 		mm_pmo_unmap(p_info, p_pmo);
 		mm_pmo_free(p_pmo);
 		mm_hp_free(p_fd, NULL);
+		mm_hp_free(k_path.path, NULL);
 		mm_hp_free(p_ref, NULL);
 		pm_set_errno(complete_result);
 		return INVALID_FD;
@@ -352,14 +361,123 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 	                      p_ref,
 	                      NULL);
 	pm_rls_mutex(&(p_file_obj->refered_proc_list_lock));
+	mm_hp_free(k_path.path, NULL);
 
 	pm_set_errno(ESUCCESS);
 
 	return ret;
 }
 
-k_status		vfs_chmod(u32 fd, u32 mode);
-bool			vfs_access(char* path, u32 mode);
+k_status vfs_chmod(u32 fd, u32 mode)
+{
+	pfile_desc_t p_fd;
+	pmsg_t p_msg;
+	k_status status, complete_result;
+	u32 send_result;
+	pmsg_chmod_info_t p_info;
+
+	//Get file descriptor
+	p_fd = get_file_descriptor(fd);
+
+	if(p_fd == NULL) {
+		pm_set_errno(EINVAL);
+		return EINVAL;
+	}
+
+	//Create message
+	status = msg_create(&p_msg, sizeof(msg_t) + sizeof(msg_chmod_info_t));
+
+	if(status! = ESUCCESS) {
+		return status;
+	}
+
+	p_msg->message = MSG_CHOMD;
+	p_msg->flags.flags = MFLAG_DIRECTBUF;
+	p_msg->buf.addr = (pmsg_chmod_info_t)(p_msg + 1);
+
+	p_info = p_msg->buf->addr;
+	p_info->process = pm_get_crrnt_process();
+	p_info->mode = mode;
+
+	//Send message
+	status = vfs_send_dev_message(kernel_drv_num,
+	                              p_fd->file_obj,
+	                              p_msg,
+	                              &send_result,
+	                              &complete_result);
+
+	if(status != ESUCCESS) {
+		return status;
+	}
+
+	if(send_result != MSTATUS_COMPLETE) {
+		pm_set_errno(EACCES);
+		return EACCES;
+	}
+
+	pm_set_errno(complete_result);
+	return complete_result;
+}
+
+k_status vfs_access(char* path, u32 mode)
+{
+	path_t path_info;
+	pmsg_t p_msg;
+	k_status status, complete_result;
+	u32 send_result;
+	pmsg_access_info_t p_info;
+	size_t len;
+
+	status = analyse_path(path, &path_info);
+
+	if(!OPERATE_SUCCESS) {
+		return EFAULT;
+	}
+
+	len = rtl_strlen(path_info.path);
+
+	//Create message
+	status = msg_create(&p_msg, sizeof(msg_t)
+	                    + sizeof(msg_access_info_t)
+	                    + len);
+
+	if(status != ESUCCESS) {
+		mm_hp_free(path_info.path);
+		pm_set_errno(status);
+		return status;
+	}
+
+	p_msg->message = MSG_ACCESS;
+	p_msg->flags.flags = MFLAG_DIRECTBUF;
+
+	p_info = (pmsg_access_info_t)(p_msg + 1);
+	p_msg->buf.addr = p_info;
+
+	p_info->mode = mode;
+	p_info->process = pm_get_crrnt_process();
+
+	rtl_strcpy_s(&(p_info->path), len + 1, path_info.path);
+	mm_hp_free(path_info.path);
+
+	//Send message
+	status = vfs_send_dev_message(kernel_drv_num,
+	                              path_info.volume_dev,
+	                              p_msg,
+	                              &send_result,
+	                              &complete_result);
+
+	if(status != ESUCCESS) {
+		return status;
+	}
+
+	if(send_result != MSTATUS_COMPLETE) {
+		pm_set_errno(EACCES);
+		return EACCES;
+	}
+
+	pm_set_errno(complete_result);
+	return complete_result;
+}
 
 void vfs_close(u32 fd)
 {
@@ -434,6 +552,79 @@ k_status vfs_read(u32 fd, ppmo_t buf)
 	}
 
 	p_msg->message = MSG_READ;
+	p_msg->flags.flags = MFLAG_PMO;
+	p_msg->buf.pmo_addr = buf;
+
+	p_info->file_obj = p_fd->file_obj;
+	p_info->offset = p_fd->offset;
+
+	//Send message
+	status = vfs_send_file_message(kernel_drv_num,
+	                               p_fd->file_obj,
+	                               p_msg,
+	                               &msg_state,
+	                               &complete_state);
+
+	if(status != ESUCCESS) {
+		mm_pmo_unmap(p_info, buf);
+		pm_set_errno(status);
+		return status;
+	}
+
+	if(msg_state != MSTATUS_COMPLETE) {
+		mm_pmo_unmap(p_info, buf);
+		pm_set_errno(EACCES);
+		return EACCES;
+	}
+
+	mm_pmo_unmap(p_info, buf);
+	pm_set_errno(complete_state);
+	return complete_state;
+}
+
+k_status vfs_readdir(u32 fd, ppmo_t buf)
+{
+	pfile_desc_t p_fd;
+	pmsg_t p_msg;
+	k_status status;
+	pmsg_readdir_info_t p_info;
+	k_status complete_state;
+	u32 msg_state;
+
+	//Get file descriptor
+	p_fd = get_file_descriptor(fd);
+
+	if(p_fd->flags | O_WRONLY) {
+		pm_set_errno(EBADF);
+		return EBADF;
+	}
+
+	//Map buffer
+	p_info = mm_pmo_map(NULL, buf, false);
+
+	if(p_info == NULL) {
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+
+	//Check buffer size
+	if(buf->size < p_info->count * sizeof(dirent_t)
+	   + sizeof(msg_readdir_info_t)
+	   - sizeof(dirent_t)) {
+		mm_pmo_unmap(p_info, buf);
+		pm_set_errno(EOVERFLOW);
+		return EOVERFLOW;
+	}
+
+	//Create message
+	status = msg_create(&p_msg, sizeof(msg_t));
+
+	if(status != ESUCCESS) {
+		mm_pmo_unmap(p_info, buf);
+		return status;
+	}
+
+	p_msg->message = MSG_READDIR;
 	p_msg->flags.flags = MFLAG_PMO;
 	p_msg->buf.pmo_addr = buf;
 
