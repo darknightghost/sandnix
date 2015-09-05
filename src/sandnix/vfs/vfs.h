@@ -22,6 +22,7 @@
 #include "./om/om.h"
 #include "./fs/fs.h"
 #include "fs/fs.h"
+#include "../msg/msg.h"
 
 #define	MAX_FILEOBJ_NUM		2048
 #define	NAME_MAX			255
@@ -74,8 +75,6 @@ typedef	struct	_dirent {
 	size_t		d_reclen;	//length of this d_name
 	char		d_name;		//filename (null-terminated)
 } dirent_t, *pdirent_t;
-
-#include "../msg/msg.h"
 
 typedef	struct	_msg	msg_t, *pmsg_t;
 

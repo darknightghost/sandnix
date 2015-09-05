@@ -97,12 +97,9 @@ typedef	struct {
 	size_t	count;		//Caller should fill
 } msg_readdir_info_t, *pmsg_readdir_info_t;
 
-struct	_dirent;
-typedef	struct	_dirent		dirent_t, *pdirent_t;
-
 typedef	struct {
 	size_t		count;
-	dirent_t	data;
+	u8			data;
 } msg_readdir_data_t, *pmsg_readdir_data_t;
 
 typedef	struct {

@@ -387,7 +387,7 @@ k_status vfs_chmod(u32 fd, u32 mode)
 	//Create message
 	status = msg_create(&p_msg, sizeof(msg_t) + sizeof(msg_chmod_info_t));
 
-	if(status! = ESUCCESS) {
+	if(status != ESUCCESS) {
 		return status;
 	}
 
@@ -395,7 +395,7 @@ k_status vfs_chmod(u32 fd, u32 mode)
 	p_msg->flags.flags = MFLAG_DIRECTBUF;
 	p_msg->buf.addr = (pmsg_chmod_info_t)(p_msg + 1);
 
-	p_info = p_msg->buf->addr;
+	p_info = p_msg->buf.addr;
 	p_info->process = pm_get_crrnt_process();
 	p_info->mode = mode;
 
@@ -442,7 +442,7 @@ k_status vfs_access(char* path, u32 mode)
 	                    + len);
 
 	if(status != ESUCCESS) {
-		mm_hp_free(path_info.path);
+		mm_hp_free(path_info.path, NULL);
 		pm_set_errno(status);
 		return status;
 	}
@@ -457,7 +457,7 @@ k_status vfs_access(char* path, u32 mode)
 	p_info->process = pm_get_crrnt_process();
 
 	rtl_strcpy_s(&(p_info->path), len + 1, path_info.path);
-	mm_hp_free(path_info.path);
+	mm_hp_free(path_info.path, NULL);
 
 	//Send message
 	status = vfs_send_dev_message(kernel_drv_num,
@@ -677,7 +677,7 @@ k_status vfs_remove(char* path)
 	                    + len);
 
 	if(status != ESUCCESS) {
-		mm_hp_free(path_info.path);
+		mm_hp_free(path_info.path, NULL);
 		pm_set_errno(status);
 		return status;
 	}
@@ -685,13 +685,13 @@ k_status vfs_remove(char* path)
 	p_msg->message = MSG_REMOVE;
 	p_msg->flags.flags = MFLAG_DIRECTBUF;
 
-	p_info = (pmsg_access_info_t)(p_msg + 1);
+	p_info = (pmsg_remove_info_t)(p_msg + 1);
 	p_msg->buf.addr = p_info;
 
 	p_info->process = pm_get_crrnt_process();
 
 	rtl_strcpy_s(&(p_info->path), len + 1, path_info.path);
-	mm_hp_free(path_info.path);
+	mm_hp_free(path_info.path, NULL);
 
 	//Send message
 	status = vfs_send_dev_message(kernel_drv_num,
@@ -737,7 +737,7 @@ k_status vfs_mkdir(char* path, u32 mode)
 	                    + len);
 
 	if(status != ESUCCESS) {
-		mm_hp_free(path_info.path);
+		mm_hp_free(path_info.path, NULL);
 		pm_set_errno(status);
 		return status;
 	}
@@ -745,14 +745,14 @@ k_status vfs_mkdir(char* path, u32 mode)
 	p_msg->message = MSG_MKDIR;
 	p_msg->flags.flags = MFLAG_DIRECTBUF;
 
-	p_info = (pmsg_access_info_t)(p_msg + 1);
+	p_info = (pmsg_mkdir_info_t)(p_msg + 1);
 	p_msg->buf.addr = p_info;
 
 	p_info->mode = mode;
 	p_info->process = pm_get_crrnt_process();
 
 	rtl_strcpy_s(&(p_info->path), len + 1, path_info.path);
-	mm_hp_free(path_info.path);
+	mm_hp_free(path_info.path, NULL);
 
 	//Send message
 	status = vfs_send_dev_message(kernel_drv_num,
@@ -864,11 +864,11 @@ u32 vfs_create_file_object()
 
 
 	//Initialize object
-	vfs_initialize_object(&p_file_obj);
+	vfs_initialize_object((pkobject_t)p_file_obj);
 
-	p_file_obj->p_driver = get_driver(get_proc_fs_info().driver_obj);
+	p_file_obj->p_driver = get_driver(get_proc_fs_info()->driver_obj);
 	p_file_obj->refered_proc_list = NULL;
-	pm_init_mutex(&(p_file_obj->refered_proc_list_lock), NULL);
+	pm_init_mutex(&(p_file_obj->refered_proc_list_lock));
 
 	//Regist object
 	if(add_file_obj(p_file_obj) != ESUCCESS) {

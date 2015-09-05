@@ -55,6 +55,7 @@ void kdriver_main(u32 thread_id, void* p_null)
 	p_driver = vfs_create_drv_object("devfs");
 	p_driver->process_id = pm_get_crrnt_process();
 	vfs_reg_driver(p_driver);
+	devfs_driver = p_driver->driver_id;
 
 	//Create device
 	p_device = vfs_create_dev_object("devfs");
@@ -277,7 +278,33 @@ u32 name_to_dev_num(char* name)
 
 u32 get_dir_file_obj(char* path)
 {
+	char* p;
 	char name_buf[NAME_MAX];
+	pdev_mj_info_t p_info;
 
+	p = path;
 
+	if(rtl_get_next_name_in_path(&p, name_buf, NAME_MAX) != ESUCCESS) {
+		pm_set_errno(ENFILE);
+		return INVALID_FILEID;
+	}
+
+	while(*p == '/') {
+		p++;
+	}
+
+	if(*p != NULL) {
+		pm_set_errno(ENFILE);
+		return INVALID_FILEID;
+	}
+
+	p_info = get_mj_by_name(name_buf);
+
+	if(p_info == NULL) {
+		pm_set_errno(ENFILE);
+		return INVALID_FILEID;
+	}
+
+	pm_set_errno(ESUCCESS);
+	return p_info->file_obj.file_id;
 }

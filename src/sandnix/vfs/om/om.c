@@ -30,6 +30,8 @@ static	mutex_t			devices_list_lock;
 static	hash_table_t	dev_filename_index;
 static	mutex_t			dev_filename_index_lock;
 
+u32		devfs_driver;
+
 static	u32				dev_mj_hash(char* name);
 static	bool			dev_mj_name_cmp(pdev_mj_info_t p_dev1,
                                         pdev_mj_info_t p_dev2);
@@ -565,6 +567,12 @@ u32 vfs_get_dev_major_by_name(char* major_name, u32 type)
 			return 0;
 		}
 
+		//Object
+		vfs_initialize_object((pkobject_t)(&(p_info->file_obj.obj)));
+		p_info->file_obj.p_driver = get_driver(devfs_driver);
+		p_info->file_obj.refered_proc_list = NULL;
+		pm_init_mutex(&(p_info->file_obj.refered_proc_list_lock));
+
 		p_info->file_obj.obj.name = mm_hp_alloc(len, NULL);
 
 		if(p_info->file_obj.obj.name == NULL) {
@@ -573,6 +581,7 @@ u32 vfs_get_dev_major_by_name(char* major_name, u32 type)
 			pm_set_errno(EFAULT);
 			return 0;
 		}
+
 
 		rtl_strcpy_s(p_info->file_obj.obj.name, len, major_name);
 
@@ -621,6 +630,8 @@ u32 vfs_get_dev_major_by_name(char* major_name, u32 type)
 			pm_set_errno(EFAULT);
 			return 0;
 		}
+
+		add_file_obj((pfile_obj_t)p_info);
 	}
 
 	pm_rls_mutex(&devices_list_lock);
@@ -818,7 +829,6 @@ pdevice_obj_t get_dev_by_name(char* name)
 pdev_mj_info_t get_mj_by_name(char* name)
 {
 	pdev_mj_info_t p_info;
-	u32 major;
 
 	pm_acqr_mutex(&devices_list_lock, TIMEOUT_BLOCK);
 	p_info = rtl_hash_table_get(&dev_mj_index, name);

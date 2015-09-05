@@ -103,6 +103,8 @@ typedef	struct	{
 	mutex_t			lock;
 } dev_mj_info_t, *pdev_mj_info_t;
 
+extern	u32		devfs_driver;
+
 void		om_init();
 
 pdriver_obj_t	get_driver(u32 driver_id);
