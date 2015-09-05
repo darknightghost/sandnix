@@ -75,6 +75,7 @@ typedef	struct	_device_obj {
 	u32				device_number;
 	bool			has_parent;
 	u32				parent_dev;
+	u32				gid;
 	void*			p_additional;
 	obj_destroyer	additional_destroyer;
 	list_t			child_list;
@@ -95,8 +96,8 @@ typedef	struct	_device_obj {
 #define	INVALID_DRV			0xFFFFFFFF
 
 typedef	struct	{
+	file_obj_t		file_obj;
 	u32				mj_num;
-	char*			name;
 	array_list_t	devices;
 	u32				device_type;
 	mutex_t			lock;
@@ -105,5 +106,7 @@ typedef	struct	{
 void		om_init();
 
 pdriver_obj_t	get_driver(u32 driver_id);
+pdevice_obj_t	get_dev_by_name(char* name);
+pdev_mj_info_t	get_mj_by_name(char* name);
 
 #endif	//!	OM_H_INCLUDE

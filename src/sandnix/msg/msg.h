@@ -38,7 +38,8 @@ typedef	struct	_msg {
 	union {
 		u32	flags;
 		struct {
-			u32		buf_type: 2;
+			u32		direct_buf: 1;
+			u32		pmo_buf: 1;
 			u32		async: 1;
 			u32		broadcast: 1;
 		} properties;
@@ -66,14 +67,13 @@ typedef	struct {
 	u32		msg_id;
 } msg_cancel_info_t, *pmsg_cancel_info_t;
 
-
 typedef	struct {
 	u32			process;
 	u32			flags;
 	u32			mode;
 	u32			file_object;
 	size_t		file_size;
-	char		path_begin;
+	char		path;
 } msg_open_info_t, *pmsg_open_info_t;
 
 typedef	struct {
@@ -96,6 +96,9 @@ typedef	struct {
 	size_t	offset;
 	size_t	count;		//Caller should fill
 } msg_readdir_info_t, *pmsg_readdir_info_t;
+
+struct	_dirent;
+typedef	struct	_dirent		dirent_t, *pdirent_t;
 
 typedef	struct {
 	size_t		count;
@@ -120,6 +123,17 @@ typedef	struct {
 	u32		process;
 } msg_chmod_info_t, *pmsg_chmod_info_t;
 
+typedef	struct {
+	u32		process;
+	char	path;
+} msg_remove_info_t, *pmsg_remove_info_t;
+
+typedef	struct {
+	u32		process;
+	u32		mode;
+	char	path;
+} msg_mkdir_info_t, *pmsg_mkdir_info_t;
+
 //Flags
 #define		MFLAG_DIRECTBUF		0x00000001
 #define		MFLAG_PMO			0x00000002
@@ -131,16 +145,17 @@ typedef	struct {
 #define		MSG_CANCEL			0x00000001
 #define		MSG_FAILED			0x00000002
 #define		MSG_OPEN			0x00000003
-#define		MSG_MKDIR			0x00000004
-#define		MSG_READ			0x00000005
-#define		MSG_READDIR			0x00000006
-#define		MSG_WRITE			0x00000007
-#define		MSG_CLOSE			0x00000008
-#define		MSG_DESTROY			0x00000009
-#define		MSG_ACCESS			0x0000000A
-#define		MSG_CHOMD			0x0000000B
-#define		MSG_IOCTRL			0x0000000C
-#define		MSG_INTERRUPT		0x0000000D
+#define		MSG_READ			0x00000004
+#define		MSG_WRITE			0x00000005
+#define		MSG_REMOVE			0x00000006
+#define		MSG_MKDIR			0x00000007
+#define		MSG_READDIR			0x00000008
+#define		MSG_CLOSE			0x00000009
+#define		MSG_DESTROY			0x0000000A
+#define		MSG_ACCESS			0x0000000B
+#define		MSG_CHOMD			0x0000000C
+#define		MSG_IOCTRL			0x0000000D
+#define		MSG_INTERRUPT		0x0000000E
 
 
 //Status
@@ -171,3 +186,5 @@ k_status	msg_cancel(pmsg_t p_msg);
 
 
 #endif	//!	MSG_H_INCLUDE
+
+

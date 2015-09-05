@@ -21,7 +21,6 @@
 #include "../../common/common.h"
 #include "./om/om.h"
 #include "./fs/fs.h"
-#include "../msg/msg.h"
 #include "fs/fs.h"
 
 #define	MAX_FILEOBJ_NUM		2048
@@ -33,17 +32,20 @@
 #define	O_WRONLY	0x00000001
 #define	O_RDWR		0x00000002
 
-#define	O_APPEND	0x00000400
-#define	O_CLOEXEC	0x00080000
 #define	O_CREAT		0x00000040
 #define	O_EXCL		0x00000080
-#define	O_TRUNC		0x00000200
 #define	O_NOCTTY	0x00000100
-#define	O_NONBLOCK	0x00000800
-
-#define	O_DSYNC		0x00001000
-#define	O_RSYNC		0x00101000
-#define	O_SYNC		0x00101000
+#define	O_TRUNC		0x00000200	//Not support
+#define	O_APPEND	0x00000400
+#define	O_NONBLOCK	0x00000800	//Not support
+#define	O_NDELAY	O_NONBLOCK
+#define	O_DSYNC		0x00001000	//Not support
+#define	O_ASYNC		0x00002000	//Not support
+#define	O_DIRECTORY	0x00010000
+#define	O_NOFOLLOW	0x00020000
+#define	O_CLOEXEC	0x00080000
+#define	O_RSYNC		0x00101000	//Not support
+#define	O_SYNC		0x00101000	//Not support
 
 //Modes
 #define	S_ISUID	0x00000800		//Set user ID
@@ -66,14 +68,16 @@
 #define	S_IWOTH	0x00000002		//Others has write permission
 #define	S_IXOTH	0x00000001		//Others has execute permission
 
-typedef	struct	_msg	msg_t, *pmsg_t;
-
 typedef	struct	_dirent {
 	long		d_ino;		//Inode number
 	size_t		d_off;		//Offset to this dirent
 	size_t		d_reclen;	//length of this d_name
 	char		d_name;		//filename (null-terminated)
 } dirent_t, *pdirent_t;
+
+#include "../msg/msg.h"
+
+typedef	struct	_msg	msg_t, *pmsg_t;
 
 void			vfs_init();
 
@@ -97,8 +101,10 @@ k_status		vfs_chmod(u32 fd, u32 mode);
 k_status		vfs_access(char* path, u32 mode);
 void			vfs_close(u32 fd);
 k_status		vfs_read(u32 fd, ppmo_t buf);
-k_status		vfs_readdir(u32 fd, ppmo_t buf);
 size_t			vfs_write(u32 fd, ppmo_t buf);
+k_status		vfs_remove(char* path);
+k_status		vfs_mkdir(char* path, u32 mode);
+k_status		vfs_readdir(u32 fd, ppmo_t buf);
 void			vfs_sync(u32 dev_num);
 //s32			vfs_ioctl(u32 fd, u32 request, ...);
 

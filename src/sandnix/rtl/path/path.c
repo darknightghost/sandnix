@@ -15,33 +15,42 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	RTL_H_INCLUDE
-#define	RTL_H_INCLUDE
+#include "../rtl.h"
+#include "../../exceptions/exceptions.h"
+#include "../../pm/pm.h"
 
-#include "../../common/common.h"
+k_status rtl_get_next_name_in_path(char** p_path, char* buf, size_t size)
+{
+	char* p;
+	size_t count;
+	char* p_old;
 
-#ifdef	X86
+	p_old = *p_path;
 
-//Variable Arguments
-typedef	u8*				va_list;
+	while(**p_path == '/') {
+		(*p_path++);
+	}
 
-#define	va_start(ap,v)	((ap) = (va_list)&(v) + 4)
+	count = 0;
+	p = buf;
 
-#define	va_arg(ap,t)	((ap) += 4 ,(\
-                                     sizeof(t) <= 4\
-                                     ? *((t*)((ap)-4))\
-                                     : **((t**)((ap)-4))))
+	while(**p_path != '/' &&**p_path != '\0') {
+		if(count >= size - 1) {
+			*p_path = p_old;
+			pm_set_errno(ENOMEM);
+			return ENOMEM;
 
-#define	va_end(ap)		((ap) = (va_list)0)
-#endif	//!	X86
+		} else {
+			*p = **p_path;
+		}
 
-#include "string/string.h"
-#include "math/math.h"
-#include "list/list.h"
-#include "queue/queue.h"
-#include "stack/stack.h"
-#include "array_list/array_list.h"
-#include "hash_table/hash_table.h"
-#include "path/path.h"
+		count++;
+		(*p_path)++;
+		p++;
+	}
 
-#endif	//!	RTL_H_INCLUDE
+	*p = '\0';
+
+	pm_set_errno(ESUCCESS);
+	return ESUCCESS;
+}
