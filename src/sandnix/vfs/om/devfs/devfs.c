@@ -18,10 +18,13 @@
 #include "devfs.h"
 #include "../../../rtl/rtl.h"
 
+static	u32				volume_dev;
+
 static	void			kdriver_main(u32 thread_id, void* p_null);
 static	bool			dispatch_message(pmsg_t p_msg);
 static	void			on_open(pmsg_t p_msg);
 static	void			on_access(pmsg_t p_msg);
+static	void			on_stat(pmsg_t p_msg);
 static	void			on_readdir(pmsg_t p_msg);
 static	bool			check_privilege(u32 euid, u32 egid, pdevice_obj_t p_dev);
 static	pdevice_obj_t	get_dev_by_path(char* path);
@@ -64,6 +67,7 @@ void kdriver_main(u32 thread_id, void* p_null)
 	                                 DEV_TYPE_BLOCK),
 	                                 0);
 	vfs_add_device(p_device, p_driver->driver_id);
+	volume_dev = p_device->device_number;
 
 	//Awake thread 0
 	pm_resume_thrd(0);
@@ -90,6 +94,10 @@ bool dispatch_message(pmsg_t p_msg)
 		on_access(p_msg);
 		break;
 
+	case MSG_STAT:
+		on_stat(p_msg);
+		break;
+
 	case MSG_READDIR:
 		on_readdir(p_msg);
 		break;
@@ -110,12 +118,20 @@ void on_open(pmsg_t p_msg)
 	k_status status;
 
 	//Check buf type
-	if(!p_msg->flags.properties.direct_buf) {
+	if(!p_msg->flags.properties.pmo_buf) {
 		msg_complete(p_msg, EINVAL);
 		return;
 	}
 
-	p_info = p_msg->buf.addr;
+	//Map bufffer
+	p_info = mm_pmo_map(NULL, p_msg->buf.pmo_addr, false);
+
+	if(p_info == NULL) {
+		msg_complete(p_msg, EFAULT);
+		return;
+	}
+
+	p_info->serial_read = false;
 
 	if(p_info->flags | O_DIRECTORY) {
 		p_info->file_object = get_dir_file_obj(&(p_info->path));
@@ -123,6 +139,7 @@ void on_open(pmsg_t p_msg)
 
 		status = pm_get_errno();
 		msg_complete(p_msg, status);
+		mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
 
 		return;
 
@@ -133,6 +150,7 @@ void on_open(pmsg_t p_msg)
 
 		if(p_dev == NULL) {
 			msg_complete(p_msg, ENFILE);
+			mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
 			return;
 		}
 
@@ -142,11 +160,13 @@ void on_open(pmsg_t p_msg)
 
 		if(p_info->mode | O_CREAT) {
 			msg_complete(p_msg, EACCES);
+			mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
 			return;
 		}
 
 		if(!check_privilege(euid, egid, p_dev)) {
 			msg_complete(p_msg, EACCES);
+			mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
 			return;
 		}
 
@@ -154,16 +174,116 @@ void on_open(pmsg_t p_msg)
 		p_info->file_size = 0;
 
 		msg_complete(p_msg, ESUCCESS);
+		mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
 		return;
 	}
 }
 
 void on_access(pmsg_t p_msg)
 {
+	pmsg_access_info_t p_info;
+	pdevice_obj_t p_dev;
+	u32 euid;
+	u32 egid;
+	k_status status;
+
+	//Check buf type
+	if(!p_msg->flags.properties.direct_buf) {
+		msg_complete(p_msg, EINVAL);
+		return;
+	}
+
+	p_info = p_msg->buf.addr;
+
+	//Devices cannot be executed
+	if(p_info->mode | X_OK) {
+		msg_complete(p_msg, EACCES);
+		return;
+	}
+
+	//Is a device?
+	p_dev = get_dev_by_path(&(p_info->path));
+
+	if(p_dev == NULL) {
+		//Is a directory?
+		if(p_info->mode | W_OK) {
+			//Directories cannot be written
+			msg_complete(p_msg, EACCES);
+			return;
+		}
+
+		get_dir_file_obj(&(p_info->path));
+
+		if(!OPERATE_SUCCESS) {
+			msg_complete(p_msg, ENFILE);
+			return;
+		}
+	}
+
+	if(p_info->mode == F_OK) {
+		msg_complete(p_msg, ESUCCESS);
+		return;
+
+	} else {
+		//Check privilege
+		euid = pm_get_proc_euid(p_info->process);
+		egid = pm_get_proc_egid(p_info->process);
+
+		if(p_dev->gid == egid || euid == 0) {
+			msg_complete(p_msg, ESUCCESS);
+			return;
+
+		} else {
+			msg_complete(p_msg, EACCES);
+			return;
+		}
+	}
+}
+
+void on_stat(pmsg_t p_msg)
+{
+
 }
 
 void on_readdir(pmsg_t p_msg)
 {
+	pmsg_readdir_info_t p_info;
+	pmsg_readdir_data_t p_data;
+	pdevice_obj_t p_dev;
+	k_status status;
+	pfile_obj_t p_fo;
+	pdevice_obj_t p_dev;
+
+	//Check buf type
+	if(!p_msg->flags.properties.pmo_buf) {
+		msg_complete(p_msg, EINVAL);
+		return;
+	}
+
+	//Map bufffer
+	p_info = mm_pmo_map(NULL, p_msg->buf.pmo_addr, false);
+
+	if(p_info == NULL) {
+		msg_complete(p_msg, EFAULT);
+		return;
+	}
+
+	p_data = (pmsg_readdir_data_t)p_info;
+	p_fo = get_file_obj(p_info->file_obj);
+
+	if(OBJ_MINOR_CLASS(p_fo->obj.class) == OBJ_MN_DEVICE) {
+		//Volume device
+		p_dev = (pdevice_obj_t)p_fo;
+
+		if(volume_dev != p_dev->device_number) {
+			mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
+			msg_complete(p_msg, ENOTDIR);
+			return;
+		}
+
+	} else {
+		//Directory
+	}
 
 }
 

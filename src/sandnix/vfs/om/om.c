@@ -62,8 +62,6 @@ void om_init()
 	pm_init_mutex(&devices_list_lock);
 	pm_init_mutex(&dev_filename_index_lock);
 
-	devfs_init();
-
 	vfs_get_dev_major_by_name("bus", DEV_TYPE_CHAR);
 	vfs_get_dev_major_by_name("dma", DEV_TYPE_CHAR);
 	vfs_get_dev_major_by_name("memory", DEV_TYPE_CHAR);
@@ -76,6 +74,7 @@ void om_init()
 	vfs_get_dev_major_by_name("partition", DEV_TYPE_BLOCK);
 	vfs_get_dev_major_by_name("volume", DEV_TYPE_CHAR);
 
+	devfs_init();
 
 	return;
 }
@@ -571,6 +570,7 @@ u32 vfs_get_dev_major_by_name(char* major_name, u32 type)
 		vfs_initialize_object((pkobject_t)(&(p_info->file_obj.obj)));
 		p_info->file_obj.p_driver = get_driver(devfs_driver);
 		p_info->file_obj.refered_proc_list = NULL;
+		p_info->file_obj.obj.class = OBJ_MJ_FILE | OBJ_MN_NORMAL;
 		pm_init_mutex(&(p_info->file_obj.refered_proc_list_lock));
 
 		p_info->file_obj.obj.name = mm_hp_alloc(len, NULL);

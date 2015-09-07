@@ -332,6 +332,7 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 	p_fd->offset = 0;
 	p_fd->size = p_info->file_size;
 	p_fd->flags = flags;
+	p_fd->serial_read = p_info->serial_read;
 	rtl_memcpy(&(p_fd->path), &k_path, sizeof(path_t));
 
 	//Add file descriptor
@@ -517,6 +518,7 @@ k_status vfs_read(u32 fd, ppmo_t buf)
 	pmsg_t p_msg;
 	k_status status;
 	pmsg_read_info_t p_info;
+	pmsg_read_data_t p_data;
 	k_status complete_state;
 	u32 msg_state;
 
@@ -575,6 +577,13 @@ k_status vfs_read(u32 fd, ppmo_t buf)
 		mm_pmo_unmap(p_info, buf);
 		pm_set_errno(EACCES);
 		return EACCES;
+	}
+
+	p_data = (pmsg_read_data_t)p_info;
+
+	if(!p_fd->serial_read) {
+		//Move file pointer
+		(p_fd->offset) += p_data->len;
 	}
 
 	mm_pmo_unmap(p_info, buf);
@@ -648,9 +657,147 @@ size_t vfs_write(u32 fd, ppmo_t buf)
 		return EACCES;
 	}
 
+	if(!p_fd->serial_read) {
+		//Move file pointer
+		(p_fd->offset) += p_info->len;
+
+		if(p_fd->offset > p_fd->size) {
+			//Reset file size
+			p_fd->size = p_fd->len;
+		}
+	}
+
 	mm_pmo_unmap(p_info, buf);
 	pm_set_errno(complete_state);
 	return complete_state;
+
+}
+
+s64 vfs_seek(u32 fd, u32 pos, s64 offset)
+{
+	pfile_desc_t p_fd;
+	s64 old_offset;
+
+	//Get file descriptor
+	p_fd = get_file_descriptor(fd);
+
+	if(p_fd == NULL) {
+		pm_set_errno(EBADF);
+		return 0;
+	}
+
+	if(p_fd->serial_read) {
+		pm_set_errno(ESPIPE);
+		return 0;
+	}
+
+	old_offset = p_fd->offset;
+
+	//Get start pos
+	switch(pos) {
+	case SEEK_SET:
+		p_fd->offset = 0;
+		break;
+
+	case SEEK_CUR:
+		break;
+
+	case SEEK_END:
+		p_fd->offset = p_fd->size;
+		break;
+
+	default:
+		pm_set_errno(EINVAL);
+		return 0;
+	}
+
+	//Add offset
+	if(p_fd->flags | O_DIRECTORY) {
+		offset = offset * (rtl_div64(offset, sizeof(dirent_t))
+		                   + (rtl_mod64(offset, sizeof(dirent_t)) ? 1 : 0));
+	}
+
+	if(offset > 0) {
+		if(offset > p_fd->size - p_fd->offset) {
+			offset = p_fd->size - p_fd->offset;
+		}
+
+	} else {
+		if((-offset) > p_fd->offset) {
+			offset = (-(s32)(p_fd->offset));
+		}
+	}
+
+	(p_fd->offset) += offset;
+
+	pm_set_errno(ESUCCESS);
+	return old_offset - p_fd->offset;
+}
+
+k_status vfs_fstat(u32 fd, ppmo_t buf)
+{
+	pfile_desc_t p_fd;
+	pmsg_t p_msg;
+	k_status status;
+	pmsg_stat_info_t p_info;
+	k_status complete_state;
+	u32 msg_state;
+
+	//Get file descriptor
+	p_fd = get_file_descriptor(fd);
+
+	//Map buffer
+	p_info = mm_pmo_map(NULL, buf, false);
+
+	if(p_info == NULL) {
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+
+	//Check buffer size
+	if(buf->size < sizeof(file_stat_t)) {
+		mm_pmo_unmap(p_info, buf);
+		pm_set_errno(EOVERFLOW);
+		return EOVERFLOW;
+	}
+
+	//Create message
+	status = msg_create(&p_msg, sizeof(msg_t));
+
+	if(status != ESUCCESS) {
+		mm_pmo_unmap(p_info, buf);
+		return status;
+	}
+
+	p_msg->message = MSG_STAT;
+	p_msg->flags.flags = MFLAG_PMO;
+	p_msg->buf.pmo_addr = buf;
+
+	p_info->file_obj = p_fd->file_obj;
+
+	//Send message
+	status = vfs_send_file_message(kernel_drv_num,
+	                               p_fd->file_obj,
+	                               p_msg,
+	                               &msg_state,
+	                               &complete_state);
+
+	if(status != ESUCCESS) {
+		mm_pmo_unmap(p_info, buf);
+		pm_set_errno(status);
+		return status;
+	}
+
+	if(msg_state != MSTATUS_COMPLETE) {
+		mm_pmo_unmap(p_info, buf);
+		pm_set_errno(EACCES);
+		return EACCES;
+	}
+
+	mm_pmo_unmap(p_info, buf);
+	pm_set_errno(complete_state);
+	return complete_state;
+
 
 }
 

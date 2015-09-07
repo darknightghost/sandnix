@@ -73,6 +73,7 @@ typedef	struct {
 	u32			mode;
 	u32			file_object;
 	size_t		file_size;
+	bool		serial_read;
 	char		path;
 } msg_open_info_t, *pmsg_open_info_t;
 
@@ -116,6 +117,10 @@ typedef	struct {
 } msg_access_info_t, *pmsg_access_info_t;
 
 typedef	struct {
+	u32		file_obj;
+} msg_stat_info_t, *pmsg_stat_info_t;
+
+typedef	struct {
 	u32		mode;
 	u32		process;
 } msg_chmod_info_t, *pmsg_chmod_info_t;
@@ -150,9 +155,10 @@ typedef	struct {
 #define		MSG_CLOSE			0x00000009
 #define		MSG_DESTROY			0x0000000A
 #define		MSG_ACCESS			0x0000000B
-#define		MSG_CHOMD			0x0000000C
-#define		MSG_IOCTRL			0x0000000D
-#define		MSG_INTERRUPT		0x0000000E
+#define		MSG_STAT			0x0000000C
+#define		MSG_CHOMD			0x0000000D
+#define		MSG_IOCTRL			0x0000000E
+#define		MSG_INTERRUPT		0x0000000F
 
 
 //Status

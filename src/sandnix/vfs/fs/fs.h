@@ -51,6 +51,7 @@ typedef	struct {
 	size_t		offset;
 	size_t		size;
 	u32			flags;
+	bool		serial_read;
 } file_desc_t, *pfile_desc_t;
 
 typedef	struct {
