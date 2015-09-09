@@ -66,6 +66,7 @@ void kdriver_main(u32 thread_id, void* p_null)
 	p_device->device_number = MK_DEV(vfs_get_dev_major_by_name("volume",
 	                                 DEV_TYPE_BLOCK),
 	                                 0);
+	p_device->block_size = 1;
 	vfs_add_device(p_device, p_driver->driver_id);
 	volume_dev = p_device->device_number;
 
@@ -142,7 +143,6 @@ void on_open(pmsg_t p_msg)
 		mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
 
 		return;
-
 
 	} else {
 		//Get device object
@@ -242,7 +242,85 @@ void on_access(pmsg_t p_msg)
 
 void on_stat(pmsg_t p_msg)
 {
+	pmsg_stat_info_t p_info;
+	pmsg_stat_data_t p_data;
+	pdevice_obj_t p_dev;
+	pdev_mj_info_t p_mj;
+	k_status status;
 
+	//Check buf type
+	if(!p_msg->flags.properties.pmo_buf) {
+		msg_complete(p_msg, EINVAL);
+		return;
+	}
+
+	//Map bufffer
+	p_info = mm_pmo_map(NULL, p_msg->buf.pmo_addr, false);
+	p_data = (pmsg_stat_data_t)p_info;
+
+	if(p_info == NULL) {
+		msg_complete(p_msg, EFAULT);
+		return;
+	}
+
+	//Get device object
+	p_dev = get_dev_by_path(&(p_info->path));
+
+	if(p_dev == NULL) {
+		p_mj = get_dir_file_obj(&(p_info->path));
+
+		if(p_mj == NULL) {
+			msg_complete(p_msg, ENFILE);
+			mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
+			return;
+		}
+
+		//Directory
+		p_data->stat.atime = 0;
+		p_data->stat.block_num = 0;
+		p_data->stat.block_size = 0;
+		p_data->stat.ctime = 0;
+		p_data->stat.dev_num = 0;
+		p_data->stat.gid = 0;
+		p_data->stat.inode = 0 - (p_mj->mj_num);
+		p_data->stat.mode = S_IRUSR | S_IRGRP | S_IROTH;
+		p_data->stat.mtime = 0;
+		p_data->stat.nlink = 1;
+		p_data->stat.rdev = 0;
+		p_data->stat.size = 0;
+		p_data->stat.uid = 0;
+
+		msg_complete(p_msg, ESUCCESS);
+
+	} else {
+		//Device
+		p_data->stat.atime = 0;
+		p_data->stat.block_num = 0;
+		p_data->stat.block_size = p_dev->block_size;
+		p_data->stat.ctime = 0;
+		p_data->stat.dev_num = p_dev->device_number;
+		p_data->stat.gid = p_dev->gid;
+		p_data->stat.inode = p_dev->device_number;
+		p_data->stat.mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH;
+		p_data->stat.mtime = 0;
+
+		if(p_dev->file_obj.obj.name == NULL) {
+			p_data->stat.nlink = 1;
+
+		} else {
+			p_data->stat.nlink = 2;
+		}
+
+		p_data->stat.rdev = p_dev->device_number;
+		p_data->stat.size = 0;
+		p_data->stat.uid = 0;
+
+		msg_complete(p_msg, ESUCCESS);
+
+	}
+
+	mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
+	return;
 }
 
 void on_readdir(pmsg_t p_msg)
@@ -253,6 +331,10 @@ void on_readdir(pmsg_t p_msg)
 	k_status status;
 	pfile_obj_t p_fo;
 	pdevice_obj_t p_dev;
+	size_t count;
+	size_t read_entries;
+	size_t offset;
+	pdirent_t p_dir_info;
 
 	//Check buf type
 	if(!p_msg->flags.properties.pmo_buf) {
@@ -270,6 +352,8 @@ void on_readdir(pmsg_t p_msg)
 
 	p_data = (pmsg_readdir_data_t)p_info;
 	p_fo = get_file_obj(p_info->file_obj);
+	count = p_info->count;
+	offset = p_info->offset;
 
 	if(OBJ_MINOR_CLASS(p_fo->obj.class) == OBJ_MN_DEVICE) {
 		//Volume device
@@ -281,8 +365,25 @@ void on_readdir(pmsg_t p_msg)
 			return;
 		}
 
+		read_entries = get_devfs_root((pdirent_t)(&(p_data->data)),
+		                              offset,
+		                              count);
+		p_data->count = read_entries;
+
+		msg_complete(p_msg, ESUCCESS);
+		return;
+
 	} else {
 		//Directory
+		read_entries = get_devfs_dir((pdev_mj_info_t)p_fo,
+		                             (pdirent_t)(&(p_data->data)),
+		                             offset,
+		                             count);
+		p_data->count = read_entries;
+
+		msg_complete(p_msg, ESUCCESS);
+		return;
+
 	}
 
 }

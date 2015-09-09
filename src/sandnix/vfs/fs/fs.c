@@ -734,7 +734,7 @@ s64 vfs_seek(u32 fd, u32 pos, s64 offset)
 	return old_offset - p_fd->offset;
 }
 
-k_status vfs_fstat(u32 fd, ppmo_t buf)
+k_status vfs_stat(char* path, ppmo_t buf)
 {
 	pfile_desc_t p_fd;
 	pmsg_t p_msg;
@@ -742,21 +742,28 @@ k_status vfs_fstat(u32 fd, ppmo_t buf)
 	pmsg_stat_info_t p_info;
 	k_status complete_state;
 	u32 msg_state;
+	path_t k_path;
 
-	//Get file descriptor
-	p_fd = get_file_descriptor(fd);
+	status = analyse_path(path, &path_info);
+
+	if(!OPERATE_SUCCESS) {
+		return EFAULT;
+	}
 
 	//Map buffer
 	p_info = mm_pmo_map(NULL, buf, false);
 
 	if(p_info == NULL) {
+		mm_hp_free(k_path.path, NULL);
 		pm_set_errno(EFAULT);
 		return EFAULT;
 	}
 
 	//Check buffer size
-	if(buf->size < sizeof(file_stat_t)) {
+	if(buf->size < sizeof(file_stat_t)
+	   || buf->size < rtl_strlen(path) + 1) {
 		mm_pmo_unmap(p_info, buf);
+		mm_hp_free(k_path.path, NULL);
 		pm_set_errno(EOVERFLOW);
 		return EOVERFLOW;
 	}
@@ -766,6 +773,7 @@ k_status vfs_fstat(u32 fd, ppmo_t buf)
 
 	if(status != ESUCCESS) {
 		mm_pmo_unmap(p_info, buf);
+		mm_hp_free(k_path.path, NULL);
 		return status;
 	}
 
@@ -773,14 +781,16 @@ k_status vfs_fstat(u32 fd, ppmo_t buf)
 	p_msg->flags.flags = MFLAG_PMO;
 	p_msg->buf.pmo_addr = buf;
 
-	p_info->file_obj = p_fd->file_obj;
+	rtl_strcpy_s(&(p_info->path), buf->size, k_path.path);
 
 	//Send message
 	status = vfs_send_file_message(kernel_drv_num,
-	                               p_fd->file_obj,
+	                               k_path.volume_dev,
 	                               p_msg,
 	                               &msg_state,
 	                               &complete_state);
+
+	mm_hp_free(k_path.path, NULL);
 
 	if(status != ESUCCESS) {
 		mm_pmo_unmap(p_info, buf);
@@ -797,8 +807,6 @@ k_status vfs_fstat(u32 fd, ppmo_t buf)
 	mm_pmo_unmap(p_info, buf);
 	pm_set_errno(complete_state);
 	return complete_state;
-
-
 }
 
 k_status vfs_remove(char* path)
@@ -988,6 +996,8 @@ k_status vfs_readdir(u32 fd, ppmo_t buf)
 		pm_set_errno(EACCES);
 		return EACCES;
 	}
+
+	fd->offset += p_info->count;
 
 	mm_pmo_unmap(p_info, buf);
 	pm_set_errno(complete_state);

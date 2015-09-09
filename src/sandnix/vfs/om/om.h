@@ -76,6 +76,7 @@ typedef	struct	_device_obj {
 	bool			has_parent;
 	u32				parent_dev;
 	u32				gid;
+	size_t			block_size;
 	void*			p_additional;
 	obj_destroyer	additional_destroyer;
 	list_t			child_list;
@@ -101,6 +102,7 @@ typedef	struct	{
 	array_list_t	devices;
 	u32				device_type;
 	mutex_t			lock;
+	u32				devices_count;
 } dev_mj_info_t, *pdev_mj_info_t;
 
 extern	u32		devfs_driver;
@@ -110,5 +112,8 @@ void		om_init();
 pdriver_obj_t	get_driver(u32 driver_id);
 pdevice_obj_t	get_dev_by_name(char* name);
 pdev_mj_info_t	get_mj_by_name(char* name);
+size_t			get_devfs_root(pdirent_t buf, size_t offset, size_t count);
+size_t			get_devfs_dir(pdev_mj_info_t p_dir, pdirent_t buf,
+                              size_t offset, size_t count);
 
 #endif	//!	OM_H_INCLUDE

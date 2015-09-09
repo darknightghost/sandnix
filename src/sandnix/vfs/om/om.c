@@ -338,6 +338,7 @@ u32 vfs_add_device(pdevice_obj_t p_device, u32 driver)
 		return 0;
 	}
 
+	(p_mj_info->devices_count)++;
 	pm_rls_mutex(&(p_mj_info->lock));
 
 	//Add to driver
@@ -353,6 +354,7 @@ u32 vfs_add_device(pdevice_obj_t p_device, u32 driver)
 
 		pm_acqr_mutex(&(p_mj_info->lock), TIMEOUT_BLOCK);
 		rtl_array_list_release(&(p_mj_info->devices), minor_num, NULL);
+		(p_mj_info->devices_count)--;
 		pm_rls_mutex(&(p_mj_info->lock));
 
 		vfs_dec_obj_reference((pkobject_t)p_drv_obj);
@@ -373,6 +375,7 @@ u32 vfs_add_device(pdevice_obj_t p_device, u32 driver)
 
 			pm_acqr_mutex(&(p_mj_info->lock), TIMEOUT_BLOCK);
 			rtl_array_list_release(&(p_mj_info->devices), minor_num, NULL);
+			(p_mj_info->devices_count)--;
 			pm_rls_mutex(&(p_mj_info->lock));
 
 			vfs_dec_obj_reference((pkobject_t)p_drv_obj);
@@ -395,6 +398,7 @@ u32 vfs_add_device(pdevice_obj_t p_device, u32 driver)
 
 			pm_acqr_mutex(&(p_mj_info->lock), TIMEOUT_BLOCK);
 			rtl_array_list_release(&(p_mj_info->devices), minor_num, NULL);
+			(p_mj_info->devices_count)--;
 			pm_rls_mutex(&(p_mj_info->lock));
 
 			vfs_dec_obj_reference((pkobject_t)p_drv_obj);
@@ -602,6 +606,7 @@ u32 vfs_get_dev_major_by_name(char* major_name, u32 type)
 
 		p_info->mj_num = major;
 		p_info->device_type = type;
+		p_info->devices_count = 0;
 
 		//Add to devices_list
 		rtl_array_list_set(&devices_list, major, p_info, NULL);
@@ -735,6 +740,7 @@ void device_destroyer(pdevice_obj_t p_dev)
 	rtl_array_list_release(&(p_info->devices),
 	                       DEV_NUM_MN(p_dev->device_number),
 	                       NULL);
+	(p_mj_info->devices_count)--;
 
 	//Remove from driver
 	p_drv = p_dev->file_obj.p_driver;
@@ -835,4 +841,15 @@ pdev_mj_info_t get_mj_by_name(char* name)
 	pm_rls_mutex(&devices_list_lock);
 
 	return p_info;
+}
+
+size_t get_devfs_root(pdirent_t buf, size_t offset, size_t count)
+{
+
+}
+
+size_t get_devfs_dir(pdev_mj_info_t p_dir, pdirent_t buf,
+                     size_t offset, size_t count)
+{
+
 }

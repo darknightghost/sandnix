@@ -117,8 +117,12 @@ typedef	struct {
 } msg_access_info_t, *pmsg_access_info_t;
 
 typedef	struct {
-	u32		file_obj;
+	char	path;
 } msg_stat_info_t, *pmsg_stat_info_t;
+
+typedef	struct {
+	file_stat_t		stat;
+} msg_stat_data_t, *pmsg_stat_data_t;
 
 typedef	struct {
 	u32		mode;
