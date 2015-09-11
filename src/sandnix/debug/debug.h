@@ -18,9 +18,26 @@
 #ifndef	DEBUG_H_INCLUDE
 #define	DEBUG_H_INCLUDE
 
-#include "../common/common.h"
+#include "../../common/common.h"
+#include "../exceptions/exceptions.h"
 
 #define	K_TTY_BUF_SIZE		4096
+
+#ifdef DEBUG
+
+#define	ASSERT(x)	{\
+		if(!(x)){\
+			excpt_panic(EASSERT,\
+			            "Assert failed.\nExpression:%s\nFile:%s\nLine:%u",\
+			            #x,\
+			            __FILE__,\
+			            __LINE__);\
+		}\
+	}
+#endif	//	DEBUG
+#ifndef DEBUG
+	#define	ASSERT(x)
+#endif	//!	DEBUG
 
 void	dbg_init();
 void	dbg_cls();

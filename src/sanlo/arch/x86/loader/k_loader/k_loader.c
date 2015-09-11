@@ -25,10 +25,11 @@
 #include "../memtest/memtest.h"
 
 static	bool		load_segment(Elf32_Phdr* p_pheader, pfile fp);
+static	bool		load_initrd(char* path);
 
 char num_buf[64];
 
-bool load_os_kernel(char* path, char* parameters)
+bool load_os_kernel(char* path, char* initrd, char* parameters)
 {
 	pfile fp;
 	Elf32_Ehdr elf_header;
@@ -114,6 +115,10 @@ bool load_os_kernel(char* path, char* parameters)
 	    FG_BRIGHT_WHITE | BG_BLACK,
 	    BG_BLACK);
 
+	if(!load_initrd(initrd)) {
+		return false;
+	}
+
 	print_string(
 	    GET_REAL_ADDR("Starting kernel...\n"),
 	    FG_BRIGHT_WHITE | BG_BLACK,
@@ -181,6 +186,57 @@ bool load_segment(Elf32_Phdr* p_pheader, pfile fp)
 	   != p_pheader->p_filesz) {
 		return false;
 	}
+
+	return true;
+}
+
+bool load_initrd(char* path)
+{
+	pfile fp;
+
+	print_string(
+	    GET_REAL_ADDR("initrd = "),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    path,
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    GET_REAL_ADDR("\n"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+
+	//Open file
+	fp = open(path);
+
+	if(fp == NULL) {
+		return false;
+	}
+
+	*(u32*)(RAMDISK_PHYSICAL) = fp->size;
+
+	if(fp->size > RAMDISK_SIZE - 4) {
+		panic(EXCEPTION_RAMDISK_TOO_LARGE);
+	}
+
+	if(read(fp, (u8*)(RAMDISK_PHYSICAL + 4), fp->size) != fp->size) {
+		return false;
+	}
+
+	print_string(
+	    GET_REAL_ADDR("initrd size = "),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    dectostr(fp->size,
+	             GET_REAL_ADDR(num_buf)),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
+	print_string(
+	    GET_REAL_ADDR("\n"),
+	    FG_BRIGHT_WHITE | BG_BLACK,
+	    BG_BLACK);
 
 	return true;
 }

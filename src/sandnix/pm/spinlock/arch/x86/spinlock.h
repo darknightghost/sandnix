@@ -18,12 +18,12 @@
 #ifndef	SPINLOCK_H_INCLUDE
 #define	SPINLOCK_H_INCLUDE
 
-#include "../../../../common/common.h"
+#include "../../../../../common/common.h"
 
 typedef	struct {
 	u32		owner;
 	u32		next;
 	u32		int_level;
-} spin_lock, *pspin_lock;
+} spinlock_t, *pspinlock_t;
 
 #endif	//!	SPINLOCK_H_INCLUDE

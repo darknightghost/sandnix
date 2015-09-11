@@ -19,11 +19,15 @@
 #define	MUTEX_H_INCLUDE
 
 #include "../pm.h"
+#include "../spinlock/arch/x86/spinlock.h"
 #include "../../rtl/rtl.h"
 
 typedef	struct {
-
-} mutex, *pmutex;
+	spinlock_t	lock;
+	bool		is_acquired;
+	u32			next_thread;
+	list_t		acquire_list;
+} mutex_t, *pmutex_t;
 
 
 #endif	//!	MUTEX_H_INCLUDE

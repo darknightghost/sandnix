@@ -19,7 +19,7 @@
 #define	SETUP_H_INCLUDE
 
 #include "../mm/mm.h"
-#include "../common/common.h"
+#include "../../common/common.h"
 
 #ifdef	X86
 
@@ -37,7 +37,7 @@
 #define	TMP_PAGE_TABLE_BASE		(TMP_PAGE_MEM_BASE+4096)
 #define	TMP_PAGED_MEM_SIZE		(TMP_PAGE_SIZE+TMP_PAGE_TABLE_BASE)
 #define	TMP_PDT_BASE			TMP_PAGE_MEM_BASE
-#define	PT_MAPPING_PAGE			(TMP_PAGED_MEM_SIZE/4096*sizeof(pte)+TMP_PAGE_TABLE_BASE+VIRTUAL_ADDR_OFFSET)
+#define	PT_MAPPING_PAGE			(TMP_PAGED_MEM_SIZE/4096*sizeof(pte_t)+TMP_PAGE_TABLE_BASE+VIRTUAL_ADDR_OFFSET)
 #define	PT_MAPPING_ADDR			(TMP_PAGED_MEM_SIZE+VIRTUAL_ADDR_OFFSET)
 
 //Segment selectors

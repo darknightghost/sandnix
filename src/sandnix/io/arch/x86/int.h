@@ -26,7 +26,7 @@
 typedef struct {
 	u16		limit;
 	u32		base;
-} idt_reg, *pidt_reg;
+} idt_reg_t, *pidt_reg_t;
 
 typedef	struct	_idt {
 	u16		offset1;			//0-15 bits of offset
@@ -40,7 +40,7 @@ typedef	struct	_idt {
 		u16		p: 1;			//Segment present flag
 	} attr;
 	u16		offset2;			//16-32 bits of offset
-} idt, *pidt;
+} idt_t, *pidt_t;
 #pragma	pack()
 
 #define		TYPE_TRAP			0x0F

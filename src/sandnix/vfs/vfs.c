@@ -15,12 +15,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	COMMON_H_INCLUDE
-#define	COMMON_H_IONCLUDE
+#include "vfs.h"
+#include "../debug/debug.h"
 
-#ifdef	X86
-	#include "../../common/arch/x86/types.h"
-	#include "../../common/arch/x86/kernel_image.h"
-#endif	//X86
-
-#endif	//!	COMMON_H_INCLUDE
+void vfs_init()
+{
+	dbg_print("\nInitializing Virtual Filesystem module...\n");
+	om_init();
+	fs_init();
+}

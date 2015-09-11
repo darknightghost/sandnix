@@ -2,8 +2,8 @@ AS = as
 CC = gcc
 LINKER = ld
 ASFLAGS = --32
-CCFLAGS = -fno-zero-initialized-in-bss -Wall -Werror-implicit-function-declaration -std=c99 -m32 -nostdlib -fno-builtin -DX86 -DVERSION=0x0000000001 -g
-LDFLAGS = -m elf_i386 --gc-sections -Ttext 0xC0100100 -e _start
+CCFLAGS = -fno-zero-initialized-in-bss -Wall -Werror-implicit-function-declaration -Wunused-parameter  -std=c99 -m32 -nostdlib -fno-builtin -DX86 -DDEBUG -DVERSION=0x0000000001 -g
+LDFLAGS = -m elf_i386 --gc-sections -Ttext 0xc0200100 -e _start
 
 current_path = $(shell pwd)
 
@@ -27,8 +27,9 @@ SOURCES += setup/arch/x86/setup.s \
 			pm/spinlock/arch/x86/spinlock.c \
 			mm/paging/arch/x86/physical_mem.c \
 			mm/paging/arch/x86/paging.c \
+			mm/paging/arch/x86/share.c \
 			rtl/string/arch/x86/string.c \
-			rtl/math/arch/x86/math.c
+			rtl/math/arch/x86/math.c \
 			
 
 OBJS_DIR = $(root_path)/obj/sandnix/x86

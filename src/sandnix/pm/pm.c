@@ -22,6 +22,7 @@
 
 void pm_init()
 {
-	dbg_print("\nInitializing pm...\n");
+	dbg_print("\nInitializing Process Manager module...\n");
+	init_process();
 	init_schedule();
 }

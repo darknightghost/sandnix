@@ -20,4 +20,38 @@
 
 #include "../../pm.h"
 
+typedef struct _process_info {
+	bool		alloc_flag;			//Allocate flag
+	char*		process_name;		//Name
+	bool		wait_flag;			//Is been waited
+	u32			parent_id;			//Parent process
+	u32			pdt_id;				//Page table id
+	u32			exit_code;			//Exit code
+	u32			status;				//Status,alive or zombie
+	u32			priority;			//0x00-0x0F
+	u32			uid;				//Real uid
+	u32			suid;				//Saved uid
+	u32			euid;				//Effective uid
+	u32			gid;				//Real gid
+	u32			sgid;				//Saved gid
+	u32			egid;				//Effective gid
+	u32			is_driver;			//The process is a driver when it is set
+	list_t		child_list;			//Child processes
+	list_t		thread_list;		//Alive threads
+	list_t		zombie_list;		//Zombie threads
+	list_t		wait_list;			//Zombie children
+} process_info_t, *pprocess_info_t;
+
+
+extern	spinlock_t		process_table_lock;
+extern	process_info_t	process_table[MAX_PROCESS_NUM];
+extern	void*			process_heap;
+
+void	init_process();
+void	set_exit_code(u32 process, u32 exit_code);
+u32		get_process_pdt(u32 process_id);
+void	switch_process(u32 process_id);
+void	add_proc_thrd(u32 thrd_id, u32 proc_id);
+void	zombie_proc_thrd(u32 thrd_id, u32 proc_id);
+
 #endif	//!	PROCESS_H_INCLUDE

@@ -18,7 +18,7 @@
 #ifndef	IO_H_INCLUDE
 #define	IO_H_INCLUDE
 
-#include "../common/common.h"
+#include "../../common/common.h"
 
 #ifdef	X86
 	#include "arch/x86/int.h"
@@ -64,8 +64,8 @@ void		io_delay();
 
 //Interrupts
 //These two functions can only be called when Interrupt level <= INT_LEVEL_DISPATCH
-bool		io_reg_int_hndlr(u8 num, pint_hndlr_info p_info);
-void		io_unreg_int_hndlr(u8 num, pint_hndlr_info p_info);
+bool		io_reg_int_hndlr(u8 num, pint_hndlr_info_t p_info);
+void		io_unreg_int_hndlr(u8 num, pint_hndlr_info_t p_info);
 
 u8			io_get_int_level(u8 num);
 void		io_set_int_level(u8 num, u8 level);

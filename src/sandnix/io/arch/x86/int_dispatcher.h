@@ -30,15 +30,15 @@ typedef	bool	(*int_hndl_func)(u32, u32, u32);
 typedef	struct _int_hndlr_info {
 	struct 			_int_hndlr_info* p_next;
 	int_hndl_func	func;
-} int_hndlr_info, *pint_hndlr_info;
+} int_hndlr_info_t, *pint_hndlr_info_t;
 
 typedef	struct {
 	u8				level;
 	bool			called_flag;
 	u32				err_code;
 	u32				thread_id;
-	pint_hndlr_info entry;
-} int_hndlr_entry, *pint_hndlr_entry;
+	pint_hndlr_info_t entry;
+} int_hndlr_entry_t, *pint_hndlr_entry_t;
 
 #pragma pack(1)
 
@@ -51,13 +51,13 @@ typedef	struct {
 	u32		edx;
 	u32		ecx;
 	u32		eax;
-} ret_regs, *pret_regs;
+} ret_regs_t, *pret_regs_t;
 #pragma pack()
 
 void		init_int_dispatcher();
-void		int_excpt_dispatcher(u32 num, pret_regs p_regs);
-void		int_normal_dispatcher(u32 num, pret_regs p_regs);
-void		int_bp_dispatcher(pret_regs p_regs);
-void		int_clock_dispatcher(pret_regs p_regs);
+void		int_excpt_dispatcher(u32 num, pret_regs_t p_regs);
+void		int_normal_dispatcher(u32 num, pret_regs_t p_regs);
+void		int_bp_dispatcher(pret_regs_t p_regs);
+void		int_clock_dispatcher(pret_regs_t p_regs);
 
 #endif	//!	INT_DISPATCHER_H_INCLUDE

@@ -29,7 +29,7 @@ typedef struct _mem_block_head {
 	void*						start_addr;
 	int							allocated_flag;
 	size_t						size;
-} mem_block_head, *pmem_block_head;
+} mem_block_head_t, *pmem_block_head_t;
 
 //Initialize heap
 void		init_heap();

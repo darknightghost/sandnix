@@ -21,33 +21,33 @@
 
 void init_heap()
 {
-	pmem_block_head p_first_head;
+	pmem_block_head_t p_first_head;
 	p_first_head = HEAP_BASE;
 	p_first_head->p_prev = NULL;
 	p_first_head->p_next = NULL;
-	p_first_head->start_addr = HEAP_BASE + sizeof(mem_block_head);
+	p_first_head->start_addr = HEAP_BASE + sizeof(mem_block_head_t);
 	p_first_head->allocated_flag = 0;
-	p_first_head->size = HEAP_SIZE - sizeof(mem_block_head);
+	p_first_head->size = HEAP_SIZE - sizeof(mem_block_head_t);
 	return;
 }
 
 void* malloc(size_t size)
 {
-	pmem_block_head p_head;
-	pmem_block_head p_prevhead;
-	pmem_block_head p_new_head;
+	pmem_block_head_t p_head;
+	pmem_block_head_t p_prevhead;
+	pmem_block_head_t p_new_head;
 	p_head = HEAP_BASE;
 	p_prevhead = NULL;
 	size = (size % 4) ? ((size_t)(size / 4) + 1) * 4 : size;
 
 	while(p_head != NULL) {
 		//Check block head
-		if(p_head < (pmem_block_head)HEAP_BASE
-		   || p_head > (pmem_block_head)(HEAP_BASE + HEAP_SIZE)
-		   || (p_head->p_prev != NULL && (p_head->p_prev < (pmem_block_head)HEAP_BASE
-		                                  || p_head->p_prev > (pmem_block_head)(HEAP_BASE + HEAP_SIZE)))
-		   || (p_head->p_next != NULL && (p_head->p_next < (pmem_block_head)HEAP_BASE
-		                                  || p_head->p_next > (pmem_block_head)(HEAP_BASE + HEAP_SIZE))
+		if(p_head < (pmem_block_head_t)HEAP_BASE
+		   || p_head > (pmem_block_head_t)(HEAP_BASE + HEAP_SIZE)
+		   || (p_head->p_prev != NULL && (p_head->p_prev < (pmem_block_head_t)HEAP_BASE
+		                                  || p_head->p_prev > (pmem_block_head_t)(HEAP_BASE + HEAP_SIZE)))
+		   || (p_head->p_next != NULL && (p_head->p_next < (pmem_block_head_t)HEAP_BASE
+		                                  || p_head->p_next > (pmem_block_head_t)(HEAP_BASE + HEAP_SIZE))
 		      )) {
 			panic(EXCEPTION_HEAP_CORRUPTION);
 		}
@@ -55,13 +55,13 @@ void* malloc(size_t size)
 		if(!p_head->allocated_flag
 		   && p_head->size >= size) {
 			//Allocate memory
-			if(p_head->size > size + sizeof(mem_block_head) + 4) {
+			if(p_head->size > size + sizeof(mem_block_head_t) + 4) {
 				//Split memory block
-				p_new_head = (pmem_block_head)((char*)(p_head->start_addr) + size);
+				p_new_head = (pmem_block_head_t)((char*)(p_head->start_addr) + size);
 				p_new_head->p_prev = p_head;
 				p_new_head->p_next = p_head->p_next;
 				p_new_head->start_addr = p_new_head + 1;
-				p_new_head->size = p_head->size - size - sizeof(mem_block_head);
+				p_new_head->size = p_head->size - size - sizeof(mem_block_head_t);
 				p_new_head->allocated_flag = 0;
 
 				if(p_head->p_next != NULL) {
@@ -98,17 +98,17 @@ void* malloc(size_t size)
 
 void free(void* addr)
 {
-	pmem_block_head p_head;
+	pmem_block_head_t p_head;
 	p_head = addr;
 	p_head--;
 
 	//Check block head
-	if(p_head < (pmem_block_head)HEAP_BASE
-	   || p_head > (pmem_block_head)(HEAP_BASE + HEAP_SIZE)
-	   || (p_head->p_prev != NULL && (p_head->p_prev < (pmem_block_head)HEAP_BASE
-	                                  || p_head->p_prev > (pmem_block_head)(HEAP_BASE + HEAP_SIZE)))
-	   || (p_head->p_next != NULL && (p_head->p_next < (pmem_block_head)HEAP_BASE
-	                                  || p_head->p_next > (pmem_block_head)(HEAP_BASE + HEAP_SIZE))
+	if(p_head < (pmem_block_head_t)HEAP_BASE
+	   || p_head > (pmem_block_head_t)(HEAP_BASE + HEAP_SIZE)
+	   || (p_head->p_prev != NULL && (p_head->p_prev < (pmem_block_head_t)HEAP_BASE
+	                                  || p_head->p_prev > (pmem_block_head_t)(HEAP_BASE + HEAP_SIZE)))
+	   || (p_head->p_next != NULL && (p_head->p_next < (pmem_block_head_t)HEAP_BASE
+	                                  || p_head->p_next > (pmem_block_head_t)(HEAP_BASE + HEAP_SIZE))
 	      )) {
 		panic(EXCEPTION_HEAP_CORRUPTION);
 	}
@@ -118,7 +118,7 @@ void free(void* addr)
 	//Join memory blocks
 	if(p_head->p_prev != NULL
 	   && !(p_head->p_prev->allocated_flag)) {
-		p_head->p_prev->size += p_head->size + sizeof(mem_block_head);
+		p_head->p_prev->size += p_head->size + sizeof(mem_block_head_t);
 		p_head->p_prev->p_next = p_head->p_next;
 
 		if(p_head->p_next != NULL) {
@@ -131,7 +131,7 @@ void free(void* addr)
 	if(p_head->p_next != NULL
 	   && !(p_head->p_next->allocated_flag)) {
 		p_head = p_head->p_next;
-		p_head->p_prev->size += p_head->size + sizeof(mem_block_head);
+		p_head->p_prev->size += p_head->size + sizeof(mem_block_head_t);
 		p_head->p_prev->p_next = p_head->p_next;
 
 		if(p_head->p_next != NULL) {

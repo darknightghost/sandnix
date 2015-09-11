@@ -15,13 +15,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../common/common.h"
+#include "../../common/common.h"
 #include "../debug/debug.h"
 #include "parameters/parameters.h"
 #include "../exceptions/exceptions.h"
 #include "../io/io.h"
 #include "../mm/mm.h"
 #include "../pm/pm.h"
+#include "../rtl/rtl.h"
+#include "../msg/msg.h"
 
 
 void test();
@@ -29,21 +31,34 @@ void test();
 void kernel_main()
 {
 	dbg_cls();
-	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
 
 	dbg_print("%s", "Sandnix 0.0.1 kernel loaded.\n");
 
+	io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
+
+	//Initialize
 	get_kernel_param();
 	io_init();
 	excpt_init();
 	mm_init();
 	pm_init();
+
+
+	//Create daemon threads
 	io_enable_interrupt();
-	pm_create_thrd(io_dispatch_int, true, false, NULL);
+	dbg_print("Creating interrupt dispatcher thread...\n");
+	pm_create_thrd(io_dispatch_int, true, false, INT_LEVEL_EXCEPTION, NULL);
+
+	//Initialize
+	msg_init();
+	vfs_init();
+
+	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST);
+
+	//Create driver_init process
 	test();
 
-	//io_dispatch_int();
-
+	//IDLE
 	io_set_crrnt_int_level(INT_LEVEL_IDLE);
 
 	while(1);
@@ -51,64 +66,7 @@ void kernel_main()
 	return;
 }
 
-void test_thread(u32 thread_id, void* p_args)
-{
-	io_set_crrnt_int_level(1);
-	u32 i;
-
-	dbg_print("Task 1\n");
-
-	while(1) {
-		for(i = 0; i < 10000; i++);
-
-		//dbg_print("1");
-		//	__asm__ __volatile__(
-		//	    "sti\n\t"
-		//	    ::);
-	}
-
-	while(1);
-}
-
-void test_thread1(u32 thread_id, void* p_args)
-{
-	u32 i;
-
-	dbg_print("Task 2\n");
-
-	while(1) {
-		for(i = 0; i < 10000; i++);
-
-		//dbg_print("2");
-		//	__asm__ __volatile__(
-		//	    "sti\n\t"
-		//	    ::);
-	}
-
-	while(1);
-}
-
-
-
 void test()
 {
-	u32 i;
-	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST);
-	//pm_create_thrd(test_thread, true, false, NULL);
-	//pm_create_thrd(test_thread1, true, false, NULL);
 
-	dbg_print("Task 0\n");
-
-	while(1) {
-		for(i = 0; i < 1000000; i++);
-
-		__asm__ __volatile__("ud2\n\t");
-
-		//	dbg_print("0");
-		//	__asm__ __volatile__(
-		//	    "sti\n\t"
-		//	    ::);
-	}
-
-	//pm_suspend_thrd(0);
 }

@@ -58,6 +58,8 @@ typedef	unsigned long long		le64;
 #define	__le32					le32
 #define	__le64					le64
 
+typedef	u32						k_status;
+
 #ifndef	__cplusplus
 	typedef	int					bool;
 	#define	true				1

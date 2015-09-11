@@ -49,38 +49,146 @@ static	void		scroll_down(u16 line, u16 color);
 static	void		cls();
 
 static	char		panic_buf[1024];
-static	int_hndlr_info	unhndld_info;
+static	int_hndlr_info_t	unhndld_info;
 
 static	char*		excpt_tbl[] = {
-	"EXCEPTION_UNKNOW",
-	"EXCEPTION_UNHANDLED_DE",
-	"EXCEPTION_UNHANDLED_DB",
-	"EXCEPTION_UNHANDLED_BP",
-	"EXCEPTION_UNHANDLED_OF",
-	"EXCEPTION_UNHANDLED_BR",
-	"EXCEPTION_UNHANDLED_UD",
-	"EXCEPTION_UNHANDLED_NM",
-	"EXCEPTION_UNHANDLED_DF",
-	"EXCEPTION_UNHANDLED_FPU",
-	"EXCEPTION_UNHANDLED_TS",
-	"EXCEPTION_UNHANDLED_NP",
-	"EXCEPTION_UNHANDLED_SS",
-	"EXCEPTION_UNHANDLED_GP",
-	"EXCEPTION_UNHANDLED_PF",
-	"EXCEPTION_UNHANDLED_MF",
-	"EXCEPTION_UNHANDLED_AC",
-	"EXCEPTION_UNHANDLED_MC",
-	"EXCEPTION_UNHANDLED_XF",
-	"EXCEPTION_INT_LEVEL_ERROR",
-	"EXCEPTION_INT_NUM_TOO_LARGE",
-	"EXCEPTION_BUF_OVERFLOW",
-	"EXCEPTION_HEAP_CORRUPTION",
-	"EXCEPTION_ILLEGAL_HEAP_ADDR",
-	"EXCEPTION_UNSPECIFIED_ROOT_PARTITION",
-	"EXCEPTION_DOUBLE_FAULT",
-	"EXCEPTION_ILLEGAL_MEM_ADDR",
-	"EXCEPTION_ILLEGAL_PDT",
-	"EXCEPTION_RESOURCE_DEPLETED"
+	"Succeed",
+	"Operation not permitted",
+	"No such file or directory",
+	"No such process",
+	"Interrupted system call",
+	"I/O error",
+	"No such device or address",
+	"Argument list_t too long",
+	"Exec format error",
+	"Bad file number",
+	"No child processes",
+	"Try again",
+	"Out of memory",
+	"Permission denied",
+	"Bad address",
+	"Block device required",
+	"Device or resource busy",
+	"File	Exists",
+	"Cross-device link",
+	"No such device",
+	"Not a directory",
+	"Is a directory",
+	"Invalid argument",
+	"File table overflow",
+	"Too many open files",
+	"Not a typewriter",
+	"Text file busy",
+	"File too large",
+	"No space left on device",
+	"Illegal seek",
+	"Read-only file system",
+	"Too many links",
+	"Broken pipe",
+	"Math argument out of domain of func",
+	"Math result not representable",
+	"Resource deadlock would occur",
+	"File name too long",
+	"No record locks available",
+	"Function not implemented",
+	"Directory not empty",
+	"Too many symbolic links encountered",
+	"Operation would block",
+	"No message of desired type",
+	"Identifier removed",
+	"Channel number out of range",
+	"Level 2 not synchronized",
+	"Level 3 halted",
+	"Level 3 reset",
+	"Link number out of range",
+	"Protocol driver not attached",
+	"No CSI structure available",
+	"Level 2 halted",
+	"Invalid exchange",
+	"Invalid request descriptor",
+	"Exchange full",
+	"No anode",
+	"Invalid request code",
+	"Invalid slot",
+	"Resource deadlock would occur",
+	"Bad font file format",
+	"Device not a stream",
+	"No data available",
+	"Timer expired",
+	"Out of streams resources",
+	"Machine is not on the network",
+	"Package not installed",
+	"Object is remote",
+	"Link has been severed",
+	"Advertise	Error",
+	"Srmount error",
+	"Communication error on send",
+	"Protocol error",
+	"Multihop attempted",
+	"RFS specific error",
+	"Not a data message",
+	"Value too large for defined data type",
+	"Name not unique on network",
+	"File descriptor in bad state",
+	"Remote address changed",
+	"Can not access a needed shared library",
+	"Accessing a corrupted shared library",
+	".lib section in a.out corrupted",
+	"Attempting to link in too many shared libraries",
+	"Cannot exec a shared library directly",
+	"Illegal byte sequence",
+	"Interrupted system call should be restarted",
+	"Streams pipe	Error",
+	"Too many users",
+	"Socket operation on non-socket",
+	"Destination address required",
+	"Message too long",
+	"Protocol wrong type for socket",
+	"Protocol not available",
+	"Protocol not supported",
+	"Socket type not supported",
+	"Operation not supported on transport endpoint",
+	"Protocol family not supported",
+	"Address family not supported by protocol",
+	"Address already in use",
+	"Cannot assign requested address",
+	"Network is down",
+	"Network is unreachable",
+	"Network dropped connection because of reset",
+	"Software caused connection abort",
+	"Connection reset by peer",
+	"No buffer space available",
+	"Transport endpoint is already connected",
+	"Transport endpoint is not connected",
+	"Cannot send after transport endpoint shutdown",
+	"Too many references: cannot splice",
+	"Connection timed out",
+	"Connection refused",
+	"Host is down",
+	"No route to host",
+	"Operation already in progress",
+	"Operation now in progress",
+	"Stale NFS file handle",
+	"Structure needs cleaning",
+	"Not a XENIX named type file",
+	"No XENIX semaphores available",
+	"Is a named type file",
+	"Remote I/O error",
+	"Quota exceeded",
+	"No medium found",
+	"Wrong medium type",
+	"Operation Canceled",
+	"Required key not available",
+	"Key has expired",
+	"Key has been revoked",
+	"Key was rejected by service",
+	"Owner died",
+	"State not recoverable",
+	"Operation not possible due to RF-kill",
+	"Memory page has hardware Error",
+	"Not supported",
+	"Kernel argument error",
+	"Assert"
 };
 
 void excpt_init()
@@ -102,7 +210,7 @@ void excpt_init()
 
 bool unhndld_excpt_call(u32 int_num, u32 thread_id, u32 err_code)
 {
-	//context thrd_cntxt;
+	//context_t thrd_cntxt;
 	u32 cr2;
 
 	//if(pm_get_thread_context(thread_id, &thrd_cntxt)
@@ -114,92 +222,92 @@ bool unhndld_excpt_call(u32 int_num, u32 thread_id, u32 err_code)
 		//Occured in kernel
 		switch(int_num) {
 		case INT_DE:
-			excpt_panic(EXCEPTION_UNHANDLED_DE,
-			            "Thread id is %u,\nError code is %p.\n",
+			excpt_panic(EFAULT,
+			            "Unhandled #DE,thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_DB:
-			excpt_panic(EXCEPTION_UNHANDLED_DB,
-			            "Thread id is %u,\nError code is %p.\n",
+			excpt_panic(EFAULT,
+			            "Unhandled #DB,thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_BP:
-			excpt_panic(EXCEPTION_UNHANDLED_BP,
-			            "Thread id is %u,\nError code is %p.\n",
+			excpt_panic(EFAULT,
+			            "Unhandled #BP,thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_OF:
-			excpt_panic(EXCEPTION_UNHANDLED_OF,
-			            "Thread id is %u,\nError code is %p.\n",
+			excpt_panic(EFAULT,
+			            "Unhandled #OF,thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_BR:
-			excpt_panic(EXCEPTION_UNHANDLED_BR,
-			            "Thread id is %u,\nError code is %p.\n",
+			excpt_panic(EFAULT,
+			            "Unhandled #BR,thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_UD:
-			excpt_panic(EXCEPTION_UNHANDLED_UD,
-			            "Thread id is %u,\nError code is %p.\n",
+			excpt_panic(EFAULT,
+			            "Unhandled #UD,thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_NM:
-			excpt_panic(EXCEPTION_UNHANDLED_NM,
-			            "Thread id is %u,\nError code is %p.\n",
+			excpt_panic(EFAULT,
+			            "Unhandled #NM,thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_DF:
-			excpt_panic(EXCEPTION_UNHANDLED_DF,
-			            "Thread id is %u,\nError code is %p.\n",
+			excpt_panic(EFAULT,
+			            "Unhandled #DF,thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_FPU:
-			excpt_panic(EXCEPTION_UNHANDLED_FPU,
-			            "Thread id is %u,\nError code is %p.\n",
+			excpt_panic(EFAULT,
+			            "Unhandled #FPU,thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_TS:
-			excpt_panic(EXCEPTION_UNHANDLED_TS,
-			            "Thread id is %u,\nError code is %p.\n",
+			excpt_panic(EFAULT,
+			            "Unhandled #TS,thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_NP:
-			excpt_panic(EXCEPTION_UNHANDLED_NP,
-			            "Thread id is %u,\nError code is %p.\n",
+			excpt_panic(EFAULT,
+			            "Unhandled #NP,thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_SS:
-			excpt_panic(EXCEPTION_UNHANDLED_SS,
-			            "Thread id is %u,\nError code is %p.\n",
+			excpt_panic(EFAULT,
+			            "Unhandled #SS,thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_GP:
-			excpt_panic(EXCEPTION_UNHANDLED_GP,
-			            "Thread id is %u,\nError code is %p.\n",
+			excpt_panic(EFAULT,
+			            "Unhandled #GP,thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
@@ -209,37 +317,37 @@ bool unhndld_excpt_call(u32 int_num, u32 thread_id, u32 err_code)
 			    "movl	%%cr2,%0\n\t"
 			    :"=r"(cr2)
 			    :);
-			excpt_panic(EXCEPTION_UNHANDLED_PF,
-			            "Thread id is %u,\nError code is %p.\nCR2 = %p\n",
+			excpt_panic(EFAULT,
+			            "Unhandled #PF,thread id is %u,\nError code is %p.\nCR2 = %p\n",
 			            thread_id,
 			            err_code,
 			            cr2);
 			break;
 
 		case INT_MF:
-			excpt_panic(EXCEPTION_UNHANDLED_MF,
-			            "Thread id is %u,\nError code is %p.\n",
+			excpt_panic(EFAULT,
+			            "Unhandled #MF,thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_AC:
-			excpt_panic(EXCEPTION_UNHANDLED_AC,
-			            "Thread id is %u,\nError code is %p.\n",
+			excpt_panic(EFAULT,
+			            "Unhandled #AC,thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_MC:
-			excpt_panic(EXCEPTION_UNHANDLED_MC,
-			            "Thread id is %u,\nError code is %p.\n",
+			excpt_panic(EFAULT,
+			            "Unhandled #MC,thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;
 
 		case INT_XF:
-			excpt_panic(EXCEPTION_UNHANDLED_XF,
-			            "Thread id is %u,\nError code is %p.\n",
+			excpt_panic(EFAULT,
+			            "Unhandled #XF,thread id is %u,\nError code is %p.\n",
 			            thread_id,
 			            err_code);
 			break;

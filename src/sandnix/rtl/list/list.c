@@ -18,12 +18,12 @@
 #include "list.h"
 #include "../../mm/mm.h"
 
-plist_node rtl_list_insert_before(list* p_list, plist_node position, void* p_item, void* heap)
+plist_node_t rtl_list_insert_before(list_t* p_list, plist_node_t position, void* p_item, void* heap)
 {
-	plist_node p_node, p_new_node;
+	plist_node_t p_node, p_new_node;
 
 	//Allocate memory
-	p_new_node = mm_hp_alloc(sizeof(list_node), heap);
+	p_new_node = mm_hp_alloc(sizeof(list_node_t), heap);
 
 	if(p_new_node == NULL) {
 		return NULL;
@@ -59,12 +59,12 @@ plist_node rtl_list_insert_before(list* p_list, plist_node position, void* p_ite
 	return p_new_node;
 }
 
-plist_node rtl_list_insert_after(list* p_list, plist_node position, void* p_item, void* heap)
+plist_node_t rtl_list_insert_after(list_t* p_list, plist_node_t position, void* p_item, void* heap)
 {
-	plist_node p_node, p_new_node;
+	plist_node_t p_node, p_new_node;
 
 	//Allocate memory
-	p_new_node = mm_hp_alloc(sizeof(list_node), heap);
+	p_new_node = mm_hp_alloc(sizeof(list_node_t), heap);
 
 	if(p_new_node == NULL) {
 		return NULL;
@@ -97,7 +97,7 @@ plist_node rtl_list_insert_after(list* p_list, plist_node position, void* p_item
 	return p_new_node;
 }
 
-void rtl_list_remove(list* p_list, plist_node p_node, void* heap)
+void rtl_list_remove(list_t* p_list, plist_node_t p_node, void* heap)
 {
 	if(*p_list == NULL) {
 		return;
@@ -120,9 +120,9 @@ void rtl_list_remove(list* p_list, plist_node p_node, void* heap)
 
 }
 
-plist_node rtl_list_get_node_by_item(list lst, void* p_item)
+plist_node_t rtl_list_get_node_by_item(list_t lst, void* p_item)
 {
-	plist_node p_node;
+	plist_node_t p_node;
 
 	if(lst == NULL) {
 		return NULL;
@@ -141,10 +141,13 @@ plist_node rtl_list_get_node_by_item(list lst, void* p_item)
 	return NULL;
 }
 
-void rtl_list_destroy(list* p_list, void* heap, item_destroyer_callback callback)
+void rtl_list_destroy(list_t* p_list, void* heap, item_destroyer_callback callback, void* p_arg)
 {
 	while(*p_list != NULL) {
-		callback((*p_list)->p_item);
+		if(callback != NULL) {
+			callback((*p_list)->p_item, p_arg);
+		}
+
 		rtl_list_remove(p_list, *p_list, heap);
 	}
 

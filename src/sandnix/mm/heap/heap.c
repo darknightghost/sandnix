@@ -23,9 +23,9 @@ static	bool	default_heap_init_flag = false;
 
 
 static	void	init_heap_head(void* start_addr, size_t scale,
-                               u32 attr, pheap_head p_prev);
-static	void	merge_mem_blocks(pheap_head p_head);
-static	void	rebuild_empty_blocks_list(pheap_head p_head);
+                               u32 attr, pheap_head_t p_prev);
+static	void	merge_mem_blocks(pheap_head_t p_head);
+static	void	rebuild_empty_blocks_list(pheap_head_t p_head);
 
 
 void* mm_hp_create(size_t max_block_size, u32 attr)
@@ -34,8 +34,8 @@ void* mm_hp_create(size_t max_block_size, u32 attr)
 	u32 scale;
 
 	//Compute scale
-	scale = ((max_block_size + sizeof(heap_head) + sizeof(mem_block_head)) / 4096
-	         + ((max_block_size + sizeof(heap_head) + sizeof(mem_block_head)) % 4096 ? 1 : 0)) * 4096;
+	scale = ((max_block_size + sizeof(heap_head_t) + sizeof(mem_block_head_t)) / 4096
+	         + ((max_block_size + sizeof(heap_head_t) + sizeof(mem_block_head_t)) % 4096 ? 1 : 0)) * 4096;
 
 	//Allocate memory
 	addr = mm_virt_alloc(NULL,
@@ -54,9 +54,9 @@ void* mm_hp_create(size_t max_block_size, u32 attr)
 
 void mm_hp_destroy(void* heap_addr)
 {
-	pheap_head p_head, p_next_head;
+	pheap_head_t p_head, p_next_head;
 
-	p_head = (pheap_head)heap_addr;
+	p_head = (pheap_head_t)heap_addr;
 
 	while(p_head != NULL) {
 		p_next_head = p_head->p_next;
@@ -69,13 +69,13 @@ void mm_hp_destroy(void* heap_addr)
 
 void* mm_hp_alloc(size_t size, void* heap_addr)
 {
-	pheap_head p_head, p_new_head;
-	pmem_block_head p_block, p_new_block;
-	pspin_lock p_lock;
+	pheap_head_t p_head, p_new_head;
+	pmem_block_head_t p_block, p_new_block;
+	pspinlock_t p_lock;
 
 	//Get heap address
 	if(heap_addr == NULL) {
-		p_head = (pheap_head)kernel_default_heap;
+		p_head = (pheap_head_t)kernel_default_heap;
 
 		if(!default_heap_init_flag) {
 			default_heap_init_flag = true;
@@ -86,21 +86,21 @@ void* mm_hp_alloc(size_t size, void* heap_addr)
 		}
 
 	} else {
-		p_head = (pheap_head)heap_addr;
+		p_head = (pheap_head_t)heap_addr;
 	}
 
 	//Check if it is the first head of heap
 	if(p_head->p_prev != NULL) {
 		//panic
 		excpt_panic(
-		    EXCEPTION_ILLEGAL_HEAP_ADDR,
+		    EINVAL,
 		    "The heap address which caused this problem is %p",
 		    p_head);
 	}
 
 	size = size % 4 ? (size / 4 + 1) * 4 : size;
 
-	if(size > p_head->scale - sizeof(mem_block_head) - sizeof(heap_head)) {
+	if(size > p_head->scale - sizeof(mem_block_head_t) - sizeof(heap_head_t)) {
 		return NULL;
 	}
 
@@ -119,20 +119,20 @@ void* mm_hp_alloc(size_t size, void* heap_addr)
 			if(p_block->magic != HEAP_INTACT_MAGIC) {
 				//Panic
 				excpt_panic(
-				    EXCEPTION_HEAP_CORRUPTION,
-				    "The block which is broken might be %p",
+				    EOVERFLOW,
+				    "Heap corruption occured,the block which is broken might be %p",
 				    p_block);
 			}
 
 			if(!p_block->allocated_flag
 			   && p_block->size > size) {
-				if(p_block->size > size + sizeof(mem_block_head)) {
+				if(p_block->size > size + sizeof(mem_block_head_t)) {
 					//Spilt memory block and allocate memory
-					p_new_block = (pmem_block_head)((u8*)(p_block->start_addr) + size);
+					p_new_block = (pmem_block_head_t)((u8*)(p_block->start_addr) + size);
 					p_new_block->magic = HEAP_INTACT_MAGIC;
 					p_new_block->allocated_flag = false;
 					p_new_block->start_addr = (u8*)(p_new_block + 1);
-					p_new_block->size = p_block->size - size - sizeof(mem_block_head);
+					p_new_block->size = p_block->size - size - sizeof(mem_block_head_t);
 					p_block->size = size;
 
 					p_block->allocated_flag = true;
@@ -217,25 +217,25 @@ void* mm_hp_alloc(size_t size, void* heap_addr)
 
 void mm_hp_free(void* addr, void* heap_addr)
 {
-	pheap_head p_head;
-	pmem_block_head p_block;
-	pspin_lock p_lock;
+	pheap_head_t p_head;
+	pmem_block_head_t p_block;
+	pspinlock_t p_lock;
 
 	//Get heap address
 	if(heap_addr == NULL) {
-		p_head = (pheap_head)kernel_default_heap;
+		p_head = (pheap_head_t)kernel_default_heap;
 
 	} else {
-		p_head = (pheap_head)heap_addr;
+		p_head = (pheap_head_t)heap_addr;
 	}
 
-	p_block = (pmem_block_head)addr - 1;
+	p_block = (pmem_block_head_t)addr - 1;
 
 	if(p_head->p_prev != NULL) {
 		//Panic
 		excpt_panic(
-		    EXCEPTION_ILLEGAL_HEAP_ADDR,
-		    "The heap address which caused this problem is %p",
+		    EINVAL,
+		    "Illegal heap address,the heap address which caused this problem is %p",
 		    p_head);
 	}
 
@@ -247,8 +247,8 @@ void mm_hp_free(void* addr, void* heap_addr)
 	if(p_block->magic != HEAP_INTACT_MAGIC) {
 		//Panic
 		excpt_panic(
-		    EXCEPTION_HEAP_CORRUPTION,
-		    "The block which is broken might be %p",
+		    EOVERFLOW,
+		    "Heap corruption occured,the block which is broken might be %p",
 		    p_block);
 	}
 
@@ -257,8 +257,8 @@ void mm_hp_free(void* addr, void* heap_addr)
 		if(p_head->p_next == NULL) {
 			//Panic
 			excpt_panic(
-			    EXCEPTION_ILLEGAL_HEAP_ADDR,
-			    "The heap address which caused this problem is %p",
+			    EINVAL,
+			    "Illegal heap address,the heap address which caused this problem is %p",
 			    heap_addr);
 		}
 
@@ -274,7 +274,7 @@ void mm_hp_free(void* addr, void* heap_addr)
 	if(p_head->p_prev != NULL
 	   && p_head->p_first_empty_block != NULL
 	   && (p_head->scale == p_head->p_first_empty_block->size
-	       + sizeof(heap_head) + sizeof(mem_block_head))) {
+	       + sizeof(heap_head_t) + sizeof(mem_block_head_t))) {
 
 		//Free pages
 		if(p_head->p_next != NULL) {
@@ -294,22 +294,22 @@ void mm_hp_free(void* addr, void* heap_addr)
 
 void mm_hp_check(void* heap_addr)
 {
-	pheap_head p_head;
-	pmem_block_head p_block;
-	pspin_lock p_lock;
+	pheap_head_t p_head;
+	pmem_block_head_t p_block;
+	pspinlock_t p_lock;
 
 	//Get heap address
 	if(heap_addr == NULL) {
-		p_head = (pheap_head)kernel_default_heap;
+		p_head = (pheap_head_t)kernel_default_heap;
 
 	} else {
-		p_head = (pheap_head)heap_addr;
+		p_head = (pheap_head_t)heap_addr;
 	}
 
 	if(p_head->p_prev != NULL) {
 		excpt_panic(
-		    EXCEPTION_ILLEGAL_HEAP_ADDR,
-		    "The heap address which caused this problem is %p",
+		    EINVAL,
+		    "Illegal heap address,the heap address which caused this problem is %p",
 		    heap_addr);
 	}
 
@@ -319,14 +319,14 @@ void mm_hp_check(void* heap_addr)
 	}
 
 	while(p_head != NULL) {
-		for(p_block = (pmem_block_head)(p_head + 1);
+		for(p_block = (pmem_block_head_t)(p_head + 1);
 		    (u8*)p_block < (u8*)p_head + p_head->scale;
-		    p_block = (pmem_block_head)(p_block->start_addr + p_block->size)) {
+		    p_block = (pmem_block_head_t)(p_block->start_addr + p_block->size)) {
 			if(p_block->magic != HEAP_INTACT_MAGIC) {
 				//Panic
 				excpt_panic(
-				    EXCEPTION_HEAP_CORRUPTION,
-				    "The block which is broken might be %p",
+				    EOVERFLOW,
+				    "Heap corruption occured,the block which is broken might be %p",
 				    p_block);
 			}
 		}
@@ -341,18 +341,18 @@ void mm_hp_check(void* heap_addr)
 	return;
 }
 
-void init_heap_head(void* start_addr, size_t scale, u32 attr, pheap_head p_prev)
+void init_heap_head(void* start_addr, size_t scale, u32 attr, pheap_head_t p_prev)
 {
-	pheap_head p_head;
-	pmem_block_head p_first_block;
+	pheap_head_t p_head;
+	pmem_block_head_t p_first_block;
 
 	//Initialize head
-	p_head = (pheap_head)start_addr;
+	p_head = (pheap_head_t)start_addr;
 	p_head->p_prev = p_prev;
 	p_head->p_next = NULL;
 	p_head->scale = scale;
 	p_head->attr = attr;
-	p_head->p_first_empty_block = (pmem_block_head)(p_head + 1);
+	p_head->p_first_empty_block = (pmem_block_head_t)(p_head + 1);
 
 	if(attr & HEAP_MULTITHREAD) {
 		pm_init_spn_lock(&(p_head->lock));
@@ -365,46 +365,46 @@ void init_heap_head(void* start_addr, size_t scale, u32 attr, pheap_head p_prev)
 	p_first_block->p_prev_empty_block = NULL;
 	p_first_block->allocated_flag = false;
 	p_first_block->start_addr = (u8*)(p_first_block + 1);
-	p_first_block->size = scale - sizeof(heap_head) - sizeof(mem_block_head);
+	p_first_block->size = scale - sizeof(heap_head_t) - sizeof(mem_block_head_t);
 
 	return;
 }
 
-void merge_mem_blocks(pheap_head p_head)
+void merge_mem_blocks(pheap_head_t p_head)
 {
-	pmem_block_head p_block;
-	pmem_block_head p_next_block;
+	pmem_block_head_t p_block;
+	pmem_block_head_t p_next_block;
 
 	//Merge memory blocks
-	for(p_block = (pmem_block_head)(p_head + 1);
+	for(p_block = (pmem_block_head_t)(p_head + 1);
 	    (u8*)p_block < (u8*)p_head + p_head->scale;
-	    p_block = (pmem_block_head)(p_block->start_addr + p_block->size)) {
+	    p_block = (pmem_block_head_t)(p_block->start_addr + p_block->size)) {
 		if(p_block->magic != HEAP_INTACT_MAGIC) {
 			//Panic
 			excpt_panic(
-			    EXCEPTION_HEAP_CORRUPTION,
-			    "The block which is broken might be %p",
+			    EOVERFLOW,
+			    "Heap corruption occured,the block which is broken might be %p",
 			    p_block);
 			return;
 		}
 
 		if(!p_block->allocated_flag) {
-			for(p_next_block = (pmem_block_head)(p_block->start_addr + p_block->size);
+			for(p_next_block = (pmem_block_head_t)(p_block->start_addr + p_block->size);
 			    (u8*)p_next_block < (u8*)p_head + p_head->scale
 			    && !p_next_block->allocated_flag;
-			    p_next_block = (pmem_block_head)(p_block->start_addr + p_block->size)
+			    p_next_block = (pmem_block_head_t)(p_block->start_addr + p_block->size)
 			   ) {
 				if(p_next_block->magic != HEAP_INTACT_MAGIC) {
 					//Panic
 					excpt_panic(
-					    EXCEPTION_HEAP_CORRUPTION,
-					    "The block which is broken might be %p",
+					    EOVERFLOW,
+					    "Heap corruption occured,the block which is broken might be %p",
 					    p_block);
 					return;
 				}
 
 				//Merge memory blocks
-				(p_block->size) += p_next_block->size + sizeof(mem_block_head);
+				(p_block->size) += p_next_block->size + sizeof(mem_block_head_t);
 			}
 		}
 	}
@@ -413,27 +413,27 @@ void merge_mem_blocks(pheap_head p_head)
 	return;
 }
 
-void rebuild_empty_blocks_list(pheap_head p_head)
+void rebuild_empty_blocks_list(pheap_head_t p_head)
 {
-	pmem_block_head p_block, p_prev_empty_block;
+	pmem_block_head_t p_block, p_prev_empty_block;
 
 	p_head->p_first_empty_block = NULL;
 
-	//Rebuild list
-	for(p_block = (pmem_block_head)(p_head + 1);
+	//Rebuild list_t
+	for(p_block = (pmem_block_head_t)(p_head + 1);
 	    (u8*)p_block < (u8*)p_head + p_head->scale;
-	    p_block = (pmem_block_head)(p_block->start_addr + p_block->size)) {
+	    p_block = (pmem_block_head_t)(p_block->start_addr + p_block->size)) {
 		if(p_block->magic != HEAP_INTACT_MAGIC) {
 			//Panic
 			excpt_panic(
-			    EXCEPTION_HEAP_CORRUPTION,
-			    "The block which is broken might be %p",
+			    EOVERFLOW,
+			    "Heap corruption occured,the block which is broken might be %p",
 			    p_block);
 			return;
 		}
 
 		if(!p_block->allocated_flag) {
-			//Add new block to the list
+			//Add new block to the list_t
 			if(p_head->p_first_empty_block == NULL) {
 				p_block->p_prev_empty_block = NULL;
 				p_block->p_next_empty_block = NULL;

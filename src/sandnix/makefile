@@ -4,8 +4,18 @@ export SOURCES = init/main.c \
 					mm/mm.c \
 					rtl/list/list.c \
 					rtl/stack/stack.c \
+					rtl/queue/queue.c \
+					rtl/array_list/array_list.c \
+					rtl/hash_table/hash_table.c \
 					pm/pm.c \
-					init/parameters/parameters.c
+					pm/mutex/mutex.c \
+					init/parameters/parameters.c \
+					msg/msg.c \
+					vfs/vfs.c \
+					vfs/om/om.c \
+					vfs/fs/fs.c \
+					vfs/fs/ramdisk/ramdisk.c \
+					vfs/fs/tarfs/tarfs.c
 
 x86_build :
 		$(MAKE) -f makefile.x86 all

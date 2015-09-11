@@ -57,7 +57,7 @@ typedef	struct {
 	u32		global_page			: 1;
 	u32		avail				: 3;
 	u32		page_table_base_addr: 20;
-} pde, *ppde;
+} pde_t, *ppde_t;
 
 //Page-Table Entry
 typedef	struct {
@@ -72,7 +72,7 @@ typedef	struct {
 	u32		global_page				: 1;
 	u32		avail					: 3;
 	u32		page_base_addr			: 20;
-} pte, *ppte;
+} pte_t, *ppte_t;
 
 //#PF error code
 typedef	struct	{
@@ -82,7 +82,7 @@ typedef	struct	{
 	u32		rsvd			: 1;
 	u32		i_d				: 1;
 	u32		reserved		: 17;
-} pf_err_code, *ppf_err_code;
+} pf_err_code_t, *ppf_err_code_t;
 
 #pragma pack()
 

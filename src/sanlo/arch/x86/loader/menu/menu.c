@@ -79,7 +79,7 @@ void show_menu()
 				p_menu_item = p_menu_item->p_next;
 			}
 
-			if(!load_os_kernel(p_menu_item->kernel_path, p_menu_item->parameter)) {
+			if(!load_os_kernel(p_menu_item->kernel_path, p_menu_item->initrd, p_menu_item->parameter)) {
 				panic(EXCEPTION_NO_KERNEL);
 			}
 
@@ -306,10 +306,12 @@ bool analyse_cfg_file(pfile fp, pmenu p_boot_menu)
 
 		jmp_space(fp);
 		p_item = malloc(sizeof(menu_item));
+
 		//Get name
 		get_word(fp, buf, 1024);
 		p_item->name = malloc(strlen(buf) + 1);
 		strcpy(p_item->name, buf);
+
 		//Get kernel path
 		jmp_space(fp);
 		get_word(fp, buf, 1024);
@@ -322,6 +324,7 @@ bool analyse_cfg_file(pfile fp, pmenu p_boot_menu)
 		get_word(fp, buf, 1024);
 		p_item->kernel_path = malloc(strlen(buf) + 1);
 		strcpy(p_item->kernel_path, buf);
+
 		//Get parameters
 		jmp_space(fp);
 		get_line(fp, buf, 1024);
@@ -339,6 +342,19 @@ bool analyse_cfg_file(pfile fp, pmenu p_boot_menu)
 			p_boot_menu->menu_list->p_prev->p_next = p_item;
 			p_boot_menu->menu_list->p_prev = p_item;
 		}
+
+		//Get ramdisk path
+		jmp_space(fp);
+		get_word(fp, buf, 1024);
+
+		if(strcmp(buf, GET_REAL_ADDR("initrd")) != 0) {
+			return false;
+		}
+
+		jmp_space(fp);
+		get_word(fp, buf, 1024);
+		p_item->initrd = malloc(strlen(buf) + 1);
+		strcpy(p_item->initrd, buf);
 
 		(p_boot_menu->item_num)++;
 	}

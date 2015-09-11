@@ -23,6 +23,6 @@
 
 typedef	struct {
 
-} semaphore, *psemaphore;
+} semaphore_t, *psemaphore_t;
 
 #endif	//!	SEMAPHORE_H_INCLUDE

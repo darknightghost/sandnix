@@ -18,9 +18,10 @@
 #ifndef	MM_H_INCLUDE
 #define	MM_H_INCLUDE
 
-#include "../common/common.h"
+#include "../../common/common.h"
 
 #ifdef	X86
+	#include "paging/arch/x86/share.h"
 	#include "paging/arch/x86/page_table.h"
 	#include "paging/arch/x86/paging.h"
 	#include "paging/arch/x86/physical_mem.h"
@@ -38,7 +39,7 @@ typedef	struct	{
 	u32		pde_table_num;
 	u32		pte_table_num;
 	u32		shared_pages;
-} mem_info, *pmem_info;
+} mem_info_t, *pmem_info_t;
 
 #endif	//X86
 
@@ -60,11 +61,7 @@ typedef	struct	{
 void		mm_init();
 
 //Physical memory
-phy_page_state		mm_phy_mem_state_get(void* addr);
-void*				mm_phy_mem_aclloc();
-void				mm_phy_mem_free();
-void				mm_phy_mem_cnt_increase();
-void				mm_phy_mem_cnt_decrease();
+phy_page_state_t		mm_phy_mem_state_get(void* addr);
 
 //Virtual memory
 void*				mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr);
@@ -79,18 +76,18 @@ void				mm_pg_unlock(u32 id, void* address);
 //Page table
 u32					mm_pg_tbl_fork(u32 parent);
 void				mm_pg_tbl_free(u32 pdt_id);
-void				mm_pg_tbl_switch(u32 pdt_id);
+void				mm_pg_tbl_switch(u32 pdt_id);				//pm only
 void				mm_pg_tbl_usr_spc_clear(u32 pdt_id);
 
 //Status
-void				mm_get_info(pmem_info p_info);
+void				mm_get_info(pmem_info_t p_info);
 
 //Share memories
 //PMO=Page mapping object
-u32					mm_pmo_create(void* base_addr, size_t size);
-void				mm_pmo_free(u32	pmo);
-void*				mm_pmo_map(void* address, u32 pmo);
-void				mm_pmo_unmap(void* address);
+ppmo_t				mm_pmo_create(size_t size);
+void				mm_pmo_free(ppmo_t p_pmo);
+void*				mm_pmo_map(void* address, ppmo_t p_pmo, bool is_user);
+void				mm_pmo_unmap(void* address, ppmo_t p_pmo);
 
 //Heap
 void*				mm_hp_create(size_t max_block_size, u32 attr);

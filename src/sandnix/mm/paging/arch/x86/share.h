@@ -18,12 +18,13 @@
 #ifndef	SHARE_H_INCLUDE
 #define	SHARE_H_INCLUDE
 
-#include "paging.h"
+#include "../../../../../common/common.h"
 
 typedef	struct {
-	u32		phy_addr;
-	u32		count;
-} shared_pg_info, *pshared_pg_info;
+	u32			ref_count;
+	void*		phy_addr;
+	size_t		size;
+} pmo_t, *ppmo_t;
 
 
 #endif	//!	SHARE_H_INCLUDE

@@ -18,19 +18,21 @@
 #ifndef	RTL_H_INCLUDE
 #define	RTL_H_INCLUDE
 
+#include "../../common/common.h"
+
 #ifdef	X86
-#include "../../common/arch/x86/types.h"
+
 //Variable Arguments
-typedef	char*			va_list;
+typedef	u8*				va_list;
 
 #define	va_start(ap,v)	((ap) = (va_list)&(v) + 4)
 
-#define	va_arg(ap,t)	(ap += 4 ,(\
-                                   sizeof(t) <= 4\
-                                   ? *((t*)(ap-4))\
-                                   : **((t**)(ap-4))))
+#define	va_arg(ap,t)	((ap) += 4 ,(\
+                                     sizeof(t) <= 4\
+                                     ? *((t*)((ap)-4))\
+                                     : **((t**)((ap)-4))))
 
-#define	va_end(ap)		(ap = (va_list)0)
+#define	va_end(ap)		((ap) = (va_list)0)
 #endif	//!	X86
 
 <<<<<<< HEAD
@@ -52,7 +54,14 @@ char*		rtl_otoa(char* buf, u64 num);
 #include "string/string.h"
 #include "math/math.h"
 #include "list/list.h"
+#include "queue/queue.h"
 #include "stack/stack.h"
+<<<<<<< HEAD
 >>>>>>> sandnix_parent/master
+=======
+#include "array_list/array_list.h"
+#include "hash_table/hash_table.h"
+#include "path/path.h"
+>>>>>>> sandnix_2015_9_11/master
 
 #endif	//!	RTL_H_INCLUDE

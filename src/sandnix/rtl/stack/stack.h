@@ -20,9 +20,9 @@
 
 #include "../list/list.h"
 
-typedef	struct _list_node	*stack;
+typedef	struct _list_node	*stack_t;
 
-bool	rtl_stack_push(stack* p_s, void* p_item, void* heap);
-void*	rtl_stack_pop(stack* p_s, void* heap);
+bool	rtl_stack_push(stack_t* p_s, void* p_item, void* heap);
+void*	rtl_stack_pop(stack_t* p_s, void* heap);
 
 #endif	//!	STACK_H_INCLUDE

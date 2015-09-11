@@ -31,12 +31,12 @@
                              || (num) == INT_PF\
                              || (num) == INT_AC)
 
-int_hndlr_entry		int_hndlr_tbl[256];
+int_hndlr_entry_t		int_hndlr_tbl[256];
 bool				exception_handling_flag;
 u32					tick_count;
 u8					current_int_level;
-u32					new_int = 0;
-static	u32					dispatcher_thread = 0;
+u32					new_int;
+static	u32			dispatcher_thread = 0;
 
 static	void		call_hndlr(u32 i);
 
@@ -45,7 +45,7 @@ void init_int_dispatcher()
 	u32 i;
 
 	exception_handling_flag = false;
-	rtl_memset(int_hndlr_tbl, 0, 256 * sizeof(int_hndlr_entry));
+	rtl_memset(int_hndlr_tbl, 0, 256 * sizeof(int_hndlr_entry_t));
 
 	//Initialize int levels
 	for(i = 0; i < 256; i++) {
@@ -61,10 +61,12 @@ void init_int_dispatcher()
 
 	}
 
+	new_int = 0;
+
 	return;
 }
 
-void int_excpt_dispatcher(u32 num, pret_regs p_regs)
+void int_excpt_dispatcher(u32 num, pret_regs_t p_regs)
 {
 	//Set interrupt status
 	int_hndlr_tbl[num].called_flag = true;
@@ -75,15 +77,20 @@ void int_excpt_dispatcher(u32 num, pret_regs p_regs)
 		int_hndlr_tbl[num].err_code = *(u32*)(p_regs + 1);
 
 		//Move saved registers
-		rtl_memmove(((u8*)(p_regs) + 4), p_regs, sizeof(ret_regs));
+		rtl_memmove(((u8*)(p_regs) + 4), p_regs, sizeof(ret_regs_t));
+
+		p_regs = (pret_regs_t)((u8*)p_regs + 4);
+
+	}
+
+	if(new_int < int_hndlr_tbl[num].level) {
+		new_int = int_hndlr_tbl[num].level;
 	}
 
 	//Resume interrupt dispatcher thread
 	if(dispatcher_thread != 0) {
 		pm_resume_thrd(dispatcher_thread);
 	}
-
-	new_int = int_hndlr_tbl[num].level;
 
 	//Schedule
 	__asm__ __volatile__(
@@ -94,19 +101,19 @@ void int_excpt_dispatcher(u32 num, pret_regs p_regs)
 	return;
 }
 
-void int_normal_dispatcher(u32 num, pret_regs p_regs)
+void int_normal_dispatcher(u32 num, pret_regs_t p_regs)
 {
 	//Set interrupt status
 	int_hndlr_tbl[num].called_flag = true;
 	int_hndlr_tbl[num].thread_id = pm_get_crrnt_thrd_id();
 
+	if(new_int < int_hndlr_tbl[INT_CLOCK].level) {
+		new_int = int_hndlr_tbl[num].level;
+	}
+
 	//Resume interrupt dispatcher thread
 	if(dispatcher_thread != 0) {
 		pm_resume_thrd(dispatcher_thread);
-	}
-
-	if(new_int < int_hndlr_tbl[INT_CLOCK].level) {
-		new_int = int_hndlr_tbl[num].level;
 	}
 
 	//Schedule
@@ -118,7 +125,7 @@ void int_normal_dispatcher(u32 num, pret_regs p_regs)
 	return;
 }
 
-void int_bp_dispatcher(pret_regs p_regs)
+void int_bp_dispatcher(pret_regs_t p_regs)
 {
 	//Set interrupt status
 	int_hndlr_tbl[INT_BP].called_flag = true;
@@ -142,11 +149,15 @@ void int_bp_dispatcher(pret_regs p_regs)
 	return;
 }
 
-void int_clock_dispatcher(pret_regs p_regs)
+void int_clock_dispatcher(pret_regs_t p_regs)
 {
 	//Set interrupt status
 	int_hndlr_tbl[INT_CLOCK].called_flag = true;
 	int_hndlr_tbl[INT_CLOCK].thread_id = pm_get_crrnt_thrd_id();
+
+	if(new_int < int_hndlr_tbl[INT_CLOCK].level) {
+		new_int = int_hndlr_tbl[INT_CLOCK].level;
+	}
 
 	//Resume interrupt dispatcher thread
 	if(int_hndlr_tbl[INT_CLOCK].entry != NULL) {
@@ -155,9 +166,6 @@ void int_clock_dispatcher(pret_regs p_regs)
 		}
 	}
 
-	if(new_int < int_hndlr_tbl[INT_CLOCK].level) {
-		new_int = int_hndlr_tbl[INT_CLOCK].level;
-	}
 
 	//Enable next clock interrupt
 	__asm__ __volatile__(
@@ -178,10 +186,9 @@ void io_dispatch_int(u32 thread_id, void* p_args)
 {
 	u32 i;
 
-	new_int = 0;
-	dispatcher_thread = thread_id;
-
 	io_set_crrnt_int_level(INT_LEVEL_EXCEPTION);
+
+	dispatcher_thread = thread_id;
 
 	while(1) {
 		//Dispatch interrupts
@@ -213,12 +220,15 @@ void io_dispatch_int(u32 thread_id, void* p_args)
 		}
 
 		new_int = 0;
-		io_set_crrnt_int_level(INT_LEVEL_DISPATCH);
-		pm_suspend_thrd(dispatcher_thread);
+		io_set_crrnt_int_level(INT_LEVEL_EXCEPTION);
+		pm_int_disaptch_suspend();
 	}
+
+	UNREFERRED_PARAMETER(p_args);
+	return;
 }
 
-bool io_reg_int_hndlr(u8 num, pint_hndlr_info p_info)
+bool io_reg_int_hndlr(u8 num, pint_hndlr_info_t p_info)
 {
 	u8	current_lvl;
 
@@ -251,10 +261,10 @@ bool io_reg_int_hndlr(u8 num, pint_hndlr_info p_info)
 	return true;
 }
 
-void io_unreg_int_hndlr(u8 num, pint_hndlr_info p_info)
+void io_unreg_int_hndlr(u8 num, pint_hndlr_info_t p_info)
 {
 	u8	current_lvl;
-	pint_hndlr_info p_reged_info;
+	pint_hndlr_info_t p_reged_info;
 
 	if(p_info == NULL) {
 		return;
@@ -323,7 +333,7 @@ u32 io_get_tick_count()
 
 void call_hndlr(u32 i)
 {
-	pint_hndlr_info p_hndlr;
+	pint_hndlr_info_t p_hndlr;
 	u8	current_lvl;
 
 	current_lvl = io_get_crrnt_int_level();

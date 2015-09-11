@@ -94,7 +94,7 @@ typedef	struct _ext2_super_block {
 	u8	s_journal_uuid[16];	/* uuid of journal superblock */
 	u32	s_journal_inum;		/* inode number of journal file */
 	u32	s_journal_dev;		/* device number of journal file */
-	u32	s_last_orphan;		/* start of list of inodes to delete */
+	u32	s_last_orphan;		/* start of list_t of inodes to delete */
 	u32	s_hash_seed[4];		/* HTREE hash seed */
 	u8	s_def_hash_version;	/* Default hash version to use */
 	u8	s_reserved_char_pad;
