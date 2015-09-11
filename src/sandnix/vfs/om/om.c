@@ -479,6 +479,11 @@ k_status vfs_set_dev_filename(u32 device, char* name)
 	len = rtl_strlen(name) + 1;
 	p_dev = get_dev(device);
 
+	if(len > NAME_MAX + 1) {
+		pm_set_errno(ENAMETOOLONG);
+		return ENAMETOOLONG;
+	}
+
 	if(p_dev == NULL) {
 		return pm_get_errno();
 	}
@@ -555,6 +560,11 @@ u32 vfs_get_dev_major_by_name(char* major_name, u32 type)
 	size_t len;
 
 	len = rtl_strlen(major_name) + 1;
+
+	if(len > NAME_MAX + 1) {
+		pm_set_errno(ENAMETOOLONG);
+		return ENAMETOOLONG;
+	}
 
 	pm_acqr_mutex(&devices_list_lock, TIMEOUT_BLOCK);
 	p_info = rtl_hash_table_get(&dev_mj_index, major_name);
@@ -845,11 +855,130 @@ pdev_mj_info_t get_mj_by_name(char* name)
 
 size_t get_devfs_root(pdirent_t buf, size_t offset, size_t count)
 {
+	u32 num;
+	u32 mj_num;
+	u32 mn_num;
+	pdirent_t p_data;
+	pdev_mj_info_t p_info;
+	u32 mn_count;
+	pdevice_obj_t p_dev;
 
+	num = 0;
+	p_data = buf;
+
+	pm_acqr_mutex(&devices_list_lock, TIMEOUT_BLOCK);
+
+	for(mj_num = rtl_array_list_get_next_index(&devcies_list_lock, 0);
+	    OPERATE_SUCCESS;
+	    mj_num = rtl_array_list_get_next_index(&devcies_list_lock, mj_num + 1)) {
+
+		if(num >= count) {
+			break;
+		}
+
+		if(offset == 0) {
+			//Directory
+			p_info = rtl_array_list_get(&devices_list, mj_num);
+			p_data->d_ino = 0 - mj_num;
+			rtl_strcpy_s(p_data->d_name, NAME_MAX, p_info->file_obj.obj.name);
+			p_data->d_off = num * sizeof(dirent_t);
+			p_data->d_reclen = rtl_strlen(p_data->d_name) + 1;
+			num++;
+			p_data++;
+
+		} else {
+			offset--;
+		}
+
+		//Named devices
+		pm_acqr_mutex(&(p_info->lock), TIMEOUT_BLOCK);
+		mn_count = rtl_array_list_item_num(&(p_info->devices));
+
+		if(offset < mn_count) {
+			for(mn_num = rtl_array_list_get_next_index(&(p_dir->devices), 0);
+			    OPERATE_SUCCESS;
+			    mn_num = rtl_array_list_get_next_index(&(p_dir->devices), mn_num + 1)) {
+
+				if(num >= count) {
+					break;
+				}
+
+				if(offset > 0) {
+					offset--;
+
+				} else {
+					p_dev = rtl_array_list_get(&(p_dir->devices), mn_num);
+
+					if(p_dev->file_obj.obj.name != NULL) {
+						p_data->d_ino = p_dev->device_number;
+						p_data->d_off = num * sizeof(dirent_t);
+						rtl_strcpy_s(p_data->d_name, NAME_MAX, p_dev->file_obj.obj.name);
+						p_data->d_reclen = rtl_strlen(p_data->d_name) + 1;
+						num++;
+						p_data++;
+					}
+				}
+			}
+
+		} else {
+			offset -= mn_count;
+		}
+
+		pm_rls_mutex(&(p_info->lock));
+	}
+
+	pm_rls_mutex(&devcies_list_lock);
+
+	pm_set_errno(ESUCCESS);
+	return num;
 }
 
 size_t get_devfs_dir(pdev_mj_info_t p_dir, pdirent_t buf,
                      size_t offset, size_t count)
 {
+	pdevice_obj_t p_dev;
+	u32 index;
+	pdirent_t p_info;
+	size_t num;
+	char *p;
 
+	pm_acqr_mutex(&(p_dir->lock), TIMEOUT_BLOCK);
+	num = 0;
+	p_info = buf;
+
+	for(index = rtl_array_list_get_next_index(&(p_dir->devices), 0);
+	    OPERATE_SUCCESS;
+	    index = rtl_array_list_get_next_index(&(p_dir->devices), index + 1)) {
+
+		//Jump read inodes
+		if(offset > 0) {
+			offset--;
+			continue;
+		}
+
+		if(num >= count) {
+			break;
+		}
+
+		p_dev = rtl_array_list_get(&(p_dir->devices), index);
+
+		//Filename
+		rtl_itoa(p_info->d_name, DEV_NUM_MJ(p_dev->device_number));
+		p = p_info->d_name + rtl_strlen(p_info->d_name);
+		*p = ':';
+		p++;
+		rtl_itoa(p, DEV_NUM_MN(p_dev->device_number));
+
+		//Inode
+		p_info->d_ino = p_dev->device_number;
+
+		p_info->d_off = num * sizeof(dirent_t);
+		p_info->d_reclen = rtl_strlen(p_info->d_name) + 1;
+
+		num++;
+		p_info++;
+	}
+
+	pm_rls_mutex(&(p_dir->lock));
+	return num;
 }

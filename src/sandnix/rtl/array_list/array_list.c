@@ -262,3 +262,22 @@ void rtl_array_list_destroy(parray_list_t p_array,
 	pm_set_errno(ESUCCESS);
 	return;
 }
+
+size_t rtl_array_list_item_num(parray_list_t p_array)
+{
+	size_t count;
+	u32 i;
+	parray_list_node_t *p_p_node;
+
+	count = 0;
+
+	for(i = 0, p_p_node = p_array->p_nodes;
+	    i < p_array->num;
+	    i++, p_p_node++) {
+		if(*p_p_node != NULL) {
+			count += ((*p_p_node)->scale - (*p_p_node)->remains);
+		}
+	}
+
+	return count;
+}
