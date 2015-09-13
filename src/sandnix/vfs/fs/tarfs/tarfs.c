@@ -19,6 +19,9 @@
 #include "../../vfs.h"
 #include "../../../debug/debug.h"
 
+u32		initrd_volume;
+u32		initrd_fs;
+
 void tarfs_init()
 {
 	dbg_print("Initializing tarfs...\n");

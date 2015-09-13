@@ -28,7 +28,7 @@ static	mutex_t			file_desc_info_table_lock;
 static	array_list_t	file_obj_table;
 static	mutex_t			file_obj_table_lock;
 
-static	mount_point_t	root_info;
+static	mount_point_t	root_mount_point;
 static	mutex_t			mount_point_lock;
 
 static	u32				kernel_drv_num;
@@ -43,6 +43,7 @@ static	void			file_desc_destroy_callback(pfile_desc_t p_fd,
 static	k_status		analyse_path(char* path, ppath_t ret);
 static	pfile_desc_t	get_file_descriptor(u32 fd);
 static	void			file_objecj_release_callback(pfile_obj_t p_fo);
+static	pmount_point_t	get_mount_point(ppath_t p_path);
 
 void fs_init()
 {
@@ -110,13 +111,214 @@ void fs_init()
 	tarfs_init();
 
 	//Mount ramdisk as root filesytem
+	dbg_print("Mounting ramdisk...\n");
+	root_mount_point.fs_dev = initrd_fs;
+	root_mount_point.volume_dev = initrd_volume;
+	root_mount_point.path.volume_dev = initrd_volume;
+	root_mount_point.path.path = "";
+	root_mount_point.uid = 0;
+	root_mount_point.gid = 0;
+	root_mount_point.mode = S_IRUSR | S_IRGRP | S_IROTH;
+
+	return;
 }
 
 //Volumes
-k_status		vfs_mount(char* src, char* target,
-                          char* fs_type, u32 flags,
-                          char* args);
-k_status		vfs_umount(char* path);
+k_status vfs_mount(char* src, char* target,
+                   char* fs_type, u32 flags,
+                   char* args)
+{
+	path_t k_path;
+	pmsg_t p_msg;
+	k_status status, complete_result;
+	ppmo_t p_pmo;
+	pmsg_mount_info_t p_info;
+	pmount_point_t p_mount_point, p_parent_point;
+	u32 volume_dev;
+	u32 send_result;
+	ppmo_t p_stat_buf;
+	pfile_stat_t p_stat;
+	u32 uid;
+	u32 gid;
+	u32 mode;
+	pdevice_obj_t p_dev;
+
+	//Only root can mount
+	if(pm_get_proc_euid(pm_get_crrnt_process()) != 0) {
+		pm_set_errno(EACCES);
+		return EACCES;
+	}
+
+	//Get folder stats
+	p_stat_buf = mm_pmo_create(sizeof(file_stat_t));
+
+	if(p_stat_buf == NULL) {
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+
+	p_stat = mm_pmo_map(NULL, p_stat_buf, false);
+
+	if(p_stat == NULL) {
+		mm_pmo_free(p_stat_buf);
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+
+	status = vfs_stat(path, p_stat_buf);
+
+	if(status != ESUCCESS) {
+		mm_pmo_unmap(p_stat, p_stat_buf);
+		mm_pmo_free(p_stat_buf);
+		pm_set_errno(status);
+		return status;
+	}
+
+	gid = p_stat->gid;
+	uid = p_stat->uid;
+	mode = p_stat->mode;
+
+	mm_pmo_unmap(p_stat, p_stat_buf);
+	mm_pmo_free(p_stat_buf);
+
+	//Get filesystem device
+	p_dev = get_dev_by_name(fs_type);
+
+	if(p_dev == NULL) {
+		pm_set_errno(ENODEV);
+		return ENODEV;
+	}
+
+	if(DEV_NUM_MJ(p_dev->device_number)
+	   != vfs_get_dev_major_by_name("filesystem")) {
+		pm_set_errno(ENODEV);
+		return ENODEV;
+	}
+
+	//Analyse path
+	status = analyse_path(path, &k_path);
+
+	if(status != ESUCCESS) {
+		return status
+	}
+
+	//Create buffer
+	p_pmo = mm_pmo_create(sizeof(msg_mount_info_t) + 2
+	                      + rtl_strlen(src) + rtl_strlen(target));
+
+	if(p_pmo == NULL) {
+		mm_hp_free(k_path.path, NULL);
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+
+	p_info = mm_pmo_map(NULL, p_pmo, false);
+
+	if(p_info == NULL) {
+		mm_pmo_free(p_pmo);
+		mm_hp_free(k_path.path, NULL);
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+
+	p_mount_point = mm_hp_alloc(sizeof(mount_point_t), NULL);
+
+	if(p_mount_point == NULL) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+
+	//Create message
+	status = msg_create(&p_msg,
+	                    sizeof(msg_t));
+
+	if(status != ESUCCESS) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
+		mm_hp_free(p_mount_point, NULL);
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+
+	p_msg->message = MSG_MOUNT;
+	p_msg->flags.flags = MFLAG_PMO;
+	p_msg->buf.pmo_addr = p_pmo;
+
+	p_info->flags = flags;
+	p_info->path_offset = 0;
+	p_info->args_offset = rtl_strlen(target) + 1;
+
+	rtl_strcpy_s(&(p_info->data) + p_info->path_offset,
+	             rtl_strlen(path) + 1,
+	             path);
+	rtl_strcpy_s(&(p_info->data) + p_info->args_offset,
+	             rtl_strlen(args) + 1,
+	             args);
+
+	//Send message
+	status = vfs_send_dev_message(kernel_drv_num,
+	                              p_dev->device_number,
+	                              p_msg,
+	                              &send_result,
+	                              &complete_result);
+
+	if(status != ESUCCESS) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_hp_free(p_mount_point, NULL);
+		mm_pmo_free(p_pmo);
+		mm_hp_free(k_path.path, NULL);
+		pm_set_errno(status);
+		return status;
+	}
+
+	if(send_result != MSTATUS_COMPLETE) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_hp_free(p_mount_point, NULL);
+		mm_pmo_free(p_pmo);
+		mm_hp_free(k_path.path, NULL);
+		pm_set_errno(EACCES);
+		return EACCES;
+	}
+
+	if(complete_result != ESUCCESS) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_hp_free(p_mount_point, NULL);
+		mm_pmo_free(p_pmo);
+		mm_hp_free(k_path.path, NULL);
+		pm_set_errno(complete_result);
+		return complete_result;
+	}
+
+	//Create mount point
+	p_mount_point->path.volume_dev = k_path.volume_dev;
+	p_mount_point->path.path = k_path.path;
+	p_mount_point->mode = mode;
+	p_mount_point->volume_dev = p_info->volume_dev;
+	p_mount_point->gid = gid;
+	p_mount_point->uid = uid;
+	p_mount_point->fs_dev = p_dev->device_number;
+	p_mount_point->mount_points = NULL;
+
+	//Add mount point
+	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
+
+	p_parent_point = get_mount_point(&k_path);
+	rtl_list_insert_after(p_mount_point->mount_points,
+	                      NULL,
+	                      p_mount_point,
+	                      NULL);
+	pm_rls_mutex(&mount_point_lock);
+
+	pm_set_errno(ESUCCESS);
+	return ESUCCESS;
+}
+
+k_status vfs_umount(char* path)
+{
+
+}
 
 //Path
 k_status		vfs_chroot(char* path);
@@ -1323,4 +1525,9 @@ void send_file_obj_destroy_msg(pfile_obj_t p_file_obj)
 	vfs_send_file_message(kernel_drv_num, p_file_obj->file_id, p_msg, NULL, NULL);
 
 	return;
+}
+
+pmount_point_t get_mount_point(ppath_t p_path)
+{
+
 }

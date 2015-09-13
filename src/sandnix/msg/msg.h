@@ -140,6 +140,14 @@ typedef	struct {
 	char	path;
 } msg_mkdir_info_t, *pmsg_mkdir_info_t;
 
+typedef	struct {
+	u32		volume_dev;
+	u32		flags;
+	u32		path_offset;
+	u32		args_offset;
+	u8		data;
+} msg_mount_info_t, *pmsg_mount_info_t;
+
 //Flags
 #define		MFLAG_DIRECTBUF		0x00000001
 #define		MFLAG_PMO			0x00000002
@@ -163,7 +171,8 @@ typedef	struct {
 #define		MSG_CHOMD			0x0000000D
 #define		MSG_IOCTRL			0x0000000E
 #define		MSG_INTERRUPT		0x0000000F
-
+#define		MSG_MOUNT			0x00000010
+#define		MSG_UMOUNT			0x00000011
 
 //Status
 #define		MSTATUS_COMPLETE	0x00000000
@@ -172,7 +181,7 @@ typedef	struct {
 
 void		msg_init();
 
-//msg_queue_t
+//Message queue
 u32			msg_queue_create();
 void		msg_queue_destroy(u32 id);
 

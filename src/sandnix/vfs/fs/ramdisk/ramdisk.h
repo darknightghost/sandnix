@@ -22,4 +22,6 @@
 
 void	ramdisk_init();
 
+extern	u32		initrd_ramdisk;
+
 #endif	//!	RAMDISK_H_INCLUDE

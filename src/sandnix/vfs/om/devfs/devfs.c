@@ -19,6 +19,9 @@
 #include "../../../rtl/rtl.h"
 
 static	u32				volume_dev;
+static	u32				fs_dev;
+static	u32				volume_file_id;
+static	u32				fs_file_id;
 
 static	void			kdriver_main(u32 thread_id, void* p_null);
 static	bool			dispatch_message(pmsg_t p_msg);
@@ -26,6 +29,8 @@ static	void			on_open(pmsg_t p_msg);
 static	void			on_access(pmsg_t p_msg);
 static	void			on_stat(pmsg_t p_msg);
 static	void			on_readdir(pmsg_t p_msg);
+static	void			on_mount(pmsg_t p_msg);
+static	void			on_umount(pmsg_t p_msg);
 static	bool			check_privilege(u32 euid, u32 egid, pdevice_obj_t p_dev);
 static	pdevice_obj_t	get_dev_by_path(char* path);
 static	u32				name_to_dev_num(char* name);
@@ -60,15 +65,27 @@ void kdriver_main(u32 thread_id, void* p_null)
 	vfs_reg_driver(p_driver);
 	devfs_driver = p_driver->driver_id;
 
-	//Create device
+	//Create filesystem device
 	p_device = vfs_create_dev_object("devfs");
 	p_device->gid = 0;
+	p_device->device_number = MK_DEV(vfs_get_dev_major_by_name("filesystem",
+	                                 DEV_TYPE_CHAR),
+	                                 0);
+	p_device->block_size = 1;
+	vfs_add_device(p_device, p_driver->driver_id);
+	fs_dev = p_device->device_number;
+	fs_file_id = p_device->file_obj.file_id;
+
+	//Create volume device
+	p_device = vfs_create_dev_object("udev");
+	p_device->gid = 0;
 	p_device->device_number = MK_DEV(vfs_get_dev_major_by_name("volume",
-	                                 DEV_TYPE_BLOCK),
+	                                 DEV_TYPE_CHAR),
 	                                 0);
 	p_device->block_size = 1;
 	vfs_add_device(p_device, p_driver->driver_id);
 	volume_dev = p_device->device_number;
+	volume_file_id = p_device->file_obj.file_id;
 
 	//Awake thread 0
 	pm_resume_thrd(0);
@@ -86,25 +103,44 @@ void kdriver_main(u32 thread_id, void* p_null)
 
 bool dispatch_message(pmsg_t p_msg)
 {
-	switch(p_msg->message) {
-	case MSG_OPEN:
-		on_open(p_msg);
-		break;
+	if(p_msg->file_id == fs_file_id) {
+		switch(p_msg->message) {
+		case MSG_MOUNT:
+			on_mount(p_msg);
+			break;
 
-	case MSG_ACCESS:
-		on_access(p_msg);
-		break;
+		case MSG_UMOUNT:
+			on_umount(p_msg);
+			break;
 
-	case MSG_STAT:
-		on_stat(p_msg);
-		break;
+		default:
+			msg_complete(p_msg ENOTSUP);
+		}
 
-	case MSG_READDIR:
-		on_readdir(p_msg);
-		break;
+	} else if(p_msg->file_id == volume_file_id) {
+		switch(p_msg->message) {
+		case MSG_OPEN:
+			on_open(p_msg);
+			break;
 
-	default:
-		msg_complete(p_msg ENOTSUP);
+		case MSG_ACCESS:
+			on_access(p_msg);
+			break;
+
+		case MSG_STAT:
+			on_stat(p_msg);
+			break;
+
+		case MSG_READDIR:
+			on_readdir(p_msg);
+			break;
+
+		default:
+			msg_complete(p_msg ENOTSUP);
+		}
+
+	} else {
+		msg_complete(p_msg, ENXIO);
 	}
 
 	return true;
@@ -528,4 +564,14 @@ u32 get_dir_file_obj(char* path)
 
 	pm_set_errno(ESUCCESS);
 	return p_info->file_obj.file_id;
+}
+
+void on_mount(pmsg_t p_msg)
+{
+
+}
+
+void on_umount(pmsg_t p_msg)
+{
+
 }

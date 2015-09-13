@@ -20,6 +20,8 @@
 #include "../../../debug/debug.h"
 #include "../../../pm/pm.h"
 
+u32				initrd_ramdisk;
+
 static	void	kdriver_main(u32 thread_id, void* p_null);
 static	bool	dispatch_message(pmsg_t p_msg);
 static	void	on_open(pmsg_t p_msg);

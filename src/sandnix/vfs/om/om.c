@@ -70,8 +70,10 @@ void om_init()
 	vfs_get_dev_major_by_name("floppy", DEV_TYPE_BLOCK);
 	vfs_get_dev_major_by_name("ata", DEV_TYPE_BLOCK);
 	vfs_get_dev_major_by_name("sata", DEV_TYPE_BLOCK);
+	vfs_get_dev_major_by_name("loop", DEV_TYPE_BLOCK);
 	vfs_get_dev_major_by_name("console", DEV_TYPE_CHAR);
 	vfs_get_dev_major_by_name("partition", DEV_TYPE_BLOCK);
+	vfs_get_dev_major_by_name("filesystem", DEV_TYPE_CHAR);
 	vfs_get_dev_major_by_name("volume", DEV_TYPE_CHAR);
 
 	devfs_init();
@@ -119,6 +121,11 @@ pdriver_obj_t vfs_create_drv_object(char* drv_name)
 	size_t len;
 
 	len = rtl_strlen(drv_name) + 1;
+
+	if(len > NAME_MAX + 1) {
+		pm_set_errno(ENAMETOOLONG);
+		return NULL;
+	}
 
 	//Allocate memory
 	ret = mm_hp_alloc(sizeof(driver_obj_t), NULL);
@@ -244,6 +251,13 @@ pdevice_obj_t vfs_create_dev_object(char* dev_name)
 	pdevice_obj_t ret;
 	size_t len;
 
+	len = rtl_strlen(dev_name) + 1;
+
+	if(len > NAME_MAX + 1) {
+		pm_set_errno(ENAMETOOLONG);
+		return NULL;
+	}
+
 	ret = mm_hp_alloc(sizeof(device_obj_t), NULL);
 
 	if(ret == NULL) {
@@ -255,7 +269,6 @@ pdevice_obj_t vfs_create_dev_object(char* dev_name)
 	vfs_initialize_object((pkobject_t)ret);
 	ret->file_obj.obj.size = sizeof(device_obj_t);
 
-	len = rtl_strlen(dev_name);
 	ret->file_obj.obj.name = mm_hp_alloc(len, NULL);
 
 	if(ret->file_obj.obj.name == NULL) {

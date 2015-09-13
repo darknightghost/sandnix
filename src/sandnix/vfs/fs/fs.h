@@ -39,7 +39,9 @@ typedef	struct	_vfs_proc_info {
 
 typedef	struct {
 	path_t		path;
-	u32			access;
+	u32			uid;
+	u32			gid;
+	u32			mode;
 	u32			fs_dev;
 	u32			volume_dev;
 	list_t		mount_points;
@@ -58,12 +60,6 @@ typedef	struct {
 	u32		process_id;
 	u32		fd;
 } file_obj_ref_t, *pfile_obj_ref_t;
-
-typedef	struct {
-	char*	name;
-	bool	multi_mount;
-	bool	mounted;
-} volume_info, *pvolume_info;
 
 void			fs_init();
 k_status		add_file_obj(pfile_obj_t p_file_obj);
