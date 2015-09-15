@@ -48,8 +48,9 @@ static	pmount_point_t	get_mount_point(ppath_t p_path);
 void fs_init()
 {
 	k_status status;
-	pvfs_proc_info p_proc0_info;
+	pvfs_proc_info p_proc0_info, p_proc_fd_info;
 	pdriver_obj_t p_drv;
+	u32 process_id;
 
 	dbg_print("Initializing filesystem...\n");
 
@@ -81,6 +82,7 @@ void fs_init()
 		            "Failed to initialize file descriptor for process 0");
 	}
 
+	rtl_memset(p_proc0_info, 0, sizeof(vfs_proc_info));
 	pm_init_mutex(&(p_proc0_info->lock));
 
 	status = rtl_array_list_set(&file_desc_info_table, 0, p_proc0_info, NULL);
@@ -119,6 +121,38 @@ void fs_init()
 	root_mount_point.uid = 0;
 	root_mount_point.gid = 0;
 	root_mount_point.mode = S_IRUSR | S_IRGRP | S_IROTH;
+	root_mount_point.p_parent = NULL;
+
+	//Set root dir and work dir of all process
+	pm_acqr_mutex(&file_desc_info_table_lock, TIMEOUT_BLOCK);
+
+	for(process_id = rtl_array_list_get_next_index(&file_desc_info_table, 0);
+	    OPERATE_SUCCESS;
+	    process_id = rtl_array_list_get_next_index(&file_desc_info_table,
+	                 process_id + 1)) {
+		p_proc_fd_info = rtl_array_list_get(&file_desc_info_table, process_id);
+		p_proc_fd_info->root.volume_dev = initrd_volume;
+		p_proc_fd_info->root.path = mm_hp_alloc(1, NULL);
+
+		if(p_proc_fd_info->root.path == NULL) {
+			excpt_panic(EFAULT, "Failed to set root directory.");
+		}
+
+		*(p_proc_fd_info->root.path) = '\0';
+
+		p_proc_fd_info->pwd.volume_dev = initrd_volume;
+		p_proc_fd_info->pwd.path = mm_hp_alloc(1, NULL);
+
+		if(p_proc_fd_info->pwd.path == NULL) {
+			excpt_panic(EFAULT, "Failed to set work directory.");
+		}
+
+		*(p_proc_fd_info->pwd.path) = '\0';
+
+	}
+
+	pm_rls_mutex(&file_desc_info_table_lock);
+
 
 	return;
 }
@@ -140,7 +174,6 @@ k_status vfs_mount(char* src, char* target,
 	pfile_stat_t p_stat;
 	u32 uid;
 	u32 gid;
-	u32 mode;
 	pdevice_obj_t p_dev;
 
 	//Only root can mount
@@ -176,7 +209,6 @@ k_status vfs_mount(char* src, char* target,
 
 	gid = p_stat->gid;
 	uid = p_stat->uid;
-	mode = p_stat->mode;
 
 	mm_pmo_unmap(p_stat, p_stat_buf);
 	mm_pmo_free(p_stat_buf);
@@ -196,9 +228,11 @@ k_status vfs_mount(char* src, char* target,
 	}
 
 	//Analyse path
+	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
 	status = analyse_path(path, &k_path);
 
 	if(status != ESUCCESS) {
+		pm_rls_mutex(&mount_point_lock);
 		return status
 	}
 
@@ -207,6 +241,7 @@ k_status vfs_mount(char* src, char* target,
 	                      + rtl_strlen(src) + rtl_strlen(target));
 
 	if(p_pmo == NULL) {
+		pm_rls_mutex(&mount_point_lock);
 		mm_hp_free(k_path.path, NULL);
 		pm_set_errno(EFAULT);
 		return EFAULT;
@@ -215,6 +250,7 @@ k_status vfs_mount(char* src, char* target,
 	p_info = mm_pmo_map(NULL, p_pmo, false);
 
 	if(p_info == NULL) {
+		pm_rls_mutex(&mount_point_lock);
 		mm_pmo_free(p_pmo);
 		mm_hp_free(k_path.path, NULL);
 		pm_set_errno(EFAULT);
@@ -224,6 +260,7 @@ k_status vfs_mount(char* src, char* target,
 	p_mount_point = mm_hp_alloc(sizeof(mount_point_t), NULL);
 
 	if(p_mount_point == NULL) {
+		pm_rls_mutex(&mount_point_lock);
 		mm_pmo_unmap(p_info, p_pmo);
 		mm_pmo_free(p_pmo);
 		pm_set_errno(EFAULT);
@@ -235,6 +272,7 @@ k_status vfs_mount(char* src, char* target,
 	                    sizeof(msg_t));
 
 	if(status != ESUCCESS) {
+		pm_rls_mutex(&mount_point_lock);
 		mm_pmo_unmap(p_info, p_pmo);
 		mm_pmo_free(p_pmo);
 		mm_hp_free(p_mount_point, NULL);
@@ -265,6 +303,7 @@ k_status vfs_mount(char* src, char* target,
 	                              &complete_result);
 
 	if(status != ESUCCESS) {
+		pm_rls_mutex(&mount_point_lock);
 		mm_pmo_unmap(p_info, p_pmo);
 		mm_hp_free(p_mount_point, NULL);
 		mm_pmo_free(p_pmo);
@@ -274,6 +313,7 @@ k_status vfs_mount(char* src, char* target,
 	}
 
 	if(send_result != MSTATUS_COMPLETE) {
+		pm_rls_mutex(&mount_point_lock);
 		mm_pmo_unmap(p_info, p_pmo);
 		mm_hp_free(p_mount_point, NULL);
 		mm_pmo_free(p_pmo);
@@ -283,6 +323,7 @@ k_status vfs_mount(char* src, char* target,
 	}
 
 	if(complete_result != ESUCCESS) {
+		pm_rls_mutex(&mount_point_lock);
 		mm_pmo_unmap(p_info, p_pmo);
 		mm_hp_free(p_mount_point, NULL);
 		mm_pmo_free(p_pmo);
@@ -294,7 +335,7 @@ k_status vfs_mount(char* src, char* target,
 	//Create mount point
 	p_mount_point->path.volume_dev = k_path.volume_dev;
 	p_mount_point->path.path = k_path.path;
-	p_mount_point->mode = mode;
+	p_mount_point->mode = p_info->mode;
 	p_mount_point->volume_dev = p_info->volume_dev;
 	p_mount_point->gid = gid;
 	p_mount_point->uid = uid;
@@ -302,13 +343,12 @@ k_status vfs_mount(char* src, char* target,
 	p_mount_point->mount_points = NULL;
 
 	//Add mount point
-	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
-
 	p_parent_point = get_mount_point(&k_path);
-	rtl_list_insert_after(p_mount_point->mount_points,
+	rtl_list_insert_after(&(p_parent_point->mount_points),
 	                      NULL,
 	                      p_mount_point,
 	                      NULL);
+	p_mount_point->p_parent = p_parent_point;
 	pm_rls_mutex(&mount_point_lock);
 
 	pm_set_errno(ESUCCESS);
@@ -317,12 +357,142 @@ k_status vfs_mount(char* src, char* target,
 
 k_status vfs_umount(char* path)
 {
+	ppath_t k_path;
+	k_status status;
+	plist_node_t p_node;
+	pmount_point_t p_mount_point, p_parent_point;
+	pmsg_t p_msg;
+	pmsg_umount_info_t p_info;
+	k_status complete_result;
 
+	//Get mount point
+	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
+	status = analyse_path(path, &k_path);
+
+	if(status != ESUCCESS) {
+		return status;
+	}
+
+	p_mount_point = get_mount_point(&k_path);
+
+	if(p_mount_point == NULL) {
+		pm_rls_mutex(&mount_point_lock);
+		pm_set_errno(EINVAL);
+		return EINVAL;
+	}
+
+	if(p_mount_point->mount_points != NULL) {
+		pm_rls_mutex(&mount_point_lock);
+		pm_set_errno(EBUSY);
+		return EBUSY;
+	}
+
+	//Create message
+	status = msg_create(&p_msg, sizeof(msg_t)
+	                    + sizeof(msg_umount_info_t));
+
+	if(status != ESUCCESS) {
+		pm_rls_mutex(&mount_point_lock);
+		mm_hp_free(k_path.path, NULL);
+		pm_set_errno(status);
+		return status;
+	}
+
+	p_msg->message = MSG_UMOUNT;
+	p_msg->flags.flags = MFLAG_DIRECTBUF;
+
+	p_info = (pmsg_umount_info_t)(p_msg + 1);
+	p_msg->buf.addr = p_info;
+
+	mm_hp_free(k_path.path, NULL);
+
+	//Send message
+	status = vfs_send_dev_message(kernel_drv_num,
+	                              path_info.volume_dev,
+	                              p_msg,
+	                              &send_result,
+	                              &complete_result);
+
+	if(status != ESUCCESS) {
+		pm_rls_mutex(&mount_point_lock);
+		return status;
+	}
+
+	if(send_result != MSTATUS_COMPLETE) {
+		pm_rls_mutex(&mount_point_lock);
+		pm_set_errno(EACCES);
+		return EACCES;
+	}
+
+	if(complete_result != ESUCCESS) {
+		pm_rls_mutex(&mount_point_lock);
+		pm_set_errno(complete_result);
+		return complete_result;
+	}
+
+	//Umount volume
+	p_node = rtl_list_get_node_by_item(&(p_mount_point->p_parent->mount_points),
+	                                   p_mount_point);
+
+	rtl_list_remove(&(p_mount_point->p_parent->mount_points),
+	                p_node,
+	                NULL);
+	pm_rls_mutex(&mount_point_lock);
+
+	pm_set_errno(ESUCCESS);
+	return ESUCCESS;
 }
 
 //Path
-k_status		vfs_chroot(char* path);
-k_status		vfs_chdir(char* path);
+k_status vfs_chroot(char* path)
+{
+	k_status status;
+	pvfs_proc_info p_proc_fd_info;
+	ppath_t k_path;
+
+	p_proc_info = get_proc_fs_info();
+	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
+	status = analyse_path(path, &k_path);
+	pm_rls_mutex(&mount_point_lock);
+
+	if(status != ESUCCESS) {
+		return status;
+	}
+
+	pm_acqr_mutex(&(p_proc_fd_info->lock), TIMEOUT_BLOCK);
+	mm_hp_free(p_proc_fd_info->root.path, NULL);
+	p_proc_fd_info->root.volume_dev = k_path.volume_dev;
+	p_proc_fd_info->root.path = k_path.path;
+	pm_rls_mutex(&(p_proc_fd_info->lock));
+
+	pm_set_errno(ESUCCESS);
+	return ESUCCESS;
+}
+
+k_status vfs_chdir(char* path)
+{
+	k_status status;
+	pvfs_proc_info p_proc_fd_info;
+	ppath_t k_path;
+
+	p_proc_info = get_proc_fs_info();
+	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
+	status = analyse_path(path, &k_path);
+	pm_rls_mutex(&mount_point_lock);
+
+	if(status != ESUCCESS) {
+		return status;
+	}
+
+	pm_acqr_mutex(&(p_proc_fd_info->lock), TIMEOUT_BLOCK);
+	mm_hp_free(p_proc_fd_info->pwd.path, NULL);
+	p_proc_fd_info->pwd.volume_dev = k_path.volume_dev;
+	p_proc_fd_info->pwd.path = k_path.path;
+	pm_rls_mutex(&(p_proc_fd_info->lock));
+
+	pm_set_errno(ESUCCESS);
+	return ESUCCESS;
+}
 
 //File descriptors
 k_status vfs_fork(u32 dest_process)
@@ -422,7 +592,9 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 	pfile_obj_ref_t p_ref;
 
 	//Analyse path
+	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
 	status = analyse_path(path, &k_path);
+	pm_rls_mutex(&mount_point_lock);
 
 	if(status != ESUCCESS) {
 		return INVALID_FD;
@@ -631,7 +803,9 @@ k_status vfs_access(char* path, u32 mode)
 	pmsg_access_info_t p_info;
 	size_t len;
 
+	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
 	status = analyse_path(path, &path_info);
+	pm_rls_mutex(&mount_point_lock);
 
 	if(!OPERATE_SUCCESS) {
 		return EFAULT;
@@ -946,7 +1120,9 @@ k_status vfs_stat(char* path, ppmo_t buf)
 	u32 msg_state;
 	path_t k_path;
 
+	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
 	status = analyse_path(path, &path_info);
+	pm_rls_mutex(&mount_point_lock);
 
 	if(!OPERATE_SUCCESS) {
 		return EFAULT;
@@ -1020,7 +1196,9 @@ k_status vfs_remove(char* path)
 	pmsg_remove_info_t p_info;
 	size_t len;
 
+	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
 	status = analyse_path(path, &path_info);
+	pm_rls_mutex(&mount_point_lock);
 
 	if(!OPERATE_SUCCESS) {
 		return EFAULT;
@@ -1080,7 +1258,9 @@ k_status vfs_mkdir(char* path, u32 mode)
 	pmsg_mkdir_info_t p_info;
 	size_t len;
 
+	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
 	status = analyse_path(path, &path_info);
+	pm_rls_mutex(&mount_point_lock);
 
 	if(!OPERATE_SUCCESS) {
 		return EFAULT;

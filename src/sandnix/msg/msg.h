@@ -145,8 +145,13 @@ typedef	struct {
 	u32		flags;
 	u32		path_offset;
 	u32		args_offset;
+	u32		mode;
 	u8		data;
 } msg_mount_info_t, *pmsg_mount_info_t;
+
+typedef	struct {
+	u32		volume_dev;
+} msg_umount_info_t, *pmsg_umount_info_t;
 
 //Flags
 #define		MFLAG_DIRECTBUF		0x00000001

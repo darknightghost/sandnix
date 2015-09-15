@@ -37,14 +37,15 @@ typedef	struct	_vfs_proc_info {
 	array_list_t	file_descs;
 } vfs_proc_info, *pvfs_proc_info;
 
-typedef	struct {
-	path_t		path;
-	u32			uid;
-	u32			gid;
-	u32			mode;
-	u32			fs_dev;
-	u32			volume_dev;
-	list_t		mount_points;
+typedef	struct _mount_point_t {
+	path_t					path;
+	u32						uid;
+	u32						gid;
+	u32						mode;
+	u32						fs_dev;
+	u32						volume_dev;
+	struct	_mount_point_t*	p_parent;
+	list_t					mount_points;
 } mount_point_t, *pmount_point_t;
 
 typedef	struct {
