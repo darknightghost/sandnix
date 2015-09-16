@@ -168,7 +168,6 @@ k_status vfs_mount(char* src, char* target,
 	ppmo_t p_pmo;
 	pmsg_mount_info_t p_info;
 	pmount_point_t p_mount_point, p_parent_point;
-	u32 volume_dev;
 	u32 send_result;
 	ppmo_t p_stat_buf;
 	pfile_stat_t p_stat;
@@ -177,7 +176,7 @@ k_status vfs_mount(char* src, char* target,
 	pdevice_obj_t p_dev;
 
 	//Only root can mount
-	if(pm_get_proc_euid(pm_get_crrnt_process()) != 0) {
+	if(!pm_get_proc_euid(pm_get_crrnt_process(), &uid) || uid != 0) {
 		pm_set_errno(EACCES);
 		return EACCES;
 	}
@@ -198,7 +197,7 @@ k_status vfs_mount(char* src, char* target,
 		return EFAULT;
 	}
 
-	status = vfs_stat(path, p_stat_buf);
+	status = vfs_stat(target, p_stat_buf);
 
 	if(status != ESUCCESS) {
 		mm_pmo_unmap(p_stat, p_stat_buf);
@@ -222,23 +221,23 @@ k_status vfs_mount(char* src, char* target,
 	}
 
 	if(DEV_NUM_MJ(p_dev->device_number)
-	   != vfs_get_dev_major_by_name("filesystem")) {
+	   != vfs_get_dev_major_by_name("filesystem", DEV_TYPE_CHAR)) {
 		pm_set_errno(ENODEV);
 		return ENODEV;
 	}
 
-	//Analyse path
+	//Analyse target path
 	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
-	status = analyse_path(path, &k_path);
+	status = analyse_path(target, &k_path);
 
 	if(status != ESUCCESS) {
 		pm_rls_mutex(&mount_point_lock);
-		return status
+		return status;
 	}
 
 	//Create buffer
 	p_pmo = mm_pmo_create(sizeof(msg_mount_info_t) + 2
-	                      + rtl_strlen(src) + rtl_strlen(target));
+	                      + rtl_strlen(src) + rtl_strlen(src));
 
 	if(p_pmo == NULL) {
 		pm_rls_mutex(&mount_point_lock);
@@ -288,10 +287,10 @@ k_status vfs_mount(char* src, char* target,
 	p_info->path_offset = 0;
 	p_info->args_offset = rtl_strlen(target) + 1;
 
-	rtl_strcpy_s(&(p_info->data) + p_info->path_offset,
-	             rtl_strlen(path) + 1,
-	             path);
-	rtl_strcpy_s(&(p_info->data) + p_info->args_offset,
+	rtl_strcpy_s(((char*) & (p_info->data)) + p_info->path_offset,
+	             rtl_strlen(src) + 1,
+	             src);
+	rtl_strcpy_s(((char*) & (p_info->data)) + p_info->args_offset,
 	             rtl_strlen(args) + 1,
 	             args);
 
@@ -357,10 +356,11 @@ k_status vfs_mount(char* src, char* target,
 
 k_status vfs_umount(char* path)
 {
-	ppath_t k_path;
+	path_t k_path;
 	k_status status;
 	plist_node_t p_node;
-	pmount_point_t p_mount_point, p_parent_point;
+	u32 send_result;
+	pmount_point_t p_mount_point;
 	pmsg_t p_msg;
 	pmsg_umount_info_t p_info;
 	k_status complete_result;
@@ -408,7 +408,7 @@ k_status vfs_umount(char* path)
 
 	//Send message
 	status = vfs_send_dev_message(kernel_drv_num,
-	                              path_info.volume_dev,
+	                              k_path.volume_dev,
 	                              p_msg,
 	                              &send_result,
 	                              &complete_result);
@@ -431,7 +431,7 @@ k_status vfs_umount(char* path)
 	}
 
 	//Umount volume
-	p_node = rtl_list_get_node_by_item(&(p_mount_point->p_parent->mount_points),
+	p_node = rtl_list_get_node_by_item(p_mount_point->p_parent->mount_points,
 	                                   p_mount_point);
 
 	rtl_list_remove(&(p_mount_point->p_parent->mount_points),
@@ -448,9 +448,9 @@ k_status vfs_chroot(char* path)
 {
 	k_status status;
 	pvfs_proc_info p_proc_fd_info;
-	ppath_t k_path;
+	path_t k_path;
 
-	p_proc_info = get_proc_fs_info();
+	p_proc_fd_info = get_proc_fs_info();
 	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
 	status = analyse_path(path, &k_path);
 	pm_rls_mutex(&mount_point_lock);
@@ -473,9 +473,9 @@ k_status vfs_chdir(char* path)
 {
 	k_status status;
 	pvfs_proc_info p_proc_fd_info;
-	ppath_t k_path;
+	path_t k_path;
 
-	p_proc_info = get_proc_fs_info();
+	p_proc_fd_info = get_proc_fs_info();
 	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
 	status = analyse_path(path, &k_path);
 	pm_rls_mutex(&mount_point_lock);
@@ -1039,7 +1039,7 @@ size_t vfs_write(u32 fd, ppmo_t buf)
 
 		if(p_fd->offset > p_fd->size) {
 			//Reset file size
-			p_fd->size = p_fd->len;
+			p_fd->size = p_fd->offset;
 		}
 	}
 
@@ -1112,7 +1112,6 @@ s64 vfs_seek(u32 fd, u32 pos, s64 offset)
 
 k_status vfs_stat(char* path, ppmo_t buf)
 {
-	pfile_desc_t p_fd;
 	pmsg_t p_msg;
 	k_status status;
 	pmsg_stat_info_t p_info;
@@ -1121,7 +1120,7 @@ k_status vfs_stat(char* path, ppmo_t buf)
 	path_t k_path;
 
 	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
-	status = analyse_path(path, &path_info);
+	status = analyse_path(path, &k_path);
 	pm_rls_mutex(&mount_point_lock);
 
 	if(!OPERATE_SUCCESS) {
@@ -1379,7 +1378,7 @@ k_status vfs_readdir(u32 fd, ppmo_t buf)
 		return EACCES;
 	}
 
-	fd->offset += p_info->count;
+	p_fd->offset += p_info->count;
 
 	mm_pmo_unmap(p_info, buf);
 	pm_set_errno(complete_state);
@@ -1637,6 +1636,19 @@ void file_desc_destroy_callback(pfile_desc_t p_fd,
 
 k_status analyse_path(char* path, ppath_t ret)
 {
+	char* p;
+
+	//Analyse begining directory
+	p = path;
+
+	if(*p == '/') {
+		//The path begins from current directory
+	} else {
+		//The path begins from root directory
+	}
+
+	pm_set_errno(ESUCCESS);
+	return ESUCCESS;
 }
 
 pfile_desc_t get_file_descriptor(u32 fd)

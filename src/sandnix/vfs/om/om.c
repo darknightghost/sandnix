@@ -763,7 +763,7 @@ void device_destroyer(pdevice_obj_t p_dev)
 	rtl_array_list_release(&(p_info->devices),
 	                       DEV_NUM_MN(p_dev->device_number),
 	                       NULL);
-	(p_mj_info->devices_count)--;
+	(p_info->devices_count)--;
 
 	//Remove from driver
 	p_drv = p_dev->file_obj.p_driver;
@@ -881,9 +881,9 @@ size_t get_devfs_root(pdirent_t buf, size_t offset, size_t count)
 
 	pm_acqr_mutex(&devices_list_lock, TIMEOUT_BLOCK);
 
-	for(mj_num = rtl_array_list_get_next_index(&devcies_list_lock, 0);
+	for(mj_num = rtl_array_list_get_next_index(&devices_list, 0);
 	    OPERATE_SUCCESS;
-	    mj_num = rtl_array_list_get_next_index(&devcies_list_lock, mj_num + 1)) {
+	    mj_num = rtl_array_list_get_next_index(&devices_list, mj_num + 1)) {
 
 		if(num >= count) {
 			break;
@@ -893,9 +893,9 @@ size_t get_devfs_root(pdirent_t buf, size_t offset, size_t count)
 			//Directory
 			p_info = rtl_array_list_get(&devices_list, mj_num);
 			p_data->d_ino = 0 - mj_num;
-			rtl_strcpy_s(p_data->d_name, NAME_MAX, p_info->file_obj.obj.name);
+			rtl_strcpy_s(&(p_data->d_name), NAME_MAX, p_info->file_obj.obj.name);
 			p_data->d_off = num * sizeof(dirent_t);
-			p_data->d_reclen = rtl_strlen(p_data->d_name) + 1;
+			p_data->d_reclen = rtl_strlen(&(p_data->d_name)) + 1;
 			num++;
 			p_data++;
 
@@ -908,9 +908,9 @@ size_t get_devfs_root(pdirent_t buf, size_t offset, size_t count)
 		mn_count = rtl_array_list_item_num(&(p_info->devices));
 
 		if(offset < mn_count) {
-			for(mn_num = rtl_array_list_get_next_index(&(p_dir->devices), 0);
+			for(mn_num = rtl_array_list_get_next_index(&(p_info->devices), 0);
 			    OPERATE_SUCCESS;
-			    mn_num = rtl_array_list_get_next_index(&(p_dir->devices), mn_num + 1)) {
+			    mn_num = rtl_array_list_get_next_index(&(p_info->devices), mn_num + 1)) {
 
 				if(num >= count) {
 					break;
@@ -920,13 +920,13 @@ size_t get_devfs_root(pdirent_t buf, size_t offset, size_t count)
 					offset--;
 
 				} else {
-					p_dev = rtl_array_list_get(&(p_dir->devices), mn_num);
+					p_dev = rtl_array_list_get(&(p_info->devices), mn_num);
 
 					if(p_dev->file_obj.obj.name != NULL) {
 						p_data->d_ino = p_dev->device_number;
 						p_data->d_off = num * sizeof(dirent_t);
-						rtl_strcpy_s(p_data->d_name, NAME_MAX, p_dev->file_obj.obj.name);
-						p_data->d_reclen = rtl_strlen(p_data->d_name) + 1;
+						rtl_strcpy_s(&(p_data->d_name), NAME_MAX, p_dev->file_obj.obj.name);
+						p_data->d_reclen = rtl_strlen(&(p_data->d_name)) + 1;
 						num++;
 						p_data++;
 					}
@@ -940,7 +940,7 @@ size_t get_devfs_root(pdirent_t buf, size_t offset, size_t count)
 		pm_rls_mutex(&(p_info->lock));
 	}
 
-	pm_rls_mutex(&devcies_list_lock);
+	pm_rls_mutex(&devices_list_lock);
 
 	pm_set_errno(ESUCCESS);
 	return num;
@@ -976,8 +976,8 @@ size_t get_devfs_dir(pdev_mj_info_t p_dir, pdirent_t buf,
 		p_dev = rtl_array_list_get(&(p_dir->devices), index);
 
 		//Filename
-		rtl_itoa(p_info->d_name, DEV_NUM_MJ(p_dev->device_number));
-		p = p_info->d_name + rtl_strlen(p_info->d_name);
+		rtl_itoa(&(p_info->d_name), DEV_NUM_MJ(p_dev->device_number));
+		p = &(p_info->d_name) + rtl_strlen(&(p_info->d_name));
 		*p = ':';
 		p++;
 		rtl_itoa(p, DEV_NUM_MN(p_dev->device_number));
@@ -986,7 +986,7 @@ size_t get_devfs_dir(pdev_mj_info_t p_dir, pdirent_t buf,
 		p_info->d_ino = p_dev->device_number;
 
 		p_info->d_off = num * sizeof(dirent_t);
-		p_info->d_reclen = rtl_strlen(p_info->d_name) + 1;
+		p_info->d_reclen = rtl_strlen(&(p_info->d_name)) + 1;
 
 		num++;
 		p_info++;

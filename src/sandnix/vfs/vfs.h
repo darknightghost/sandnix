@@ -19,10 +19,6 @@
 #define	VFS_H_INCLUDE
 
 #include "../../common/common.h"
-#include "./om/om.h"
-#include "./fs/fs.h"
-#include "fs/fs.h"
-#include "../msg/msg.h"
 
 #define	MAX_FILEOBJ_NUM		2048
 #define	NAME_MAX			255
@@ -80,28 +76,9 @@
 #define	SEEK_CUR	0x00000001
 #define	SEEK_END	0x00000002
 
-typedef	struct	_dirent {
-	long		d_ino;		//Inode number
-	size_t		d_off;		//Offset to this dirent
-	size_t		d_reclen;	//length of this d_name
-	char		d_name;		//filename (null-terminated)
-} dirent_t, *pdirent_t;
-
-typedef struct {
-	u32			dev_num;	//Device number of device containing file
-	u32			inode;		//Inode number
-	u32			mode;		//Protection
-	u32			nlink;		//Number of hard links
-	u32			uid;		//User ID of owner
-	u32			gid;		//Group ID of owner
-	u32			rdev;		//Device number (if special file)
-	size_t		size;		//Total size, in bytes
-	size_t		block_size;	//Blocksize for filesystem I/O
-	u32			block_num;	//Number of 512B blocks allocated
-	u32			atime;		//Time of last access
-	u32			mtime;		//Time of last modification
-	u32			ctime;		//Time of last status change
-} file_stat_t, *pfile_stat_t;
+#include "om/om.h"
+#include "fs/fs.h"
+#include "../msg/msg.h"
 
 typedef	struct	_msg	msg_t, *pmsg_t;
 

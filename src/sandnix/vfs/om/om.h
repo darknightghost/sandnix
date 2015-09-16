@@ -22,7 +22,6 @@
 #include "../../pm/pm.h"
 #include "../../rtl/rtl.h"
 #include "sys/sys.h"
-#include "../../msg/msg.h"
 
 typedef	struct	_kobject	kobject_t, *pkobject_t;
 
@@ -105,9 +104,11 @@ typedef	struct	{
 	u32				devices_count;
 } dev_mj_info_t, *pdev_mj_info_t;
 
+#include "../fs/fs.h"
+
 extern	u32		devfs_driver;
 
-void		om_init();
+void			om_init();
 
 pdriver_obj_t	get_driver(u32 driver_id);
 pdevice_obj_t	get_dev_by_name(char* name);

@@ -48,6 +48,29 @@ typedef	struct _mount_point_t {
 	list_t					mount_points;
 } mount_point_t, *pmount_point_t;
 
+typedef	struct	_dirent {
+	long		d_ino;		//Inode number
+	size_t		d_off;		//Offset to this dirent
+	size_t		d_reclen;	//length of this d_name
+	char		d_name;		//filename (null-terminated)
+} dirent_t, *pdirent_t;
+
+typedef struct _file_stat_t {
+	u32			dev_num;	//Device number of device containing file
+	u32			inode;		//Inode number
+	u32			mode;		//Protection
+	u32			nlink;		//Number of hard links
+	u32			uid;		//User ID of owner
+	u32			gid;		//Group ID of owner
+	u32			rdev;		//Device number (if special file)
+	size_t		size;		//Total size, in bytes
+	size_t		block_size;	//Blocksize for filesystem I/O
+	u32			block_num;	//Number of 512B blocks allocated
+	u32			atime;		//Time of last access
+	u32			mtime;		//Time of last modification
+	u32			ctime;		//Time of last status change
+} file_stat_t, *pfile_stat_t;
+
 typedef	struct {
 	path_t		path;
 	u32			file_obj;
@@ -61,6 +84,8 @@ typedef	struct {
 	u32		process_id;
 	u32		fd;
 } file_obj_ref_t, *pfile_obj_ref_t;
+
+#include "../om/om.h"
 
 void			fs_init();
 k_status		add_file_obj(pfile_obj_t p_file_obj);

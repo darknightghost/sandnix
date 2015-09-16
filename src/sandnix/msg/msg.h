@@ -120,6 +120,8 @@ typedef	struct {
 	char	path;
 } msg_stat_info_t, *pmsg_stat_info_t;
 
+typedef struct _file_stat_t	file_stat_t, *pfile_stat_t;
+
 typedef	struct {
 	file_stat_t		stat;
 } msg_stat_data_t, *pmsg_stat_data_t;
@@ -203,9 +205,4 @@ k_status	msg_forward(pmsg_t p_msg, u32 dest_queue);
 k_status	msg_complete(pmsg_t p_msg, k_status result);
 k_status	msg_cancel(pmsg_t p_msg);
 
-
-
-
 #endif	//!	MSG_H_INCLUDE
-
-
