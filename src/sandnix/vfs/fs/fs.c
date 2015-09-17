@@ -1637,9 +1637,11 @@ void file_desc_destroy_callback(pfile_desc_t p_fd,
 k_status analyse_path(char* path, ppath_t ret)
 {
 	char* p;
+	stack_t path_stack;
 
 	//Analyse begining directory
 	p = path;
+	path_stack = NULL;
 
 	if(*p == '/') {
 		//The path begins from current directory
