@@ -451,12 +451,13 @@ k_status vfs_chroot(char* path)
 	path_t k_path;
 
 	//Check if the path exists
-	status = vfs_access(path,F_OK);
-	if(status != ESUCCESS){
+	status = vfs_access(path, F_OK);
+
+	if(status != ESUCCESS) {
 		pm_set_errno(status);
 		return status;
 	}
-	
+
 	//Change root directory
 	p_proc_fd_info = get_proc_fs_info();
 	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
@@ -484,8 +485,9 @@ k_status vfs_chdir(char* path)
 	path_t k_path;
 
 	//Check if the path exists
-	status = vfs_access(path,F_OK);
-	if(status != ESUCCESS){
+	status = vfs_access(path, F_OK);
+
+	if(status != ESUCCESS) {
 		pm_set_errno(status);
 		return status;
 	}
@@ -1653,28 +1655,81 @@ void file_desc_destroy_callback(pfile_desc_t p_fd,
 k_status analyse_path(char* path, ppath_t ret)
 {
 	char* p;
-	list_t path_list;
 	char* name_buf;
 	char* path_buf;
+	char* p_name;
+	pmount_point_t p_current_mount_point;
+	stack_t path_stack;
+	size_t len;
 
-	//Analyse begining directory
-	if(*path != "/"){
-		//The path begins from current directory
+	path_stack = NULL;
+
+	if(rtl_strlen(path > PATH_MAX)) {
+		pm_set_errno(ENAMETOOLONG);
+		return ENAMETOOLONG;
 	}
-	
-	path_list = NULL;
-	
+
+	//Allocate memory
+	name_buf = mm_hp_alloc(NAME_MAX + 1, NULL);
+
+	if(name_buf == NULL) {
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+
+	path_buf = mm_hp_alloc(PATH_MAX + 1, NULL);
+
+	if(path_buf == NULL) {
+		mm_hp_free(name_buf, NULL);
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+
 	//Analyse path
-	for(p = path;)
-
-	//Find mount point
 	if(*path == '/') {
-		//The path begins from current directory
-	} else {
 		//The path begins from root directory
+		//Push directories name in the stack
+		for(p = path, rtl_get_next_name_in_path(&p, name_buf, NAME_MAX + 1);
+		    OPERATE_SUCCESS && *name_buf != '\0';
+		    rtl_get_next_name_in_path(&p, name_buf, NAME_MAX + 1)) {
+			if(rtl_strcmp(name_buf, ".") == 0) {
+				continue;
+
+			} else if(rtl_strcmp(name_buf, "..") == 0) {
+				if(path_stack == NULL) {
+					mm_hp_free(path_buf, NULL);
+					mm_hp_free(name_buf, NULL);
+					pm_set_errno(ENOENT);
+					return ENOENT;
+
+				} else {
+					p_name = rtl_stack_pop(&path_stack, NULL);
+					mm_hp_free(p_name);
+				}
+
+			} else {
+				len = rtl_strlen(name_buf) + 1;
+				p_name = mm_hp_alloc(len, NULL);
+				rtl_strcpy_s(p_name, len , name_buf);
+				rtl_stack_push(&path_stack, p_name , NULL);
+			}
+		}
+
+		//Get path
+		*path_buf = '\0';
+
+		while(path_stack != NULL) {
+			rtl_strcat_s(path_buf, PATH_MAX + 1, "/");
+			p_name = path_stack->p_item;
+			rtl_strcat_s(path_buf, PATH_MAX + 1, p_name);
+			rtl_list_remove(&path_stack, path_stack, NULL);
+		}
+
+	} else {
+		//The path begins from current directory
 	}
 
-	
+
 	pm_set_errno(ESUCCESS);
 	return ESUCCESS;
 }
