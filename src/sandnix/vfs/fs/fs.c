@@ -43,7 +43,7 @@ static	void			file_desc_destroy_callback(pfile_desc_t p_fd,
 static	k_status		analyse_path(char* path, ppath_t ret);
 static	pfile_desc_t	get_file_descriptor(u32 fd);
 static	void			file_objecj_release_callback(pfile_obj_t p_fo);
-static	pmount_point_t	get_mount_point(ppath_t p_path);
+static	k_status		get_cwd(char* buf, size_t size);
 
 void fs_init()
 {
@@ -342,7 +342,7 @@ k_status vfs_mount(char* src, char* target,
 	p_mount_point->mount_points = NULL;
 
 	//Add mount point
-	p_parent_point = get_mount_point(&k_path);
+	p_parent_point = k_path->p_mount_point;
 	rtl_list_insert_after(&(p_parent_point->mount_points),
 	                      NULL,
 	                      p_mount_point,
@@ -373,7 +373,7 @@ k_status vfs_umount(char* path)
 		return status;
 	}
 
-	p_mount_point = get_mount_point(&k_path);
+	p_mount_point = k_path.p_mount_point;
 
 	if(p_mount_point == NULL) {
 		pm_rls_mutex(&mount_point_lock);
@@ -510,6 +510,18 @@ k_status vfs_chdir(char* path)
 
 	pm_set_errno(ESUCCESS);
 	return ESUCCESS;
+}
+
+k_status vfs_getcwd(char* buf, size_t size)
+{
+	k_status status;
+
+	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
+	status = get_cwd(buf, size);
+	pm_rls_mutex(&mount_point_lock);
+
+	pm_set_errno(status);
+	return status;
 }
 
 //File descriptors
@@ -1658,9 +1670,13 @@ k_status analyse_path(char* path, ppath_t ret)
 	char* name_buf;
 	char* path_buf;
 	char* p_name;
-	pmount_point_t p_current_mount_point;
+	pmount_point_t p_mount_point, p_current_mount_point;;
 	stack_t path_stack;
 	size_t len;
+	size_t path_buf_len;
+	plist_node_t p_node;
+
+	path_buf_len = rtl_strlen(path) + 1 + PATH_MAX;
 
 	path_stack = NULL;
 
@@ -1677,7 +1693,7 @@ k_status analyse_path(char* path, ppath_t ret)
 		return EFAULT;
 	}
 
-	path_buf = mm_hp_alloc(PATH_MAX + 1, NULL);
+	path_buf = mm_hp_alloc(path_buf_len, NULL);
 
 	if(path_buf == NULL) {
 		mm_hp_free(name_buf, NULL);
@@ -1719,17 +1735,95 @@ k_status analyse_path(char* path, ppath_t ret)
 		*path_buf = '\0';
 
 		while(path_stack != NULL) {
-			rtl_strcat_s(path_buf, PATH_MAX + 1, "/");
+			rtl_strcat_s(path_buf, path_buf_len , "/");
 			p_name = path_stack->p_item;
-			rtl_strcat_s(path_buf, PATH_MAX + 1, p_name);
+			rtl_strcat_s(path_buf, path_buf_len, p_name);
 			rtl_list_remove(&path_stack, path_stack, NULL);
 		}
 
 	} else {
 		//The path begins from current directory
+		status = get_cwd(path_buf, path_buf_len);
+
+		if(status != ESUCCESS) {
+			return status;
+		}
+
+		rtl_strcat_s(path_buf, path_buf_len, "/");
+		rtl_strcat_s(path_buf, path_buf_len, path);
+
+		//Push directories name in the stack
+		for(p = path_buf, rtl_get_next_name_in_path(&p, name_buf, NAME_MAX + 1);
+		    OPERATE_SUCCESS && *name_buf != '\0';
+		    rtl_get_next_name_in_path(&p, name_buf, NAME_MAX + 1)) {
+			if(rtl_strcmp(name_buf, ".") == 0) {
+				continue;
+
+			} else if(rtl_strcmp(name_buf, "..") == 0) {
+				if(path_stack == NULL) {
+					mm_hp_free(path_buf, NULL);
+					mm_hp_free(name_buf, NULL);
+					pm_set_errno(ENOENT);
+					return ENOENT;
+
+				} else {
+					p_name = rtl_stack_pop(&path_stack, NULL);
+					mm_hp_free(p_name);
+				}
+
+			} else {
+				len = rtl_strlen(name_buf) + 1;
+				p_name = mm_hp_alloc(len, NULL);
+				rtl_strcpy_s(p_name, len , name_buf);
+				rtl_stack_push(&path_stack, p_name , NULL);
+			}
+		}
+
+		//Get path
+		*path_buf = '\0';
+
+		while(path_stack != NULL) {
+			rtl_strcat_s(path_buf, path_buf_len , "/");
+			p_name = path_stack->p_item;
+			rtl_strcat_s(path_buf, path_buf_len, p_name);
+			rtl_list_remove(&path_stack, path_stack, NULL);
+		}
+
 	}
 
+	//Get mount point
+	p = path_buf;
+	p++;
+	p_current_mount_point = &root_mount_point;
 
+	while(p_current_mount_point->mount_points != NULL) {
+		p_node = p_current_mount_point->mount_points;
+
+		while(1) {
+			p_mount_point = (pmount_point_t)(p_node->p_item);
+
+			if(rtl_is_sub_string(p, p_mount_point->path.path)) {
+				p_current_mount_point = p_mount_point;
+				p += (rtl_strlen(p_mount_point->path.path) + 1);
+				break;
+			}
+
+			p_node = p_node->p_next;
+
+			if(p_node == p_current_mount_point->mount_points) {
+				goto _MOUNT_POINT_BREAK;
+			}
+		}
+	}
+
+_MOUNT_POINT_BREAK:
+	ret->p_mount_point = p_current_mount_point;
+	len = rtl_strlen(p) + 1;
+	ret->path = mm_hp_alloc(len, NULL);
+	rtl_strcpy_s(ret->path, len, p);
+
+	mm_hp_free(path_buf, NULL);
+	mm_hp_free(name_buf, NULL);
 	pm_set_errno(ESUCCESS);
 	return ESUCCESS;
 }
@@ -1802,7 +1896,35 @@ void send_file_obj_destroy_msg(pfile_obj_t p_file_obj)
 	return;
 }
 
-pmount_point_t get_mount_point(ppath_t p_path)
+k_status get_cwd(char* buf, size_t size)
 {
+	pvfs_proc_info p_info;
+	stack_t mount_point_stack;
+	pmount_point_t p_mount_point;
 
+	p_info = get_proc_fs_info();
+	p_mount_point = p_info->pwd.p_mount_point;
+
+	//Push mount points
+	while(p_mount_point != NULL) {
+		rtl_stack_push(&mount_point_stack, p_mount_point, NULL);
+		p_mount_point = p_mount_point->p_parent;
+	}
+
+	//Pop mount points
+	*buf = '\0';
+
+	while(mount_point_stack != NULL) {
+		rtl_strcat_s(buf, size, "/");
+		p_mount_point = rtl_stack_pop(&mount_point_stack, NULL);
+		rtl_strcat_s(buf, size, p_mount_point->path.path);
+	}
+
+	if(*(p_mount_point->path.path) != '\0') {
+		rtl_strcat_s(buf, size, "/");
+		rtl_strcat_s(buf, size, p_info->pwd.path);
+	}
+
+	pm_set_errno(ESUCCESS);
+	return ESUCCESS;
 }

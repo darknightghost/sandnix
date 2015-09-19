@@ -211,6 +211,22 @@ char* rtl_strcat_s(char* dest, size_t buf_size, char* src)
 	return dest;
 }
 
+bool rtl_is_sub_string(char* str, char* substr)
+{
+	char* p;
+	char* p_sub;
+
+	for(p_sub = substr, p = str;
+	    *p_sub != '\0';
+	    p++, p_sub++) {
+		if(*p != p_sub) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 u32 rtl_sprintf_s(char* buf, size_t buf_size, char* fmt, ...)
 {
 	va_list args;

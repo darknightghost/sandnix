@@ -24,9 +24,11 @@
 #define	INVALID_FILEID		0xFFFFFFFF
 #define	INVALID_FD			0xFFFFFFFF
 
+struct	_mount_point_t;
+
 typedef	struct	_path {
-	pmount_point_t	p_mount_point;
-	char*			path;
+	struct _mount_point_t	*p_mount_point;
+	char*					path;
 } path_t, *ppath_t;
 
 typedef	struct	_vfs_proc_info {

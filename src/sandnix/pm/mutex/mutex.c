@@ -39,6 +39,13 @@ k_status  pm_acqr_mutex(pmutex_t p_mutex, u32 timeout)
 	p_node = p_mutex->acquire_list;
 
 	if(p_node != NULL || p_mutex->is_acquired) {
+		//If current thread has got the mutex
+		if(p_mutex->current_thread == pm_get_crrnt_thrd_id()) {
+			pm_rls_spn_lock(&(p_mutex->lock));
+			pm_set_errno(ESUCCESS);
+			return ESUCCESS;
+		}
+
 		//If other thread has acquired the mutex_t
 		//Add current thread to the list_t
 		if(p_node != NULL) {
@@ -84,6 +91,7 @@ k_status  pm_acqr_mutex(pmutex_t p_mutex, u32 timeout)
 
 		if(p_mutex->next_thread == pm_get_crrnt_thrd_id()) {
 			p_mutex->is_acquired = true;
+			p_mutex->current_thread = pm_get_crrnt_thrd_id();
 			pm_rls_spn_lock(&(p_mutex->lock));
 			pm_set_errno(ESUCCESS);
 			return ESUCCESS;
@@ -98,6 +106,7 @@ k_status  pm_acqr_mutex(pmutex_t p_mutex, u32 timeout)
 	} else {
 		//Acquired the mutex_t
 		p_mutex->is_acquired = true;
+		p_mutex->current_thread = pm_get_crrnt_thrd_id();
 		pm_rls_spn_lock(&(p_mutex->lock));
 		pm_set_errno(ESUCCESS);
 		return ESUCCESS;
@@ -110,17 +119,25 @@ k_status pm_try_acqr_mutex(pmutex_t p_mutex)
 
 	if(p_mutex->is_acquired == false
 	   && p_mutex->acquire_list == NULL) {
+		p_mutex->current_thread = pm_get_crrnt_thrd_id();
 		p_mutex->is_acquired = true;
 		pm_rls_spn_lock(&(p_mutex->lock));
 		pm_set_errno(ESUCCESS);
 		return ESUCCESS;
 
 	} else {
-		pm_rls_spn_lock(&(p_mutex->lock));
-		pm_set_errno(EAGAIN);
-		return EAGAIN;
-	}
+		if(p_mutex->current_thread == pm_get_crrnt_thrd_id()) {
+			pm_rls_spn_lock(&(p_mutex->lock));
+			pm_set_errno(ESUCCESS);
+			return ESUCCESS;
 
+		} else {
+			pm_rls_spn_lock(&(p_mutex->lock));
+			pm_set_errno(EAGAIN);
+			return EAGAIN;
+
+		}
+	}
 }
 
 void pm_rls_mutex(pmutex_t p_mutex)
@@ -128,6 +145,12 @@ void pm_rls_mutex(pmutex_t p_mutex)
 	plist_node_t p_node;
 
 	pm_acqr_spn_lock(&(p_mutex->lock));
+
+	if(p_mutex->current_thread != pm_get_crrnt_thrd_id()) {
+		pm_rls_spn_lock(&(p_mutex->lock));
+		pm_set_errno(EINVAL);
+		return;
+	}
 
 	//Release the mutex
 	p_mutex->is_acquired = false;

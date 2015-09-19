@@ -93,6 +93,7 @@ k_status		vfs_umount(char* path);
 //Path
 k_status		vfs_chroot(char* path);
 k_status		vfs_chdir(char* path);
+k_status		vfs_getcwd(char* buf, size_t size);
 
 //File descriptors
 k_status		vfs_fork(u32 dest_process);
