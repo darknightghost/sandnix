@@ -79,6 +79,7 @@
 #include "om/om.h"
 #include "fs/fs.h"
 #include "../msg/msg.h"
+#include "../mm/mm.h"
 
 typedef	struct	_msg	msg_t, *pmsg_t;
 
@@ -108,7 +109,7 @@ k_status		vfs_read(u32 fd, ppmo_t buf);
 size_t			vfs_write(u32 fd, ppmo_t buf);
 s64				vfs_seek(u32 fd, u32 pos, s64 offset);
 k_status		vfs_stat(char* path, ppmo_t buf);
-k_status		vfs_remove(char* path);
+k_status		vfs_unlink(char* path);
 k_status		vfs_mkdir(char* path, u32 mode);
 k_status		vfs_readdir(u32 fd, ppmo_t buf);
 void			vfs_sync(u32 dev_num);

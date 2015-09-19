@@ -64,6 +64,7 @@ void kdriver_main(u32 thread_id, void* p_null)
 	                                 DEV_TYPE_BLOCK),
 	                                 0);
 	vfs_add_device(p_device, p_driver->driver_id);
+	initrd_ramdisk = p_device->device_number;
 
 	//Awake thread 0
 	pm_resume_thrd(0);

@@ -18,8 +18,8 @@
 #ifndef	FS_H_INCLUDE
 #define	FS_H_INCLUDE
 
-#include "../vfs.h"
 #include "../../rtl/rtl.h"
+#include "../om/om.h"
 
 #define	INVALID_FILEID		0xFFFFFFFF
 #define	INVALID_FD			0xFFFFFFFF
@@ -87,7 +87,7 @@ typedef	struct {
 	u32		fd;
 } file_obj_ref_t, *pfile_obj_ref_t;
 
-#include "../om/om.h"
+typedef	struct _file_obj	_file_obj_t, *pfile_obj_t;
 
 void			fs_init();
 k_status		add_file_obj(pfile_obj_t p_file_obj);

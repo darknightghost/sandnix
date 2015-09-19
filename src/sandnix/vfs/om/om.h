@@ -18,10 +18,9 @@
 #ifndef	OM_H_INCLUDE
 #define	OM_H_INCLUDE
 
-#include "../vfs.h"
 #include "../../pm/pm.h"
 #include "../../rtl/rtl.h"
-#include "sys/sys.h"
+#include "../fs/fs.h"
 
 typedef	struct	_kobject	kobject_t, *pkobject_t;
 
@@ -104,7 +103,7 @@ typedef	struct	{
 	u32				devices_count;
 } dev_mj_info_t, *pdev_mj_info_t;
 
-#include "../fs/fs.h"
+typedef	struct _dirent	dirent_t, *pdirent_t;
 
 extern	u32		devfs_driver;
 

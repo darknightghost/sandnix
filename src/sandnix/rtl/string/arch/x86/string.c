@@ -219,7 +219,7 @@ bool rtl_is_sub_string(char* str, char* substr)
 	for(p_sub = substr, p = str;
 	    *p_sub != '\0';
 	    p++, p_sub++) {
-		if(*p != p_sub) {
+		if(*p != *p_sub) {
 			return false;
 		}
 	}

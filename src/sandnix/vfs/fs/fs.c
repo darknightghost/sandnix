@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "fs.h"
+#include "../vfs.h"
 #include "../../pm/pm.h"
 #include "../../rtl/rtl.h"
 #include "../../exceptions/exceptions.h"
@@ -115,7 +115,6 @@ void fs_init()
 	//Mount ramdisk as root filesytem
 	dbg_print("Mounting ramdisk...\n");
 	root_mount_point.fs_dev = initrd_fs;
-	root_mount_point.p_mount_point = &root_mount_point;
 	root_mount_point.path.p_mount_point = NULL;
 	root_mount_point.path.path = "";
 	root_mount_point.uid = 0;
@@ -131,7 +130,7 @@ void fs_init()
 	    process_id = rtl_array_list_get_next_index(&file_desc_info_table,
 	                 process_id + 1)) {
 		p_proc_fd_info = rtl_array_list_get(&file_desc_info_table, process_id);
-		p_proc_fd_info->root.p_mount_point = root_mount_point;
+		p_proc_fd_info->root.p_mount_point = &root_mount_point;
 		p_proc_fd_info->root.path = mm_hp_alloc(1, NULL);
 
 		if(p_proc_fd_info->root.path == NULL) {
@@ -342,7 +341,7 @@ k_status vfs_mount(char* src, char* target,
 	p_mount_point->mount_points = NULL;
 
 	//Add mount point
-	p_parent_point = k_path->p_mount_point;
+	p_parent_point = k_path.p_mount_point;
 	rtl_list_insert_after(&(p_parent_point->mount_points),
 	                      NULL,
 	                      p_mount_point,
@@ -1216,13 +1215,13 @@ k_status vfs_stat(char* path, ppmo_t buf)
 	return complete_state;
 }
 
-k_status vfs_remove(char* path)
+k_status vfs_unlink(char* path)
 {
 	path_t path_info;
 	pmsg_t p_msg;
 	k_status status, complete_result;
 	u32 send_result;
-	pmsg_remove_info_t p_info;
+	pmsg_unlink_info_t p_info;
 	size_t len;
 
 	pm_acqr_mutex(&mount_point_lock, TIMEOUT_BLOCK);
@@ -1237,7 +1236,7 @@ k_status vfs_remove(char* path)
 
 	//Create message
 	status = msg_create(&p_msg, sizeof(msg_t)
-	                    + sizeof(msg_remove_info_t)
+	                    + sizeof(msg_unlink_info_t)
 	                    + len);
 
 	if(status != ESUCCESS) {
@@ -1246,10 +1245,10 @@ k_status vfs_remove(char* path)
 		return status;
 	}
 
-	p_msg->message = MSG_REMOVE;
+	p_msg->message = MSG_UNLINK;
 	p_msg->flags.flags = MFLAG_DIRECTBUF;
 
-	p_info = (pmsg_remove_info_t)(p_msg + 1);
+	p_info = (pmsg_unlink_info_t)(p_msg + 1);
 	p_msg->buf.addr = p_info;
 
 	p_info->process = pm_get_crrnt_process();
@@ -1445,6 +1444,7 @@ u32 vfs_create_file_object()
 	}
 
 	p_file_obj->obj.ref_count = 0;
+	p_file_obj->obj.destroy_callback = (obj_destroyer)(&file_objecj_release_callback);
 
 	pm_set_errno(ESUCCESS);
 	return p_file_obj->file_id;
@@ -1675,12 +1675,13 @@ k_status analyse_path(char* path, ppath_t ret)
 	size_t len;
 	size_t path_buf_len;
 	plist_node_t p_node;
+	k_status status;
 
 	path_buf_len = rtl_strlen(path) + 1 + PATH_MAX;
 
 	path_stack = NULL;
 
-	if(rtl_strlen(path > PATH_MAX)) {
+	if(rtl_strlen(path) > PATH_MAX) {
 		pm_set_errno(ENAMETOOLONG);
 		return ENAMETOOLONG;
 	}
@@ -1720,7 +1721,7 @@ k_status analyse_path(char* path, ppath_t ret)
 
 				} else {
 					p_name = rtl_stack_pop(&path_stack, NULL);
-					mm_hp_free(p_name);
+					mm_hp_free(p_name, NULL);
 				}
 
 			} else {
@@ -1768,7 +1769,7 @@ k_status analyse_path(char* path, ppath_t ret)
 
 				} else {
 					p_name = rtl_stack_pop(&path_stack, NULL);
-					mm_hp_free(p_name);
+					mm_hp_free(p_name, NULL);
 				}
 
 			} else {
