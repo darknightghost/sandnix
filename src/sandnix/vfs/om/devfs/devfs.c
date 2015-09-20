@@ -15,8 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "../../vfs.h"
 #include "devfs.h"
 #include "../../../rtl/rtl.h"
+#include "../../../debug/debug.h"
 
 static	u32				volume_dev;
 static	u32				fs_dev;
@@ -114,7 +116,7 @@ bool dispatch_message(pmsg_t p_msg)
 			break;
 
 		default:
-			msg_complete(p_msg ENOTSUP);
+			msg_complete(p_msg, ENOTSUP);
 		}
 
 	} else if(p_msg->file_id == volume_file_id) {
@@ -136,7 +138,7 @@ bool dispatch_message(pmsg_t p_msg)
 			break;
 
 		default:
-			msg_complete(p_msg ENOTSUP);
+			msg_complete(p_msg, ENOTSUP);
 		}
 
 	} else {
@@ -144,6 +146,34 @@ bool dispatch_message(pmsg_t p_msg)
 	}
 
 	return true;
+}
+
+void on_mount(pmsg_t p_msg)
+{
+	pmsg_mount_info_t p_info;
+
+	if(!(p_msg->flags.properties.pmo_buf)) {
+		msg_complete(p_msg, EINVAL);
+	}
+
+	p_info = mm_pmo_map(NULL, p_msg->buf.pmo_addr);
+
+	if(p_info == NULL) {
+		msg_complete(p_msg, EFAULT);
+	}
+
+	p_info->volume_dev = volume_dev;
+	p_info->mode = S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR;
+	mm_pmo_unmap(p_info.p_msg->buf.pmo_addr);
+	msg_complete(p_msg, ESUCCESS);
+
+	return;
+}
+
+void on_umount(pmsg_t p_msg)
+{
+	msg_complete(p_msg, ESUCCESS);
+	return;
 }
 
 void on_open(pmsg_t p_msg)
@@ -172,7 +202,7 @@ void on_open(pmsg_t p_msg)
 
 	if(p_info->flags | O_DIRECTORY) {
 		p_info->file_object = get_dir_file_obj(&(p_info->path));
-		p_info->size = 0;
+		p_info->file_size = 0;
 
 		status = pm_get_errno();
 		msg_complete(p_msg, status);
@@ -191,8 +221,8 @@ void on_open(pmsg_t p_msg)
 		}
 
 		//Check privilege
-		euid = pm_get_proc_euid(p_info->process);
-		egid = pm_get_proc_egid(p_info->process);
+		pm_get_proc_euid(p_info->process, &euid);
+		pm_get_proc_egid(p_info->process, &egid);
 
 		if(p_info->mode | O_CREAT) {
 			msg_complete(p_msg, EACCES);
@@ -206,7 +236,7 @@ void on_open(pmsg_t p_msg)
 			return;
 		}
 
-		p_info->file_object = (pfile_obj_t)p_dev;
+		p_info->file_object = p_dev->file_obj.file_id;
 		p_info->file_size = 0;
 
 		msg_complete(p_msg, ESUCCESS);
@@ -221,7 +251,6 @@ void on_access(pmsg_t p_msg)
 	pdevice_obj_t p_dev;
 	u32 euid;
 	u32 egid;
-	k_status status;
 
 	//Check buf type
 	if(!p_msg->flags.properties.direct_buf) {
@@ -262,8 +291,8 @@ void on_access(pmsg_t p_msg)
 
 	} else {
 		//Check privilege
-		euid = pm_get_proc_euid(p_info->process);
-		egid = pm_get_proc_egid(p_info->process);
+		pm_get_proc_euid(p_info->process, &euid);
+		pm_get_proc_egid(p_info->process, &egid);
 
 		if(p_dev->gid == egid || euid == 0) {
 			msg_complete(p_msg, ESUCCESS);
@@ -282,7 +311,6 @@ void on_stat(pmsg_t p_msg)
 	pmsg_stat_data_t p_data;
 	pdevice_obj_t p_dev;
 	pdev_mj_info_t p_mj;
-	k_status status;
 
 	//Check buf type
 	if(!p_msg->flags.properties.pmo_buf) {
@@ -303,7 +331,7 @@ void on_stat(pmsg_t p_msg)
 	p_dev = get_dev_by_path(&(p_info->path));
 
 	if(p_dev == NULL) {
-		p_mj = get_dir_file_obj(&(p_info->path));
+		p_mj = (pdev_mj_info_t)get_file_obj(get_dir_file_obj(&(p_info->path)));
 
 		if(p_mj == NULL) {
 			msg_complete(p_msg, ENFILE);
@@ -364,13 +392,10 @@ void on_readdir(pmsg_t p_msg)
 	pmsg_readdir_info_t p_info;
 	pmsg_readdir_data_t p_data;
 	pdevice_obj_t p_dev;
-	k_status status;
 	pfile_obj_t p_fo;
-	pdevice_obj_t p_dev;
 	size_t count;
 	size_t read_entries;
 	size_t offset;
-	pdirent_t p_dir_info;
 
 	//Check buf type
 	if(!p_msg->flags.properties.pmo_buf) {
@@ -391,7 +416,7 @@ void on_readdir(pmsg_t p_msg)
 	count = p_info->count;
 	offset = p_info->offset;
 
-	if(OBJ_MINOR_CLASS(p_fo->obj.class) == OBJ_MN_DEVICE) {
+	if(OBJ_MINOR_CLASS((pkobject_t)p_fo) == OBJ_MN_DEVICE) {
 		//Volume device
 		p_dev = (pdevice_obj_t)p_fo;
 
@@ -480,7 +505,6 @@ pdevice_obj_t get_dev_by_path(char* path)
 		}
 
 		p_dev = get_dev(dev_num);
-
 	}
 
 	return p_dev;
@@ -527,7 +551,7 @@ u32 name_to_dev_num(char* name)
 		mn_num = mn_num * 10 + *p - '0';
 	}
 
-	dev_num = MK_DEV(mj_num.mn_num);
+	dev_num = MK_DEV(mj_num, mn_num);
 
 	pm_set_errno(ESUCCESS);
 	return dev_num;
@@ -550,7 +574,7 @@ u32 get_dir_file_obj(char* path)
 		p++;
 	}
 
-	if(*p != NULL) {
+	if(*p != '\0') {
 		pm_set_errno(ENFILE);
 		return INVALID_FILEID;
 	}
@@ -564,14 +588,4 @@ u32 get_dir_file_obj(char* path)
 
 	pm_set_errno(ESUCCESS);
 	return p_info->file_obj.file_id;
-}
-
-void on_mount(pmsg_t p_msg)
-{
-
-}
-
-void on_umount(pmsg_t p_msg)
-{
-
 }

@@ -19,7 +19,7 @@
 #define	MSG_H_INCLUDE
 
 #include "../../common/common.h"
-#include "messages.h"
+#include "msg_datas.h"
 
 #define	MAX_MSG_QUEUE_NUM		65535
 

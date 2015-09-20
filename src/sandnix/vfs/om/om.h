@@ -115,5 +115,6 @@ pdev_mj_info_t	get_mj_by_name(char* name);
 size_t			get_devfs_root(pdirent_t buf, size_t offset, size_t count);
 size_t			get_devfs_dir(pdev_mj_info_t p_dir, pdirent_t buf,
                               size_t offset, size_t count);
+pdevice_obj_t	get_dev(u32 dev_num);
 
 #endif	//!	OM_H_INCLUDE

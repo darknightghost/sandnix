@@ -37,7 +37,6 @@ static	bool			dev_mj_name_cmp(pdev_mj_info_t p_dev1,
                                         pdev_mj_info_t p_dev2);
 static	void			driver_destroyer(pdriver_obj_t p_obj);
 static	void			device_destroyer(pdevice_obj_t p_dev);
-static	pdevice_obj_t	get_dev(u32 dev_num);
 
 void om_init()
 {

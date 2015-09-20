@@ -473,6 +473,8 @@ k_status vfs_chroot(char* path)
 	p_proc_fd_info->root.path = k_path.path;
 	pm_rls_mutex(&(p_proc_fd_info->lock));
 
+	vfs_chdir("/");
+
 	pm_set_errno(ESUCCESS);
 	return ESUCCESS;
 }
@@ -1676,8 +1678,11 @@ k_status analyse_path(char* path, ppath_t ret)
 	size_t path_buf_len;
 	plist_node_t p_node;
 	k_status status;
+	pvfs_proc_info p_info;
 
-	path_buf_len = rtl_strlen(path) + 1 + PATH_MAX;
+	p_info = get_proc_fs_info();
+	path_buf_len = rtl_strlen(path) + 1 + PATH_MAX
+	               + rtl_strlen(p_info->root.path);
 
 	path_stack = NULL;
 
@@ -1733,7 +1738,7 @@ k_status analyse_path(char* path, ppath_t ret)
 		}
 
 		//Get path
-		*path_buf = '\0';
+		rtl_strcpy_s(path_buf, path_buf_len, p_info->root.path);
 
 		while(path_stack != NULL) {
 			rtl_strcat_s(path_buf, path_buf_len , "/");
@@ -1781,7 +1786,7 @@ k_status analyse_path(char* path, ppath_t ret)
 		}
 
 		//Get path
-		*path_buf = '\0';
+		rtl_strcpy_s(path_buf, path_buf_len, p_info->root.path);
 
 		while(path_stack != NULL) {
 			rtl_strcat_s(path_buf, path_buf_len , "/");
@@ -1789,13 +1794,12 @@ k_status analyse_path(char* path, ppath_t ret)
 			rtl_strcat_s(path_buf, path_buf_len, p_name);
 			rtl_list_remove(&path_stack, path_stack, NULL);
 		}
-
 	}
 
 	//Get mount point
 	p = path_buf;
 	p++;
-	p_current_mount_point = &root_mount_point;
+	p_current_mount_point = p_info->root.p_mount_point;
 
 	while(p_current_mount_point->mount_points != NULL) {
 		p_node = p_current_mount_point->mount_points;
@@ -1907,9 +1911,15 @@ k_status get_cwd(char* buf, size_t size)
 	p_mount_point = p_info->pwd.p_mount_point;
 
 	//Push mount points
-	while(p_mount_point != NULL) {
+	while(1) {
 		rtl_stack_push(&mount_point_stack, p_mount_point, NULL);
-		p_mount_point = p_mount_point->p_parent;
+
+		if(p_mount_point == p_info.root.p_mount_point) {
+			break;
+
+		} else {
+			p_mount_point = p_mount_point->p_parent;
+		}
 	}
 
 	//Pop mount points
@@ -1918,7 +1928,16 @@ k_status get_cwd(char* buf, size_t size)
 	while(mount_point_stack != NULL) {
 		rtl_strcat_s(buf, size, "/");
 		p_mount_point = rtl_stack_pop(&mount_point_stack, NULL);
-		rtl_strcat_s(buf, size, p_mount_point->path.path);
+
+		if(p_mount_point == p_info->root.p_mount_point) {
+			rtl_strcat_s(buf,
+			             size,
+			             p_mount_point->path.path
+			             + rtl_strlen(p_info->root.path));
+
+		} else {
+			rtl_strcat_s(buf, size, p_mount_point->path.path);
+		}
 	}
 
 	if(*(p_mount_point->path.path) != '\0') {

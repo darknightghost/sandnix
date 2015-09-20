@@ -28,7 +28,7 @@ k_status rtl_get_next_name_in_path(char** p_path, char* buf, size_t size)
 	p_old = *p_path;
 
 	while(**p_path == '/') {
-		(*p_path++);
+		(*p_path)++;
 	}
 
 	count = 0;
