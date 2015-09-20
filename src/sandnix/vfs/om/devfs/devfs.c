@@ -156,15 +156,15 @@ void on_mount(pmsg_t p_msg)
 		msg_complete(p_msg, EINVAL);
 	}
 
-	p_info = mm_pmo_map(NULL, p_msg->buf.pmo_addr);
+	p_info = mm_pmo_map(NULL, p_msg->buf.pmo_addr, false);
 
 	if(p_info == NULL) {
 		msg_complete(p_msg, EFAULT);
 	}
 
 	p_info->volume_dev = volume_dev;
-	p_info->mode = S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR;
-	mm_pmo_unmap(p_info.p_msg->buf.pmo_addr);
+	p_info->mode = S_IRUSR | S_IRGRP | S_IROTH;
+	mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
 	msg_complete(p_msg, ESUCCESS);
 
 	return;
@@ -346,7 +346,7 @@ void on_stat(pmsg_t p_msg)
 		p_data->stat.ctime = 0;
 		p_data->stat.dev_num = 0;
 		p_data->stat.gid = 0;
-		p_data->stat.inode = 0 - (p_mj->mj_num);
+		p_data->stat.inode = 0 - (p_mj->mj_num) - 1;
 		p_data->stat.mode = S_IRUSR | S_IRGRP | S_IROTH;
 		p_data->stat.mtime = 0;
 		p_data->stat.nlink = 1;

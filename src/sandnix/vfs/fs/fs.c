@@ -1914,7 +1914,7 @@ k_status get_cwd(char* buf, size_t size)
 	while(1) {
 		rtl_stack_push(&mount_point_stack, p_mount_point, NULL);
 
-		if(p_mount_point == p_info.root.p_mount_point) {
+		if(p_mount_point == p_info->root.p_mount_point) {
 			break;
 
 		} else {
