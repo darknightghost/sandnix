@@ -201,6 +201,7 @@ void on_open(pmsg_t p_msg)
 	p_info->serial_read = false;
 
 	if(p_info->flags | O_DIRECTORY) {
+		//Directory
 		p_info->file_object = get_dir_file_obj(&(p_info->path));
 		p_info->file_size = 0;
 
@@ -239,7 +240,7 @@ void on_open(pmsg_t p_msg)
 		p_info->file_object = p_dev->file_obj.file_id;
 		p_info->file_size = 0;
 
-		msg_complete(p_msg, ESUCCESS);
+		vfs_msg_forward(p_msg, p_dev->device_number);
 		mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
 		return;
 	}

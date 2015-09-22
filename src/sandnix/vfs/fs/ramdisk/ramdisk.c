@@ -28,10 +28,16 @@ static	void	on_open(pmsg_t p_msg);
 static	void	on_read(pmsg_t p_msg);
 static	void	on_close(pmsg_t p_msg);
 static	void	on_destroy(pmsg_t p_msg);
+static	size_t	ramdisk_size;
+static	char*	p_ramdisk;
 
 void ramdisk_init()
 {
 	dbg_print("Initializing ramdisk...\n");
+
+	//Get ramdisk info
+	ramdisk_size = *((u32*)RAMDISK_BASE);
+	p_ramdisk = (char*)(RAMDISK_BASE + 4);
 
 	//Create driver process
 	if(pm_fork() == 0) {
@@ -98,6 +104,9 @@ bool dispatch_message(pmsg_t p_msg)
 	case MSG_DESTROY:
 		on_destroy(p_msg);
 		return false;
+
+	default:
+		msg_complete(p_msg, ENOTSUP);
 	}
 
 	return true;
@@ -105,20 +114,77 @@ bool dispatch_message(pmsg_t p_msg)
 
 void on_open(pmsg_t p_msg)
 {
+	pmsg_open_info_t p_info;
 
+	p_info = mm_pmo_map(NULL, p_msg->buf.pmo_addr, false);
+
+	if(p_info == NULL) {
+		msg_complete(p_msg, EFAULT);
+		return;
+	}
+
+	p_info->file_size = ramdisk_size;
+	p_info->serial_read = false;
+
+	mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
+	msg_complete(p_msg, ESUCCESS);
+	return;
 }
 
 void on_read(pmsg_t p_msg)
 {
+	pmsg_read_info_t p_info;
+	pmsg_read_data_t p_data;
+	size_t len;
+	size_t offset;
 
+	//Check buf type
+	if(!p_msg->flags.properly.pmo_buf) {
+		msg_complete(p_msg, EINVAL);
+		return;
+	}
+
+	//Map buffer
+	p_info = mm_pmo_map(NULL, p_msg->buf.pmo_addr, false);
+
+	if(p_info == NULL) {
+		msg_complete(p_msg, EFAULT);
+		return;
+	}
+
+	len = p_info->len;
+	offset = p_info->offset;
+	p_data = (pmsg_read_data_t)p_info;
+
+	//Compute length to read
+	if(offset + len > ramdisk_size) {
+		if(offset > ramdisk_size) {
+			p_data->len = 0;
+			mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
+			msg_complete(p_msg, ESUCCESS);
+			return;
+		}
+
+		len = ramdisk_size - offset;
+	}
+
+	//Read data
+	p_data->len = len;
+	rtl_memcpy(&(p_data->data), p_ramdisk + offset, len);
+
+	mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
+	msg_complete(p_msg, ESUCCESS);
+	return;
 }
 
 void on_close(pmsg_t p_msg)
 {
-
+	msg_complete(p_msg, ESUCCESS);
+	return;
 }
 
 void on_destroy(pmsg_t p_msg)
 {
-
+	msg_complete(p_msg, ESUCCESS);
+	return;
 }

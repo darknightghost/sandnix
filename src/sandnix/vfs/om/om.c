@@ -149,7 +149,7 @@ pdriver_obj_t vfs_create_drv_object(char* drv_name)
 
 	ret->obj.size = sizeof(driver_obj_t);
 	ret->obj.destroy_callback = (obj_destroyer)driver_destroyer;
-	ret->obj.class = OBJ_MJ_DRIVER;
+	ret->obj.class_num = OBJ_MJ_DRIVER;
 
 	//Driver object
 	ret->file_list = NULL;
@@ -277,7 +277,7 @@ pdevice_obj_t vfs_create_dev_object(char* dev_name)
 	}
 
 	rtl_strcpy_s(ret->file_obj.obj.name, len, dev_name);
-	ret->file_obj.obj.class = OBJ_MJ_FILE | OBJ_MN_DEVICE;
+	ret->file_obj.obj.class_num = OBJ_MJ_FILE | OBJ_MN_DEVICE;
 	ret->file_obj.obj.destroy_callback = (obj_destroyer)device_destroyer;
 
 	//File object
@@ -596,7 +596,7 @@ u32 vfs_get_dev_major_by_name(char* major_name, u32 type)
 		vfs_initialize_object((pkobject_t)(&(p_info->file_obj.obj)));
 		p_info->file_obj.p_driver = get_driver(devfs_driver);
 		p_info->file_obj.refered_proc_list = NULL;
-		p_info->file_obj.obj.class = OBJ_MJ_FILE | OBJ_MN_NORMAL;
+		p_info->file_obj.obj.class_num = OBJ_MJ_FILE | OBJ_MN_NORMAL;
 		pm_init_mutex(&(p_info->file_obj.refered_proc_list_lock));
 
 		p_info->file_obj.obj.name = mm_hp_alloc(len, NULL);

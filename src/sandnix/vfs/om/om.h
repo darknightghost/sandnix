@@ -28,15 +28,15 @@ typedef	void	(*obj_destroyer)(pkobject_t);
 
 struct	_kobject {
 	char*				name;
-	u32					class;
+	u32					class_num;
 	size_t				size;
 	obj_destroyer		destroy_callback;
 	u32					ref_count;
 	mutex_t				ref_count_lock;
 };
 
-#define	OBJ_MAJOR_CLASS(p_object)	(((p_object)->class) & 0xFFFF0000)
-#define	OBJ_MINOR_CLASS(p_object)	(((p_object)->class) & 0x0000FFFF)
+#define	OBJ_MAJOR_CLASS(p_object)	(((p_object)->class_num) & 0xFFFF0000)
+#define	OBJ_MINOR_CLASS(p_object)	(((p_object)->class_num) & 0x0000FFFF)
 
 //Major class
 #define	OBJ_MJ_DRIVER				0x00010000

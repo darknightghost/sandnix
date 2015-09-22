@@ -937,6 +937,11 @@ k_status vfs_read(u32 fd, ppmo_t buf)
 		return EBADF;
 	}
 
+	if(p_fd->flags | O_DIRECTORY) {
+		pm_set_errno(EISDIR);
+		return EISDIR;
+	}
+
 	//Map buffer
 	p_info = mm_pmo_map(NULL, buf, false);
 
@@ -1013,6 +1018,11 @@ size_t vfs_write(u32 fd, ppmo_t buf)
 	if(!((p_fd->flags | O_WRONLY) || (p_fd->flags | O_RDWR))) {
 		pm_set_errno(EBADF);
 		return EBADF;
+	}
+
+	if(p_fd->flags | O_DIRECTORY) {
+		pm_set_errno(EISDIR);
+		return EISDIR;
 	}
 
 	//Map buffer
@@ -1356,6 +1366,11 @@ k_status vfs_readdir(u32 fd, ppmo_t buf)
 	if(p_fd->flags | O_WRONLY) {
 		pm_set_errno(EBADF);
 		return EBADF;
+	}
+
+	if(!(p_fd->flags | O_DIRECTORY)) {
+		pm_set_errno(ENOTDIR);
+		return ENOTDIR;
 	}
 
 	//Map buffer
