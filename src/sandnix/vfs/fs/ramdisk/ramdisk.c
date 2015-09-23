@@ -35,10 +35,6 @@ void ramdisk_init()
 {
 	dbg_print("Initializing ramdisk...\n");
 
-	//Get ramdisk info
-	ramdisk_size = *((u32*)RAMDISK_BASE);
-	p_ramdisk = (char*)(RAMDISK_BASE + 4);
-
 	//Create driver process
 	if(pm_fork() == 0) {
 		pm_exec("initrd", NULL);
@@ -56,6 +52,11 @@ void kdriver_main(u32 thread_id, void* p_null)
 {
 	pdevice_obj_t p_device;
 	pmsg_t p_msg;
+	
+	//Get ramdisk info
+	ramdisk_size = *((u32*)RAMDISK_BASE);
+	p_ramdisk = (char*)(RAMDISK_BASE + 4);
+
 
 	//Create driver
 	pdriver_obj_t p_driver;

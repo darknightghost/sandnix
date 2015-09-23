@@ -27,6 +27,8 @@ u32		initrd_fs;
 
 static	array_list_t	inode_table;
 
+static	void	kdriver_main(u32 thread_id, void* p_null);
+static	bool	dispatch_message(pmsg_t p_msg);
 static	void	on_mount(pmsg_t p_msg);
 static	void	on_umount(pmsg_t p_msg);
 static	void	on_open(pmsg_t p_msg);
@@ -37,4 +39,23 @@ static	void	on_close(pmsg_t p_msg);
 void tarfs_init()
 {
 	dbg_print("Initializing tarfs...\n");
+	
+	//Create driver process
+	if(pm_fork() == 0) {
+		pm_exec("initrd", NULL);
+		pm_clear_kernel_stack(kdriver_main, NULL);
+
+	} else {
+		pm_suspend_thrd(pm_get_crrnt_thrd_id());
+	}
+
+	return;
 }
+
+void kdriver_main(u32 thread_id, void* p_null)
+{
+	//Analyse inodes
+}
+
+
+bool dispatch_message(pmsg_t p_msg);
