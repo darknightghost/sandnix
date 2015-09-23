@@ -58,10 +58,9 @@ void kdriver_main(u32 thread_id, void* p_null)
 {
 	pdevice_obj_t p_device;
 	pmsg_t p_msg;
-
-	//Create driver
 	pdriver_obj_t p_driver;
 
+	//Create driver
 	p_driver = vfs_create_drv_object("devfs");
 	p_driver->process_id = pm_get_crrnt_process();
 	vfs_reg_driver(p_driver);

@@ -65,6 +65,8 @@
 #define	S_IWOTH	0x00000002		//Others has write permission
 #define	S_IXOTH	0x00000001		//Others has execute permission
 
+#define	S_IFDIR	0x00004000		//Directory
+
 //Access modes
 #define	F_OK	0x00000000		//Exist
 #define	X_OK	0x00000001		//Execute
