@@ -15,26 +15,23 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "tarfs.h"
-#include "../../vfs.h"
-#include "../../../debug/debug.h"
+#ifndef	FS_STRUCTS_H_INCLUDE
+#define	FS_STRUCTS_H_INCLUDE
+
+#include "../../../../common/common.h"
 #include "../../../rtl/rtl.h"
-#include "tar.h"
-#include "fs_structs.h"
 
-u32		initrd_volume;
-u32		initrd_fs;
+typedef	struct	_inode {
+	u32		uid;
+	u32		gid;
+	u32		mode;
+	union {
+		struct {
+			size_t			offset;
+			size_t			len;
+		} file_info;
+		array_list_t	dir_entries;
+	} data;
+} inode_t, *pinode_t;
 
-static	array_list_t	inode_table;
-
-static	void	on_mount(pmsg_t p_msg);
-static	void	on_umount(pmsg_t p_msg);
-static	void	on_open(pmsg_t p_msg);
-static	void	on_read(pmsg_t p_msg);
-static	void	on_write(pmsg_t p_msg);
-static	void	on_close(pmsg_t p_msg);
-
-void tarfs_init()
-{
-	dbg_print("Initializing tarfs...\n");
-}
+#endif	//!	FS_STRUCTS_H_INCLUDE

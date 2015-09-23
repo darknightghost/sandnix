@@ -62,6 +62,7 @@ void om_init()
 	pm_init_mutex(&dev_filename_index_lock);
 
 	vfs_get_dev_major_by_name("bus", DEV_TYPE_CHAR);
+	vfs_get_dev_major_by_name("bus_dev_info", DEV_TYPE_CHAR);
 	vfs_get_dev_major_by_name("dma", DEV_TYPE_CHAR);
 	vfs_get_dev_major_by_name("memory", DEV_TYPE_CHAR);
 	vfs_get_dev_major_by_name("ramdisk", DEV_TYPE_BLOCK);
