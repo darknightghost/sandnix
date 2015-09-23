@@ -18,6 +18,7 @@
 #include "tarfs.h"
 #include "../../vfs.h"
 #include "../../../debug/debug.h"
+#include "tar.h"
 
 u32		initrd_volume;
 u32		initrd_fs;
