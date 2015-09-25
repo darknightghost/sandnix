@@ -18,29 +18,30 @@
 #ifndef	TAR_H_INCLUDE
 #define	TAR_H_INCLUDE
 
-#include "../../../../common/common.h"
-
 #define	TAR_BLOCK_SIZE		512
 #define	TAR_FILENAME_SIZE	100
 #define	TAR_UNAME_LEN		32
 #define	TAR_GNAME_LEN		32
 
 #pragma pack(1)
-typedef	struct {
-	char	name[TAR_FILENAME_SIZE];
-	char	mode[8];
-	char	uid[8];
-	char	gid[8];
-	char	size[12];
-	char	mtime[12];
-	char	chksum[8];
-	char	linkflag;
-	char	linkname[TAR_FILENAME_SIZE];
-	char	magic[8];
-	char	uname[TAR_UNAME_LEN];
-	char	gname[TAR_GNAME_LEN];
-	char	devmajor[8];
-	char	devminor[8];
+typedef union {
+	char	block[TAR_BLOCK_SIZE];
+	struct {
+		char	name[TAR_FILENAME_SIZE];
+		char	mode[8];
+		char	uid[8];
+		char	gid[8];
+		char	size[12];
+		char	mtime[12];
+		char	chksum[8];
+		char	linkflag;
+		char	linkname[TAR_FILENAME_SIZE];
+		char	magic[8];
+		char	uname[TAR_UNAME_LEN];
+		char	gname[TAR_GNAME_LEN];
+		char	devmajor[8];
+		char	devminor[8];
+	} header;
 } tar_record_header_t, *ptar_record_header_t;
 
 typedef	union	record {

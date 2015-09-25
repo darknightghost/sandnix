@@ -96,5 +96,6 @@ void			send_file_obj_destroy_msg(pfile_obj_t p_file_obj);
 pfile_obj_t		get_file_obj(u32 id);
 void			set_drv_obj(u32 driver_id);
 bool			has_drv_object();
+u32				get_initrd_fd();
 
 #endif	//!	FS_H_INCLUDE

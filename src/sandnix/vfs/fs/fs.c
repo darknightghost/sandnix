@@ -114,7 +114,6 @@ void fs_init()
 
 	//Mount ramdisk as root filesytem
 	dbg_print("Mounting ramdisk...\n");
-	root_mount_point.fs_dev = initrd_fs;
 	root_mount_point.path.p_mount_point = NULL;
 	root_mount_point.path.path = "";
 	root_mount_point.uid = 0;
@@ -912,6 +911,10 @@ void vfs_close(u32 fd)
 
 	//Decrease reference count of file object
 	vfs_dec_obj_reference((pkobject_t)get_file_obj(p_desc->file_obj));
+
+	if(p_desc->path.p_mount_point != NULL) {
+		mm_hp_free(p_desc->path.path, NULL);
+	}
 
 	mm_hp_free(p_desc, NULL);
 
@@ -1962,4 +1965,152 @@ k_status get_cwd(char* buf, size_t size)
 
 	pm_set_errno(ESUCCESS);
 	return ESUCCESS;
+}
+
+u32 get_initrd_fd()
+{
+	pmsg_t p_msg;
+	k_status status, complete_result;
+	ppmo_t p_pmo;
+	pmsg_open_info_t p_info;
+	u32 send_result;
+	pfile_desc_t p_fd;
+	pvfs_proc_info p_proc_fd_info;
+	u32 ret;
+	pfile_obj_t p_file_obj;
+	pfile_obj_ref_t p_ref;
+
+	//Create buffer
+	p_pmo = mm_pmo_create(sizeof(pmsg_open_info_t) + PATH_MAX);
+
+	if(p_pmo == NULL) {
+		pm_set_errno(EFAULT);
+		return INVALID_FD;
+	}
+
+	p_info = mm_pmo_map(NULL, p_pmo, false);
+
+	if(p_info == NULL) {
+		mm_pmo_free(p_pmo);
+		pm_set_errno(EFAULT);
+		return INVALID_FD;
+	}
+
+	p_fd = mm_hp_alloc(sizeof(file_desc_t), NULL);
+
+	if(p_fd == NULL) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
+		mm_pmo_free(p_pmo);
+		pm_set_errno(EFAULT);
+		return INVALID_FD;
+	}
+
+	p_ref = mm_hp_alloc(sizeof(file_obj_ref_t), NULL);
+
+	if(p_ref == NULL) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
+		mm_hp_free(p_fd, NULL);
+		pm_set_errno(EFAULT);
+		return INVALID_FD;
+	}
+
+	//Create message
+	status = msg_create(&p_msg,
+	                    sizeof(msg_t));
+
+	if(status != ESUCCESS) {
+		mm_hp_free(p_ref, NULL);
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
+		mm_hp_free(p_fd, NULL);
+		pm_set_errno(EFAULT);
+		return INVALID_FD;
+	}
+
+	p_msg->message = MSG_OPEN;
+	p_msg->flags.flags = MFLAG_PMO;
+	p_msg->buf.pmo_addr = p_pmo;
+
+	p_info->process = pm_get_crrnt_process();
+	p_info->mode = O_RDONLY;
+	p_info->flags = 0;
+
+	rtl_strcpy_s(&(p_info->path), PATH_MAX, "initrd");
+
+	//Send message
+	status = vfs_send_dev_message(kernel_drv_num,
+	                              initrd_ramdisk,
+	                              p_msg,
+	                              &send_result,
+	                              &complete_result);
+
+	if(status != ESUCCESS) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
+		mm_hp_free(p_fd, NULL);
+		mm_hp_free(p_ref, NULL);
+		pm_set_errno(status);
+		return INVALID_FD;
+	}
+
+	if(send_result != MSTATUS_COMPLETE) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
+		mm_hp_free(p_fd, NULL);
+		mm_hp_free(p_ref, NULL);
+		pm_set_errno(EACCES);
+		return INVALID_FD;
+	}
+
+	if(complete_result != ESUCCESS) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
+		mm_hp_free(p_fd, NULL);
+		mm_hp_free(p_ref, NULL);
+		pm_set_errno(complete_result);
+		return INVALID_FD;
+	}
+
+	//Create file descriptor
+	p_fd->file_obj = p_info->file_object;
+	p_fd->offset = 0;
+	p_fd->size = p_info->file_size;
+	p_fd->flags = 0;
+	p_fd->serial_read = p_info->serial_read;
+	p_fd->path.p_mount_point = NULL;
+	p_fd->path.path = "";
+
+	//Add file descriptor
+	p_proc_fd_info = get_proc_fs_info();
+
+	pm_acqr_mutex(&(p_proc_fd_info->lock), TIMEOUT_BLOCK);
+
+	ret = rtl_array_list_get_free_index(&(p_proc_fd_info->file_descs));
+	rtl_array_list_set(&(p_proc_fd_info->file_descs), ret, p_fd, NULL);
+	ASSERT(OPERATE_SUCCESS);
+
+	pm_rls_mutex(&(p_proc_fd_info->lock));
+
+	mm_pmo_unmap(p_info, p_pmo);
+	mm_pmo_free(p_pmo);
+
+	p_file_obj = get_file_obj(p_fd->file_obj);
+	vfs_inc_obj_reference((pkobject_t)p_file_obj);
+
+	//Add process
+	p_ref->fd = ret;
+	p_ref->process_id = pm_get_crrnt_process();
+
+	pm_acqr_mutex(&(p_file_obj->refered_proc_list_lock), TIMEOUT_BLOCK);
+	rtl_list_insert_after(&(p_file_obj->refered_proc_list),
+	                      NULL,
+	                      p_ref,
+	                      NULL);
+	pm_rls_mutex(&(p_file_obj->refered_proc_list_lock));
+
+	pm_set_errno(ESUCCESS);
+
+	return ret;
 }

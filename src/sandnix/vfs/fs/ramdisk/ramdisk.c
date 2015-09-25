@@ -53,7 +53,7 @@ void kdriver_main(u32 thread_id, void* p_null)
 	pdevice_obj_t p_device;
 	pmsg_t p_msg;
 	pdriver_obj_t p_driver;
-	
+
 	//Get ramdisk info
 	ramdisk_size = *((u32*)RAMDISK_BASE);
 	p_ramdisk = (char*)(RAMDISK_BASE + 4);
@@ -139,7 +139,7 @@ void on_read(pmsg_t p_msg)
 	size_t offset;
 
 	//Check buf type
-	if(!p_msg->flags.properly.pmo_buf) {
+	if(!p_msg->flags.properties.pmo_buf) {
 		msg_complete(p_msg, EINVAL);
 		return;
 	}

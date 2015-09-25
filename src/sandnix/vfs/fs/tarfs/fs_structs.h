@@ -35,12 +35,4 @@ typedef	struct	_inode {
 	} data;
 } inode_t, *pinode_t;
 
-typedef	struct{
-	u32				parent_dev;
-	u32				volume_dev;
-	u32				file_id;
-	u32				thread_id;
-	array_list_t	inodes;
-}fs_volume_info_t,*pfs_volume_info_t;
-
 #endif	//!	FS_STRUCTS_H_INCLUDE
