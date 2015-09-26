@@ -18,15 +18,17 @@
 #ifndef	FS_H_INCLUDE
 #define	FS_H_INCLUDE
 
-#include "../vfs.h"
 #include "../../rtl/rtl.h"
+#include "../om/om.h"
 
 #define	INVALID_FILEID		0xFFFFFFFF
 #define	INVALID_FD			0xFFFFFFFF
 
+struct	_mount_point_t;
+
 typedef	struct	_path {
-	u32			volume_dev;
-	char*		path;
+	struct _mount_point_t	*p_mount_point;
+	char*					path;
 } path_t, *ppath_t;
 
 typedef	struct	_vfs_proc_info {
@@ -37,13 +39,39 @@ typedef	struct	_vfs_proc_info {
 	array_list_t	file_descs;
 } vfs_proc_info, *pvfs_proc_info;
 
-typedef	struct {
-	path_t		path;
-	u32			access;
-	u32			fs_dev;
-	u32			volume_dev;
-	list_t		mount_points;
+typedef	struct _mount_point_t {
+	path_t					path;
+	u32						uid;
+	u32						gid;
+	u32						mode;
+	u32						fs_dev;
+	u32						volume_dev;
+	struct	_mount_point_t*	p_parent;
+	list_t					mount_points;
 } mount_point_t, *pmount_point_t;
+
+typedef	struct	_dirent {
+	long		d_ino;		//Inode number
+	size_t		d_off;		//Offset to this dirent
+	size_t		d_reclen;	//length of this d_name
+	char		d_name;		//filename (null-terminated)
+} dirent_t, *pdirent_t;
+
+typedef struct _file_stat_t {
+	u32			dev_num;	//Device number of device containing file
+	u32			inode;		//Inode number
+	u32			mode;		//Protection
+	u32			nlink;		//Number of hard links
+	u32			uid;		//User ID of owner
+	u32			gid;		//Group ID of owner
+	u32			rdev;		//Device number (if special file)
+	size_t		size;		//Total size, in bytes
+	size_t		block_size;	//Blocksize for filesystem I/O
+	u32			block_num;	//Number of 512B blocks allocated
+	u32			atime;		//Time of last access
+	u32			mtime;		//Time of last modification
+	u32			ctime;		//Time of last status change
+} file_stat_t, *pfile_stat_t;
 
 typedef	struct {
 	path_t		path;
@@ -59,11 +87,7 @@ typedef	struct {
 	u32		fd;
 } file_obj_ref_t, *pfile_obj_ref_t;
 
-typedef	struct {
-	char*	name;
-	bool	multi_mount;
-	bool	mounted;
-} volume_info, *pvolume_info;
+typedef	struct _file_obj	_file_obj_t, *pfile_obj_t;
 
 void			fs_init();
 k_status		add_file_obj(pfile_obj_t p_file_obj);
@@ -72,5 +96,6 @@ void			send_file_obj_destroy_msg(pfile_obj_t p_file_obj);
 pfile_obj_t		get_file_obj(u32 id);
 void			set_drv_obj(u32 driver_id);
 bool			has_drv_object();
+u32				get_initrd_fd();
 
 #endif	//!	FS_H_INCLUDE

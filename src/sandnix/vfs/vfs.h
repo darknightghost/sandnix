@@ -19,10 +19,6 @@
 #define	VFS_H_INCLUDE
 
 #include "../../common/common.h"
-#include "./om/om.h"
-#include "./fs/fs.h"
-#include "fs/fs.h"
-#include "../msg/msg.h"
 
 #define	MAX_FILEOBJ_NUM		2048
 #define	NAME_MAX			255
@@ -69,39 +65,23 @@
 #define	S_IWOTH	0x00000002		//Others has write permission
 #define	S_IXOTH	0x00000001		//Others has execute permission
 
+#define	S_IFDIR	0x00004000		//Directory
+
 //Access modes
-#define	F_OK	0x00000000		//Read
+#define	F_OK	0x00000000		//Exist
 #define	X_OK	0x00000001		//Execute
 #define	W_OK	0x00000002		//Write
-#define	R_OK	0x00000004		//Exist
+#define	R_OK	0x00000004		//Read
 
 //Seek
 #define	SEEK_SET	0x00000000
 #define	SEEK_CUR	0x00000001
 #define	SEEK_END	0x00000002
 
-typedef	struct	_dirent {
-	long		d_ino;		//Inode number
-	size_t		d_off;		//Offset to this dirent
-	size_t		d_reclen;	//length of this d_name
-	char		d_name;		//filename (null-terminated)
-} dirent_t, *pdirent_t;
-
-typedef struct {
-	u32			dev_num;	//Device number of device containing file
-	u32			inode;		//Inode number
-	u32			mode;		//Protection
-	u32			nlink;		//Number of hard links
-	u32			uid;		//User ID of owner
-	u32			gid;		//Group ID of owner
-	u32			rdev;		//Device number (if special file)
-	size_t		size;		//Total size, in bytes
-	size_t		block_size;	//Blocksize for filesystem I/O
-	u32			block_num;	//Number of 512B blocks allocated
-	u32			atime;		//Time of last access
-	u32			mtime;		//Time of last modification
-	u32			ctime;		//Time of last status change
-} file_stat_t, *pfile_stat_t;
+#include "om/om.h"
+#include "fs/fs.h"
+#include "../msg/msg.h"
+#include "../mm/mm.h"
 
 typedef	struct	_msg	msg_t, *pmsg_t;
 
@@ -116,6 +96,7 @@ k_status		vfs_umount(char* path);
 //Path
 k_status		vfs_chroot(char* path);
 k_status		vfs_chdir(char* path);
+k_status		vfs_getcwd(char* buf, size_t size);
 
 //File descriptors
 k_status		vfs_fork(u32 dest_process);
@@ -130,7 +111,7 @@ k_status		vfs_read(u32 fd, ppmo_t buf);
 size_t			vfs_write(u32 fd, ppmo_t buf);
 s64				vfs_seek(u32 fd, u32 pos, s64 offset);
 k_status		vfs_stat(char* path, ppmo_t buf);
-k_status		vfs_remove(char* path);
+k_status		vfs_unlink(char* path);
 k_status		vfs_mkdir(char* path, u32 mode);
 k_status		vfs_readdir(u32 fd, ppmo_t buf);
 void			vfs_sync(u32 dev_num);

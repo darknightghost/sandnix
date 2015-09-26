@@ -15,42 +15,24 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../rtl.h"
-#include "../../exceptions/exceptions.h"
-#include "../../pm/pm.h"
+#ifndef	FS_STRUCTS_H_INCLUDE
+#define	FS_STRUCTS_H_INCLUDE
 
-k_status rtl_get_next_name_in_path(char** p_path, char* buf, size_t size)
-{
-	char* p;
-	size_t count;
-	char* p_old;
+#include "../../../../common/common.h"
+#include "../../../rtl/rtl.h"
 
-	p_old = *p_path;
+typedef	struct	_inode {
+	u32		uid;
+	u32		gid;
+	u32		mode;
+	char*	file_name;
+	union {
+		struct {
+			size_t			offset;
+			size_t			len;
+		} file_info;
+		array_list_t	dir_entries;
+	} data;
+} inode_t, *pinode_t;
 
-	while(**p_path == '/') {
-		(*p_path)++;
-	}
-
-	count = 0;
-	p = buf;
-
-	while(**p_path != '/' &&**p_path != '\0') {
-		if(count >= size - 1) {
-			*p_path = p_old;
-			pm_set_errno(ENOMEM);
-			return ENOMEM;
-
-		} else {
-			*p = **p_path;
-		}
-
-		count++;
-		(*p_path)++;
-		p++;
-	}
-
-	*p = '\0';
-
-	pm_set_errno(ESUCCESS);
-	return ESUCCESS;
-}
+#endif	//!	FS_STRUCTS_H_INCLUDE

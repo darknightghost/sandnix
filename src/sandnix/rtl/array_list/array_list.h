@@ -45,5 +45,6 @@ void			rtl_array_list_destroy(parray_list_t p_array,
                                        item_destroyer_callback callback,
                                        void* p_arg,
                                        void* heap);
+size_t			rtl_array_list_item_num(parray_list_t p_array);
 
 #endif	//!	ARRAY_LIST_H_INCLUDE

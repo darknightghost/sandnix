@@ -277,6 +277,11 @@ _CHILD_EXISIS:
 	return 0;
 }
 
+u32 pm_get_crrnt_process()
+{
+	return current_process;
+}
+
 bool pm_get_proc_uid(u32 process_id, u32* p_uid)
 {
 	pm_acqr_spn_lock(&process_table_lock);

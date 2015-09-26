@@ -25,6 +25,7 @@
 typedef	struct {
 	spinlock_t	lock;
 	bool		is_acquired;
+	u32			current_thread;
 	u32			next_thread;
 	list_t		acquire_list;
 } mutex_t, *pmutex_t;

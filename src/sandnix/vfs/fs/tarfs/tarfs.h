@@ -22,4 +22,6 @@
 
 void		tarfs_init();
 
+extern	u32		initrd_volume;
+
 #endif	//!	TARFS_H_INCLUDE
