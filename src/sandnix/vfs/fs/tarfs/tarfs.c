@@ -41,7 +41,6 @@ static	void	kdriver_main(u32 thread_id, void* p_null);
 static	bool	dispatch_message(pmsg_t p_msg);
 static	void	on_open(pmsg_t p_msg);
 static	void	on_read(pmsg_t p_msg);
-static	void	on_write(pmsg_t p_msg);
 static	void	on_readdir(pmsg_t p_msg);
 static	void	on_access(pmsg_t p_msg);
 static	void	on_stat(pmsg_t p_msg);
@@ -51,7 +50,7 @@ static	void		analyse_inodes();
 static	u32			create_volume(u32 dev_num);
 static	pinode_t	create_inode();
 static	void		add_dirent(char* name, u32 inode, char* path);
-static	u32			get_inode(char* path);
+static	pinode_t	get_inode(char* path);
 static	bool		checksum(ptar_record_header_t p_head);
 static	u32			get_num(char* buf, size_t len);
 
@@ -129,7 +128,7 @@ bool dispatch_message(pmsg_t p_msg)
 		break;
 
 	case MSG_WRITE:
-		on_write(p_msg);
+		msg_complete(p_msg, EROFS);
 		break;
 
 	case MSG_READDIR:
@@ -251,6 +250,7 @@ void analyse_inodes()
 
 		p_inode->uid = get_num(p_head->header.uid, 8);
 		p_inode->gid = get_num(p_head->header.gid, 8);
+		p_inode->mtime = get_num(p_head->header.mtime, 12);
 		tar_mode = get_num(p_head->header.mode, 8);
 
 		p_inode->mode = (tar_mode & TAR_UREAD ? S_IRUSR : 0)
@@ -324,8 +324,192 @@ u32 create_volume(u32 dev_num)
 	//Create volume
 }
 
-static	pinode_t	create_inode();
-static	void		add_dirent(char* name, u32 inode, char* path);
-static	u32			get_inode(char* path);
-static	bool		checksum(ptar_record_header_t p_head);
-static	u32			get_num(char* buf, size_t len);
+pinode_t create_inode()
+{
+	u32 index;
+	pinode_t p_inode;
+	k_status status;
+
+	index = rtl_array_list_get_free_index(&inodes);
+
+	if(!OPERATE_SUCCESS) {
+		excpt_panic(ENOMEM,
+		            "Too much inodes!\n");
+	}
+
+	p_inode = mm_hp_alloc(sizeof(inode_t), fs_heap);
+
+	if(p_inode == NULL) {
+		excpt_panic(EFAULT,
+		            "Failed to create inode!\n");
+	}
+
+	p_inode->inode_num = index;
+	status = rtl_array_list_set(&inodes, index, p_inode, fs_heap);
+
+	if(status != ESUCCESS) {
+		excpt_panic(status,
+		            "Failed to add inode!");
+	}
+
+	return p_inode;
+}
+
+void add_dirent(char* name, u32 inode, char* path)
+{
+	pinode_t p_dir_inode;
+	pdirent_t p_dirent;
+	u32 index;
+	k_status status;
+
+	//Get inode
+	p_dir_inode = get_inode(path);
+
+	if(p_dir_inode == NULL) {
+		excpt_panic(pm_get_errno(),
+		            "Failed to add dir entry!\n");
+	}
+
+	if(!p_dir_inode->mode & S_IFDIR) {
+		excpt_panic(ENOTDIR,
+		            "The file is note a directory!\n");
+	}
+
+	//Add directory entery
+	index = rtl_array_list_get_free_index(&(p_dir_inode->data.dir_entries));
+
+	if(!OPERATE_SUCCESS) {
+		excpt_panic(pm_get_errno(),
+		            "Failed to add dir entry!\n");
+	}
+
+	p_dirent = mm_hp_alloc(sizeof(dirent_t) + rtl_strlen(name),
+	                       fs_heap);
+
+	if(p_dirent == NULL) {
+		excpt_panic(EFAULT,
+		            "Failed to add dir entry!\n");
+	}
+
+	p_dirent->d_ino = inode;
+	p_dirent->d_off = index;
+	p_dirent->d_reclen = rtl_strlen(name) + 1;
+	rtl_strcpy_s(&(p_dirent->d_name), p_dirent->d_reclen, name);
+
+	status = rtl_array_list_set(&(p_dir_inode->data.dir_entries),
+	                            index,
+	                            p_dirent,
+	                            fs_heap);
+
+	if(status != ESUCCESS) {
+		pm_set_errno(status,
+		             "Failed to add dir entery!\n");
+	}
+
+	return;
+}
+
+pinode_t get_inode(char* path)
+{
+	char buf[NAME_MAX + 1];
+	char* p;
+	k_status status;
+	u32 index;
+	pinode_t p_inode;
+	pdirent_t p_dir_entry;
+
+	if(*path == '\0') {
+		//Root inode
+		return rtl_array_list_get(&inodes, 0);
+	}
+
+	p = path;
+	p_inode = rtl_array_list_get(&inodes, 0);
+	ASSERT(p_inode != NULL);
+
+	for(status = rtl_get_next_name_in_path(&p, buf, NAME_MAX + 1);
+	    *buf != '\0';
+	    status = rtl_get_next_name_in_path(&p, buf, NAME_MAX + 1)) {
+
+		if(status == EOVERFLOW) {
+			break;
+
+		} else if(status != ESUCCESS) {
+			pm_set_errno(status);
+			return NULL;
+		}
+
+		//Get inode
+		if(!p_inode->mode & S_IFDIR) {
+			pm_set_errno(ENOTDIR);
+			return NULL;
+		}
+
+		for(index = rtl_array_list_get_next_index(&(p_inode->data.dir_entries),
+		            0);
+		    OPERATE_SUCCESS;
+		    index = rtl_array_list_get_next_index(&(p_inode->data.dir_entries),
+		            index + 1)) {
+			p_dir_entry = rtl_array_list_get(&(p_inode->data.dir_entries),
+			                                 index);
+			ASSERT(p_dir_entry != NULL);
+
+			if(rtl_strcmp(buf, &(p_dir_entry->d_name)) == 0) {
+				//Found the inode
+				p_inode = rtl_array_list_get(&inodes, p_dir_entry->d_ino);
+				ASSERT(p_inode);
+				goto _INODE_FOUND;
+			}
+		}
+
+		//Inode not found
+		pm_set_errno(ENOENT);
+		return NULL;
+
+_INODE_FOUND:
+	}
+
+	pm_set_errno(ESUCCESS);
+	return p_inode;
+}
+
+bool checksum(ptar_record_header_t p_head)
+{
+	u32 sum;
+	u32 sum_recorded;
+	u32 i;
+
+	sum_recorded = get_num(p_head->header.chksum, 8);
+	rtl_memset(p_head->header.chksum, ' ', 8);
+
+	for(i = 0, sum = 0;
+	    i < sizeof(p_head->header);
+	    i++) {
+		sum += p_head->block[i];
+	}
+
+	if(sum_recorded != sum) {
+		return false;
+
+	} else {
+		return true;
+	}
+}
+
+u32 get_num(char* buf, size_t len)
+{
+	u32 ret;
+	char* p;
+
+	for(p = buf;
+	    *p <= '0' && *p >= '7' && p - buf < len;
+	    p++);
+
+	for(ret = 0;
+	    *p >= '0' && *p <= '7' && p - buf < len;
+	    p++) {
+		ret = ret * 8 + *p - '0';
+	}
+
+	return ret;
+}

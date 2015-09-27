@@ -26,6 +26,7 @@ typedef	struct	_inode {
 	u32		uid;
 	u32		gid;
 	u32		mode;
+	u32		mtime;
 	union {
 		struct {
 			size_t			offset;
