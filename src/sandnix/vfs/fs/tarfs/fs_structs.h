@@ -22,6 +22,7 @@
 #include "../../../rtl/rtl.h"
 
 typedef	struct	_inode {
+	u32		inode_num;
 	u32		uid;
 	u32		gid;
 	u32		mode;

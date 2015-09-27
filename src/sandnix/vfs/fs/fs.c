@@ -1093,10 +1093,9 @@ size_t vfs_write(u32 fd, ppmo_t buf)
 
 }
 
-s64 vfs_seek(u32 fd, u32 pos, s64 offset)
+size_t vfs_seek(u32 fd, u32 pos, s64 offset)
 {
 	pfile_desc_t p_fd;
-	s64 old_offset;
 
 	//Get file descriptor
 	p_fd = get_file_descriptor(fd);
@@ -1110,8 +1109,6 @@ s64 vfs_seek(u32 fd, u32 pos, s64 offset)
 		pm_set_errno(ESPIPE);
 		return 0;
 	}
-
-	old_offset = p_fd->offset;
 
 	//Get start pos
 	switch(pos) {
@@ -1151,7 +1148,7 @@ s64 vfs_seek(u32 fd, u32 pos, s64 offset)
 	(p_fd->offset) += offset;
 
 	pm_set_errno(ESUCCESS);
-	return old_offset - p_fd->offset;
+	return p_fd->offset;
 }
 
 k_status vfs_stat(char* path, ppmo_t buf)

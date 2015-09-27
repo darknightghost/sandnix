@@ -26,6 +26,7 @@
 #include "../ramdisk/ramdisk.h"
 
 #define	MAX_INODE_NUM	1024
+#define	MAX_DIRENT_NUM	512
 
 u32		initrd_volume;
 
@@ -46,11 +47,13 @@ static	void	on_access(pmsg_t p_msg);
 static	void	on_stat(pmsg_t p_msg);
 static	void	on_close(pmsg_t p_msg);
 
-static	k_status	analyse_inodes();
+static	void		analyse_inodes();
 static	u32			create_volume(u32 dev_num);
 static	pinode_t	create_inode();
-static	k_status	add_dirent(char* name, u32 inode, u32 parent_inode);
+static	void		add_dirent(char* name, u32 inode, char* path);
 static	u32			get_inode(char* path);
+static	bool		checksum(ptar_record_header_t p_head);
+static	u32			get_num(char* buf, size_t len);
 
 void tarfs_init()
 {
@@ -152,12 +155,18 @@ bool dispatch_message(pmsg_t p_msg)
 	return true;
 }
 
-k_status analyse_inodes()
+void analyse_inodes()
 {
 	pinode_t p_inode;
 	k_status status;
 	pmsg_read_info_t p_info;
 	pmsg_read_data_t p_data;
+	u8*	p_block;
+	ptar_record_header_t p_head;
+	u32 tar_mode;
+	char* p_name;
+	u32 i, block_num;
+	size_t size;
 
 	//Create root inode
 	p_inode = create_inode();
@@ -170,7 +179,7 @@ k_status analyse_inodes()
 	}
 
 	status = rtl_array_list_init(&(p_inode->data.dir_entries),
-	                             MAX_INODE_NUM,
+	                             MAX_DIRENT_NUM,
 	                             fs_heap);
 
 	if(static != ESUCCESS) {
@@ -198,16 +207,125 @@ k_status analyse_inodes()
 		            "Failed to map read buffer!");
 	}
 
-	p_inode = (pmsg_read_info_t)p_read_buf;
+	p_info = (pmsg_read_info_t)p_read_buf;
 	p_data = (pmsg_read_data_t)p_read_buf;
+
+	//Get inodes
+	while(1) {
+		//Read block
+		p_info->len = TAR_BLOCK_SIZE;
+		status = vfs_read(initrd_fd, p_read_pmo);
+
+		if(status != ESUCCESS) {
+			excpt_panic(status,
+			            "Read initrd error!\n");
+		}
+
+		if(p_data->len == 0) {
+			break;
+		}
+
+		//Analyse head
+		p_head = (ptar_record_header_t)(&(p_data->data));
+
+		if(p_head->header.name[0] == '\0'
+		   && p_head->header.chksum[0] == '\0'
+		   && p_head->header.gname[0] == '\0'
+		   && p_head->header.uname[0] == '\0') {
+			break;
+		}
+
+		if(!checksum(p_head)) {
+			excpt_panic(EIO,
+			            "Initrd has been broken!\n");
+		}
+
+		//Create inode
+		p_inode = create_inode();
+		status = pm_get_errno();
+
+		if(statuc != ESUCCESS) {
+			excpt_panic(status,
+			            "Failed to create inode of initrd.\n");
+		}
+
+		p_inode->uid = get_num(p_head->header.uid, 8);
+		p_inode->gid = get_num(p_head->header.gid, 8);
+		tar_mode = get_num(p_head->header.mode, 8);
+
+		p_inode->mode = (tar_mode & TAR_UREAD ? S_IRUSR : 0)
+		                | (tar_mode & TAR_UEXEC ? S_IXUSR : 0)
+		                | (tar_mode & TAR_GREAD ? S_IRGRP : 0)
+		                | (tar_mode & TAR_GEXEC ? S_IXGRP : 0)
+		                | (tar_mode & TAR_OREAD ? S_IROTH : 0)
+		                | (tar_mode & TAR_OEXEC ? S_IXOTH : 0)
+		                | (p_head->header.linkflag == TAR_LF_DIR ? S_IFDIR : 0);
+
+		if(p_inode->mode & S_IFDIR) {
+			//Directory
+			status = rtl_array_list_init(&(p_inode->data.dir_entries),
+			                             MAX_DIRENT_NUM,
+			                             fs_heap);
+
+			if(static != ESUCCESS) {
+				excpt_panic(status,
+				            "Failed to create inode of initrd.\n");
+			}
+
+		} else {
+			//Normal file
+			p_inode->data.file_info.offset = vfs_seek(initrd_fd, SEEK_CUR, 0);
+			p_inode->data.file_info.len = get_num(p_head->header.size, 12);
+		}
+
+		//Add directry entery
+		p_name = p_head->header.name + rtl_strlen(p_head->header.name);
+		p_name--;
+
+		while(1) {
+			p_name--;
+
+			if(p_name == p_head->header.name) {
+				add_dirent(p_head->header.name, p_inode->inode_num, "");
+				break;
+
+			} else if(*p_name == '/') {
+				p_name = '\0';
+				add_dirent(p_name, p_inode->inode_num, p_head->header.name);
+				break;
+			}
+		}
+
+		//Jump to next block
+		size = get_num(p_head->header.size, 12);
+
+		for(i = 0, block_num = size / TAR_BLOCK_SIZE + (size % TAR_BLOCK_SIZE ? 1 : 0);
+		    i < block_num;
+		    i++) {
+			p_data->len = TAR_BLOCK_SIZE;
+			vfs_read(initrd_fd, p_read_pmo);
+		}
+	}
+
+	return;
 }
 
 u32 create_volume(u32 dev_num)
 {
+	k_status status;
+
 	//Open ramdisk device
 	initrd_fd = get_initrd_fd();
 
 	//Analyse inodes
+	analyse_inodes();
+
 
 	//Create volume
 }
+
+static	pinode_t	create_inode();
+static	void		add_dirent(char* name, u32 inode, char* path);
+static	u32			get_inode(char* path);
+static	bool		checksum(ptar_record_header_t p_head);
+static	u32			get_num(char* buf, size_t len);
