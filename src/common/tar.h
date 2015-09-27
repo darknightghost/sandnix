@@ -51,7 +51,7 @@ typedef	union	record {
 #pragma pack()
 
 //The checksum field is filled with this while the checksum is computed.
-#define	chkblanks	"        "		//8 blanks, no null
+#define	CHK_BLANKS	"        "		//8 blanks, no null
 
 //The magic field is filled with this if uname and gname are valid.
 #define	MAGIC		"ustar  "		//7 chars and a null

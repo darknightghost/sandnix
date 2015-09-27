@@ -20,9 +20,12 @@
 #include "../../../debug/debug.h"
 #include "../../../rtl/rtl.h"
 #include "../../../exceptions/exceptions.h"
+#include "../../../pm/pm.h"
 #include "../../../../common/tar.h"
 #include "fs_structs.h"
 #include "../ramdisk/ramdisk.h"
+
+#define	MAX_INODE_NUM	1024
 
 u32		initrd_volume;
 
@@ -30,6 +33,8 @@ static	u32				tarfs_driver;
 static	void*			fs_heap;
 static	u32				initrd_fd;
 static	array_list_t	inodes;
+static	ppmo_t			p_read_pmo;
+static	u8				p_read_buf;
 
 static	void	kdriver_main(u32 thread_id, void* p_null);
 static	bool	dispatch_message(pmsg_t p_msg);
@@ -43,6 +48,9 @@ static	void	on_close(pmsg_t p_msg);
 
 static	k_status	analyse_inodes();
 static	u32			create_volume(u32 dev_num);
+static	pinode_t	create_inode();
+static	k_status	add_dirent(char* name, u32 inode, u32 parent_inode);
+static	u32			get_inode(char* path);
 
 void tarfs_init()
 {
@@ -58,7 +66,7 @@ void tarfs_init()
 		            "Failed to create tarfs heap!\n");
 	}
 
-	status = rtl_array_list_init(inodes, 1024, fs_heap);
+	status = rtl_array_list_init(inodes, MAX_INODE_NUM, fs_heap);
 
 	if(status != ESUCCESS) {
 		excpt_panic(status, "Failed to initialize inode table of tarfs!\n");
@@ -146,8 +154,52 @@ bool dispatch_message(pmsg_t p_msg)
 
 k_status analyse_inodes()
 {
+	pinode_t p_inode;
+	k_status status;
+	pmsg_read_info_t p_info;
+	pmsg_read_data_t p_data;
+
 	//Create root inode
+	p_inode = create_inode();
+
+	status = pm_get_errno();
+
+	if(statuc != ESUCCESS) {
+		excpt_panic(status,
+		            "Failed to create first inode of initrd.\n");
+	}
+
+	status = rtl_array_list_init(&(p_inode->data.dir_entries),
+	                             MAX_INODE_NUM,
+	                             fs_heap);
+
+	if(static != ESUCCESS) {
+		excpt_panic(status,
+		            "Failed to create first inode of initrd.\n");
+	}
+
+	p_inode->gid = 0;
+	p_inode->uid = 0;
+	p_inode->mode = S_IRUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH
+	                | S_IFDIR;
+
 	//Scan ramdisk
+	p_read_pmo = mm_pmo_create(4096);
+
+	if(p_read_pmo == NULL) {
+		excpt_panic(pm_get_errno(),
+		            "Failed to create read buffer!");
+	}
+
+	p_read_buf = mm_pmo_map(NULL, p_read_pmo, false);
+
+	if(p_read_buf == NULL) {
+		excpt_panic(pm_get_errno(),
+		            "Failed to map read buffer!");
+	}
+
+	p_inode = (pmsg_read_info_t)p_read_buf;
+	p_data = (pmsg_read_data_t)p_read_buf;
 }
 
 u32 create_volume(u32 dev_num)

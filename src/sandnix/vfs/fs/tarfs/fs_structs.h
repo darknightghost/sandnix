@@ -25,13 +25,12 @@ typedef	struct	_inode {
 	u32		uid;
 	u32		gid;
 	u32		mode;
-	char*	file_name;
 	union {
 		struct {
 			size_t			offset;
 			size_t			len;
 		} file_info;
-		array_list_t	dir_entries;
+		array_list_t		dir_entries;
 	} data;
 } inode_t, *pinode_t;
 
