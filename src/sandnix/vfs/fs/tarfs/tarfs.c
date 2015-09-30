@@ -36,6 +36,8 @@ static	u32				initrd_fd;
 static	array_list_t	inodes;
 static	ppmo_t			p_read_pmo;
 static	u8				p_read_buf;
+static	hash_table_t	path_table;
+static	array_list_t	file_id_table;
 
 static	void	kdriver_main(u32 thread_id, void* p_null);
 static	bool	dispatch_message(pmsg_t p_msg);
@@ -46,13 +48,16 @@ static	void	on_access(pmsg_t p_msg);
 static	void	on_stat(pmsg_t p_msg);
 static	void	on_close(pmsg_t p_msg);
 
-static	void		analyse_inodes();
-static	u32			create_volume(u32 dev_num);
-static	pinode_t	create_inode();
-static	void		add_dirent(char* name, u32 inode, char* path);
-static	pinode_t	get_inode(char* path);
-static	bool		checksum(ptar_record_header_t p_head);
-static	u32			get_num(char* buf, size_t len);
+static	void				analyse_inodes();
+static	u32					create_volume(u32 dev_num);
+static	pinode_t			create_inode();
+static	void				add_dirent(char* name, u32 inode, char* path);
+static	pinode_t			get_inode(char* path);
+static	bool				checksum(ptar_record_header_t p_head);
+static	u32					get_num(char* buf, size_t len);
+static	u32					path_hash(char* path);
+static	bool				path_comparer(char* path1, char* path2);
+static	pfile_obj_info_t	get_fileobj_info(char* path, u32 mode, u32 process);
 
 void tarfs_init()
 {
@@ -72,6 +77,19 @@ void tarfs_init()
 
 	if(status != ESUCCESS) {
 		excpt_panic(status, "Failed to initialize inode table of tarfs!\n");
+	}
+
+	status = rtl_array_list_init(file_id_table, MAX_FILEOBJ_NUM, fs_heap);
+
+	if(status != ESUCCESS) {
+		excpt_panic(status, "Failed to initialize file id table of tarfs!\n");
+	}
+
+	status = rtl_hash_table_init(&path_table, 0, 0xFFFF, (hash_func_t)path_hash,
+	                             (compare_func_t)path_comparer, fs_heap);
+
+	if(status != ESUCCESS) {
+		excpt_panic(status, "Failed to initialize path hash table of tarfs!\n");
 	}
 
 	//Create driver process
@@ -145,6 +163,10 @@ bool dispatch_message(pmsg_t p_msg)
 
 	case MSG_CLOSE:
 		on_close(p_msg);
+		break;
+
+	case MSG_SYNC:
+		msg_complete(p_msg, ESUCCESS);
 		break;
 
 	default:
@@ -313,6 +335,8 @@ void analyse_inodes()
 u32 create_volume(u32 dev_num)
 {
 	k_status status;
+	u32 volume_dev;
+	pdevice_obj_t p_device;
 
 	//Open ramdisk device
 	initrd_fd = get_initrd_fd();
@@ -320,8 +344,17 @@ u32 create_volume(u32 dev_num)
 	//Analyse inodes
 	analyse_inodes();
 
-
 	//Create volume
+	p_device = vfs_create_dev_object("init_volume");
+	p_device->gid = 0;
+	p_device->device_number = MK_DEV(vfs_get_dev_major_by_name("volume",
+	                                 DEV_TYPE_CHAR),
+	                                 0);
+	p_device->block_size = 1;
+	vfs_add_device(p_device, p_driver->driver_id);
+	volume_dev = p_device->device_number;
+
+	return volume_dev;
 }
 
 pinode_t create_inode()
@@ -512,4 +545,233 @@ u32 get_num(char* buf, size_t len)
 	}
 
 	return ret;
+}
+
+u32 path_hash(char* path)
+{
+	u32 hash = 0;
+	u32 i;
+	u32 len;
+
+	len = rtl_strlen(path);
+
+	for(i = 0; i < len; i++) {
+		hash = 33 * hash + *(path + i);
+	}
+
+	return hash % 0x00010000;
+}
+
+bool path_comparer(char* path1, char* path2)
+{
+	if(rtl_strcmp(path1, path2) == 0) {
+		return true;
+	}
+
+	return false;
+}
+
+pfile_obj_info_t get_fileobj_info(char* path, u32 mode, u32 process)
+{
+	pfile_obj_info_t p_info;
+	pinode_t p_inode;
+	u32 uid;
+	u32 gid;
+	k_status status;
+	size_t len;
+
+	//Get file object
+	p_info = rtl_hash_table_get(&path_table, path);
+
+	if(p_info != NULL) {
+		return p_info;
+	}
+
+	//Get inode
+	p_inode = get_inode(path);
+
+	if(p_inode == NULL) {
+		pm_set_errno(ENOENT);
+		return NULL;
+	}
+
+	//Check privilege
+	if(mode & O_CREAT) {
+		pm_set_errno(EROFS);
+		return NULL;
+	}
+
+	if((mode & O_WRONLY) || (mode & O_RDWR)) {
+		pm_set_errno(EROFS);
+		return NULL;
+	}
+
+	if((mode & O_DIRECTORY) && !(p_inode->mode & S_IFDIR)) {
+		pm_set_errno(ENOTDIR);
+		return NULL;
+	}
+
+	if((!(mode & O_DIRECTORY)) && (p_inode->mode & S_IFDIR)) {
+		pm_set_errno(EISDIR);
+		return NULL;
+	}
+
+	uid = pm_get_proc_euid(process);
+	gid = pm_get_proc_egid(process);
+
+	if(p_inode->uid == uid) {
+		//Owner
+		if(mode & O_RDONLY) {
+			if(!(p_inode->mode & S_IRUSR)) {
+				pm_set_errno(EACCES);
+				return NULL;
+			}
+		}
+
+		if(mode & O_EXCL) {
+			if(!(p_node->mode & S_IXUSR)) {
+				pm_set_errno(EACCES);
+				return NULL;
+			}
+		}
+
+	} else if(p_inode->gid == gid) {
+		//Group
+		if(mode & O_RDONLY) {
+			if(!(p_inode->mode & S_IRGRP)) {
+				pm_set_errno(EACCES);
+				return NULL;
+			}
+		}
+
+		if(mode & O_EXCL) {
+			if(!(p_node->mode & S_IXGRP)) {
+				pm_set_errno(EACCES);
+				return NULL;
+			}
+		}
+
+	} else {
+		//Others
+		if(mode & O_RDONLY) {
+			if(!(p_inode->mode & S_IROTH)) {
+				pm_set_errno(EACCES);
+				return NULL;
+			}
+		}
+
+		if(mode & O_EXCL) {
+			if(!(p_node->mode & S_IXOTH)) {
+				pm_set_errno(EACCES);
+				return NULL;
+			}
+		}
+	}
+
+	//Create file object
+	p_info = mm_hp_alloc(sizeof(file_obj_info_t), fs_heap);
+
+	if(p_info == NULL) {
+		pm_set_errno(EFAULT);
+		return NULL;
+	}
+
+	len = rtl_strlen(path) + 1;
+	p_info->path = mm_hp_alloc(len, fs_heap);
+
+	if(p_info->path == NULL) {
+		mm_hp_free(p_info);
+		pm_set_errno(EFAULT);
+		return NULL;
+	}
+
+	rtl_strcpy_s(p_info->path, len, path);
+
+	p_info->file_id == vfs_create_file_object();
+	status = pm_get_errno();
+
+	if(status != ESUCCESS) {
+		mm_hp_free(p_info->path, fs_heap);
+		mm_hp_free(p_info, fs_heap);
+		pm_set_errno(status);
+		return NULL;
+	}
+
+	p_info->p_inode = p_inode;
+
+	rtl_hash_table_set(&path_table, p_info->path, p_info, fs_heap);
+	ASSERT(OPERATE_SUCCESS);
+
+	pm_set_errno(ESUCCESS);
+	return p_info;
+}
+
+void on_open(pmsg_t p_msg)
+{
+	pmsg_open_info_t p_info;
+	pfile_obj_info_t p_fo_info;
+	k_status status;
+
+	if(!(p_msg->flags.properties.pmo_buf)) {
+		msg_complete(p_msg, EINVAL);
+		return;
+	}
+
+	//Map buffer
+	p_info = mm_pmo_map(NULL, p_msg->buf.pmo_addr, false);
+
+	if(p_info == NULL) {
+		msg_complete(p_msg, pm_get_errno());
+		return;
+	}
+
+	//Get file object
+	p_fo_info = get_fileobj_info(&(p_info->path), p_info->mode, p_info->process);
+
+	if(p_fo_info == NULL) {
+		status = pm_get_errno();
+		mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
+		msg_complete(p_msg, status);
+		return;
+	}
+
+	p_info->file_object = p_fo_info->file_id;
+
+	if(p_info->mode & O_DIRECTORY) {
+		p_info->file_size = rtl_array_list_item_num(&p_inode->data.dir_entries);
+
+	} else {
+		p_info->file_size = p_fo_info->p_inode->data.file_info.len;
+	}
+
+	p_info->serial_read = false;
+
+	mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
+	msg_complete(p_msg, ESUCCESS);
+	return;
+}
+
+void on_read(pmsg_t p_msg)
+{
+
+}
+
+void on_readdir(pmsg_t p_msg)
+{
+
+}
+
+void on_access(pmsg_t p_msg)
+{
+
+}
+
+void on_stat(pmsg_t p_msg)
+{
+
+}
+
+void on_close(pmsg_t p_msg)
+{
+
 }

@@ -136,6 +136,10 @@ bool dispatch_message(pmsg_t p_msg)
 			on_readdir(p_msg);
 			break;
 
+		case MSG_SYNC:
+			msg_complete(p_msg, ESUCCESS);
+			break;
+
 		default:
 			msg_complete(p_msg, ENOTSUP);
 		}

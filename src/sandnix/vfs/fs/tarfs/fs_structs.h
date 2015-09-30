@@ -36,4 +36,10 @@ typedef	struct	_inode {
 	} data;
 } inode_t, *pinode_t;
 
+typedef	struct	{
+	char*		path;
+	pinode_t	p_inode;
+	u32			file_id;
+} file_obj_info_t, pfile_obj_info_t;
+
 #endif	//!	FS_STRUCTS_H_INCLUDE

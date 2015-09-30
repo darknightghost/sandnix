@@ -33,8 +33,8 @@ static	mutex_t			dev_filename_index_lock;
 u32		devfs_driver;
 
 static	u32				dev_mj_hash(char* name);
-static	bool			dev_mj_name_cmp(pdev_mj_info_t p_dev1,
-                                        pdev_mj_info_t p_dev2);
+static	bool			dev_mj_name_cmp(char* p_name1,
+                                        char* p_name2);
 static	void			driver_destroyer(pdriver_obj_t p_obj);
 static	void			device_destroyer(pdevice_obj_t p_dev);
 
@@ -682,7 +682,43 @@ k_status vfs_msg_forward(pmsg_t p_msg, u32 dev_num)
 	return msg_forward(p_msg, p_dev_obj->file_obj.p_driver->msg_queue);
 }
 
-void			vfs_sync(u32 dev_num);
+void vfs_sync(u32 dev_num)
+{
+	pmsg_t p_msg;
+	k_status status;
+	k_status complete_status;
+	u32 result;
+
+	status = msg_create(&p_msg, sizeof(msg_t));
+
+	if(status != ESUCCESS) {
+		pm_set_errno(status);
+		return;
+	}
+
+	p_msg->flags.flags = 0;
+	p_msg->message = MSG_SYNC;
+
+	status = vfs_send_dev_message(
+	             kernel_drv_num,
+	             dev_num,
+	             p_msg,
+	             &result,
+	             &complete_status);
+
+	if(status != ESUCCESS) {
+		pm_set_errno(status);
+		return;
+	}
+
+	if(result != MSTATUS_COMPLETE) {
+		pm_set_errno(ENODEV);
+		return;
+	}
+
+	pm_set_errno(complete_status);
+	return;
+}
 
 u32 dev_mj_hash(char* name)
 {
@@ -699,9 +735,9 @@ u32 dev_mj_hash(char* name)
 	return hash % 0x00010000;
 }
 
-bool dev_mj_name_cmp(pdev_mj_info_t p_dev1, pdev_mj_info_t p_dev2)
+bool dev_mj_name_cmp(char* p_name1, char* p_name2)
 {
-	if(rtl_strcmp(p_dev1->file_obj.obj.name, p_dev2->file_obj.obj.name) == 0) {
+	if(rtl_strcmp(p_name2, p_name2) == 0) {
 		return true;
 	}
 
