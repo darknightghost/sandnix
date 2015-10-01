@@ -149,6 +149,10 @@ bool dispatch_message(pmsg_t p_msg)
 		msg_complete(p_msg, EROFS);
 		break;
 
+	case MSG_UNLINK:
+		msg_complete(p_msg, EROFS);
+		break;
+
 	case MSG_READDIR:
 		on_readdir(p_msg);
 		break;
@@ -391,7 +395,7 @@ pinode_t create_inode()
 void add_dirent(char* name, u32 inode, char* path)
 {
 	pinode_t p_dir_inode;
-	pdirent_t p_dirent;
+	pdirent_t p_dirent, p_prev_dirent;;
 	u32 index;
 	k_status status;
 
@@ -424,8 +428,18 @@ void add_dirent(char* name, u32 inode, char* path)
 		            "Failed to add dir entry!\n");
 	}
 
+	if(index == 0) {
+		p_dirent->d_off = 0;
+
+	} else {
+		p_prev_dirent = rtl_array_list_get(&(p_dir_inode->data.dir_entries),
+		                                   index - 1);
+		ASSERT(p_prev_dirent != NULL);
+		p_dirent->d_off = p_prev_dirent->d_off
+		                  + sizeof(dirent_t) + p_prev_dirent->d_reclen - 1;
+	}
+
 	p_dirent->d_ino = inode;
-	p_dirent->d_off = index;
 	p_dirent->d_reclen = rtl_strlen(name) + 1;
 	rtl_strcpy_s(&(p_dirent->d_name), p_dirent->d_reclen, name);
 
@@ -616,8 +630,15 @@ pfile_obj_info_t get_fileobj_info(char* path, u32 mode, u32 process)
 		return NULL;
 	}
 
-	uid = pm_get_proc_euid(process);
-	gid = pm_get_proc_egid(process);
+	if(!pm_get_proc_euid(process, &uid)) {
+		pm_set_errno(ESRCH);
+		return NULL;
+	}
+
+	if(!pm_get_proc_egid(process, &gid)) {
+		pm_set_errno(ESRCH);
+		return NULL;
+	}
 
 	if(p_inode->uid == uid) {
 		//Owner
@@ -701,6 +722,8 @@ pfile_obj_info_t get_fileobj_info(char* path, u32 mode, u32 process)
 
 	rtl_hash_table_set(&path_table, p_info->path, p_info, fs_heap);
 	ASSERT(OPERATE_SUCCESS);
+	rtl_array_list_set(&file_id_table, p_info->file_id, p_info, fs_heap);
+	ASSERT(OPERATE_SUCCESS);
 
 	pm_set_errno(ESUCCESS);
 	return p_info;
@@ -753,17 +776,248 @@ void on_open(pmsg_t p_msg)
 
 void on_read(pmsg_t p_msg)
 {
+	pmsg_read_info_t p_info;
+	pmsg_read_data_t p_data;
+	k_status status;
+	pfile_obj_info_t p_fileobj_info;
 
+	if(!p_msg->flags.properties.pmo_buf) {
+		msg_complete(p_msg, EINVAL);
+		return;
+	}
+
+	//Map buffer
+	p_info = mm_pmo_map(NULL, p_msg->buf.pmo_addr, false);
+
+	if(p_info == NULL) {
+		msg_complete(p_msg, pm_set_errno());
+		return;
+	}
+
+	p_fileobj_info = rtl_array_list_get(&file_id_table, p_info->file_obj);
+
+	if(p_fileobj_info == NULL) {
+		status = pm_get_errno();
+		mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
+		msg_complete(p_msg, status);
+		return;
+	}
+
+	if(p_fileobj_info->p_inode->mode & S_IFDIR) {
+		mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
+		msg_complete(p_msg, EISDIR);
+		return;
+	}
+
+	if(p_info->offset >= p_fileobj_info->p_inode->data.file_info.len) {
+		p_data = (pmsg_read_data_t)p_info;
+		p_data->len = 0;
+		mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
+		msg_complete(p_msg, ESUCCESS);
+		return;
+	}
+
+	//Forward the message
+	if(p_info->len + p_info->offset > p_fileobj_info->p_inode->data.file_info.len) {
+		p_info->len = p_fileobj_info->p_inode->data.file_info.len
+		              - p_info->offset;
+	}
+
+	p_info->offset += p_fileobj_info->p_inode->data.file_info.offset;
+
+	mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
+	vfs_msg_forward(p_msg, initrd_ramdisk);
+	return;
 }
 
 void on_readdir(pmsg_t p_msg)
 {
+	pmsg_readdir_info_t p_info;
+	pmsg_read_data_t p_data;
+	pfile_obj_info_t p_fo_info;
+	pinode_t p_inode;
+	u64 offset;
+	size_t read_len;
+	size_t count;
+	pdirent_t p_dir_entry;
+	u32 i;
+	u8* p;
+	u8* p_buf;
+	size_t len;
 
+	if(!p_msg->flags.properties.pmo_buf) {
+		msg_complete(p_msg, EINVAL);
+		return;
+	}
+
+	//Map buffer
+	p_info = mm_pmo_map(NULL, p_msg->buf.pmo_addr, false);
+
+	if(p_info == NULL) {
+		msg_complete(p_msg, pm_get_errno());
+		return;
+	}
+
+	p_data = (pmsg_read_data_t)p_info;
+
+	//Look for inode
+	p_fo_info = rtl_array_list_get(&file_id_table, p_info->file_obj);
+
+	if(p_fo_info == NULL) {
+		mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
+		msg_complete(p_msg, EBADFD);
+		return;
+	}
+
+	p_inode = p_fo_info->p_inode;
+
+	if(!p_inode->mode & S_IFDIR) {
+		mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
+		msg_complete(p_msg, ENOTDIR);
+		return;
+	}
+
+	//Read directory
+	offset = p_info->offset;
+	read_len = 0;
+	count = p_info->count;
+	p_buf = &(p_data->data);
+
+	for(i = rtl_array_list_get_next_index(&(p_inode->data.dir_entries), 0);
+	    OPERATE_SUCCESS;
+	    i = rtl_array_list_get_next_index(&(p_inode->data.dir_entries), i + 1)) {
+		p_dir_entry = rtl_array_list_get(&(p_inode->data.dir_entries), i);
+		ASSERT(p_dir_entry != NULL);
+
+		if(offset > 0) {
+			//Offset
+			if(offset >= sizeof(dirent_t) + p_dir_entry->d_reclen - 1) {
+				offset -= sizeof(dirent_t) + p_dir_entry->d_reclen - 1;
+
+			} else {
+				p = (u8*)p_dir_entry;
+				p += offset;
+				len = sizeof(dirent_t) + p_dir_entry->d_reclen - 1 - offset;
+				rtl_memcpy(&(p_data->data), p,
+				           (count > len
+				            ? len
+				            : count));
+				read_len = (count > len ? len : count);
+				p_buf += offset;
+				offset = 0;
+			}
+
+			continue;
+		}
+
+		if(read_len > count) {
+			break;
+		}
+
+		//Read directory enteries
+		if(sizeof(dirent_t) + p_dir_entry->d_reclen - 1 <= count - read_len) {
+			rtl_memcpy(p_buf, p_dir_entry, sizeof(dirent_t) + p_dir_entry->d_reclen - 1);
+			read_len += sizeof(dirent_t) + p_dir_entry->d_reclen - 1;
+
+		} else {
+			rtl_memcpy(p_buf, p_dir_entry, count - read_len);
+			read_len = count;
+		}
+
+	}
+
+	p_data->len = read_len;
+	mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
+	msg_complete(p_msg, ESUCCESS);
+
+	return;
 }
 
 void on_access(pmsg_t p_msg)
 {
+	pmsg_access_info_t p_info;
+	pinode_t p_inode;
+	u32 uid;
+	u32 gid;
 
+	//Check buf type
+	if(!p_msg->flags.properties.direct_buf) {
+		msg_complete(p_msg, EINVAL);
+		return;
+	}
+
+	p_info = (pmsg_access_info_t)(p_msg->buf.addr);
+
+	//Get inode
+	p_inode = get_inode(&(p_info->path));
+
+	if(p_inode == NULL) {
+		msg_complete(p_msg, ENOENT);
+		return;
+	}
+
+	//Write
+	if(p_info->mode & W_OK) {
+		msg_complete(p_msg, EROFS);
+		return;
+	}
+
+	if(!pm_get_proc_euid(p_info->process, &uid)) {
+		msg_complete(p_msg, ESRCH);
+		return;
+	}
+
+	if(!pm_get_proc_egid(p_info->process, &gid)) {
+		msg_complete(p_msg, ESRCH);
+		return;
+	}
+
+	//Read
+	if(p_info->mode & R_OK) {
+		if(uid == p_inode->uid) {
+			if(!p_inode->mode & S_IRUSR) {
+				msg_complete(p_msg, EACCES);
+				return;
+			}
+
+		} else if(gid == p_inode->gid) {
+			if(!p_inode->mode & S_IRGRP) {
+				msg_complete(p_msg, EACCES);
+				return;
+			}
+
+		} else {
+			if(!p_inode->mode & S_IROTH) {
+				msg_complete(p_msg, EACCES);
+				return;
+			}
+		}
+	}
+
+	//Execute
+	if(p_info->mode & W_OK) {
+		if(uid == p_inode->uid) {
+			if(!p_inode->mode & S_IWUSR) {
+				msg_complete(p_msg, EACCES);
+				return;
+			}
+
+		} else if(gid == p_inode->gid) {
+			if(!p_inode->mode & S_IWGRP) {
+				msg_complete(p_msg, EACCES);
+				return;
+			}
+
+		} else {
+			if(!p_inode->mode & S_IWOTH) {
+				msg_complete(p_msg, EACCES);
+				return;
+			}
+		}
+	}
+
+	msg_complete(p_msg, ESUCCESS);
+	return;
 }
 
 void on_stat(pmsg_t p_msg)

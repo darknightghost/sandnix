@@ -734,7 +734,8 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 	//Create file descriptor
 	p_fd->file_obj = p_info->file_object;
 	p_fd->offset = 0;
-	p_fd->size = p_info->file_size;
+	p_file_object = get_file_obj(p_fd->file_obj);
+	p_file_object->size = p_info->file_size;
 	p_fd->flags = flags;
 	p_fd->serial_read = p_info->serial_read;
 	rtl_memcpy(&(p_fd->path), &k_path, sizeof(path_t));
@@ -1014,6 +1015,7 @@ size_t vfs_write(u32 fd, ppmo_t buf)
 	pmsg_write_info_t p_info;
 	k_status complete_state;
 	u32 msg_state;
+	pfile_obj_t p_fo;
 
 	//Get file descriptor
 	p_fd = get_file_descriptor(fd);
@@ -1079,11 +1081,12 @@ size_t vfs_write(u32 fd, ppmo_t buf)
 
 	if(!p_fd->serial_read) {
 		//Move file pointer
+		p_fo = get_file_obj();
 		(p_fd->offset) += p_info->len;
 
-		if(p_fd->offset > p_fd->size) {
+		if(p_fd->offset > p_fo->size) {
 			//Reset file size
-			p_fd->size = p_fd->offset;
+			p_fo->size = p_fd->offset;
 		}
 	}
 
@@ -1093,9 +1096,10 @@ size_t vfs_write(u32 fd, ppmo_t buf)
 
 }
 
-size_t vfs_seek(u32 fd, u32 pos, s64 offset)
+u64 vfs_seek(u32 fd, u32 pos, s64 offset)
 {
 	pfile_desc_t p_fd;
+	pfile_obj_t p_fo;
 
 	//Get file descriptor
 	p_fd = get_file_descriptor(fd);
@@ -1110,6 +1114,8 @@ size_t vfs_seek(u32 fd, u32 pos, s64 offset)
 		return 0;
 	}
 
+	p_fo = get_file_obj(p_fd->file_obj);
+
 	//Get start pos
 	switch(pos) {
 	case SEEK_SET:
@@ -1120,7 +1126,7 @@ size_t vfs_seek(u32 fd, u32 pos, s64 offset)
 		break;
 
 	case SEEK_END:
-		p_fd->offset = p_fd->size;
+		p_fd->offset = p_fo->size;
 		break;
 
 	default:
@@ -1129,19 +1135,14 @@ size_t vfs_seek(u32 fd, u32 pos, s64 offset)
 	}
 
 	//Add offset
-	if(p_fd->flags | O_DIRECTORY) {
-		offset = offset * (rtl_div64(offset, sizeof(dirent_t))
-		                   + (rtl_mod64(offset, sizeof(dirent_t)) ? 1 : 0));
-	}
-
 	if(offset > 0) {
-		if(offset > p_fd->size - p_fd->offset) {
-			offset = p_fd->size - p_fd->offset;
+		if(offset > p_fo->size - p_fd->offset) {
+			offset = p_fo->size - p_fd->offset;
 		}
 
 	} else {
-		if((-offset) > p_fd->offset) {
-			offset = (-(s32)(p_fd->offset));
+		if((-offset) > p_fo->offset) {
+			offset = (-(s64)(p_fo->offset));
 		}
 	}
 

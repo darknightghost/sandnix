@@ -70,7 +70,7 @@ typedef	struct {
 	u32			flags;
 	u32			mode;
 	u32			file_object;
-	size_t		file_size;
+	u64			file_size;
 	bool		serial_read;
 	char		path;
 } msg_open_info_t, *pmsg_open_info_t;
@@ -81,7 +81,7 @@ typedef	struct {
 
 typedef	struct {
 	u32		file_obj;
-	size_t	offset;
+	u64		offset;
 	size_t	len;		//Caller should fill
 } msg_read_info_t, *pmsg_read_info_t;
 
@@ -92,8 +92,8 @@ typedef	struct {
 
 typedef	struct {
 	u32		file_obj;
-	size_t	offset;
-	size_t	count;		//Caller should fill
+	u64		offset;
+	siez_t	count;		//Caller should fill
 } msg_readdir_info_t, *pmsg_readdir_info_t;
 
 typedef	struct {
@@ -103,7 +103,7 @@ typedef	struct {
 
 typedef	struct {
 	u32		file_obj;
-	size_t	offset;
+	u64		offset;
 	size_t	len;		//Caller should fill
 	u8		data;
 } msg_write_info_t, *pmsg_write_info_t;

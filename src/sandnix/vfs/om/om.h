@@ -64,6 +64,7 @@ typedef	struct	_file_obj {
 	kobject_t		obj;
 	pdriver_obj_t	p_driver;
 	u32				file_id;
+	u64				size;
 	list_t			refered_proc_list;
 	mutex_t			refered_proc_list_lock;
 } file_obj_t, *pfile_obj_t;

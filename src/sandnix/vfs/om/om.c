@@ -904,7 +904,7 @@ pdev_mj_info_t get_mj_by_name(char* name)
 
 size_t get_devfs_root(pdirent_t buf, size_t offset, size_t count)
 {
-	u32 num;
+	size_t read_len;
 	u32 mj_num;
 	u32 mn_num;
 	pdirent_t p_data;
@@ -912,7 +912,7 @@ size_t get_devfs_root(pdirent_t buf, size_t offset, size_t count)
 	u32 mn_count;
 	pdevice_obj_t p_dev;
 
-	num = 0;
+	read_len = 0;
 	p_data = buf;
 
 	pm_acqr_mutex(&devices_list_lock, TIMEOUT_BLOCK);
@@ -921,56 +921,56 @@ size_t get_devfs_root(pdirent_t buf, size_t offset, size_t count)
 	    OPERATE_SUCCESS;
 	    mj_num = rtl_array_list_get_next_index(&devices_list, mj_num + 1)) {
 
-		if(num >= count) {
+		p_info = rtl_array_list_get(&devices_list, mj_num);
+
+		if(read_len + sizeof(dirent_t) +
+		   rtl_strlen(p_info->file_obj.obj.name) > count) {
 			break;
 		}
 
 		if(offset == 0) {
 			//Directory
-			p_info = rtl_array_list_get(&devices_list, mj_num);
 			p_data->d_ino = 0 - mj_num;
 			rtl_strcpy_s(&(p_data->d_name), NAME_MAX, p_info->file_obj.obj.name);
-			p_data->d_off = num * sizeof(dirent_t);
+			p_data->d_off = read_len;
 			p_data->d_reclen = rtl_strlen(&(p_data->d_name)) + 1;
-			num++;
-			p_data++;
+			read_len += sizeof(dirent_t) + p_data->d_reclen - 1;
+			p_data = (pdirent_t)((u8*)p_data + sizeof(dirent_t) + p_data->d_reclen - 1);
 
 		} else {
-			offset--;
+			offset -= sizeof(dirent_t) +
+			          rtl_strlen(p_info->file_obj.obj.name);
 		}
 
 		//Named devices
 		pm_acqr_mutex(&(p_info->lock), TIMEOUT_BLOCK);
 		mn_count = rtl_array_list_item_num(&(p_info->devices));
 
-		if(offset < mn_count) {
-			for(mn_num = rtl_array_list_get_next_index(&(p_info->devices), 0);
-			    OPERATE_SUCCESS;
-			    mn_num = rtl_array_list_get_next_index(&(p_info->devices), mn_num + 1)) {
+		for(mn_num = rtl_array_list_get_next_index(&(p_info->devices), 0);
+		    OPERATE_SUCCESS;
+		    mn_num = rtl_array_list_get_next_index(&(p_info->devices), mn_num + 1)) {
 
-				if(num >= count) {
-					break;
-				}
+			p_dev = rtl_array_list_get(&(p_info->devices), mn_num);
 
-				if(offset > 0) {
-					offset--;
-
-				} else {
-					p_dev = rtl_array_list_get(&(p_info->devices), mn_num);
-
-					if(p_dev->file_obj.obj.name != NULL) {
-						p_data->d_ino = p_dev->device_number;
-						p_data->d_off = num * sizeof(dirent_t);
-						rtl_strcpy_s(&(p_data->d_name), NAME_MAX, p_dev->file_obj.obj.name);
-						p_data->d_reclen = rtl_strlen(&(p_data->d_name)) + 1;
-						num++;
-						p_data++;
-					}
-				}
+			if(read_len + sizeof(dirent_t) +
+			   rtl_strlen(p_dev->file_obj.obj.name) > count) {
+				break;
 			}
 
-		} else {
-			offset -= mn_count;
+			if(offset > 0) {
+				offset -= sizeof(dirent_t) +
+				          rtl_strlen(p_dev->file_obj.obj.name);
+
+			} else {
+				if(p_dev->file_obj.obj.name != NULL) {
+					p_data->d_ino = p_dev->device_number;
+					p_data->d_off = read_len;
+					rtl_strcpy_s(&(p_data->d_name), NAME_MAX, p_dev->file_obj.obj.name);
+					p_data->d_reclen = rtl_strlen(&(p_data->d_name)) + 1;
+					read_len += sizeof(dirent_t) + p_data->d_reclen - 1;
+					p_data = (pdirent_t)((u8*)p_data + sizeof(dirent_t) + p_data->d_reclen - 1);
+				}
+			}
 		}
 
 		pm_rls_mutex(&(p_info->lock));
@@ -979,7 +979,7 @@ size_t get_devfs_root(pdirent_t buf, size_t offset, size_t count)
 	pm_rls_mutex(&devices_list_lock);
 
 	pm_set_errno(ESUCCESS);
-	return num;
+	return read_len;
 }
 
 size_t get_devfs_dir(pdev_mj_info_t p_dir, pdirent_t buf,
@@ -988,46 +988,47 @@ size_t get_devfs_dir(pdev_mj_info_t p_dir, pdirent_t buf,
 	pdevice_obj_t p_dev;
 	u32 index;
 	pdirent_t p_info;
-	size_t num;
+	size_t read_len;
 	char *p;
+	char name_buf[10];
 
 	pm_acqr_mutex(&(p_dir->lock), TIMEOUT_BLOCK);
-	num = 0;
+	read_len = 0;
 	p_info = buf;
 
 	for(index = rtl_array_list_get_next_index(&(p_dir->devices), 0);
 	    OPERATE_SUCCESS;
 	    index = rtl_array_list_get_next_index(&(p_dir->devices), index + 1)) {
 
-		//Jump read inodes
-		if(offset > 0) {
-			offset--;
-			continue;
-		}
-
-		if(num >= count) {
-			break;
-		}
-
 		p_dev = rtl_array_list_get(&(p_dir->devices), index);
 
 		//Filename
-		rtl_itoa(&(p_info->d_name), DEV_NUM_MJ(p_dev->device_number));
-		p = &(p_info->d_name) + rtl_strlen(&(p_info->d_name));
+		rtl_itoa(name_buf, DEV_NUM_MJ(p_dev->device_number));
+		p = name_buf + rtl_strlen(name_buf);
 		*p = ':';
 		p++;
 		rtl_itoa(p, DEV_NUM_MN(p_dev->device_number));
 
+		//Jump read inodes
+		if(offset > 0) {
+			offset -= sizeof(dirent_t) + rtl_strlen(name_buf);
+			continue;
+		}
+
+		if(read_len + sizeof(dirent_t) + rtl_strlen(name_buf) >= count) {
+			break;
+		}
+
 		//Inode
 		p_info->d_ino = p_dev->device_number;
-
-		p_info->d_off = num * sizeof(dirent_t);
+		p_info->d_off = read_len;
+		rtl_strcpy_s(&(p_info->d_name), NAME_MAX, name_buf);
 		p_info->d_reclen = rtl_strlen(&(p_info->d_name)) + 1;
 
-		num++;
+		read_len += sizeof(dirent_t) + p_info->d_reclen - 1;
 		p_info++;
 	}
 
 	pm_rls_mutex(&(p_dir->lock));
-	return num;
+	return read_len;
 }

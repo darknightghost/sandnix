@@ -150,6 +150,11 @@ k_status msg_send(pmsg_t p_msg,
                   u32* p_result,
                   k_status* p_complete_result)
 {
+	if(p_msg->flags.properties.direct_buf && p_msg->flags.properties.pmo_buf) {
+		pm_set_errno(EINVAL);
+		return EINVAL;
+	}
+
 	pm_acqr_mutex(&msg_queue_table_lock, TIMEOUT_BLOCK);
 
 	//Check if the queue_t exists
@@ -285,6 +290,11 @@ k_status msg_recv(pmsg_t* p_p_msg, u32 dest_queue, bool if_block)
 
 k_status msg_forward(pmsg_t p_msg, u32 dest_queue)
 {
+	if(p_msg->flags.properties.direct_buf && p_msg->flags.properties.pmo_buf) {
+		pm_set_errno(EINVAL);
+		return EINVAL;
+	}
+
 	p_msg->status = MSTATUS_FORWARD;
 
 	pm_acqr_mutex(&msg_queue_table_lock, TIMEOUT_BLOCK);

@@ -76,8 +76,7 @@ typedef struct _file_stat_t {
 typedef	struct {
 	path_t		path;
 	u32			file_obj;
-	size_t		offset;
-	size_t		size;
+	u64			offset;
 	u32			flags;
 	bool		serial_read;
 } file_desc_t, *pfile_desc_t;

@@ -398,7 +398,6 @@ void on_readdir(pmsg_t p_msg)
 	pdevice_obj_t p_dev;
 	pfile_obj_t p_fo;
 	size_t count;
-	size_t read_entries;
 	size_t offset;
 
 	//Check buf type
@@ -430,21 +429,19 @@ void on_readdir(pmsg_t p_msg)
 			return;
 		}
 
-		read_entries = get_devfs_root((pdirent_t)(&(p_data->data)),
-		                              offset,
-		                              count);
-		p_data->count = read_entries;
+		p_data->count = get_devfs_root((pdirent_t)(&(p_data->data)),
+		                               offset,
+		                               count);
 
 		msg_complete(p_msg, ESUCCESS);
 		return;
 
 	} else {
 		//Directory
-		read_entries = get_devfs_dir((pdev_mj_info_t)p_fo,
-		                             (pdirent_t)(&(p_data->data)),
-		                             offset,
-		                             count);
-		p_data->count = read_entries;
+		p_data->count = get_devfs_dir((pdev_mj_info_t)p_fo,
+		                              (pdirent_t)(&(p_data->data)),
+		                              offset,
+		                              count);
 
 		msg_complete(p_msg, ESUCCESS);
 		return;

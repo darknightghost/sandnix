@@ -109,7 +109,7 @@ k_status		vfs_access(char* path, u32 mode);
 void			vfs_close(u32 fd);
 k_status		vfs_read(u32 fd, ppmo_t buf);
 size_t			vfs_write(u32 fd, ppmo_t buf);
-size_t			vfs_seek(u32 fd, u32 pos, s64 offset);
+u64				vfs_seek(u32 fd, u32 pos, s64 offset);
 k_status		vfs_stat(char* path, ppmo_t buf);
 k_status		vfs_unlink(char* path);
 k_status		vfs_mkdir(char* path, u32 mode);
