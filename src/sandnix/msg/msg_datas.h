@@ -93,7 +93,7 @@ typedef	struct {
 typedef	struct {
 	u32		file_obj;
 	u64		offset;
-	siez_t	count;		//Caller should fill
+	size_t	count;		//Caller should fill
 } msg_readdir_info_t, *pmsg_readdir_info_t;
 
 typedef	struct {

@@ -31,8 +31,6 @@ static	mutex_t			file_obj_table_lock;
 static	mount_point_t	root_mount_point;
 static	mutex_t			mount_point_lock;
 
-static	u32				kernel_drv_num;
-
 static	pvfs_proc_info	get_proc_fs_info();
 static	void			set_proc_fs_info(u32 process_id,
         pvfs_proc_info p_new_info);
@@ -734,8 +732,8 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 	//Create file descriptor
 	p_fd->file_obj = p_info->file_object;
 	p_fd->offset = 0;
-	p_file_object = get_file_obj(p_fd->file_obj);
-	p_file_object->size = p_info->file_size;
+	p_file_obj = get_file_obj(p_fd->file_obj);
+	p_file_obj->size = p_info->file_size;
 	p_fd->flags = flags;
 	p_fd->serial_read = p_info->serial_read;
 	rtl_memcpy(&(p_fd->path), &k_path, sizeof(path_t));
@@ -754,7 +752,6 @@ u32 vfs_open(char* path, u32 flags, u32 mode)
 	mm_pmo_unmap(p_info, p_pmo);
 	mm_pmo_free(p_pmo);
 
-	p_file_obj = get_file_obj(p_fd->file_obj);
 	vfs_inc_obj_reference((pkobject_t)p_file_obj);
 
 	//Add process
@@ -1081,7 +1078,7 @@ size_t vfs_write(u32 fd, ppmo_t buf)
 
 	if(!p_fd->serial_read) {
 		//Move file pointer
-		p_fo = get_file_obj();
+		p_fo = get_file_obj(p_fd->file_obj);
 		(p_fd->offset) += p_info->len;
 
 		if(p_fd->offset > p_fo->size) {
@@ -1141,8 +1138,8 @@ u64 vfs_seek(u32 fd, u32 pos, s64 offset)
 		}
 
 	} else {
-		if((-offset) > p_fo->offset) {
-			offset = (-(s64)(p_fo->offset));
+		if((-offset) > p_fd->offset) {
+			offset = (-(s64)(p_fd->offset));
 		}
 	}
 
@@ -2074,7 +2071,8 @@ u32 get_initrd_fd()
 	//Create file descriptor
 	p_fd->file_obj = p_info->file_object;
 	p_fd->offset = 0;
-	p_fd->size = p_info->file_size;
+	p_file_obj = get_file_obj(p_fd->file_obj);
+	p_file_obj->size = p_info->file_size;
 	p_fd->flags = 0;
 	p_fd->serial_read = p_info->serial_read;
 	p_fd->path.p_mount_point = NULL;
@@ -2094,7 +2092,6 @@ u32 get_initrd_fd()
 	mm_pmo_unmap(p_info, p_pmo);
 	mm_pmo_free(p_pmo);
 
-	p_file_obj = get_file_obj(p_fd->file_obj);
 	vfs_inc_obj_reference((pkobject_t)p_file_obj);
 
 	//Add process

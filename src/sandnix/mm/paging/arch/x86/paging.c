@@ -518,6 +518,8 @@ void mm_pg_tbl_usr_spc_clear(u32 pdt_id)
 void mm_get_info(pmem_info_t p_info)
 {
 	//TODO:Return memory info
+	UNREFERRED_PARAMETER(p_info);
+	return;
 }
 
 void* kernel_mem_reserve(u32 base, u32 num)

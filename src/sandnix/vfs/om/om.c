@@ -737,7 +737,7 @@ u32 dev_mj_hash(char* name)
 
 bool dev_mj_name_cmp(char* p_name1, char* p_name2)
 {
-	if(rtl_strcmp(p_name2, p_name2) == 0) {
+	if(rtl_strcmp(p_name1, p_name2) == 0) {
 		return true;
 	}
 
@@ -909,7 +909,6 @@ size_t get_devfs_root(pdirent_t buf, size_t offset, size_t count)
 	u32 mn_num;
 	pdirent_t p_data;
 	pdev_mj_info_t p_info;
-	u32 mn_count;
 	pdevice_obj_t p_dev;
 
 	read_len = 0;
@@ -944,7 +943,6 @@ size_t get_devfs_root(pdirent_t buf, size_t offset, size_t count)
 
 		//Named devices
 		pm_acqr_mutex(&(p_info->lock), TIMEOUT_BLOCK);
-		mn_count = rtl_array_list_item_num(&(p_info->devices));
 
 		for(mn_num = rtl_array_list_get_next_index(&(p_info->devices), 0);
 		    OPERATE_SUCCESS;

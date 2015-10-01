@@ -65,7 +65,7 @@ typedef struct _file_stat_t {
 	u32			uid;		//User ID of owner
 	u32			gid;		//Group ID of owner
 	u32			rdev;		//Device number (if special file)
-	size_t		size;		//Total size, in bytes
+	u64			size;		//Total size, in bytes
 	size_t		block_size;	//Blocksize for filesystem I/O
 	u32			block_num;	//Number of 512B blocks allocated
 	u32			atime;		//Time of last access
@@ -87,6 +87,8 @@ typedef	struct {
 } file_obj_ref_t, *pfile_obj_ref_t;
 
 typedef	struct _file_obj	_file_obj_t, *pfile_obj_t;
+
+u32				kernel_drv_num;
 
 void			fs_init();
 k_status		add_file_obj(pfile_obj_t p_file_obj);
