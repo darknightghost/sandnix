@@ -1019,8 +1019,10 @@ void switch_to(u32 thread_id)
 	__asm__ __volatile__(
 	    "movl	$0x0175,%%ecx\n\t"
 	    "movl	%0,%%eax\n\t"
+	    "addl	%1,%%eax\n\t"
 	    "wrmsr\n\t"
-	    ::"m"(thread_table[current_thread].kernel_stack));
+	    ::"m"(thread_table[current_thread].kernel_stack),
+	    "i"(KERNEL_STACK_SIZE));
 	io_set_crrnt_int_level(thread_table[thread_id].level);
 
 	//Save esp,ebp

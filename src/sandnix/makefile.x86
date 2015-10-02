@@ -31,6 +31,9 @@ SOURCES += setup/arch/x86/setup.S \
 			mm/paging/arch/x86/share.c \
 			rtl/string/arch/x86/string.c \
 			rtl/math/arch/x86/math.c \
+			syscall/arch/x86/syscall.S \
+			syscall/ssddt/ssddt.c \
+			syscall/ssudt/ssudt.c
 			
 
 OBJS_DIR = $(root_path)/obj/sandnix/x86

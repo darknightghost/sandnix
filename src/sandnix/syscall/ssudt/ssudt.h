@@ -16,6 +16,10 @@
 */
 
 #ifndef	SSUDT_H_INCLUDE
-#ifndef	SSUDT_H_INCLUDE
+#define	SSUDT_H_INCLUDE
+
+#include "../syscall.h"
+
+extern	syscall_t	ssudt[];
 
 #endif	//!	SSUDT_H_INCLUDE

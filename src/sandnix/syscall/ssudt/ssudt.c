@@ -14,3 +14,10 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+#include "ssudt.h"
+
+syscall_t	ssudt[] = {
+	NULL,		//0x00000000
+	NULL		//0x00000001
+};

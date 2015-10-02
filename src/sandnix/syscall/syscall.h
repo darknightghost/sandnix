@@ -16,8 +16,9 @@
 */
 
 /*
-	When a system call happened.
+	When a system call happens.
 	EAX	:	System call number
+	EBX	:	Start address of arguments
 	ECX	:	User ESP
 	EDX	:	User EIP
 */
@@ -26,10 +27,16 @@
 #define	SYSCALL_H_INCLUDE
 
 #include "../../common/common.h"
-#include "ssudt/ssudt.h"
-#include "ssddt/ssddt.h"
 
-void		syscall_init();
+#define	SYSCALL_MAX		128
 
-void		sys_ret(void* ret);
+#ifndef	_ASM
+	typedef		void*		(*syscall_t)(void*);
+
+	#include "ssudt/ssudt.h"
+	#include "ssddt/ssddt.h"
+
+	void		syscall_init();
+#endif	//!	_ASM
+
 #endif	//!	SYSCALL_H_INCLUDE

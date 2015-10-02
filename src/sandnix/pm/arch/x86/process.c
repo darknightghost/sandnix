@@ -429,6 +429,11 @@ void pm_change_to_usr_process()
 	return;
 }
 
+bool pm_is_driver()
+{
+	return process_table[current_process].is_driver;
+}
+
 void add_proc_thrd(u32 thrd_id, u32 proc_id)
 {
 	if(process_table[proc_id].alloc_flag == false) {

@@ -107,6 +107,7 @@
 	bool		pm_set_proc_egid(u32 process_id, u32 egid);
 	bool		pm_get_proc_egid(u32 process_id, u32* p_egid);
 	void		pm_change_to_usr_process();
+	bool		pm_is_driver();
 
 	//Spin lock
 	void		pm_init_spn_lock(pspinlock_t p_lock);

@@ -18,4 +18,8 @@
 #ifndef	SSDDT_H_INCLUDE
 #define	SSDDT_H_INCLUDE
 
+#include "../syscall.h"
+
+extern	syscall_t	ssddt[];
+
 #endif	//!	SSDDT_H_INCLUDE
