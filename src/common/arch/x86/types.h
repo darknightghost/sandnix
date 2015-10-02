@@ -18,52 +18,54 @@
 #ifndef	TYPES_H_INCLUDE
 #define	TYPES_H_INCLUDE
 
-#define	NULL				((void*)0)
+#ifndef	_ASM
+	#define	NULL				((void*)0)
 
-typedef	unsigned long			size_t;
+	typedef	unsigned long			size_t;
 
-typedef unsigned char			u8;
-typedef unsigned short			u16;
-typedef unsigned long			u32;
-typedef	unsigned long long		u64;
+	typedef unsigned char			u8;
+	typedef unsigned short			u16;
+	typedef unsigned long			u32;
+	typedef	unsigned long long		u64;
 
-#define	__u8					u8
-#define	__u16					u16
-#define	__u32					u32
-#define	__u64					u64
+	#define	__u8					u8
+	#define	__u16					u16
+	#define	__u32					u32
+	#define	__u64					u64
 
-typedef signed char				s8;
-typedef short					s16;
-typedef long					s32;
-typedef	long long				s64;
+	typedef signed char				s8;
+	typedef short					s16;
+	typedef long					s32;
+	typedef	long long				s64;
 
-#define	__s8					s8
-#define	__s16					s16
-#define	__s32					s32
-#define	__s64					s64
+	#define	__s8					s8
+	#define	__s16					s16
+	#define	__s32					s32
+	#define	__s64					s64
 
-typedef	float					f32;
-typedef	double					f64;
+	typedef	float					f32;
+	typedef	double					f64;
 
-#define	__f32					f32
-#define	__f64					f64
+	#define	__f32					f32
+	#define	__f64					f64
 
-typedef unsigned char			le8;
-typedef unsigned short			le16;
-typedef unsigned long			le32;
-typedef	unsigned long long		le64;
+	typedef unsigned char			le8;
+	typedef unsigned short			le16;
+	typedef unsigned long			le32;
+	typedef	unsigned long long		le64;
 
-#define	__le8					le8
-#define	__le16					le16
-#define	__le32					le32
-#define	__le64					le64
+	#define	__le8					le8
+	#define	__le16					le16
+	#define	__le32					le32
+	#define	__le64					le64
 
-typedef	u32						k_status;
+	typedef	u32						k_status;
 
-#ifndef	__cplusplus
-	typedef	int					bool;
-	#define	true				1
-	#define	false				0
-#endif	//!	__cplusplus
+	#ifndef	__cplusplus
+		typedef	int					bool;
+		#define	true				1
+		#define	false				0
+	#endif	//!	__cplusplus
+#endif	//!	_ASM
 
 #endif	//! TYPES_H_INCLUDE

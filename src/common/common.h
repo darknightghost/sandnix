@@ -19,7 +19,9 @@
 #define	COMMON_H_INCLUDE
 
 #ifdef	X86
-	#include "./arch/x86/types.h"
+	#ifndef	_ASM
+		#include "./arch/x86/types.h"
+	#endif	//!	_ASM
 	#include "./arch/x86/kernel_image.h"
 #endif	//X86
 

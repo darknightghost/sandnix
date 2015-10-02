@@ -15,53 +15,22 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-.global		memtest
-.global		mem_info
-.code16
 
-mem_info:
-.long		0
-.org		20*128+4,0
+.section	.text
+.global		syscall_init
+.global		sys_call
+.global		sys_ret
 
-msg_mem_error:
-	.asciz "Memory test Failed!"
+#include	"../../../setup/setup.h"
+.equ		IA32_SYSENTER_CS,		0x174
+.equ		IA32_SYSENTER_EIP,		0x175
 
-memtest:
-	pushw	%bp
-	movw	%sp,%bp
-	pushw	%bx
-	pushw	%cx
-	pushw	%dx
-	pushw	%di
-	xorl	%ebx,%ebx
-	movw	$(mem_info+4),%di
-	_DO_1:
-	#do{
-		movl	$0xE820,%eax
-		movl	$20,%ecx
-		movl	$0x534d4150,%edx
-		int		$0x15
-		jnc		SUCCEED
-		pushw	$0x0F
-		pushw	$0
-		pushw	$2
-		pushw	$msg_mem_error
-		call	print_at_pos
-		addw	$0x08,%sp
-		A:
-		jmp		A
-		SUCCEED:
-		addw	$20,%di
-		movl	mem_info,%eax
-		incl	%eax
-		movl	%eax,mem_info
-		cmpl	$0,%ebx
-		jne		_DO_1
-	#}while(ebx!=0)
-	popw	%di
-	popw	%dx
-	popw	%cx
-	popw	%bx
-	movw	%bp,%sp
-	popw	%bp
-	ret
+.code32
+syscall_init:
+		pushl	%ebp
+		movl	%esp,%ebp
+		pushal
+		popal
+		leave
+		ret
+

@@ -1,6 +1,6 @@
-AS = as
+AS = gcc
 CC = gcc
-ASFLAGS = --32
+ASFLAGS = -x assembler-with-cpp $(CCFLAGS) -D_ASM
 CCFLAGS = -std=c99 -m32 -nostdlib -fno-builtin -DVERSION=0x0000000001 -c
 
 root_path = ../../../../..
@@ -11,7 +11,7 @@ TARGET_DIR = $(root_path)/bin/sanlo/x86
 TARGET = $(TARGET_DIR)/sanlo_x86_loader
 MAP = $(TARGET_DIR)/sanlo_x86_loader.map
 
-SOURCES = init.s \
+SOURCES = init.S \
 			main.c	\
 			string/string.c \
 			io/io.c \
@@ -20,14 +20,14 @@ SOURCES = init.s \
 			memory/memory.c \
 			exception/exception.c \
 			interrupt/interrupt.c \
-			interrupt/interrupt_routines.s \
+			interrupt/interrupt_routines.S \
 			hdd/hdd.c \
 			hdd/partition.c \
 			fs/fs.c \
 			fs/ext2.c \
 			menu/menu.c \
 			k_loader/k_loader.c \
-			memtest/memtest.s
+			memtest/memtest.S
 
 OBJS_DIR = $(root_path)/obj/sanlo/x86/loader
 

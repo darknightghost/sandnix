@@ -16,6 +16,7 @@
 */
 
 #include "../../setup.h"
+#include "../../../mm/mm.h"
 
 char	init_stack[KERNEL_STACK_SIZE];
 

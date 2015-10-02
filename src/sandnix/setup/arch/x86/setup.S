@@ -15,7 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-.equ		KERNEL_STACK_SIZE,(4096*2)
+#include "../../setup.h"
+#include "../../../pm/pm.h"
 
 .section	.text
 .global		_start
@@ -61,29 +62,19 @@
 .equ		DA_386IGate,0x8E	#Interrupt gate
 .equ		DA_386TGate,0x8F	#Trap gate
 
-//Segment selectors
-.equ		DESCRIPTOR_SIZE,		8
-.equ		SELECTOR_K_DATA,		(1 * DESCRIPTOR_SIZE)
-.equ		SELECTOR_K_CODE,		(2 * DESCRIPTOR_SIZE)
-.equ		SELECTOR_U_DATA,		(3 * DESCRIPTOR_SIZE | 3)
-.equ		SELECTOR_U_CODE,		(4 * DESCRIPTOR_SIZE | 3)
-.equ		SELECTOR_BASIC_VIDEO,	(5 * DESCRIPTOR_SIZE)
-.equ		SELECTOR_TSS,			(6 * DESCRIPTOR_SIZE)
-.equ		BASIC_VIDEO_BASE_ADDR,	0xC00B8000
-
 .code32
 
 //---------------------------------GDT------------------------------------------
 gdt:
 SEGMENT_DESCRIPTOR	0,				0,					0
-descriptor_kernel_data:
-SEGMENT_DESCRIPTOR	0,				0xFFFFF,			DA_DRW | DA_DPL0 | DA_32
 descriptor_kernel_code:
 SEGMENT_DESCRIPTOR	0,				0xFFFFF,			DA_CR | DA_DPL0 | DA_32
-descriptor_user_data:
-SEGMENT_DESCRIPTOR	0,				0xFFFFF,			DA_DRW | DA_DPL3 | DA_32
+descriptor_kernel_data:
+SEGMENT_DESCRIPTOR	0,				0xFFFFF,			DA_DRW | DA_DPL0 | DA_32
 descriptor_user_code:
 SEGMENT_DESCRIPTOR	0,				0xFFFFF,			DA_CR | DA_DPL3 | DA_32
+descriptor_user_data:
+SEGMENT_DESCRIPTOR	0,				0xFFFFF,			DA_DRW | DA_DPL3 | DA_32
 descriptor_basic_video:
 SEGMENT_DESCRIPTOR	0xC00B8000,		0xFFFFF,			DA_DRW | DA_DPL0 | DA_32
 descriptor_tss:

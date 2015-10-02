@@ -1,6 +1,6 @@
-AS = as
+AS = gcc
 CC = gcc
-ASFLAGS = --32
+ASFLAGS = -x assembler-with-cpp $(CCFLAGS) -D_ASM
 CCFLAGS = -m32 -c
 
 root_path = ../../../../..
@@ -8,7 +8,7 @@ root_path = ../../../../..
 TARGET_DIR = $(root_path)/bin/sanlo/x86
 TARGET = $(TARGET_DIR)/sanlo_x86_boot
 
-SOURCES = boot.s
+SOURCES = boot.S
 
 OBJS_DIR = $(root_path)/obj/sanlo/x86/boot
 

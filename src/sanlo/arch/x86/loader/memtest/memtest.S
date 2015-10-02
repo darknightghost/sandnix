@@ -15,24 +15,53 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-.equ		EXCEPTION_UNKNOW_EXCEPTION,0x00000000
-.equ		EXCEPTION_HEAP_CORRUPTION,0x00000001
-.equ		EXCEPTION_DE,0x00000002
-.equ		EXCEPTION_DB,0x00000003
-.equ		EXCEPTION_NMI,0x00000004
-.equ		EXCEPTION_BR,0x00000005
-.equ		EXCEPTION_UD,0x00000006
-.equ		EXCEPTION_NM,0x00000007
-.equ		EXCEPTION_DF,0x00000008
-.equ		EXCEPTION_FPU,0x00000009
-.equ		EXCEPTION_TS,0x0000000A
-.equ		EXCEPTION_NP,0x0000000B
-.equ		EXCEPTION_SS,0x0000000C
-.equ		EXCEPTION_GP,0x0000000D
-.equ		EXCEPTION_PF,0x0000000E
-.equ		EXCEPTION_RESERVED,0x0000000F
-.equ		EXCEPTION_MF,0x00000010
-.equ		EXCEPTION_AC,0x00000011
-.equ		EXCEPTION_MC,0x00000012
-.equ		EXCEPTION_XF,0x00000013
-.equ		EXCEPTION_NOT_ENOUGH_MEMORY,0x00000014
+.global		memtest
+.global		mem_info
+.code16
+
+mem_info:
+.long		0
+.org		20*128+4,0
+
+msg_mem_error:
+	.asciz "Memory test Failed!"
+
+memtest:
+	pushw	%bp
+	movw	%sp,%bp
+	pushw	%bx
+	pushw	%cx
+	pushw	%dx
+	pushw	%di
+	xorl	%ebx,%ebx
+	movw	$(mem_info+4),%di
+	_DO_1:
+	//do{
+		movl	$0xE820,%eax
+		movl	$20,%ecx
+		movl	$0x534d4150,%edx
+		int		$0x15
+		jnc		SUCCEED
+		pushw	$0x0F
+		pushw	$0
+		pushw	$2
+		pushw	$msg_mem_error
+		call	print_at_pos
+		addw	$0x08,%sp
+		A:
+		jmp		A
+		SUCCEED:
+		addw	$20,%di
+		movl	mem_info,%eax
+		incl	%eax
+		movl	%eax,mem_info
+		cmpl	$0,%ebx
+		jne		_DO_1
+	//}while(ebx!=0)
+	popw	%di
+	popw	%dx
+	popw	%cx
+	popw	%bx
+	movw	%bp,%sp
+	popw	%bp
+	ret

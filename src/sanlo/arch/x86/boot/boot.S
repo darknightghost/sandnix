@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-.include	"../common_defs.inc"
+#include	"../common_defs.h"
 .section	.text 
 .global		_start
 //------------------------------Definitions-------------------------------------

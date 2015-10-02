@@ -15,6 +15,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+	When a system call happened.
+	EAX	:	System call number
+	ECX	:	User ESP
+	EDX	:	User EIP
+*/
+
 #ifndef	SYSCALL_H_INCLUDE
 #define	SYSCALL_H_INCLUDE
 
@@ -24,4 +31,5 @@
 
 void		syscall_init();
 
+void		sys_ret(void* ret);
 #endif	//!	SYSCALL_H_INCLUDE

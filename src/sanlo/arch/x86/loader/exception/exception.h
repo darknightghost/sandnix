@@ -48,6 +48,8 @@
 #define	EXCEPTION_KERNEL_PARAMETER_TOO_LONG	0x00000019
 #define	EXCEPTION_RAMDISK_TOO_LARGE			0x0000001A
 
-void		panic(u32 reason);
+#ifndef	_ASM
+	void		panic(u32 reason);
+#endif	//!	_ASM
 
 #endif	//! EXCEPTION_H_INCLUDE

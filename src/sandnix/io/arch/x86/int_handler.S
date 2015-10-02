@@ -71,7 +71,7 @@ fmt_df:
 .macro		EXCEPTION_INT_HNDLR num has_err_code
 		pushal
 		movb	exception_handling_flag,%al
-		#if(exception_handling_flag)
+		//if(exception_handling_flag)
 		cmpb	$0,%al
 		je		checked_\num
 			addl	$(4+4*8),%esp
