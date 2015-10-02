@@ -15,13 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	SSUDT_H_INCLUDE
-#define	SSUDT_H_INCLUDE
+#ifndef	SYSCALLS_H_INCLUDE
+#define	SYSCALLS_H_INCLUDE
 
-#include "../syscall.h"
-
-extern	syscall_t	ssudt[];
-
-void	ssudt_init();
-
-#endif	//!	SSUDT_H_INCLUDE
+#endif	//!	SYSCALLS_H_INCLUDE

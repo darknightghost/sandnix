@@ -22,4 +22,6 @@
 
 extern	syscall_t	ssddt[];
 
+void	ssddt_init();
+
 #endif	//!	SSDDT_H_INCLUDE

@@ -15,13 +15,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	SSUDT_H_INCLUDE
-#define	SSUDT_H_INCLUDE
+#ifndef	SYSCALL_H_INCLUDE
+#define	SYSCALL_H_INCLUDE
 
-#include "../syscall.h"
+/*
+	Calling convention:
+x86:
+	EAX		:	System call number
+	stack	:	arguments,like _cdecl
+ */
+void	do_sys_call();
 
-extern	syscall_t	ssudt[];
-
-void	ssudt_init();
-
-#endif	//!	SSUDT_H_INCLUDE
+#endif	//!	SYSCALL_H_INCLUDE

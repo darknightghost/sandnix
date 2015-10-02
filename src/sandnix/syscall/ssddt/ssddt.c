@@ -16,8 +16,11 @@
 */
 
 #include "ssddt.h"
+#include "../../../libs/driver/syscalls.h"
 
-syscall_t	ssddt[] = {
-	NULL,		//0x00000000
-	NULL		//0x00000001
-};
+syscall_t	ssddt[SYSCALL_MAX];
+
+void ssddt_init()
+{
+	return;
+}

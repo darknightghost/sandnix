@@ -16,8 +16,11 @@
 */
 
 #include "ssudt.h"
+#include "../../../libs/user/syscalls.h"
 
-syscall_t	ssudt[] = {
-	NULL,		//0x00000000
-	NULL		//0x00000001
-};
+syscall_t	ssudt[SYSCALL_MAX];
+
+void ssudt_init()
+{
+	return;
+}

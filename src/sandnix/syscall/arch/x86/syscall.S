@@ -15,6 +15,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+	When a system call happens.
+	EAX	:	System call number
+	EBX	:	Start address of arguments
+	ECX	:	User ESP
+	EDX	:	User EIP
+*/
+
 #include "../../../setup/setup.h"
 #include "../../syscall.h"
 
@@ -39,6 +47,9 @@ syscall_init:
 		movl	$sys_call,%eax
 		movl	$IA32_SYSENTER_EIP,%ecx
 		wrmsr
+
+		call	ssddt_init
+		call	ssudt_init
 
 		ret
 

@@ -15,13 +15,29 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	SSUDT_H_INCLUDE
-#define	SSUDT_H_INCLUDE
+/*
+	When a system call happens.
+	EAX	:	System call number
+	EBX	:	Start address of arguments
+	ECX	:	User ESP
+	EDX	:	User EIP
+*/
 
-#include "../syscall.h"
+.section	.text
+.global		do_sys_call
 
-extern	syscall_t	ssudt[];
+.code32
+do_sys_call:
+	push	%ebp
+	movl	%esp,%ebp
+	push	%ebx
+	movl	%ebp
+	lea		(%ebp+8),%ebx
+	movl	%esp,%ecx
+	movl	$_RET,%edx
+	sysenter
+	_RET:
+	pop		%ebx
+	leave
+	ret
 
-void	ssudt_init();
-
-#endif	//!	SSUDT_H_INCLUDE
