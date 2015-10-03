@@ -206,22 +206,20 @@ void io_dispatch_int(u32 thread_id, void* p_args)
 
 		exception_handling_flag = false;
 
-		for(i = INT_XF + 1; i < 256; i++) {
+		for(i = 0; i < 256; i++) {
 			if(int_hndlr_tbl[i].called_flag) {
 				if(new_int > INT_LEVEL_IO) {
 					continue;
 				}
 
-				if(int_hndlr_tbl[i].level <= INT_LEVEL_DISPATCH) {
-					call_hndlr(i);
-					int_hndlr_tbl[i].called_flag = false;
-				}
+				call_hndlr(i);
+				int_hndlr_tbl[i].called_flag = false;
 			}
 		}
 
 		new_int = 0;
 		io_set_crrnt_int_level(INT_LEVEL_EXCEPTION);
-		pm_int_disaptch_suspend();
+		pm_suspend_thrd(dispatcher_thread);
 	}
 
 	UNREFERRED_PARAMETER(p_args);

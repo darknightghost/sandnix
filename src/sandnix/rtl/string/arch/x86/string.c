@@ -87,13 +87,21 @@ void* rtl_memcpy(void* dest, void* src, size_t len)
 
 void* rtl_memset(void* dest, u8 val, size_t len)
 {
+	size_t len_4;
+	u32 val_4;
+
+	len_4 = len / 4;
+	len = len % 4;
+	val_4 = 0x01010101 * val;
 	__asm__ __volatile__(
 	    "cld\n\t"
-	    "movl		%0,%%edi\n\t"
-	    "movl		%1,%%ecx\n\t"
-	    "movb		%2,%%al\n\t"
-	    "rep		stosb\n\t"
-	    ::"m"(dest), "m"(len), "m"(val));
+	    "movl		%0,%%edi\n"
+	    "movl		%3,%%ecx\n"
+	    "movl		%2,%%eax\n"
+	    "rep		stosl\n"
+	    "movl		%1,%%ecx\n"
+	    "rep		stosb\n"
+	    ::"m"(dest), "m"(len), "m"(val_4), "m"(len_4));
 	return dest;
 }
 

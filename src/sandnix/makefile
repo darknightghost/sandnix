@@ -2,6 +2,7 @@
 export SOURCES = init/main.c \
 					mm/heap/heap.c \
 					mm/mm.c \
+					io/int_msg/int_msg.c \
 					rtl/list/list.c \
 					rtl/stack/stack.c \
 					rtl/queue/queue.c \

@@ -112,11 +112,8 @@
 	//Spin lock
 	void		pm_init_spn_lock(pspinlock_t p_lock);
 	void		pm_acqr_spn_lock(pspinlock_t p_lock);
-	void		pm_acqr_raw_spn_lock(pspinlock_t p_lock);
 	bool		pm_try_acqr_spn_lock(pspinlock_t p_lock);
-	bool		pm_try_acqr_raw_spn_lock(pspinlock_t p_lock);
 	void		pm_rls_spn_lock(pspinlock_t p_lock);
-	void		pm_rls_raw_spn_lock(pspinlock_t p_lock);
 
 	//Mutex
 	void		pm_init_mutex(pmutex_t p_mutex);

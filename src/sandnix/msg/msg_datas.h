@@ -153,4 +153,8 @@ typedef	struct {
 	u32		volume_dev;
 } msg_umount_info_t, *pmsg_umount_info_t;
 
+typedef	struct {
+	u32		int_num;
+} msg_interrupt_info_t, *pmsg_interrupt_info_t;
+
 #endif	//!	MESSAGES_H_INCLUDE

@@ -17,10 +17,12 @@
 
 #include "ssddt.h"
 #include "../../../libs/driver/syscalls.h"
+#include "../../rtl/rtl.h"
 
 syscall_t	ssddt[SYSCALL_MAX];
 
 void ssddt_init()
 {
+	rtl_memset(ssddt, 0, sizeof(ssddt));
 	return;
 }

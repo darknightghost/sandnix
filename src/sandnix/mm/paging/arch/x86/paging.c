@@ -487,7 +487,7 @@ void mm_pg_tbl_switch(u32 pdt_id)
 		            pdt_id);
 	}
 
-	pm_acqr_raw_spn_lock(&mem_lock);
+	pm_acqr_spn_lock(&mem_lock);
 
 	current_pdt = pdt_id;
 
@@ -499,7 +499,7 @@ void mm_pg_tbl_switch(u32 pdt_id)
 	    "movl	%%eax,%%cr3\n\t"
 	    ::"m"(pdt_index_table[pdt_id]));
 
-	pm_rls_raw_spn_lock(&mem_lock);
+	pm_rls_spn_lock(&mem_lock);
 
 	return;
 }

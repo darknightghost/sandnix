@@ -38,6 +38,9 @@
 //System time
 #define		SYS_TICK				10
 
+//Interrupt messages
+#define		ALL_INTERRUPT			0xFFFFFFFF
+
 //Init
 void		io_init();
 
@@ -79,5 +82,10 @@ void		io_enable_interrupt();
 void		io_disable_interrupt();
 
 void		io_dispatch_int(u32 thread_id, void* p_args);
+
+//Interrupt messages
+void		io_int_msg_init();
+bool		io_int_msg_set(u32 int_num);
+void		io_int_msg_clean(u32 int_num);
 
 #endif	//!	IO_H_INCLUDE

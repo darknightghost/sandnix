@@ -59,8 +59,8 @@ typedef	struct	_idt {
 		(base)[(num)].attr.p=s_p;\
 	}
 
-#define		SET_NORMAL_IDT(base,num)	SET_IDT((base), num, int_##num, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1)
-
+#define	SET_NORMAL_IDT(base,num)	SET_IDT((base), num, int_##num, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1)
+#define	IS_INT_RESERVED(num)		((num) < 0x20)
 //Interrupt number
 #define	INT_DE			0x00
 #define	INT_DB			0x01

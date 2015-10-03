@@ -20,12 +20,11 @@
 
 #include "../../common/common.h"
 
-#define	SYSCALL_MAX		128
-
-#define	SYSTEM_CALL(num,func,table)	((table)[(num)] = (func))
+#define	SYSCALL_MAX		0xFFFF
 
 #ifndef	_ASM
 	typedef		void*		(*syscall_t)(void*);
+	#define	SYSTEM_CALL(num,func,table)	((table)[(num)] = (syscall_t)(func))
 
 	#include "ssudt/ssudt.h"
 	#include "ssddt/ssddt.h"

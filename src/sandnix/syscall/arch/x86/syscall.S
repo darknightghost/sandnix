@@ -35,8 +35,8 @@
 #define	IA32_SYSENTER_EIP	0x176
 
 .code32
-ssddt_addr:		.long		$ssddt
-ssudt_addr:		.long		$ssudt
+ssddt_addr:		.long		ssddt
+ssudt_addr:		.long		ssudt
 
 syscall_init:
 		xorl	%edx,%edx
@@ -63,9 +63,9 @@ sys_call:
 		cmpl	$SYSCALL_MAX,%eax
 		jb		_DO_SYS_CALL
 
-		//Return 0
-		xorl	%eax,%eax
-		sysexit
+			//Return 0
+			xorl	%eax,%eax
+			sysexit
 		_DO_SYS_CALL:
 
 		//Check if the process is a driver or a user process
@@ -89,6 +89,13 @@ sys_call:
 		imul	$4,%eax
 		addl	%ebx,%eax
 		movl	(%eax),%eax
+
+		//Check start address
+		cmp		$0,%eax
+		jne		_NOT_NULL
+			xorl	%eax,%eax
+			sysexit
+		_NOT_NULL:
 
 		//Do system call
 		popl	%ebx

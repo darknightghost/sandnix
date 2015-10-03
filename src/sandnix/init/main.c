@@ -24,6 +24,7 @@
 #include "../pm/pm.h"
 #include "../rtl/rtl.h"
 #include "../msg/msg.h"
+#include "../syscall/syscall.h"
 
 
 void test();
@@ -42,21 +43,22 @@ void kernel_main()
 	excpt_init();
 	mm_init();
 	pm_init();
-
+	//io_int_msg_init();
 
 	//Create daemon threads
 	io_enable_interrupt();
 	dbg_print("Creating interrupt dispatcher thread...\n");
 	pm_create_thrd(io_dispatch_int, true, false, INT_LEVEL_EXCEPTION, NULL);
 
+	test();
 	//Initialize
 	msg_init();
 	vfs_init();
+	syscall_init();
 
 	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST);
 
 	//Create driver_init process
-	test();
 
 	//IDLE
 	io_set_crrnt_int_level(INT_LEVEL_IDLE);
@@ -66,7 +68,26 @@ void kernel_main()
 	return;
 }
 
+
+bool int_hndlr_test(u32 int_num, u32 thread_id, u32 err_code)
+{
+	dbg_print("Int test:%u.,from thread %u\n", int_num, thread_id);
+	UNREFERRED_PARAMETER(err_code);
+	return true;
+}
+
 void test()
 {
+	int_hndlr_info_t info;
+	info.func = int_hndlr_test;
+	io_reg_int_hndlr(128, &info);
 
+	__asm__("int	$128\r\n");
+	__asm__("int	$128\r\n");
+	__asm__("int	$128\r\n");
+	__asm__("int	$128\r\n");
+	__asm__("int	$128\r\n");
+	__asm__("int	$128\r\n");
+
+	while(1);
 }

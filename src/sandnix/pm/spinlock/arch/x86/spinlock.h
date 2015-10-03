@@ -23,7 +23,6 @@
 typedef	struct {
 	u32		owner;
 	u32		next;
-	u32		int_level;
 } spinlock_t, *pspinlock_t;
 
 #endif	//!	SPINLOCK_H_INCLUDE

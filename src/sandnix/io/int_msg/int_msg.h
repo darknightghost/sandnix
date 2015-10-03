@@ -15,14 +15,16 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "ssudt.h"
-#include "../../../libs/user/syscalls.h"
-#include "../../rtl/rtl.h"
+#include "../../../common/common.h"
 
-syscall_t	ssudt[SYSCALL_MAX];
+#ifndef	INT_MSG_H_INCLUDE
+#define	INT_MSG_H_INCLUDE
 
-void ssudt_init()
-{
-	rtl_memset(ssudt, 0, sizeof(ssudt));
-	return;
-}
+typedef	struct {
+	u32					ref_count;
+	u32					count;
+	spinlock_t			count_lock;
+	int_hndlr_info_t	info;
+} int_msg_info_t, *pint_msg_info_t;
+
+#endif	//!	INT_MSG_H_INCLUDE

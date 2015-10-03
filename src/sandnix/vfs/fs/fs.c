@@ -22,6 +22,7 @@
 #include "ramdisk/ramdisk.h"
 #include "tarfs/tarfs.h"
 #include "../../debug/debug.h"
+#include "../../io/io.h"
 
 static	array_list_t	file_desc_info_table;
 static	mutex_t			file_desc_info_table_lock;
@@ -540,6 +541,7 @@ k_status vfs_fork(u32 dest_process)
 	}
 
 	rtl_memcpy(p_dest_info, p_src_info, sizeof(vfs_proc_info));
+	vfs_inc_obj_reference((pkobject_t)get_driver(p_src_info->driver_obj));
 	pm_init_mutex(&(p_dest_info->lock));
 
 	pm_set_errno(ESUCCESS);
@@ -586,6 +588,11 @@ void vfs_clean(u32 process_id)
 		pm_rls_mutex(&file_desc_info_table_lock);
 		pm_set_errno(EFAULT);
 		return;
+	}
+
+	if(pm_is_driver()) {
+		io_int_msg_clean(ALL_INTERRUPT);
+		vfs_dec_obj_reference((pkobject_t)get_driver(p_info->driver_obj));
 	}
 
 	pm_acqr_mutex(&file_desc_info_table_lock, TIMEOUT_BLOCK);
@@ -1494,6 +1501,13 @@ k_status vfs_send_file_message(u32 src_driver,
 	                p_dest_file->p_driver->msg_queue,
 	                p_result,
 	                p_complete_result);
+}
+
+u32 vfs_get_crrnt_driver_id()
+{
+	pvfs_proc_info p_info;
+	p_info = get_proc_fs_info();
+	return p_info->driver_obj;
 }
 
 k_status add_file_obj(pfile_obj_t p_file_obj)

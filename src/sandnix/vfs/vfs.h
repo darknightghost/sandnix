@@ -114,7 +114,6 @@ k_status		vfs_stat(char* path, ppmo_t buf);
 k_status		vfs_unlink(char* path);
 k_status		vfs_mkdir(char* path, u32 mode);
 k_status		vfs_readdir(u32 fd, ppmo_t buf);
-void			vfs_sync(u32 dev_num);
 //s32			vfs_ioctl(u32 fd, u32 request, ...);
 
 //File object
@@ -131,6 +130,7 @@ void			vfs_dec_obj_reference(pkobject_t p_object);
 
 //Driver Objects
 pdriver_obj_t	vfs_create_drv_object(char* drv_name);
+u32				vfs_get_crrnt_driver_id();
 u32				vfs_reg_driver(pdriver_obj_t p_driver);
 k_status		vfs_send_drv_message(u32 src_driver,
                                      u32 dest_driver,

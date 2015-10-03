@@ -335,7 +335,8 @@ k_status msg_complete(pmsg_t p_msg, k_status result)
 	if(p_msg->flags.flags | MFLAG_ASYNC) {
 
 		if(p_msg->message == MSG_COMPLETE
-		   || p_msg->message == MSG_CANCEL) {
+		   || p_msg->message == MSG_CANCEL
+		   || p_msg->message == MSG_INTERRUPT) {
 			mm_hp_free(p_msg, NULL);
 
 			pm_set_errno(ESUCCESS);
