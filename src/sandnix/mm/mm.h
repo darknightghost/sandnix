@@ -64,7 +64,8 @@ void		mm_init();
 phy_page_state_t		mm_phy_mem_state_get(void* addr);
 
 //Virtual memory
-void*				mm_virt_alloc(void* start_addr, size_t size, u32 options, u32 attr);
+void*				mm_virt_alloc(void* start_addr,
+                                  size_t size, u32 options, u32 attr);
 void				mm_virt_free(void* start_addr, size_t size, u32 options);
 void*				mm_virt_map(void* virt_addr, void* phy_addr);
 void				mm_virt_unmap(void* virt_addr);

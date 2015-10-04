@@ -1345,8 +1345,6 @@ void wait_thread()
 	    schedule_heap);
 	pm_rls_spn_lock(&(task_queues[level].lock));
 
-	pm_enable_task_switch();
-
 	pm_rls_spn_lock(&thread_table_lock);
 
 	pm_schedule();

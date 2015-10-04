@@ -18,11 +18,21 @@
 #ifndef	SEMAPHORE_H_INCLUDE
 #define	SEMAPHORE_H_INCLUDE
 
-#include "../pm.h"
+#include "../spinlock/arch/x86/spinlock.h"
 #include "../../rtl/rtl.h"
 
 typedef	struct {
-
+	u32			count;
+	u32			max_count;
+	list_t		blocked_list;
+	spinlock_t	lock;
 } semaphore_t, *psemaphore_t;
+
+typedef	struct {
+	u32		thread_id;
+	bool	awake_flag;
+} sem_wait_thrd_t, *psem_wait_thrd_t;
+
+#include "../pm.h"
 
 #endif	//!	SEMAPHORE_H_INCLUDE

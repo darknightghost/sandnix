@@ -37,7 +37,7 @@ void ramdisk_init()
 
 	//Create driver process
 	if(pm_fork() == 0) {
-		pm_exec("initrd", NULL);
+		pm_execve("initrd", NULL, NULL);
 		pm_clear_kernel_stack(kdriver_main, NULL);
 
 	} else {

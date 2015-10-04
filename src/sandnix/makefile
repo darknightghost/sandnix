@@ -11,6 +11,7 @@ export SOURCES = init/main.c \
 					rtl/hash_table/hash_table.c \
 					pm/pm.c \
 					pm/mutex/mutex.c \
+					pm/semaphore/semaphore.c \
 					init/parameters/parameters.c \
 					msg/msg.c \
 					vfs/vfs.c \

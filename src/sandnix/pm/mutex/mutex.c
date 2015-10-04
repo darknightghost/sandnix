@@ -27,7 +27,7 @@ void pm_init_mutex(pmutex_t p_mutex)
 	return;
 }
 
-k_status  pm_acqr_mutex(pmutex_t p_mutex, u32 timeout)
+k_status pm_acqr_mutex(pmutex_t p_mutex, u32 timeout)
 {
 	plist_node_t p_node;
 	plist_node_t p_current_node;

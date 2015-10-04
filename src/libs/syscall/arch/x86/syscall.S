@@ -31,7 +31,6 @@ do_sys_call:
 	push	%ebp
 	movl	%esp,%ebp
 	push	%ebx
-	movl	%ebp
 	lea		(%ebp+8),%ebx
 	movl	%esp,%ecx
 	movl	$_RET,%edx

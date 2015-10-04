@@ -97,8 +97,8 @@
 
 	//Process
 	s32			pm_fork();														//Can be only called as a system call
-	void		pm_exec(char* cmd_line, char* image_path);
-	u32			pm_wait(u32 child_id, bool if_block);
+	void		pm_execve(char* file_name, char* argv[], char* envp[]);
+	u32			pm_wait(u32 child_id, u32* p_id, bool if_block);
 	u32			pm_get_crrnt_process();
 	bool		pm_get_proc_uid(u32 process_id, u32* p_uid);
 	bool		pm_set_proc_euid(u32 process_id, u32 euid);
@@ -122,10 +122,10 @@
 	void		pm_rls_mutex(pmutex_t p_mutex);
 
 	//Semaphore
-	void		pm_init_semaphore(psemaphore_t p_semaphore, u32 max_num);
-	k_status	pm_acqr_semaphore(psemaphore_t p_semaphore, u32 timeout);
-	k_status	pm_try_acqr_semaphore(psemaphore_t p_semaphore);
-	void		pm_rls_semaphore(psemaphore_t p_semaphore);
+	void		pm_init_semaphore(psemaphore_t p_sem, u32 max_count);
+	k_status	pm_acqr_semaphore(psemaphore_t p_sem, u32 timeout);
+	k_status	pm_try_acqr_semaphore(psemaphore_t p_sem);
+	void		pm_rls_semaphore(psemaphore_t p_sem);
 
 #endif	//!	_ASM
 

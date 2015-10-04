@@ -133,14 +133,14 @@ s32	pm_fork()
 	return new_id;
 }
 
-void pm_exec(char* cmd_line, char* image_path)
+void pm_execve(char* file_name, char* argv[], char* envp[])
 {
 	size_t name_len;
 
 	//TODO:exec
-	if(image_path == NULL) {
+	if(argv == NULL) {
 		//Just change the name of process
-		name_len = rtl_strlen(cmd_line) + 1;
+		name_len = rtl_strlen(file_name) + 1;
 		pm_acqr_spn_lock(&process_table_lock);
 		mm_hp_free(process_table[current_process].process_name,
 		           process_heap);
@@ -148,14 +148,16 @@ void pm_exec(char* cmd_line, char* image_path)
 		        process_heap);
 		rtl_strcpy_s(process_table[current_process].process_name,
 		             name_len,
-		             cmd_line);
+		             file_name);
 		pm_rls_spn_lock(&process_table_lock);
 		pm_set_errno(ESUCCESS);
 		return;
 	}
+
+	UNREFERRED_PARAMETER(envp);
 }
 
-u32 pm_wait(u32 child_id, bool if_block)
+u32 pm_wait(u32 child_id, u32* p_id, bool if_block)
 {
 	plist_node_t p_node;
 	u32 ret;
@@ -206,7 +208,7 @@ _HAS_CHILD:
 	}
 
 	//Wait
-	while(if_block) {
+	do {
 		if(pm_should_break()) {
 			pm_rls_spn_lock(&process_table_lock);
 			pm_set_errno(EINTR);
@@ -219,8 +221,9 @@ _HAS_CHILD:
 		if(p_node != NULL) {
 			do {
 				if(child_id == 0 ||
-				   (u32)(p_node->p_item) != child_id) {
+				   (u32)(p_node->p_item) == child_id) {
 					//Return
+					*p_id = (u32)(p_node->p_item);
 					ret = release_process((u32)(p_node->p_item));
 					rtl_list_remove(&(process_table[current_process].wait_list),
 					                p_node,
@@ -263,13 +266,13 @@ _CHILD_EXISIS:
 		//Set thread status
 		pm_rls_spn_lock(&process_table_lock);
 
-		if(!pm_should_break()) {
+		if((!pm_should_break()) && if_block) {
 			wait_thread();
 		}
 
 		pm_acqr_spn_lock(&process_table_lock);
 
-	}
+	} while(if_block);
 
 	//Clear zombie threads
 	pm_rls_spn_lock(&process_table_lock);

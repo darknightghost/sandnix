@@ -44,7 +44,7 @@ void devfs_init()
 
 	//Create driver process
 	if(pm_fork() == 0) {
-		pm_exec("devfs", NULL);
+		pm_execve("devfs", NULL, NULL);
 		pm_clear_kernel_stack(kdriver_main, NULL);
 
 	} else {
