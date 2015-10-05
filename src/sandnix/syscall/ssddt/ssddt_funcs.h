@@ -16,94 +16,95 @@
 */
 
 #include "../../../common/common.h"
+#include "../../rtl/rtl.h"
 
 #ifndef	SSDDT_FUNCS_H_INCLUDE
 #define	SSDDT_FUNCS_H_INCLUDE
 
 //Filesystem
-u32			ssddt_open(void* p_args);
-k_status	ssddt_fchmod(void* p_args);
-k_status	ssddt_access(void* p_args);
-void		ssddt_close(void* p_args);
-size_t		ssddt_read(void* p_args);
-size_t		ssddt_write(void* p_args);
-k_status	ssddt_seek(void* p_args);
-k_status	ssddt_stat(void* p_args);
-k_status	ssddt_unlink(void* p_args);
-k_status	ssddt_mkdir(void* p_args);
-size_t		ssddt_readdir(void* p_args);
+u32			ssddt_open(va_list p_args);
+k_status	ssddt_fchmod(va_list p_args);
+k_status	ssddt_access(va_list p_args);
+void		ssddt_close(va_list p_args);
+size_t		ssddt_read(va_list p_args);
+size_t		ssddt_write(va_list p_args);
+k_status	ssddt_seek(va_list p_args);
+k_status	ssddt_stat(va_list p_args);
+k_status	ssddt_unlink(va_list p_args);
+k_status	ssddt_mkdir(va_list p_args);
+size_t		ssddt_readdir(va_list p_args);
 
 //Mount
-k_status	ssddt_mount(void* p_args);
-k_status	ssddt_umount(void* p_args);
+k_status	ssddt_mount(va_list p_args);
+k_status	ssddt_umount(va_list p_args);
 
 //Objects
 u32			ssddt_create_file_obj();
-u32			ssddt_create_drv_obj(void* p_args);
-u32			ssddt_create_dev(void* p_args);
-u32			ssddt_remove_dev(void* p_args);
-u32			ssddt_set_dev_filename(void* p_args);
-u32			ssddt_get_major(void* p_args);
-k_status	ssddt_sync(void* p_args);
+u32			ssddt_create_drv_obj(va_list p_args);
+u32			ssddt_create_dev(va_list p_args);
+u32			ssddt_remove_dev(va_list p_args);
+u32			ssddt_set_dev_filename(va_list p_args);
+u32			ssddt_get_major(va_list p_args);
+k_status	ssddt_sync(va_list p_args);
 
 //Memory
-void*		ssddt_virt_alloc(void* p_args);
-void		ssddt_virt_free(void* p_args);
-void*		ssddt_map_pmo(void* p_args);
-void		ssddt_unmap_pmo(void* p_args);
-void*		ssddt_map_reserv_mem(void* p_args);
-void		ssddt_umap_reserv_mem(void* p_args);
+void*		ssddt_virt_alloc(va_list p_args);
+void		ssddt_virt_free(va_list p_args);
+void*		ssddt_map_pmo(va_list p_args);
+void		ssddt_unmap_pmo(va_list p_args);
+void*		ssddt_map_reserv_mem(va_list p_args);
+void		ssddt_umap_reserv_mem(va_list p_args);
 
 //Process
 int			ssddt_fork();
-void		ssddt_execve(void* p_args);
-u32			ssddt_waitpid(void* p_args);
+void		ssddt_execve(va_list p_args);
+u32			ssddt_waitpid(va_list p_args);
 u32			ssddt_get_proc_id();
 u32			ssddt_get_uid();
-k_status	ssddt_set_uid(void* p_args);
+k_status	ssddt_set_uid(va_list p_args);
 u32			ssddt_get_gid();
-k_status	ssddt_set_gid(void* p_args);
+k_status	ssddt_set_gid(va_list p_args);
 void		ssddt_chg_to_usr();
 
 //Thread
 void		ssddt_schedule();
-u32			ssddt_create_thrd(void* p_args);
-void		ssddt_exit_thrd(void* p_args);
-void		ssddt_suspend(void* p_args);
-u32			ssddt_join(void* p_args);
-void		ssddt_resume(void* p_args);
-void		ssddt_sleep(void* p_args);
+u32			ssddt_create_thrd(va_list p_args);
+void		ssddt_exit_thrd(va_list p_args);
+void		ssddt_suspend(va_list p_args);
+u32			ssddt_join(va_list p_args);
+void		ssddt_resume(va_list p_args);
+void		ssddt_sleep(va_list p_args);
 u32			ssddt_get_thrd_id();
 u32			ssddt_get_errno();
-void		ssddt_set_errno(void* p_args);
+void		ssddt_set_errno(va_list p_args);
 
 //Mutex
-void*		ssddt_create_mutex(void* p_args);
-k_status	ssddt_acqr_mutex(void* p_args);
-k_status	ssddt_try_mutex(void* p_args);
-void		ssddt_rls_mutex(void* p_args);
+void*		ssddt_create_mutex(va_list p_args);
+k_status	ssddt_acqr_mutex(va_list p_args);
+k_status	ssddt_try_mutex(va_list p_args);
+void		ssddt_rls_mutex(va_list p_args);
 
 //Semaphore
-void*		ssddt_create_semaphore(void* p_args);
-k_status	ssddt_acqr_semaphore(void* p_args);
-k_status	ssddt_try_semaphore(void* p_args);
-void		ssddt_rls_semaphore(void* p_args);
+void*		ssddt_create_semaphore(va_list p_args);
+k_status	ssddt_acqr_semaphore(va_list p_args);
+k_status	ssddt_try_semaphore(va_list p_args);
+void		ssddt_rls_semaphore(va_list p_args);
 
 //Message
-void*		ssddt_recv_msg(void* p_args);
-k_status	ssddt_complete_msg(void* p_args);
-k_status	ssddt_forward_msg(void* p_args);
-void		ssddt_cancel_msg(void* p_args);
+void*		ssddt_recv_msg(va_list p_args);
+k_status	ssddt_complete_msg(va_list p_args);
+k_status	ssddt_forward_msg(va_list p_args);
+void		ssddt_cancel_msg(va_list p_args);
 
 //IO
-void		ssddt_read_port(void* p_args);
-void		ssddt_write_port(void* p_args);
-void		ssddt_get_tickcount(void* p_args);
+void		ssddt_read_port(va_list p_args);
+void		ssddt_write_port(va_list p_args);
+void		ssddt_get_tickcount(va_list p_args);
 u32			ssddt_get_tick();
-k_status	ssddt_set_int_msg(void* p_args);
-void		ssddt_clean_int_msg(void* p_args);
+k_status	ssddt_set_int_msg(va_list p_args);
+void		ssddt_clean_int_msg(va_list p_args);
 
 //Others
-u32			ssddt_kprint(void* p_args);
+u32			ssddt_kprint(va_list p_args);
 
 #endif	//!	SSDDT_FUNCS_H_INCLUDE

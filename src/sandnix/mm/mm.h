@@ -57,6 +57,12 @@ typedef	struct	{
 #define		HEAP_MULTITHREAD	0x02
 #define		HEAP_DESTROY		0x04
 
+#define		PG_STAT_USER		0x00000001
+#define		PG_STAT_RESERVE		0x00000002
+#define		PG_STAT_COMMIT		0x00000004
+#define		PG_STAT_WRITEABLE	0x00000008
+#define		PG_STAT_EXECUTEABLE	0x00000010
+
 
 void		mm_init();
 
@@ -69,6 +75,8 @@ void*				mm_virt_alloc(void* start_addr,
 void				mm_virt_free(void* start_addr, size_t size, u32 options);
 void*				mm_virt_map(void* virt_addr, void* phy_addr);
 void				mm_virt_unmap(void* virt_addr);
+u32					mm_virt_status(void* addr);
+bool				mm_virt_test(void* base, size_t len, u32 flags);
 
 //Swap
 void				mm_pg_lock(u32 id, void* address);

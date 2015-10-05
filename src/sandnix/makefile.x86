@@ -33,7 +33,8 @@ SOURCES += setup/arch/x86/setup.S \
 			rtl/math/arch/x86/math.c \
 			syscall/arch/x86/syscall.S \
 			syscall/ssddt/ssddt.c \
-			syscall/ssudt/ssudt.c
+			syscall/ssudt/ssudt.c \
+			syscall/ssddt/fs.c
 			
 
 OBJS_DIR = $(root_path)/obj/sandnix/x86

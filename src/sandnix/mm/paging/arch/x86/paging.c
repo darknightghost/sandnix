@@ -449,6 +449,106 @@ void mm_virt_unmap(void* virt_addr)
 	return;
 }
 
+u32 mm_virt_status(void* addr)
+{
+	u32 ret;
+	u32 index;
+	ppde_t p_pde;
+	ppte_t p_pte;
+
+	index = (u32)addr / 4096;
+	pm_acqr_spn_lock(&mem_lock);
+	switch_to_0();
+
+	//Get pde
+	if(index >= KERNEL_MEM_BASE / 4096) {
+		p_pde = (ppde_t)(TMP_PDT_BASE + VIRTUAL_ADDR_OFFSET);
+
+	} else {
+		map_phy_addr(pdt_index_table[current_pdt]);
+		p_pde = (ppde_t)(PT_MAPPING_ADDR);
+	}
+
+	p_pde += index / 1024;
+
+	//Get page status
+	if(!IS_KERNEL_MEM(addr)) {
+		ret = PG_STAT_USER;
+	}
+
+_GET_STATUS:
+
+	if(p_pde->present == PG_NP) {
+		if(p_pde->avail == PG_NORMAL) {
+			//Do nothing
+		} else if(p_pde->avail == PG_SWAPPED) {
+			//TODO:Swap
+			excpt_panic(ENOTSUP,
+			            "Memory in swap!\n");
+			goto _GET_STATUS;
+
+		} else {
+			excpt_panic(EOVERFLOW,
+			            "pdt_table has been broken!\n");
+		}
+
+	} else {
+		//Map pdt
+		map_phy_addr((void*)(p_pde->page_table_base_addr << 12));
+		p_pte = (ppte_t)(PT_MAPPING_ADDR);
+		p_pte += index % 1024;
+
+		if(p_pte->present == PG_P) {
+			//Present
+			ret = ret | PG_STAT_RESERVE;
+			ret = ret | PG_STAT_COMMIT;
+
+			if(p_pte->read_write == PG_RW
+			   || p_pte->avail == PG_CP_ON_W_RW) {
+				ret = ret | PG_STAT_WRITEABLE;
+			}
+
+			//In x86 structure,all pages can execute
+			ret = ret | PG_STAT_EXECUTEABLE;
+
+		} else {
+			//Not present
+			if(p_pte->avail == PG_SWAPPED) {
+				//TODO:Call swap module
+				excpt_panic(ENOTSUP,
+				            "Memory in swap!\n");
+			}
+
+			if(p_pte->avail == PG_RESERVED) {
+				ret = ret | PG_STAT_RESERVE;
+			}
+		}
+	}
+
+	switch_back();
+	pm_rls_spn_lock(&mem_lock);
+
+	return ret;
+}
+
+bool mm_virt_test(void* base, size_t len, u32 flags)
+{
+	u32 end, addr;
+
+	addr = (u32)base / 4096 * 4096;
+	end = ((u32)base + len) / 4096 * 4096;
+
+	do {
+		if((mm_virt_status((void*)addr)&flags) != flags) {
+			return false;
+		}
+
+		addr += 4096;
+	} while(addr < end);
+
+	return true;
+}
+
 u32 mm_pg_tbl_fork(u32 parent)
 {
 	u32 new_id;

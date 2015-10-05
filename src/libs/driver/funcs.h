@@ -25,11 +25,11 @@ k_status	access(const char *pathname, u32 mode);
 void		close(u32 fd);
 size_t		read(u32 fd, void *buf, size_t count);
 size_t		write(u32 fd, const void *buf, size_t count);
-k_status	seek(u32 fd, u64 offset, u32 whence, u64* p_after_pos);
-k_status	stat(const char *path, struct stat *buf);
+k_status	seek(u32 fd, s64 offset, u32 whence, u64* p_after_pos);
+k_status	stat(const char *path, pfile_stat_t *buf);
 k_status	unlink(const char *pathname);
 k_status	mkdir(const char *pathname, u32 mode);
-size_t		readdir(u32 fd, pdirent_t *buf, size_t count);
+size_t		readdir(u32 fd, pdirent_t buf, size_t count);
 
 //Mount
 k_status	mount(const char *source, const char *target,

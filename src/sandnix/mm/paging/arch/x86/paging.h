@@ -21,6 +21,8 @@
 #include "../../../../../common/arch/x86/types.h"
 #include "../../../mm.h"
 
+#define	IS_KERNEL_MEM(addr)	((u32)(addr) < KERNEL_MEM_BASE)
+
 #define	PAGE_TABLE_VADDR
 #define	REFRESH_TLB	{\
 		__asm__ __volatile__(\
