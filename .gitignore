@@ -1,7 +1,9 @@
 /obj/*
+/bin/*
+/tools/*
+/libs/*
 #*#
 *~
 tags
 cscope*
-/bin/*
 *.swp

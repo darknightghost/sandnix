@@ -25,7 +25,8 @@ void io_read_port_bytes(u32 port, u8* buf, u32 num)
 	    "movl		%1,%%edi\n\t"
 	    "movl		%2,%%ecx\n\t"
 	    "rep		insb\n\t"
-	    ::"m"(port), "m"(buf), "m"(num));
+	    ::"m"(port), "m"(buf), "m"(num)
+	    :"cx", "dx", "di");
 	return;
 }
 
@@ -37,7 +38,8 @@ void io_write_port_bytes(u32 port, u8* buf, u32 num)
 	    "movl		%1,%%esi\n\t"
 	    "movl		%2,%%ecx\n\t"
 	    "rep		outsb\n\t"
-	    ::"m"(port), "m"(buf), "m"(num));
+	    ::"m"(port), "m"(buf), "m"(num)
+	    :"cx", "dx", "si");
 	return;
 }
 
@@ -49,7 +51,8 @@ void io_read_port_words(u32 port, u16* buf, u32 num)
 	    "movl		%1,%%edi\n\t"
 	    "movl		%2,%%ecx\n\t"
 	    "rep		insw\n\t"
-	    ::"m"(port), "m"(buf), "m"(num));
+	    ::"m"(port), "m"(buf), "m"(num)
+	    :"cx", "dx", "di");
 	return;
 }
 void io_write_port_words(u32 port, u16* buf, u32 num)
@@ -60,7 +63,8 @@ void io_write_port_words(u32 port, u16* buf, u32 num)
 	    "movl		%1,%%esi\n\t"
 	    "movl		%2,%%ecx\n\t"
 	    "rep		outsw\n\t"
-	    ::"m"(port), "m"(buf), "m"(num));
+	    ::"m"(port), "m"(buf), "m"(num)
+	    :"cx", "dx", "si");
 	return;
 }
 
@@ -72,7 +76,8 @@ void io_read_port_dwords(u32 port, u32* buf, u32 num)
 	    "movl		%1,%%edi\n\t"
 	    "movl		%2,%%ecx\n\t"
 	    "rep		insl\n\t"
-	    ::"m"(port), "m"(buf), "m"(num));
+	    ::"m"(port), "m"(buf), "m"(num)
+	    :"cx", "dx", "di");
 	return;
 }
 
@@ -84,7 +89,8 @@ void io_write_port_dwords(u32 port, u32* buf, u32 num)
 	    "movl		%1,%%esi\n\t"
 	    "movl		%2,%%ecx\n\t"
 	    "rep		outsl\n\t"
-	    ::"m"(port), "m"(buf), "m"(num));
+	    ::"m"(port), "m"(buf), "m"(num)
+	    :"cx", "dx", "si");
 	return;
 }
 

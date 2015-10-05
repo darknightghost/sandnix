@@ -7,9 +7,9 @@ LDFLAGS =
 
 current_path = $(shell pwd)
 
-root_path = $(current_path)/../..
+root_path = $(current_path)/../../..
 
-TARGET_DIR = $(root_path)/bin/tools
+TARGET_DIR = $(root_path)/tools
 TARGET = $(TARGET_DIR)/initrd
 
 SOURCES = initrd.c

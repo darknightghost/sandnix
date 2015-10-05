@@ -497,7 +497,8 @@ void mm_pg_tbl_switch(u32 pdt_id)
 	    "andl	$0xFFFFF000,%%eax\n\t"
 	    "orl	$0x008,%%eax\n\t"
 	    "movl	%%eax,%%cr3\n\t"
-	    ::"m"(pdt_index_table[pdt_id]));
+	    ::"m"(pdt_index_table[pdt_id])
+	    :"ax");
 
 	pm_rls_spn_lock(&mem_lock);
 
@@ -830,7 +831,7 @@ void map_phy_addr(void* phy_addr)
 	__asm__ __volatile__(
 	    "movl	%%cr3,%%eax\n\t"
 	    "movl	%%eax,%%cr3\n\t"
-	    ::);
+	    :::"ax");
 
 	return;
 }
@@ -1377,7 +1378,8 @@ void switch_to_0()
 	    "andl	$0xFFFFF000,%%eax\n\t"
 	    "orl	$0x008,%%eax\n\t"
 	    "movl	%%eax,%%cr3\n\t"
-	    ::"m"(pdt_index_table[0]));
+	    ::"m"(pdt_index_table[0])
+	    :"ax");
 	return;
 
 }
@@ -1390,6 +1392,7 @@ void switch_back()
 	    "andl	$0xFFFFF000,%%eax\n\t"
 	    "orl	$0x008,%%eax\n\t"
 	    "movl	%%eax,%%cr3\n\t"
-	    ::"m"(pdt_index_table[current_pdt]));
+	    ::"m"(pdt_index_table[current_pdt])
+	    :"ax");
 	return;
 }

@@ -399,7 +399,8 @@ void cls()
 	    "movb		%1,%%ah\n\t"
 	    "movb		$0x20,%%al\n\t"
 	    "rep		stosw"
-	    ::"m"(size), "i"(FG_BRIGHT_WHITE | BG_RED), "i"(BASIC_VIDEO_BASE_ADDR));
+	    ::"m"(size), "i"(FG_BRIGHT_WHITE | BG_RED), "i"(BASIC_VIDEO_BASE_ADDR)
+	    :"cx", "di");
 	current_cursor_line = 0;
 	current_cursor_row = 0;
 	set_cursor_pos(0, 0);
@@ -527,6 +528,7 @@ void scroll_down(u16 line, u16 color)
 	    "rep		stosw\n\t"
 	    "pop		%%ds\n\t"
 	    "pop		%%es\n\t"
-	    ::"m"(offset), "m"(len), "m"(color), "m"(half_len));
+	    ::"m"(offset), "m"(len), "m"(color), "m"(half_len)
+	    :"ax", "cx", "si", "di");
 	return;
 }

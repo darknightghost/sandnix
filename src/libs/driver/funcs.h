@@ -18,17 +18,18 @@
 #ifndef	FUNCS_H_INCLUDE
 #define	FUNCS_H_INCLUDE
 
-//Fileysytem
+//Filesystem
 u32			open(const char *pathname, u32 flags, u32 mode);
 k_status	fchmod(u32 fd, u32 mode);
 k_status	access(const char *pathname, u32 mode);
 void		close(u32 fd);
 size_t		read(u32 fd, void *buf, size_t count);
 size_t		write(u32 fd, const void *buf, size_t count);
-void		seek(u32 fd, u64 offset, u32 whence, u64* p_after_pos);
+k_status	seek(u32 fd, u64 offset, u32 whence, u64* p_after_pos);
 k_status	stat(const char *path, struct stat *buf);
 k_status	unlink(const char *pathname);
 k_status	mkdir(const char *pathname, u32 mode);
+size_t		readdir(u32 fd, pdirent_t *buf, size_t count);
 
 //Mount
 k_status	mount(const char *source, const char *target,
@@ -61,9 +62,9 @@ void		execve(const char *filename, char *const argv[],
 u32			waitpid(u32 pid, u32 *status, u32 options);
 u32			get_proc_id();
 u32			get_uid();
-int			set_uid(u32 uid);
+k_status	set_uid(u32 uid);
 u32			get_gid();
-int			set_gid(u32 gid);
+k_status	set_gid(u32 gid);
 void		chg_to_usr();
 
 //Thread
@@ -86,8 +87,8 @@ k_status	try_mutex(void* p_mutex_obj);
 void		rls_mutex(void* p_mutex_obj);
 
 //Semaphore
-void*		create_semaphore();
-k_status	acqr_semaphore(void* p_sem_obj, u32 timeout, u32 max_count);
+void*		create_semaphore(u32 max_count);
+k_status	acqr_semaphore(void* p_sem_obj, u32 timeout);
 k_status	try_semaphore(void* p_sem_obj);
 void		rls_semaphore(void* p_sem_obj);
 

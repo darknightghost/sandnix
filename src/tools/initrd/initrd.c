@@ -24,7 +24,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include "../common/tar.h"
+#include "../../common/tar.h"
 
 #define	BUF_SIZE		4096
 

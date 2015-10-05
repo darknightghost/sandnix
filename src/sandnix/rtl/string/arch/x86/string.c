@@ -81,7 +81,8 @@ void* rtl_memcpy(void* dest, void* src, size_t len)
 	    "movl		%1,%%esi\n\t"
 	    "movl		%2,%%ecx\n\t"
 	    "rep		movsb\n\t"
-	    ::"m"(dest), "m"(src), "m"(len));
+	    ::"m"(dest), "m"(src), "m"(len)
+	    :"cx", "si", "di");
 	return dest;
 }
 
@@ -101,7 +102,8 @@ void* rtl_memset(void* dest, u8 val, size_t len)
 	    "rep		stosl\n"
 	    "movl		%1,%%ecx\n"
 	    "rep		stosb\n"
-	    ::"m"(dest), "m"(len), "m"(val_4), "m"(len_4));
+	    ::"m"(dest), "m"(len), "m"(val_4), "m"(len_4)
+	    :"ax", "cx", "di");
 	return dest;
 }
 
@@ -114,7 +116,8 @@ void* rtl_memmove(void* dest, void* src, size_t n)
 		    "movl		%1,%%esi\n\t"
 		    "movl		%2,%%edi\n\t"
 		    "rep		movsb"
-		    ::"m"(n), "m"(src), "m"(dest));
+		    ::"m"(n), "m"(src), "m"(dest)
+		    :"cx", "si", "di");
 
 	} else {
 		src = src + n - 1;
@@ -125,7 +128,8 @@ void* rtl_memmove(void* dest, void* src, size_t n)
 		    "movl		%1,%%esi\n\t"
 		    "movl		%2,%%edi\n\t"
 		    "rep		movsb\n\t"
-		    ::"m"(n), "m"(src), "m"(dest));
+		    ::"m"(n), "m"(src), "m"(dest)
+		    :"cx", "si", "di");
 	}
 
 	return dest;
@@ -144,7 +148,8 @@ u32 rtl_strlen(char* str)
 	    "subl		%%ecx,%%eax\n\t"
 	    "decl		%%eax\n\t"
 	    :"=%%eax"(ret)
-	    :"m"(str));
+	    :"m"(str)
+	    :"cx", "di");
 	return ret;
 }
 
@@ -168,7 +173,8 @@ char* rtl_strcpy_s(char* dest, size_t buf_size, char* src)
 	    "movl		%2,%%edi\n\t"
 	    "rep		movsb\n\t"
 	    "movb		$0,(%%edi)"
-	    ::"m"(len), "m"(src), "m"(dest));
+	    ::"m"(len), "m"(src), "m"(dest)
+	    :"cx", "si", "di");
 	return dest;
 }
 
@@ -215,7 +221,8 @@ char* rtl_strcat_s(char* dest, size_t buf_size, char* src)
 	    "movl		%2,%%edi\n\t"
 	    "rep		movsb\n\t"
 	    "movb		$0,(%%edi)"
-	    ::"m"(len), "m"(src), "m"(dest));
+	    ::"m"(len), "m"(src), "m"(dest)
+	    :"cx", "si", "di");
 	return dest;
 }
 

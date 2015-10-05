@@ -310,7 +310,7 @@ void init_idt()
 	    "andl	$0xFFFFCFFF,%%eax\n\t"
 	    "movl	%%eax,(%%esp)\n\t"
 	    "popfl\n\t"
-	    ::);
+	    :::"ax");
 }
 
 void setup_8259A()

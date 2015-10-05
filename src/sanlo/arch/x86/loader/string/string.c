@@ -27,7 +27,8 @@ void memset(void* addr, u8 value, size_t size)
 	    "movl		%1,%%ecx\n\t"
 	    "movb		%2,%%al\n\t"
 	    "rep		stosb\n\t"
-	    ::"m"(addr), "m"(size), "m"(value));
+	    ::"m"(addr), "m"(size), "m"(value)
+	    :"ax", "cx", "dx");
 	return;
 }
 
@@ -39,7 +40,8 @@ void memcpy(void* dest, void* src, size_t len)
 	    "movl		%1,%%esi\n\t"
 	    "movl		%2,%%ecx\n\t"
 	    "rep		movsb"
-	    ::"m"(dest), "m"(src), "m"(len));
+	    ::"m"(dest), "m"(src), "m"(len)
+	    :"cx", "si", "di");
 	return;
 }
 
@@ -78,9 +80,11 @@ size_t strlen(char* str)
 	    "subl		%%ecx,%%eax\n\t"
 	    "decl		%%eax\n\t"
 	    :"=%%eax"(ret)
-	    :"m"(str));
+	    :"m"(str)
+	    :"cx", "di");
 	return ret;
 }
+
 char* strcpy(char* dest, char* src)
 {
 	size_t len;
@@ -92,7 +96,8 @@ char* strcpy(char* dest, char* src)
 	    "movl		%0,%%esi\n\t"
 	    "movl		%1,%%edi\n\t"
 	    "repnz		movsb\n\t"
-	    ::"m"(src), "m"(dest), "m"(len));
+	    ::"m"(src), "m"(dest), "m"(len)
+	    :"ax", "cx", "si", "di");
 	return dest;
 }
 int strcmp(char* dest, char* src)

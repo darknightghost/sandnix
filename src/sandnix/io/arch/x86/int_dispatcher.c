@@ -171,7 +171,7 @@ void int_clock_dispatcher(pret_regs_t p_regs)
 	__asm__ __volatile__(
 	    "movb	$0x20,%%al\n\t"
 	    "outb	%%al,$0x20\n\t"
-	    ::);
+	    :::"ax");
 
 	//Schedule
 	__asm__ __volatile__(

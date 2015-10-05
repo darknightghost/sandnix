@@ -87,8 +87,9 @@ print_err:
 	while(get_keyboard_input() != KEY_ESC_PRESSED);
 
 	__asm__ __volatile__(
-	    "movb	$0xFE,%al\n\t"
-	    "outb	%al,$0x64\n\t");
+	    "movb	$0xFE,%%al\n\t"
+	    "outb	%%al,$0x64\n\t"
+	    :::"ax");
 	return;
 }
 #pragma GCC pop_options
