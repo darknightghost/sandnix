@@ -57,8 +57,11 @@ fmt_df:
 		pushal
 		pushl	%esp
 		movl	tick_count,%eax
-		incl	%eax
+		addl	$1,%eax
 		movl	%eax,tick_count
+		movl	tick_count+4,%eax
+		adcl	$0,%eax
+		movl	%eax,tick_count+4
 		call	int_clock_dispatcher
 .endm
 

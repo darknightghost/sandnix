@@ -38,6 +38,12 @@ u32 ssddt_open(va_list p_args)
 	flags = va_arg(p_args, u32);
 	mode = va_arg(p_args, u32);
 
+	//Check arguments
+	if(!check_str_arg(pathname, PATH_MAX + 1)) {
+		pm_set_errno(EINVAL);
+		return 0;
+	}
+
 	return vfs_open(pathname, flags, mode);
 }
 
@@ -67,6 +73,12 @@ k_status ssddt_access(va_list p_args)
 	//Get args
 	pathname = va_arg(p_args, char*);
 	mode = va_arg(p_args, u32);
+
+	//Check arguments
+	if(!check_str_arg(pathname, PATH_MAX + 1)) {
+		pm_set_errno(EINVAL);
+		return EINVAL;
+	}
 
 	return vfs_access(pathname, mode);
 }
@@ -245,8 +257,9 @@ k_status ssddt_stat(va_list p_args)
 	buf = va_arg(p_args, pfile_stat_t);
 
 	//Check arguments
-	if(!mm_virt_test(buf, sizeof(file_stat_t)
-	                 , PG_STAT_USER | PG_STAT_WRITEABLE)) {
+	if((!mm_virt_test(buf, sizeof(file_stat_t)
+	                  , PG_STAT_USER | PG_STAT_WRITEABLE)
+	    || (!check_str_arg(path, PATH_MAX + 1)))) {
 		pm_set_errno(EINVAL);
 		return 0;
 	}
@@ -295,6 +308,12 @@ k_status ssddt_unlink(va_list p_args)
 	//Get args
 	pathname = va_arg(p_args, char*);
 
+	//Check arguments
+	if(!check_str_arg(pathname, PATH_MAX + 1)) {
+		pm_set_errno(EINVAL);
+		return EINVAL;
+	}
+
 	return vfs_unlink(pathname);
 }
 
@@ -309,6 +328,12 @@ k_status ssddt_mkdir(va_list p_args)
 	//Get args
 	pathname = va_arg(p_args, char*);
 	mode = va_arg(p_args, u32);
+
+	//Check arguments
+	if(!check_str_arg(pathname, PATH_MAX + 1)) {
+		pm_set_errno(EINVAL);
+		return EINVAL;
+	}
 
 	return vfs_mkdir(pathname, mode);
 }

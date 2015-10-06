@@ -531,7 +531,7 @@ _GET_STATUS:
 	return ret;
 }
 
-bool mm_virt_test(void* base, size_t len, u32 flags)
+bool mm_virt_test(void* base, size_t len, u32 flags, bool if_all)
 {
 	u32 end, addr;
 
@@ -539,14 +539,26 @@ bool mm_virt_test(void* base, size_t len, u32 flags)
 	end = ((u32)base + len) / 4096 * 4096;
 
 	do {
-		if((mm_virt_status((void*)addr)&flags) != flags) {
-			return false;
+		if(if_all) {
+			if((mm_virt_status((void*)addr)&flags) != flags) {
+				return false;
+			}
+
+		} else {
+			if((mm_virt_status((void*)addr)&flags) == flags) {
+				return true;
+			}
 		}
 
 		addr += 4096;
 	} while(addr < end);
 
-	return true;
+	if(if_all) {
+		return true;
+
+	} else {
+		return false;
+	}
 }
 
 u32 mm_pg_tbl_fork(u32 parent)

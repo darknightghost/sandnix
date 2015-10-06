@@ -42,9 +42,9 @@ u32			create_file_obj();
 u32			create_drv_obj(char* drv_name);
 u32			create_dev(char* name, u32 major, u32 gid,
                        u32 block_size, u32 parent);
-u32			remove_dev(u32 dev_num);
-u32			set_dev_filename(u32 dev_num, char* file_name);
-u32			get_major(char* num);
+void		remove_dev(u32 dev_num);
+k_status	set_dev_filename(u32 dev_num, char* file_name);
+u32			get_major(char* name, u32 type);
 k_status	sync(u32 dev_num);
 
 //Memory
@@ -69,7 +69,7 @@ void		chg_to_usr();
 
 //Thread
 void		schedule();
-u32			create_thrd(void (start_addr*)(void*), u32 priority,
+u32			create_thrd(thread_func start_addr, u32 priority,
                         bool is_ready, void* p_args);
 void		exit_thrd(u32 exit_code);
 void		suspend(u32 thread_id);
@@ -106,8 +106,6 @@ void		get_tickcount(u64* tick_count);
 u32			get_tick();
 k_status	set_int_msg(u32 int_num);
 void		clean_int_msg(u32 int_num);
-
-//Others
-u32			kprint(char* fmt, ...);
+void		kprint(char* fmt, ...);
 
 #endif	//!	FUNCS_H_INCLUDE

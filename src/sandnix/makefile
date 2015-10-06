@@ -19,7 +19,19 @@ export SOURCES = init/main.c \
 					vfs/om/devfs/devfs.c \
 					vfs/fs/fs.c \
 					vfs/fs/ramdisk/ramdisk.c \
-					vfs/fs/tarfs/tarfs.c
+					vfs/fs/tarfs/tarfs.c \
+					syscall/ssddt/ssddt.c \
+					syscall/ssudt/ssudt.c \
+					syscall/ssddt/fs.c \
+					syscall/ssddt/mount.c \
+					syscall/ssddt/objects.c \
+					syscall/ssddt/memory.c \
+					syscall/ssddt/process.c \
+					syscall/ssddt/thread.c \
+					syscall/ssddt/mutex.c \
+					syscall/ssddt/semaphore.c \
+					syscall/ssddt/message.c \
+					syscall/ssddt/io.c
 
 x86_build :
 		$(MAKE) -f makefile.x86 all

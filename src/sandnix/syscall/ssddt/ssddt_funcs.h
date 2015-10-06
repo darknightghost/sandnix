@@ -79,7 +79,7 @@ u32			ssddt_get_errno();
 void		ssddt_set_errno(va_list p_args);
 
 //Mutex
-void*		ssddt_create_mutex(va_list p_args);
+void*		ssddt_create_mutex();
 k_status	ssddt_acqr_mutex(va_list p_args);
 k_status	ssddt_try_mutex(va_list p_args);
 void		ssddt_rls_mutex(va_list p_args);
@@ -103,8 +103,6 @@ void		ssddt_get_tickcount(va_list p_args);
 u32			ssddt_get_tick();
 k_status	ssddt_set_int_msg(va_list p_args);
 void		ssddt_clean_int_msg(va_list p_args);
-
-//Others
-u32			ssddt_kprint(va_list p_args);
+void		ssddt_kprint(va_list p_args);
 
 #endif	//!	SSDDT_FUNCS_H_INCLUDE

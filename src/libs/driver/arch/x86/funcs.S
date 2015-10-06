@@ -316,8 +316,6 @@ set_int_msg:
 clean_int_msg:
 			movl	$SYS_CLEAN_INT_MSG,%eax
 			jmp		do_sys_call
-
-//Others
 kprint:
 			movl	$SYS_KPRINT,%eax
 			jmp		do_sys_call

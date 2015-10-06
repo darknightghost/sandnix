@@ -76,7 +76,7 @@ void				mm_virt_free(void* start_addr, size_t size, u32 options);
 void*				mm_virt_map(void* virt_addr, void* phy_addr);
 void				mm_virt_unmap(void* virt_addr);
 u32					mm_virt_status(void* addr);
-bool				mm_virt_test(void* base, size_t len, u32 flags);
+bool				mm_virt_test(void* base, size_t len, u32 flags, bool if_all);
 
 //Swap
 void				mm_pg_lock(u32 id, void* address);

@@ -15,33 +15,32 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	DEBUG_H_INCLUDE
-#define	DEBUG_H_INCLUDE
+#include "../mm/mm.h"
 
-#include "../../common/common.h"
-#include "../exceptions/exceptions.h"
+bool check_str_arg(char* arg, size_t max_len)
+{
+	char* p;
+	size_t count;
+	u32 page;
 
-#define	K_TTY_BUF_SIZE		4096
-
-#ifdef DEBUG
-
-#define	ASSERT(x)	{\
-		if(!(x)){\
-			excpt_panic(EASSERT,\
-			            "Assert failed.\nExpression:%s\nFile:%s\nLine:%u",\
-			            #x,\
-			            __FILE__,\
-			            __LINE__);\
-		}\
+	if(!mm_virt_test(arg, 1, PG_STAT_USER | PG_STAT_COMMIT)) {
+		return false;
 	}
-#endif	//	DEBUG
-#ifndef DEBUG
-	#define	ASSERT(x)
-#endif	//!	DEBUG
 
-void	dbg_init();
-void	dbg_cls();
-void	dbg_vprint(char* fmt, va_list args);
-void	dbg_print(char* fmt, ...);
+	for(count = 0, p = arg, page = (u32)arg / PAGE_SIZE;
+	    count <= max_len; count++, p++) {
+		if(page < (u32)p / PAGE_SIZE) {
+			page = (u32)p / PAGE_SIZE;
 
-#endif	//!	DEBUG_H_INCLUDE
+			if(!mm_virt_test(p, 1, PG_STAT_USER | PG_STAT_COMMIT)) {
+				return false;
+			}
+		}
+
+		if(*p == '\0') {
+			return true;
+		}
+	}
+
+	return false;
+}

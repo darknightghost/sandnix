@@ -22,7 +22,7 @@ static	void		decrease_pmo_ref(ppmo_t p_pmo);
 
 ppmo_t mm_pmo_create(size_t size)
 {
-	ppmo_t ret;
+	ppmo_  ret;
 
 	//Allocate memory
 	ret = mm_hp_alloc(sizeof(pmo_t), NULL);
@@ -78,6 +78,7 @@ void* mm_pmo_map(void* address, ppmo_t p_pmo, bool is_user)
 				mm_virt_unmap((void*)virt_addr);
 			}
 
+			mm_virt_free(ret, p_pmo->size, MEM_RELEASE);
 			return NULL;
 		}
 	}
@@ -99,6 +100,7 @@ void mm_pmo_unmap(void* address, ppmo_t p_pmo)
 		mm_virt_unmap((void*)((u32)address + offset));
 	}
 
+	mm_virt_free(address, p_pmo->size, MEM_RELEASE);
 	//Decrease reference count
 	decrease_pmo_ref(p_pmo);
 	return;

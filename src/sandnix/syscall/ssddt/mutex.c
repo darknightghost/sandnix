@@ -15,33 +15,46 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	DEBUG_H_INCLUDE
-#define	DEBUG_H_INCLUDE
+#include "ssddt.h"
+#include "ssddt_funcs.h"
+#include "../../rtl/rtl.h"
+#include "../../vfs/vfs.h"
+#include "../../msg/msg.h"
+#include "../../mm/mm.h"
+#include "../../pm/pm.h"
+#include "../../exceptions/exceptions.h"
 
-#include "../../common/common.h"
-#include "../exceptions/exceptions.h"
+void* ssddt_create_mutex()
+{
+}
 
-#define	K_TTY_BUF_SIZE		4096
+k_status ssddt_acqr_mutex(va_list p_args)
+{
+	//Agruments
+	void* p_mutex_obj;
+	u32 timeout;
 
-#ifdef DEBUG
+	//Variables
 
-#define	ASSERT(x)	{\
-		if(!(x)){\
-			excpt_panic(EASSERT,\
-			            "Assert failed.\nExpression:%s\nFile:%s\nLine:%u",\
-			            #x,\
-			            __FILE__,\
-			            __LINE__);\
-		}\
-	}
-#endif	//	DEBUG
-#ifndef DEBUG
-	#define	ASSERT(x)
-#endif	//!	DEBUG
+	//Get args
+}
 
-void	dbg_init();
-void	dbg_cls();
-void	dbg_vprint(char* fmt, va_list args);
-void	dbg_print(char* fmt, ...);
+k_status ssddt_try_mutex(va_list p_args)
+{
+	//Agruments
+	void* p_mutex_obj;
 
-#endif	//!	DEBUG_H_INCLUDE
+	//Variables
+
+	//Get args
+}
+
+void ssddt_rls_mutex(va_list p_args)
+{
+	//Agruments
+	void* p_mutex_obj;
+
+	//Variables
+
+	//Get args
+}

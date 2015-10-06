@@ -30,6 +30,7 @@
 	#include "ssddt/ssddt.h"
 
 	void		syscall_init();
+	bool		check_str_arg(char* arg, size_t max_len);
 #endif	//!	_ASM
 
 #endif	//!	SYSCALL_H_INCLUDE

@@ -76,7 +76,7 @@ void		io_set_int_level(u8 num, u8 level);
 void		io_set_crrnt_int_level(u8 level);
 u8			io_get_crrnt_int_level();
 
-u32			io_get_tick_count();
+u64			io_get_tick_count();
 
 void		io_enable_interrupt();
 void		io_disable_interrupt();

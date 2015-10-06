@@ -101,8 +101,6 @@
 #define	SYS_GET_TICK				0x00000803
 #define	SYS_SET_INT_MSG				0x00000804
 #define	SYS_CLEAN_INT_MSG			0x00000805
-
-//Others
-#define	SYS_KPRINT					0x00000900
+#define	SYS_KPRINT					0x00000806
 
 #endif	//!	SYSCALLS_H_INCLUDE

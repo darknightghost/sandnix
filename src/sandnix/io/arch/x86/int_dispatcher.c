@@ -33,7 +33,7 @@
 
 int_hndlr_entry_t		int_hndlr_tbl[256];
 bool				exception_handling_flag;
-u32					tick_count;
+u64					tick_count;
 u8					current_int_level;
 u32					new_int;
 static	u32			dispatcher_thread = 0;
@@ -324,7 +324,7 @@ void io_set_int_level(u8 num, u8 level)
 	return;
 }
 
-u32 io_get_tick_count()
+u64 io_get_tick_count()
 {
 	return tick_count;
 }

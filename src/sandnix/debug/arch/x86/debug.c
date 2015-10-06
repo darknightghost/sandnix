@@ -62,13 +62,19 @@ void dbg_init()
 
 void dbg_print(char* fmt, ...)
 {
-	char* buf;
 	va_list args;
+
+	va_start(args, fmt);
+	dbg_vprint(fmt, args);
+}
+
+void dbg_vprint(char* fmt, va_list args)
+{
+	char* buf;
 	size_t len;
 
 	pm_acqr_spn_lock(&print_lock);
 	buf = mm_hp_alloc(BUF_SIZE, NULL);
-	va_start(args, fmt);
 	rtl_vprintf_s(buf, BUF_SIZE, fmt, args);
 	va_end(args);
 

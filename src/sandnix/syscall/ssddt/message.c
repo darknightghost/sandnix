@@ -15,33 +15,56 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	DEBUG_H_INCLUDE
-#define	DEBUG_H_INCLUDE
+#include "ssddt.h"
+#include "ssddt_funcs.h"
+#include "../../rtl/rtl.h"
+#include "../../vfs/vfs.h"
+#include "../../msg/msg.h"
+#include "../../mm/mm.h"
+#include "../../pm/pm.h"
+#include "../../exceptions/exceptions.h"
 
-#include "../../common/common.h"
-#include "../exceptions/exceptions.h"
+void* ssddt_recv_msg(va_list p_args)
+{
+	//Agruments
+	pmsg_t buf;
+	size_t buf_size;
+	size_t* p_msg_len;
+	bool if_block;
 
-#define	K_TTY_BUF_SIZE		4096
+	//Variables
 
-#ifdef DEBUG
+	//Get args
+}
 
-#define	ASSERT(x)	{\
-		if(!(x)){\
-			excpt_panic(EASSERT,\
-			            "Assert failed.\nExpression:%s\nFile:%s\nLine:%u",\
-			            #x,\
-			            __FILE__,\
-			            __LINE__);\
-		}\
-	}
-#endif	//	DEBUG
-#ifndef DEBUG
-	#define	ASSERT(x)
-#endif	//!	DEBUG
+k_status ssddt_complete_msg(va_list p_args)
+{
+	//Agruments
+	void* p_msg;
+	k_status status;
 
-void	dbg_init();
-void	dbg_cls();
-void	dbg_vprint(char* fmt, va_list args);
-void	dbg_print(char* fmt, ...);
+	//Variables
 
-#endif	//!	DEBUG_H_INCLUDE
+	//Get args
+}
+
+k_status ssddt_forward_msg(va_list p_args)
+{
+	//Agruments
+	void* p_msg;
+	u32 dev_num;
+
+	//Variables
+
+	//Get args
+}
+
+void ssddt_cancel_msg(va_list p_args)
+{
+	//Agruments
+	void* p_msg;
+
+	//Variables
+
+	//Get args
+}
