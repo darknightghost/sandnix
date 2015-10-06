@@ -39,7 +39,6 @@ void ssddt_init()
 	SYSTEM_CALL(SYS_MKDIR, ssddt_mkdir, ssddt);
 	SYSTEM_CALL(SYS_READDIR, ssddt_readdir, ssddt);
 
-	/*
 	//Mount
 	SYSTEM_CALL(SYS_MOUNT, ssddt_mount, ssddt);
 	SYSTEM_CALL(SYS_UMOUNT, ssddt_umount, ssddt);
@@ -109,9 +108,7 @@ void ssddt_init()
 	SYSTEM_CALL(SYS_GET_TICK, ssddt_get_tick, ssddt);
 	SYSTEM_CALL(SYS_SET_INT_MSG, ssddt_set_int_msg, ssddt);
 	SYSTEM_CALL(SYS_CLEAN_INT_MSG, ssddt_clean_int_msg, ssddt);
-
-	//Others
 	SYSTEM_CALL(SYS_KPRINT, ssddt_kprint, ssddt);
-	*/
+
 	return;
 }
