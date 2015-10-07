@@ -104,6 +104,8 @@ void ssddt_init()
 	//IO
 	SYSTEM_CALL(SYS_READ_PORT, ssddt_read_port, ssddt);
 	SYSTEM_CALL(SYS_WRITE_PORT, ssddt_write_port, ssddt);
+	SYSTEM_CALL(SYS_READ_PORT_DATAS, ssddt_read_port_datas, ssddt);
+	SYSTEM_CALL(SYS_WRITE_PORT_DATAS, ssddt_write_port_datas, ssddt);
 	SYSTEM_CALL(SYS_GET_TICKCOUNT, ssddt_get_tickcount, ssddt);
 	SYSTEM_CALL(SYS_GET_TICK, ssddt_get_tick, ssddt);
 	SYSTEM_CALL(SYS_SET_INT_MSG, ssddt_set_int_msg, ssddt);

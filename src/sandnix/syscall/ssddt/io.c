@@ -27,16 +27,45 @@
 void ssddt_read_port(va_list p_args)
 {
 	//Agruments
+	u32 port;
 	void* buf;
-	u32 bits;
-	u32 len;
+	size_t bits;
 
 	//Variables
 
 	//Get args
+	port = va_arg(p_args, u32);
 	buf = va_arg(p_args, void*);
-	bits = va_arg(p_args, u32);
-	len = va_arg(p_args, u32);
+	bits = va_arg(p_args, size_t);
+
+	//Check arguments
+	if(port > 255) {
+		pm_set_errno(EINVAL);
+		return;
+	}
+
+	if(!mm_virt_test(buf, bit, PG_STAT_WRITEABLE | PG_STAT_COMMIT, true)) {
+		pm_set_errno(EINVAL);
+		return;
+	}
+
+	switch(bits) {
+	case 1:
+		*(u8*)buf = io_read_port_byte(port);
+		break;
+
+	case 2:
+		*(u16*)buf = io_read_port_word(port);
+		break;
+
+	case 4:
+		*(u32*)buf = io_read_port_dword(port);
+		break;
+
+	default:
+		pm_set_errno(EINVAL);
+		return;
+	}
 
 	pm_set_errno(ESUCCESS);
 	return;
@@ -45,13 +74,146 @@ void ssddt_read_port(va_list p_args)
 void ssddt_write_port(va_list p_args)
 {
 	//Agruments
+	u32 port;
 	void* buf;
-	u32 bits;
-	u32 len;
+	size_t bits;
 
 	//Variables
 
 	//Get args
+	port = va_arg(p_args, u32);
+	buf = va_arg(p_args, void*);
+	bits = va_arg(p_args, size_t);
+
+	//Check arguments
+	if(port > 255) {
+		pm_set_errno(EINVAL);
+		return;
+	}
+
+	if(!mm_virt_test(buf, bit, PG_STAT_COMMIT, true)) {
+		pm_set_errno(EINVAL);
+		return;
+	}
+
+	switch(bits) {
+	case 1:
+		io_write_port_byte(*(u8*)buf, port);
+		break;
+
+	case 2:
+		io_write_port_word(*(u16*)buf, port);
+		break;
+
+	case 4:
+		io_write_port_dword(*(u32*)buf, port);
+		break;
+
+	default:
+		pm_set_errno(EINVAL);
+		return;
+	}
+
+	pm_set_errno(ESUCCESS);
+	return;
+}
+
+void ssddt_read_port_datas(va_list p_args)
+{
+	//Agruments
+	u32 port;
+	void* buf;
+	size_t bits;
+	size_t len;
+
+	//Variables
+
+	//Get args
+	port = va_arg(p_args, u32);
+	buf = va_arg(p_args, void*);
+	bits = va_arg(p_args, size_t);
+	len = va_arg(p_args, size_t);
+
+	//Check arguments
+	if(port > 255) {
+		pm_set_errno(EINVAL);
+		return;
+	}
+
+	if(!mm_virt_test(buf, len, PG_STAT_WRITEABLE | PG_STAT_COMMIT, true)) {
+		pm_set_errno(EINVAL);
+		return;
+	}
+
+	switch(bits) {
+	case 1:
+		io_read_port_bytes(port, buf, len);
+		break;
+
+	case 2:
+		io_read_port_words(port, buf, len / bits);
+		break;
+
+	case 4:
+		io_read_port_dwords(port, buf, len / bits);
+		break;
+
+	default:
+		pm_set_errno(EINVAL);
+		return;
+	}
+
+	pm_set_errno(ESUCCESS);
+	return;
+}
+
+void ssddt_write_port_datas(va_list p_args)
+{
+	//Agruments
+	u32 port;
+	void* buf;
+	size_t bits;
+	size_t len;
+
+	//Variables
+
+	//Get args
+	port = va_arg(p_args, u32);
+	buf = va_arg(p_args, void*);
+	bits = va_arg(p_args, size_t);
+	len = va_arg(p_args, size_t);
+
+	//Check arguments
+	if(port > 255) {
+		pm_set_errno(EINVAL);
+		return;
+	}
+
+	if(!mm_virt_test(buf, len, PG_STAT_COMMIT, true)) {
+		pm_set_errno(EINVAL);
+		return;
+	}
+
+	switch(bits) {
+	case 1:
+		io_write_port_bytes(port, buf, len);
+		break;
+
+	case 2:
+		io_write_port_words(port, buf, len / bits);
+		break;
+
+	case 4:
+		io_write_port_dwords(port, buf, len / bits);
+		break;
+
+	default:
+		pm_set_errno(EINVAL);
+		return;
+	}
+
+	pm_set_errno(ESUCCESS);
+	return;
 }
 
 void ssddt_get_tickcount(va_list p_args)

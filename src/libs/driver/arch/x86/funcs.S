@@ -304,6 +304,12 @@ read_port:
 write_port:
 			movl	$SYS_WRITE_PORT,%eax
 			jmp		do_sys_call
+read_port_datas:
+			movl	$SYS_READ_PORT_DATAS,%eax
+			jmp		do_sys_call
+write_port_datas:
+			movl	$SYS_WRITE_PORT_DATAS,%eax
+			jmp		do_sys_call
 get_tickcount:
 			movl	$SYS_GET_TICKCOUNT,%eax
 			jmp		do_sys_call

@@ -100,8 +100,10 @@ k_status	forward_msg(void* p_msg, u32 dev_num);
 void		cancel_msg(void* p_msg);
 
 //IO
-void		read_port(void* buf, u32 bits, u32 len);
-void		write_port(void* buf, u32 bits, u32 len);
+void		read_port(u32 port, void* buf, size_t bits);
+void		write_port(u32 port, void* buf, size_t bits);
+void		read_port_datas(u32 port, void* buf, size_t bits, size_t len);
+void		write_port_datas(u32 port, void* buf, size_t bits, size_t len);
 void		get_tickcount(u64* tick_count);
 u32			get_tick();
 k_status	set_int_msg(u32 int_num);

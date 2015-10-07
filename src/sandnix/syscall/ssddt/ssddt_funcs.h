@@ -99,6 +99,8 @@ void		ssddt_cancel_msg(va_list p_args);
 //IO
 void		ssddt_read_port(va_list p_args);
 void		ssddt_write_port(va_list p_args);
+void		ssddt_read_port_datas(va_list p_args);
+void		ssddt_write_port_datas(va_list p_args);
 void		ssddt_get_tickcount(va_list p_args);
 u32			ssddt_get_tick();
 k_status	ssddt_set_int_msg(va_list p_args);
