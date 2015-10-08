@@ -83,12 +83,14 @@ void*		ssddt_create_mutex();
 k_status	ssddt_acqr_mutex(va_list p_args);
 k_status	ssddt_try_mutex(va_list p_args);
 void		ssddt_rls_mutex(va_list p_args);
+void		ssddt_destroy_mutex(va_list p_args);
 
 //Semaphore
 void*		ssddt_create_semaphore(va_list p_args);
 k_status	ssddt_acqr_semaphore(va_list p_args);
 k_status	ssddt_try_semaphore(va_list p_args);
 void		ssddt_rls_semaphore(va_list p_args);
+void		ssddt_destroy_semaphore(va_list p_args);
 
 //Message
 void*		ssddt_recv_msg(va_list p_args);

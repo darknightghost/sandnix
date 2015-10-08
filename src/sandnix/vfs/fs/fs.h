@@ -37,6 +37,7 @@ typedef	struct	_vfs_proc_info {
 	u32				driver_obj;
 	mutex_t			lock;
 	array_list_t	file_descs;
+	array_list_t	ref_objs;
 } vfs_proc_info, *pvfs_proc_info;
 
 typedef	struct _mount_point_t {

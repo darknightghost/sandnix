@@ -85,12 +85,14 @@ void*		create_mutex();
 k_status	acqr_mutex(void* p_mutex_obj, u32 timeout);
 k_status	try_mutex(void* p_mutex_obj);
 void		rls_mutex(void* p_mutex_obj);
+void		destroy_mutex(void* p_mutex_obj);
 
 //Semaphore
 void*		create_semaphore(u32 max_count);
 k_status	acqr_semaphore(void* p_sem_obj, u32 timeout);
 k_status	try_semaphore(void* p_sem_obj);
 void		rls_semaphore(void* p_sem_obj);
+void		destroy_semaphore(void* p_sem_obj);
 
 //Message
 void*		recv_msg(pmsg_t buf, size_t buf_size,

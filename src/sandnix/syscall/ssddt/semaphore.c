@@ -64,3 +64,13 @@ void ssddt_rls_semaphore(va_list p_args)
 
 	//Get args
 }
+
+void ssddt_destroy_semaphore(va_list p_args)
+{
+	//Agruments
+	void* p_sem_obj;
+
+	//Variables
+
+	//Get args
+}

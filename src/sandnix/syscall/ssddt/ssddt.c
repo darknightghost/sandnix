@@ -88,12 +88,14 @@ void ssddt_init()
 	SYSTEM_CALL(SYS_ACQR_MUTEX, ssddt_acqr_mutex, ssddt);
 	SYSTEM_CALL(SYS_TRY_MUTEX, ssddt_try_mutex, ssddt);
 	SYSTEM_CALL(SYS_RLS_MUTEX, ssddt_rls_mutex, ssddt);
+	SYSTEM_CALL(SYS_DESTROY_MUTEX, ssddt_destroy_mutex, ssddt);
 
 	//Semaphore
 	SYSTEM_CALL(SYS_CREATE_SEMAPHORE, ssddt_create_semaphore, ssddt);
 	SYSTEM_CALL(SYS_ACQR_SEMAPHORE, ssddt_acqr_semaphore, ssddt);
 	SYSTEM_CALL(SYS_TRY_SEMAPHORE, ssddt_try_semaphore, ssddt);
 	SYSTEM_CALL(SYS_RLS_SEMAPHORE, ssddt_rls_semaphore, ssddt);
+	SYSTEM_CALL(SYS_DESTROY_SEMAPHORE, ssddt_destroy_semaphore, ssddt);
 
 	//Message
 	SYSTEM_CALL(SYS_RECV_MSG, ssddt_recv_msg, ssddt);

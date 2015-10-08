@@ -85,11 +85,27 @@ void fs_init()
 	pm_init_mutex(&(p_proc0_info->lock));
 
 	status = rtl_array_list_set(&file_desc_info_table, 0, p_proc0_info, NULL);
+	
+	status=rtl_array_list_init(&(p_proc0_info->file_descs),
+                                    1024,
+                                    NULL);
+	if(status!=ESUCCESS){
+		excpt_panic(status,
+		            "Failed to initialize file descriptor for process 0");
+	}
+	
+	status=rtl_array_list_init(&(p_proc0_info->ref_objs),
+                                    1024,
+                                    NULL);
+	if(status!=ESUCCESS){
+		excpt_panic(status,
+		            "Failed to initialize file descriptor for process 0");
+	}
 
 	if(status != ESUCCESS) {
 		excpt_panic(status, "Failed to initialize file_desc_info_table.");
 	}
-
+	
 	//Create driver object of process 0.
 	p_drv = vfs_create_drv_object("kernel");
 
@@ -529,6 +545,7 @@ k_status vfs_fork(u32 dest_process)
 	pvfs_proc_info p_src_info, p_dest_info;
 	u32 i;
 	pfile_desc_t p_src_fd, p_dest_fd;
+	pkobject_t p_obj;
 
 	p_src_info = get_proc_fs_info();
 
@@ -569,6 +586,23 @@ k_status vfs_fork(u32 dest_process)
 		ASSERT(OPERATE_SUCCESS);
 	}
 
+	rtl_array_list_init(&(p_dest_info->ref_objs),
+	                    p_src_info->ref_objs.size,
+	                    NULL);
+
+	for(i = 0;
+	    OPERATE_SUCCESS;
+	    i = rtl_array_list_get_next_index(&(p_src_info->ref_objs), i + 1)) {
+
+		//Get source file descriptor
+		p_obj = rtl_array_list_get(&(p_src_info->ref_objs), i);
+		ASSERT(p_obj != NULL);
+
+		vfs_inc_obj_reference(p_obj);
+
+		rtl_array_list_set(&(p_dest_info->ref_objs), i, p_obj, NULL);
+		ASSERT(OPERATE_SUCCESS);
+	}
 	pm_rls_mutex(&(p_src_info->lock));
 
 	//Add new info
@@ -605,6 +639,10 @@ void vfs_clean(u32 process_id)
 	//Release info
 	rtl_array_list_destroy(&(p_info->file_descs),
 	                       (item_destroyer_callback)file_desc_destroy_callback,
+	                       NULL,
+	                       NULL);
+	rtl_array_list_destroy(&(p_info->ref_objs),
+	                       (item_destroyer_callback)vfs_dec_obj_reference,
 	                       NULL,
 	                       NULL);
 	pm_set_errno(ESUCCESS);
@@ -1508,6 +1546,71 @@ u32 vfs_get_crrnt_driver_id()
 	pvfs_proc_info p_info;
 	p_info = get_proc_fs_info();
 	return p_info->driver_obj;
+}
+
+u32 vfs_add_proc_obj(pkobject_t p_object)
+{
+	pvfs_proc_info p_info;
+	u32 index;
+	k_status status;
+
+	p_info = get_proc_fs_info();
+	
+	pm_acqr_mutex(&(p_info->lock),TIMEOUT_BLOCK);
+	index=rtl_array_list_get_free_index(&(p_info->ref_objs));
+	status=pm_get_errno();
+	
+	if(status!=ESUCCESS){
+		pm_rls_mutex(&(p_info->lock));
+		pm_set_errno(status);
+		return 0;
+	}
+	
+	status=rtl_array_list_set(&(p_info->ref_objs),index,p_object,NULL);
+	if(status!=ESUCCESS){
+		pm_rls_mutex(&(p_info->lock));
+		pm_set_errno(status);
+		return 0;
+	}
+	
+	pm_rls_mutex(&(p_info->lock));
+	
+	vfs_inc_obj_reference(p_object);
+	
+	pm_set_errno(ESUCCESS);
+	return index;
+}
+
+void vfs_remove_proc_obj(u32 index)
+{
+	pvfs_proc_info p_info;
+	k_status status;
+	pkobject_t p_object;
+
+	p_info = get_proc_fs_info();
+	
+	pm_acqr_mutex(&(p_info->lock),TIMEOUT_BLOCK);
+	
+	p_object=rtl_array_list_get(&(p_info->ref_objs), index);
+	if(p_object==NULL){
+		status=pm_get_errno();
+		pm_rls_mutex(&(p_info->lock));
+		pm_set_errno(status);
+		return;
+	}
+	rtl_array_list_release(&(p_info->ref_objs), index, NULL);
+	status=pm_get_errno();
+	if(status!=ESUCCESS){
+		pm_rls_mutex(&(p_info->lock));
+		pm_set_errno(status);
+		return;
+	}
+	pm_rls_mutex(&(p_info->lock));
+	
+	vfs_dec_obj_reference(p_object);
+	
+	pm_set_errno(ESUCCESS);
+	return;
 }
 
 k_status add_file_obj(pfile_obj_t p_file_obj)

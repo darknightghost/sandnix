@@ -128,6 +128,9 @@ void			vfs_initialize_object(pkobject_t p_object);
 void			vfs_inc_obj_reference(pkobject_t p_object);
 void			vfs_dec_obj_reference(pkobject_t p_object);
 
+u32				vfs_add_proc_obj(pkobject_t p_object);
+void			vfs_remove_proc_obj(u32 index);
+
 //Driver Objects
 pdriver_obj_t	vfs_create_drv_object(char* drv_name);
 u32				vfs_get_crrnt_driver_id();
