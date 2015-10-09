@@ -81,18 +81,21 @@
 .global		acqr_mutex
 .global		try_mutex
 .global		rls_mutex
+.global		destroy_mutex
 
 //Semaphore
 .global		create_semaphore
 .global		acqr_semaphore
 .global		try_semaphore
 .global		rls_semaphore
+.global		destroy_semaphore
 
 //Message
 .global		recv_msg
 .global		complete_msg
 .global		forward_msg
 .global		cancel_msg
+.global		read_msg
 
 //IO
 .global		read_port
@@ -268,6 +271,9 @@ try_mutex:
 rls_mutex:
 			movl	$SYS_RLS_MUTEX,%eax
 			jmp		do_sys_call
+destroy_mutex:
+			movl	$SYS_DESTROY_MUTEX,%eax
+			jmp		do_sys_call
 
 //Semaphore
 create_semaphore:
@@ -282,6 +288,9 @@ try_semaphore:
 rls_semaphore:
 			movl	$SYS_RLS_SEMAPHORE,%eax
 			jmp		do_sys_call
+destroy_semaphore:
+			movl	$SYS_DESTROY_SEMAPHORE,%eax
+			jmp		do_sys_call
 
 //Message
 recv_msg:
@@ -295,6 +304,9 @@ forward_msg:
 			jmp		do_sys_call
 cancel_msg:
 			movl	$SYS_CANCEL_MSG,%eax
+			jmp		do_sys_call
+read_msg:
+			movl	$SYS_READ_MSG,%eax
 			jmp		do_sys_call
 
 //IO

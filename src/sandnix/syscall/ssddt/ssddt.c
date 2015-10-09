@@ -102,6 +102,7 @@ void ssddt_init()
 	SYSTEM_CALL(SYS_COMPLETE_MSG, ssddt_complete_msg, ssddt);
 	SYSTEM_CALL(SYS_FORWARD_MSG, ssddt_forward_msg, ssddt);
 	SYSTEM_CALL(SYS_CANCEL_MSG, ssddt_cancel_msg, ssddt);
+	SYSTEM_CALL(SYS_READ_MSG, ssddt_read_msg, ssddt);
 
 	//IO
 	SYSTEM_CALL(SYS_READ_PORT, ssddt_read_port, ssddt);

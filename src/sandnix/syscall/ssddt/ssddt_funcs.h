@@ -97,6 +97,7 @@ void*		ssddt_recv_msg(va_list p_args);
 k_status	ssddt_complete_msg(va_list p_args);
 k_status	ssddt_forward_msg(va_list p_args);
 void		ssddt_cancel_msg(va_list p_args);
+k_status	ssddt_read_msg(va_list p_args);
 
 //IO
 void		ssddt_read_port(va_list p_args);

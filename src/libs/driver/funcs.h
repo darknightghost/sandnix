@@ -95,11 +95,11 @@ void		rls_semaphore(void* p_sem_obj);
 void		destroy_semaphore(void* p_sem_obj);
 
 //Message
-void*		recv_msg(pmsg_t buf, size_t buf_size,
-                     size_t* p_msg_len, bool if_block);
+void*		recv_msg(size_t* p_msg_len, bool if_block);
 k_status	complete_msg(void* p_msg, k_status status);
 k_status	forward_msg(void* p_msg, u32 dev_num);
 void		cancel_msg(void* p_msg);
+k_status	read_msg(void* p_obj, pmsg_t buf, size_t size);
 
 //IO
 void		read_port(u32 port, void* buf, size_t bits);

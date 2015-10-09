@@ -85,19 +85,21 @@ void fs_init()
 	pm_init_mutex(&(p_proc0_info->lock));
 
 	status = rtl_array_list_set(&file_desc_info_table, 0, p_proc0_info, NULL);
-	
-	status=rtl_array_list_init(&(p_proc0_info->file_descs),
-                                    1024,
-                                    NULL);
-	if(status!=ESUCCESS){
+
+	status = rtl_array_list_init(&(p_proc0_info->file_descs),
+	                             1024,
+	                             NULL);
+
+	if(status != ESUCCESS) {
 		excpt_panic(status,
 		            "Failed to initialize file descriptor for process 0");
 	}
-	
-	status=rtl_array_list_init(&(p_proc0_info->ref_objs),
-                                    1024,
-                                    NULL);
-	if(status!=ESUCCESS){
+
+	status = rtl_array_list_init(&(p_proc0_info->ref_objs),
+	                             1024,
+	                             NULL);
+
+	if(status != ESUCCESS) {
 		excpt_panic(status,
 		            "Failed to initialize file descriptor for process 0");
 	}
@@ -105,7 +107,7 @@ void fs_init()
 	if(status != ESUCCESS) {
 		excpt_panic(status, "Failed to initialize file_desc_info_table.");
 	}
-	
+
 	//Create driver object of process 0.
 	p_drv = vfs_create_drv_object("kernel");
 
@@ -603,6 +605,7 @@ k_status vfs_fork(u32 dest_process)
 		rtl_array_list_set(&(p_dest_info->ref_objs), i, p_obj, NULL);
 		ASSERT(OPERATE_SUCCESS);
 	}
+
 	pm_rls_mutex(&(p_src_info->lock));
 
 	//Add new info
@@ -1555,28 +1558,29 @@ u32 vfs_add_proc_obj(pkobject_t p_object)
 	k_status status;
 
 	p_info = get_proc_fs_info();
-	
-	pm_acqr_mutex(&(p_info->lock),TIMEOUT_BLOCK);
-	index=rtl_array_list_get_free_index(&(p_info->ref_objs));
-	status=pm_get_errno();
-	
-	if(status!=ESUCCESS){
+
+	pm_acqr_mutex(&(p_info->lock), TIMEOUT_BLOCK);
+	index = rtl_array_list_get_free_index(&(p_info->ref_objs));
+	status = pm_get_errno();
+
+	if(status != ESUCCESS) {
 		pm_rls_mutex(&(p_info->lock));
 		pm_set_errno(status);
 		return 0;
 	}
-	
-	status=rtl_array_list_set(&(p_info->ref_objs),index,p_object,NULL);
-	if(status!=ESUCCESS){
+
+	status = rtl_array_list_set(&(p_info->ref_objs), index, p_object, NULL);
+
+	if(status != ESUCCESS) {
 		pm_rls_mutex(&(p_info->lock));
 		pm_set_errno(status);
 		return 0;
 	}
-	
+
 	pm_rls_mutex(&(p_info->lock));
-	
+
 	vfs_inc_obj_reference(p_object);
-	
+
 	pm_set_errno(ESUCCESS);
 	return index;
 }
@@ -1588,27 +1592,31 @@ void vfs_remove_proc_obj(u32 index)
 	pkobject_t p_object;
 
 	p_info = get_proc_fs_info();
-	
-	pm_acqr_mutex(&(p_info->lock),TIMEOUT_BLOCK);
-	
-	p_object=rtl_array_list_get(&(p_info->ref_objs), index);
-	if(p_object==NULL){
-		status=pm_get_errno();
+
+	pm_acqr_mutex(&(p_info->lock), TIMEOUT_BLOCK);
+
+	p_object = rtl_array_list_get(&(p_info->ref_objs), index);
+
+	if(p_object == NULL) {
+		status = pm_get_errno();
 		pm_rls_mutex(&(p_info->lock));
 		pm_set_errno(status);
 		return;
 	}
+
 	rtl_array_list_release(&(p_info->ref_objs), index, NULL);
-	status=pm_get_errno();
-	if(status!=ESUCCESS){
+	status = pm_get_errno();
+
+	if(status != ESUCCESS) {
 		pm_rls_mutex(&(p_info->lock));
 		pm_set_errno(status);
 		return;
 	}
+
 	pm_rls_mutex(&(p_info->lock));
-	
+
 	vfs_dec_obj_reference(p_object);
-	
+
 	pm_set_errno(ESUCCESS);
 	return;
 }
