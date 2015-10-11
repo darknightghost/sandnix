@@ -20,6 +20,7 @@
 
 #include "../../common/common.h"
 #include "../exceptions/exceptions.h"
+#include "../rtl/rtl.h"
 
 #define	K_TTY_BUF_SIZE		4096
 

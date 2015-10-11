@@ -42,7 +42,7 @@ k_status	ssddt_umount(va_list p_args);
 u32			ssddt_create_file_obj();
 u32			ssddt_create_drv_obj(va_list p_args);
 u32			ssddt_create_dev(va_list p_args);
-u32			ssddt_remove_dev(va_list p_args);
+void		ssddt_remove_dev(va_list p_args);
 u32			ssddt_set_dev_filename(va_list p_args);
 u32			ssddt_get_major(va_list p_args);
 k_status	ssddt_sync(va_list p_args);

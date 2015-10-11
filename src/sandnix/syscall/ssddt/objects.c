@@ -26,7 +26,7 @@
 
 u32 ssddt_create_file_obj()
 {
-	return create_file_obj();
+	return vfs_create_file_object();
 }
 
 u32 ssddt_create_drv_obj(va_list p_args)
@@ -73,7 +73,7 @@ u32 ssddt_create_dev(va_list p_args)
 	//Get args
 	name = va_arg(p_args, char*);
 	major = va_arg(p_args, u32);
-	gid = va_arg(p_args, gid);
+	gid = va_arg(p_args, u32);
 	block_size = va_arg(p_args, u32);
 	parent = va_arg(p_args, u32);
 
@@ -164,7 +164,7 @@ k_status ssddt_sync(va_list p_args)
 	//Variables
 
 	//Get args
-	dev_num = va_arg(p_args, dev_num);
+	dev_num = va_arg(p_args, u32);
 
 	vfs_sync(dev_num);
 

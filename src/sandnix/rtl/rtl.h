@@ -25,13 +25,15 @@
 //Variable Arguments
 typedef	u8*				va_list;
 
-#define	va_start(ap,v)	((ap) = (va_list)&(v) + 4)
+#define	va_start(ap,v)	((ap) = (va_list)(&(v)) + 4)
 
 #define	va_arg(ap,t)	((ap) += \
                                  (sizeof(t) / 4 + \
                                   (sizeof(t) % 4\
-                                   ?1:0)\
-                                 )*4,*((t*)ap))
+                                   ?1:0))*4\
+                                 ,*((t*)((ap)-(sizeof(t) / 4 + \
+                                         (sizeof(t) % 4\
+                                                 ?1:0))*4)))
 
 #define	va_end(ap)		((ap) = (va_list)0)
 #endif	//!	X86

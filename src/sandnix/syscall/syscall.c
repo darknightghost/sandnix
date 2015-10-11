@@ -23,7 +23,7 @@ bool check_str_arg(char* arg, size_t max_len)
 	size_t count;
 	u32 page;
 
-	if(!mm_virt_test(arg, 1, PG_STAT_USER | PG_STAT_COMMIT)) {
+	if(!mm_virt_test(arg, 1, PG_STAT_USER | PG_STAT_COMMIT, true)) {
 		return false;
 	}
 
@@ -32,7 +32,7 @@ bool check_str_arg(char* arg, size_t max_len)
 		if(page < (u32)p / PAGE_SIZE) {
 			page = (u32)p / PAGE_SIZE;
 
-			if(!mm_virt_test(p, 1, PG_STAT_USER | PG_STAT_COMMIT)) {
+			if(!mm_virt_test(p, 1, PG_STAT_USER | PG_STAT_COMMIT, true)) {
 				return false;
 			}
 		}

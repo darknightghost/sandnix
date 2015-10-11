@@ -44,7 +44,7 @@ void ssddt_read_port(va_list p_args)
 		return;
 	}
 
-	if(!mm_virt_test(buf, bit, PG_STAT_WRITEABLE | PG_STAT_COMMIT, true)) {
+	if(!mm_virt_test(buf, bits, PG_STAT_WRITEABLE | PG_STAT_COMMIT, true)) {
 		pm_set_errno(EINVAL);
 		return;
 	}
@@ -91,7 +91,7 @@ void ssddt_write_port(va_list p_args)
 		return;
 	}
 
-	if(!mm_virt_test(buf, bit, PG_STAT_COMMIT, true)) {
+	if(!mm_virt_test(buf, bits, PG_STAT_COMMIT, true)) {
 		pm_set_errno(EINVAL);
 		return;
 	}
@@ -253,7 +253,7 @@ k_status ssddt_set_int_msg(va_list p_args)
 	//Variables
 
 	//Get args
-	int_num = va_arg(u32);
+	int_num = va_arg(p_args, u32);
 
 	if(io_int_msg_set(int_num)) {
 		pm_set_errno(ESUCCESS);
@@ -273,7 +273,7 @@ void ssddt_clean_int_msg(va_list p_args)
 	//Variables
 
 	//Get args
-	int_num = va_arg(u32);
+	int_num = va_arg(p_args, u32);
 
 	io_int_msg_clean(int_num);
 	pm_set_errno(ESUCCESS);
@@ -288,11 +288,12 @@ void ssddt_kprint(va_list p_args)
 
 	//Variables
 
+
 	//Get args
 	fmt = va_arg(p_args, char*);
-	va_start(args, va_arg(p_args, char*));
+	args = va_arg(p_args, va_list);
 
-	dbg_vprint(fmt_args);
+	dbg_vprint(fmt, args);
 
 	return;
 }

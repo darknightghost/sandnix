@@ -44,7 +44,7 @@ void* ssddt_create_mutex()
 
 	if(p_obj == NULL) {
 		pm_set_errno(EFAULT);
-		return;
+		return NULL;
 	}
 
 	vfs_initialize_object((pkobject_t)p_obj);
@@ -53,7 +53,7 @@ void* ssddt_create_mutex()
 	pm_init_mutex(&(p_obj->mutex));
 	p_obj->obj.destroy_callback = mutex_obj_destroyer;
 
-	index = vfs_add_proc_obj(p_obj);
+	index = vfs_add_proc_obj((pkobject_t)p_obj);
 	status = pm_get_errno();
 
 	if(status != ESUCCESS) {
@@ -84,15 +84,15 @@ k_status ssddt_acqr_mutex(va_list p_args)
 	//Check arguments
 	if(!mm_virt_test(p_mutex_obj, sizeof(mutex_obj_t), PG_STAT_COMMIT, true)) {
 		pm_set_errno(EINVAL);
-		return;
+		return EINVAL;
 	}
 
 	if(p_mutex_obj->obj.name != mutex_obj_name) {
 		pm_set_errno(EINVAL);
-		return;
+		return EINVAL;
 	}
 
-	pm_acqr_mutex(&(p_obj->mutex), timeout);
+	pm_acqr_mutex(&(p_mutex_obj->mutex), timeout);
 
 	return pm_get_errno();
 }
@@ -110,15 +110,15 @@ k_status ssddt_try_mutex(va_list p_args)
 	//Check arguments
 	if(!mm_virt_test(p_mutex_obj, sizeof(mutex_obj_t), PG_STAT_COMMIT, true)) {
 		pm_set_errno(EINVAL);
-		return;
+		return EINVAL;
 	}
 
 	if(p_mutex_obj->obj.name != mutex_obj_name) {
 		pm_set_errno(EINVAL);
-		return;
+		return EINVAL;
 	}
 
-	pm_try_acqr_mutex(&(p_obj->mutex));
+	pm_try_acqr_mutex(&(p_mutex_obj->mutex));
 
 	return pm_get_errno();
 }
@@ -144,9 +144,9 @@ void ssddt_rls_mutex(va_list p_args)
 		return;
 	}
 
-	pm_rls_mutex(&(p_obj->mutex));
+	pm_rls_mutex(&(p_mutex_obj->mutex));
 
-	return pm_get_errno();
+	return;
 }
 
 void ssddt_destroy_mutex(va_list p_args)

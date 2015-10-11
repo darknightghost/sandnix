@@ -152,7 +152,8 @@ void pm_clock_schedule()
 
 	int_level = io_get_crrnt_int_level();
 
-	if(int_level <= INT_LEVEL_USR_HIGHEST) {
+	if(int_level <= INT_LEVEL_USR_HIGHEST
+	   && cpu0_task_switch_disable_count == 0) {
 		if(cpu0_tick > TIME_SLICE_TICKS) {
 			__asm__ __volatile__(
 			    "leave\n\t"
@@ -179,6 +180,9 @@ void pm_task_schedule()
 
 	if(cpu0_task_switch_disable_count == 0) {
 		if(pm_try_acqr_spn_lock(&cpu0_schedule_lock)) {
+			__asm__ __volatile__(
+			    "sti\n"
+			    ::);
 			adjust_int_level();
 			cpu0_tick = 0;
 
@@ -1066,7 +1070,7 @@ u32 get_next_task()
 	plist_node_t p_new_node;
 	pthread_info_t p_info;
 	bool idle_flag;
-	u32 current_tick;
+	u64 current_tick;
 	u32 ret_id;
 
 	idle_flag = true;

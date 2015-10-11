@@ -31,6 +31,8 @@ void test();
 
 void kernel_main()
 {
+	dbg_init();
+
 	dbg_cls();
 
 	dbg_print("%s", "Sandnix 0.0.1 kernel loaded.\n");
@@ -50,10 +52,13 @@ void kernel_main()
 	dbg_print("Creating interrupt dispatcher thread...\n");
 	pm_create_thrd(io_dispatch_int, true, false, INT_LEVEL_EXCEPTION, NULL);
 
-	test();
 	//Initialize
 	msg_init();
+
+	test();
+
 	vfs_init();
+	io_int_msg_init();
 	syscall_init();
 
 	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST);
@@ -68,26 +73,29 @@ void kernel_main()
 	return;
 }
 
-
-bool int_hndlr_test(u32 int_num, u32 thread_id, u32 err_code)
+void recv_theard(u32 id, void* p_args)
 {
-	dbg_print("Int test:%u.,from thread %u\n", int_num, thread_id);
-	UNREFERRED_PARAMETER(err_code);
-	return true;
+	u32 msg_queue_id;
+
+	dbg_print("Recive thread created,thread id = %u.\n", id);
+	msg_queue_id = (u32)p_args;
+	pm_exit_thrd(0);
 }
 
 void test()
 {
-	int_hndlr_info_t info;
-	info.func = int_hndlr_test;
-	io_reg_int_hndlr(128, &info);
+	u32 queue_id;
+	pmsg_t p_msg;
 
-	__asm__("int	$128\r\n");
-	__asm__("int	$128\r\n");
-	__asm__("int	$128\r\n");
-	__asm__("int	$128\r\n");
-	__asm__("int	$128\r\n");
-	__asm__("int	$128\r\n");
+	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST);
+	dbg_print("\nMessage test started\n");
+
+	queue_id = msg_queue_create();
+	dbg_print("Message queue %u created.\n", queue_id);
+
+	pm_create_thrd(recv_theard, true, false, INT_LEVEL_USR_HIGHEST, (void*)queue_id);
+	dbg_print("\n/test\n");
+	pm_join(0);
 
 	while(1);
 }

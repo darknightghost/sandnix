@@ -58,7 +58,7 @@ void ssddt_init()
 	SYSTEM_CALL(SYS_MAP_PMO, ssddt_map_pmo, ssddt);
 	SYSTEM_CALL(SYS_UNMAP_PMO, ssddt_unmap_pmo, ssddt);
 	SYSTEM_CALL(SYS_MAP_RESERV_MEM, ssddt_map_reserv_mem, ssddt);
-	SYSTEM_CALL(SYS_UMAP_RESERV_MEM, ssddt_umap_reserv_mem, ssddt);
+	SYSTEM_CALL(SYS_UNMAP_RESERV_MEM, ssddt_umap_reserv_mem, ssddt);
 
 	//Process
 	SYSTEM_CALL(SYS_FORK, ssddt_fork, ssddt);

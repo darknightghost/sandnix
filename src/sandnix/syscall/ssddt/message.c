@@ -61,7 +61,7 @@ void* ssddt_recv_msg(va_list p_args)
 	status = vfs_recv_drv_message(vfs_get_crrnt_driver_id(),
 	                              &p_msg, if_block);
 
-	if(statu != ESUCCESS) {
+	if(status != ESUCCESS) {
 		return NULL;
 	}
 
@@ -69,7 +69,7 @@ void* ssddt_recv_msg(va_list p_args)
 
 	if(p_obj == NULL) {
 		pm_set_errno(EFAULT);
-		return;
+		return NULL;
 	}
 
 	vfs_initialize_object((pkobject_t)p_obj);
@@ -79,7 +79,7 @@ void* ssddt_recv_msg(va_list p_args)
 	pm_init_mutex(&(p_obj->lock));
 	p_obj->obj.destroy_callback = msg_obj_destroyer;
 
-	index = vfs_add_proc_obj(p_obj);
+	index = vfs_add_proc_obj((pkobject_t)p_obj);
 	status = pm_get_errno();
 
 	if(status != ESUCCESS) {
@@ -111,12 +111,12 @@ k_status ssddt_complete_msg(va_list p_args)
 	//Check arguments
 	if(!mm_virt_test(p_msg_obj, sizeof(msg_obj_t), PG_STAT_COMMIT, true)) {
 		pm_set_errno(EINVAL);
-		return;
+		return EINVAL;
 	}
 
 	if(p_msg_obj->obj.name != msg_obj_name) {
 		pm_set_errno(EINVAL);
-		return;
+		return EINVAL;
 	}
 
 	if(p_msg_obj->p_msg == NULL) {
@@ -148,6 +148,7 @@ k_status ssddt_forward_msg(va_list p_args)
 	u32 dev_num;
 
 	//Variables
+	k_status status;
 
 	//Get args
 	p_msg_obj = va_arg(p_args, void*);
@@ -156,12 +157,12 @@ k_status ssddt_forward_msg(va_list p_args)
 	//Check arguments
 	if(!mm_virt_test(p_msg_obj, sizeof(msg_obj_t), PG_STAT_COMMIT, true)) {
 		pm_set_errno(EINVAL);
-		return;
+		return EINVAL;
 	}
 
 	if(p_msg_obj->obj.name != msg_obj_name) {
 		pm_set_errno(EINVAL);
-		return;
+		return EINVAL;
 	}
 
 	if(p_msg_obj->p_msg == NULL) {
@@ -210,7 +211,7 @@ void ssddt_cancel_msg(va_list p_args)
 
 	if(p_msg_obj->p_msg == NULL) {
 		pm_set_errno(EINVAL);
-		return EINVAL;
+		return;
 	}
 
 	pm_acqr_mutex(&(p_msg_obj->lock), TIMEOUT_BLOCK);
@@ -227,7 +228,7 @@ void ssddt_cancel_msg(va_list p_args)
 	}
 
 	pm_set_errno(status);
-	return status;
+	return;
 }
 
 k_status ssddt_read_msg(va_list p_args)
@@ -247,12 +248,12 @@ k_status ssddt_read_msg(va_list p_args)
 	//Check arguments
 	if(!mm_virt_test(p_msg_obj, sizeof(msg_obj_t), PG_STAT_COMMIT, true)) {
 		pm_set_errno(EINVAL);
-		return;
+		return EINVAL;
 	}
 
 	if(p_msg_obj->obj.name != msg_obj_name) {
 		pm_set_errno(EINVAL);
-		return;
+		return EINVAL;
 	}
 
 	if(p_msg_obj->p_msg == NULL) {
@@ -261,9 +262,9 @@ k_status ssddt_read_msg(va_list p_args)
 	}
 
 	rtl_memcpy(buf, p_msg_obj->p_msg,
-	           (size > p_msg_obj->p_msg.size ? p_msg_obj->p_msg.size : size));
+	           (size > p_msg_obj->p_msg->size ? p_msg_obj->p_msg->size : size));
 
-	if(size > p_msg_obj->p_msg.size) {
+	if(size > p_msg_obj->p_msg->size) {
 		pm_set_errno(ESUCCESS);
 		return ESUCCESS;
 

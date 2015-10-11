@@ -42,6 +42,7 @@ void* ssddt_create_semaphore(va_list p_args)
 	//Variables
 	k_status status;
 	u32 index;
+	psem_obj_t p_obj;
 
 	//Get args
 	max_count = va_arg(p_args, u32);
@@ -50,7 +51,7 @@ void* ssddt_create_semaphore(va_list p_args)
 
 	if(p_obj == NULL) {
 		pm_set_errno(EFAULT);
-		return;
+		return NULL;
 	}
 
 	vfs_initialize_object((pkobject_t)p_obj);
@@ -59,7 +60,7 @@ void* ssddt_create_semaphore(va_list p_args)
 	pm_init_semaphore(&(p_obj->semaphore), max_count);
 	p_obj->obj.destroy_callback = sem_obj_destroyer;
 
-	index = vfs_add_proc_obj(p_obj);
+	index = vfs_add_proc_obj((pkobject_t)p_obj);
 	status = pm_get_errno();
 
 	if(status != ESUCCESS) {
@@ -78,27 +79,27 @@ void* ssddt_create_semaphore(va_list p_args)
 k_status ssddt_acqr_semaphore(va_list p_args)
 {
 	//Agruments
-	void* p_sem_obj;
+	psem_obj_t p_sem_obj;
 	u32 timeout;
 
 	//Variables
 
 	//Get args
-	p_sem_obj = va_arg(p_args, psem_obj_t);
+	p_sem_obj = va_arg(p_args, void*);
 	timeout = va_arg(p_args, u32);
 
 	//Check arguments
 	if(!mm_virt_test(p_sem_obj, sizeof(sem_obj_t), PG_STAT_COMMIT, true)) {
 		pm_set_errno(EINVAL);
-		return;
+		return EINVAL;
 	}
 
 	if(p_sem_obj->obj.name != sem_obj_name) {
 		pm_set_errno(EINVAL);
-		return;
+		return EINVAL;
 	}
 
-	pm_acqr_semaphore(&(p_obj->semaphore), timeout);
+	pm_acqr_semaphore(&(p_sem_obj->semaphore), timeout);
 
 	return pm_get_errno();
 }
@@ -106,7 +107,7 @@ k_status ssddt_acqr_semaphore(va_list p_args)
 k_status ssddt_try_semaphore(va_list p_args)
 {
 	//Agruments
-	void* p_sem_obj;
+	psem_obj_t p_sem_obj;
 
 	//Variables
 
@@ -116,15 +117,15 @@ k_status ssddt_try_semaphore(va_list p_args)
 	//Check arguments
 	if(!mm_virt_test(p_sem_obj, sizeof(sem_obj_t), PG_STAT_COMMIT, true)) {
 		pm_set_errno(EINVAL);
-		return;
+		return ESUCCESS;
 	}
 
 	if(p_sem_obj->obj.name != sem_obj_name) {
 		pm_set_errno(EINVAL);
-		return;
+		return EINVAL;
 	}
 
-	pm_try_acqr_semaphore(&(p_obj->semaphore));
+	pm_try_acqr_semaphore(&(p_sem_obj->semaphore));
 
 	return pm_get_errno();
 }
@@ -132,7 +133,7 @@ k_status ssddt_try_semaphore(va_list p_args)
 void ssddt_rls_semaphore(va_list p_args)
 {
 	//Agruments
-	void* p_sem_obj;
+	psem_obj_t p_sem_obj;
 
 	//Variables
 
@@ -150,15 +151,15 @@ void ssddt_rls_semaphore(va_list p_args)
 		return;
 	}
 
-	pm_rls_semaphore(&(p_obj->semaphore));
+	pm_rls_semaphore(&(p_sem_obj->semaphore));
 
-	return pm_get_errno();
+	return;
 }
 
 void ssddt_destroy_semaphore(va_list p_args)
 {
 	//Agruments
-	void* p_sem_obj;
+	psem_obj_t p_sem_obj;
 
 	//Variables
 

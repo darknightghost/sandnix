@@ -130,8 +130,8 @@ typedef	struct {
 #pragma pack()
 
 typedef	struct {
-	u32		start_tick;
-	u32		stop_tick;
+	u64		start_tick;
+	u64		stop_tick;
 } sleep_thread_info_t, *psleep_thread_info_t;
 
 typedef	struct {

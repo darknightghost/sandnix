@@ -20,6 +20,7 @@ export SOURCES = init/main.c \
 					vfs/fs/fs.c \
 					vfs/fs/ramdisk/ramdisk.c \
 					vfs/fs/tarfs/tarfs.c \
+					syscall/syscall.c \
 					syscall/ssddt/ssddt.c \
 					syscall/ssudt/ssudt.c \
 					syscall/ssddt/fs.c \

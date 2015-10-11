@@ -22,7 +22,7 @@ static	void		decrease_pmo_ref(ppmo_t p_pmo);
 
 ppmo_t mm_pmo_create(size_t size)
 {
-	ppmo_  ret;
+	ppmo_t  ret;
 
 	//Allocate memory
 	ret = mm_hp_alloc(sizeof(pmo_t), NULL);

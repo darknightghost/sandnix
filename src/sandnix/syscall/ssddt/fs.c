@@ -117,7 +117,7 @@ size_t ssddt_read(va_list p_args)
 	count = va_arg(p_args, size_t);
 
 	//Check arguments
-	if(!mm_virt_test(buf, count, PG_STAT_USER | PG_STAT_WRITEABLE)) {
+	if(!mm_virt_test(buf, count, PG_STAT_USER | PG_STAT_WRITEABLE, true)) {
 		pm_set_errno(EINVAL);
 		return 0;
 	}
@@ -178,7 +178,7 @@ size_t ssddt_write(va_list p_args)
 	count = va_arg(p_args, size_t);
 
 	//Check arguments
-	if(!mm_virt_test(buf, count, PG_STAT_USER | PG_STAT_COMMIT)) {
+	if(!mm_virt_test(buf, count, PG_STAT_USER | PG_STAT_COMMIT, true)) {
 		pm_set_errno(EINVAL);
 		return 0;
 	}
@@ -229,7 +229,7 @@ k_status ssddt_seek(va_list p_args)
 
 	//Check arguments
 	if(!mm_virt_test(p_after_pos, sizeof(u64)
-	                 , PG_STAT_USER | PG_STAT_WRITEABLE)) {
+	                 , PG_STAT_USER | PG_STAT_WRITEABLE, true)) {
 		pm_set_errno(EINVAL);
 		return 0;
 	}
@@ -258,7 +258,7 @@ k_status ssddt_stat(va_list p_args)
 
 	//Check arguments
 	if((!mm_virt_test(buf, sizeof(file_stat_t)
-	                  , PG_STAT_USER | PG_STAT_WRITEABLE)
+	                  , PG_STAT_USER | PG_STAT_WRITEABLE, true)
 	    || (!check_str_arg(path, PATH_MAX + 1)))) {
 		pm_set_errno(EINVAL);
 		return 0;
@@ -359,7 +359,7 @@ size_t ssddt_readdir(va_list p_args)
 
 	//Check arguments
 	if(!mm_virt_test(buf, sizeof(count)
-	                 , PG_STAT_USER | PG_STAT_WRITEABLE)) {
+	                 , PG_STAT_USER | PG_STAT_WRITEABLE, true)) {
 		pm_set_errno(EINVAL);
 		return 0;
 	}

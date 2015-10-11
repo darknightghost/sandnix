@@ -66,6 +66,7 @@ void dbg_print(char* fmt, ...)
 
 	va_start(args, fmt);
 	dbg_vprint(fmt, args);
+	va_end(args);
 }
 
 void dbg_vprint(char* fmt, va_list args)
@@ -76,7 +77,6 @@ void dbg_vprint(char* fmt, va_list args)
 	pm_acqr_spn_lock(&print_lock);
 	buf = mm_hp_alloc(BUF_SIZE, NULL);
 	rtl_vprintf_s(buf, BUF_SIZE, fmt, args);
-	va_end(args);
 
 	//Wrtie string to buf;
 	if(p_tty_buf == NULL) {

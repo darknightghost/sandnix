@@ -100,7 +100,7 @@ void ssddt_virt_free(va_list p_args)
 		return;
 	}
 
-	if(option | MEM_UNCOMMIT) {
+	if(options | MEM_UNCOMMIT) {
 		if(!mm_virt_test(start_addr, size, PG_STAT_COMMIT, true)) {
 			pm_set_errno(EINVAL);
 			return;
@@ -112,7 +112,7 @@ void ssddt_virt_free(va_list p_args)
 			return;
 		}
 
-		if((option | MEM_RESERVE)) {
+		if((options | MEM_RESERVE)) {
 			pm_set_errno(EINVAL);
 			return;
 		}
@@ -123,7 +123,7 @@ void ssddt_virt_free(va_list p_args)
 		}
 	}
 
-	option = option | MEM_USER;
+	options = options | MEM_USER;
 	mm_virt_free(start_addr, size, options);
 	pm_set_errno(ESUCCESS);
 	return;
@@ -176,7 +176,7 @@ void* ssddt_map_reserv_mem(va_list p_args)
 	if((!mm_virt_test(virt_addr, 1, PG_STAT_RESERVE, true))
 	   || mm_virt_test(virt_addr, 1, PG_STAT_COMMIT, true)) {
 		pm_set_errno(EINVAL);
-		return EINVAL;
+		return NULL;
 	}
 
 	return mm_virt_map(virt_addr, phy_addr);

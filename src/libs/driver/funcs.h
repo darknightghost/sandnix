@@ -110,6 +110,6 @@ void		get_tickcount(u64* tick_count);
 u32			get_tick();
 k_status	set_int_msg(u32 int_num);
 void		clean_int_msg(u32 int_num);
-void		kprint(char* fmt, ...);
+void		kprint(char* fmt, va_list args);
 
 #endif	//!	FUNCS_H_INCLUDE

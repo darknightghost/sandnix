@@ -78,7 +78,7 @@ void ssddt_suspend(va_list p_args)
 	u32 process;
 
 	//Get args
-	thread_id = va_arg(thread_id);
+	thread_id = va_arg(p_args, u32);
 
 	if(!pm_get_proc_id(thread_id, &process)) {
 		pm_set_errno(ESRCH);
@@ -117,7 +117,7 @@ void ssddt_resume(va_list p_args)
 	u32 process;
 
 	//Get args
-	thread_id = va_arg(thread_id);
+	thread_id = va_arg(p_args, u32);
 
 	if(!pm_get_proc_id(thread_id, &process)) {
 		pm_set_errno(ESRCH);
