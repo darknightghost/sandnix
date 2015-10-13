@@ -18,9 +18,77 @@
 #include "elf.h"
 #include "../../../vfs/vfs.h"
 #include "../../../mm/mm.h"
+#include "../../../msg/msg.h"
 
-bool check_elf(char* path)
+k_status check_elf(char* path)
 {
+	u32 fd;
+	k_status status;
+	ppmo_t p_pmo;
+	pmsg_read_info_t p_info;
+	pmsg_read_data_t p_data;
+	Elf32_Ehdr* p_head;
+	
+	//Check if the file is executable
+	status = vfs_access(path,X_OK | R_OK);
+	if(status != ESUCCESS){
+		return status;
+	}
+	
+	//Open file
+	fd = vfs_open(path,O_RDONLY,0);
+	if(!OPERATE_SUCCESS){
+		return pm_get_errno();
+	}
+	
+	//Create buffer
+	p_pmo = mm_pmo_create(sizeof(Elf32_Ehdr) + sizeof(msg_read_info_t));
+	if(p_pmo == NULL){
+		vfs_close(fd);
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+	
+	//Map buffer
+	p_info = mm_pmo_map(NULL,p_pmo,false);
+	if(p_info == NULL){
+		mm_pmo_unmap(p_info,p_pmo);
+		vfs_close(fd);
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+	
+	//Read elf header
+	p_info->len = sizeof(Elf32_Ehdr);
+	status = vfs_read(fd, p_pmo);
+	if(status != ESUCCESS){
+		mm_pmo_unmap(p_info,p_pmo);
+		vfs_close(fd);
+		pm_set_errno(status);
+		return status;
+	}
+	
+	p_data = (pmsg_read_data_t)p_info;
+	if(p_data->len != sizeof(Elf32_Ehdr)){
+		mm_pmo_unmap(p_info,p_pmo);
+		vfs_close(fd);
+		pm_set_errno(ENOEXEC);
+		return ENOEXEC;
+	}
+	
+	//Check elf header
+	p_head = (Elf32_Ehdr*)(&(p_data->data));
+	if(p_head->e_ident[0] != 0x7F
+		||p_head->e_ident[0] != 0x45
+		||p_head->e_ident[0] != 0x4C
+		||p_head->e_ident[0] != 0x46){
+		mm_pmo_unmap(p_info,p_pmo);
+		vfs_close(fd);
+		pm_set_errno(ENOEXEC);
+		return ENOEXEC;
+	}
+	
+	//TODO:
 }
 
 void* load_elf(char* path)

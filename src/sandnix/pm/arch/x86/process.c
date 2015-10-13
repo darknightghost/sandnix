@@ -154,6 +154,7 @@ void pm_execve(char* file_name, char* argv[], char* envp[])
 	//Return to user memory
 
 	UNREFERRED_PARAMETER(envp);
+	UNREFERRED_PARAMETER(argv);
 }
 
 u32 pm_wait(u32 child_id, u32* p_id, bool if_block)

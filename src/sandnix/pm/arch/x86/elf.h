@@ -130,7 +130,7 @@ typedef struct {
 
 #pragma	pack()
 
-bool	check_elf(char* path);
-void*	load_elf(char* path);
+k_status	check_elf(char* path);
+void*		load_elf(char* path);
 
 #endif	//!	ELF_H_INCLUDE
