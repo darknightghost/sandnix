@@ -17,6 +17,7 @@
 
 #include "../../pm.h"
 #include "process.h"
+#include "elf.h"
 #include "../../../rtl/rtl.h"
 #include "../../../debug/debug.h"
 #include "../../../mm/mm.h"
@@ -138,21 +139,19 @@ void pm_execve(char* file_name, char* argv[], char* envp[])
 	size_t name_len;
 
 	//TODO:exec
-	if(argv == NULL) {
-		//Just change the name of process
-		name_len = rtl_strlen(file_name) + 1;
-		pm_acqr_spn_lock(&process_table_lock);
-		mm_hp_free(process_table[current_process].process_name,
-		           process_heap);
-		process_table[current_process].process_name = mm_hp_alloc(name_len,
-		        process_heap);
-		rtl_strcpy_s(process_table[current_process].process_name,
-		             name_len,
-		             file_name);
-		pm_rls_spn_lock(&process_table_lock);
-		pm_set_errno(ESUCCESS);
+	if(file_name == NULL
+		||argv==NULL
+		||envp==NULL) {
+		pm_set_errno(EINVAL);
 		return;
 	}
+	
+	//Check thread number
+	//Check file type
+	//Save arguments
+	//Clear user memory
+	//Load elf file
+	//Return to user memory
 
 	UNREFERRED_PARAMETER(envp);
 }
@@ -435,6 +434,23 @@ void pm_change_to_usr_process()
 bool pm_is_driver()
 {
 	return process_table[current_process].is_driver;
+}
+
+void pm_change_name(char* new_name)
+{
+	//Change the name of process
+	name_len = rtl_strlen(new_name) + 1;
+	pm_acqr_spn_lock(&process_table_lock);
+	mm_hp_free(process_table[current_process].process_name,
+			   process_heap);
+	process_table[current_process].process_name = mm_hp_alloc(name_len,
+			process_heap);
+	rtl_strcpy_s(process_table[current_process].process_name,
+				 name_len,
+				 new_name);
+	pm_rls_spn_lock(&process_table_lock);
+	pm_set_errno(ESUCCESS);
+	return;
 }
 
 void add_proc_thrd(u32 thrd_id, u32 proc_id)

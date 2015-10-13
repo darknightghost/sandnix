@@ -16,11 +16,11 @@
 */
 
 #include "k_loader.h"
+#include "elf.h"
 #include "../fs/fs.h"
 #include "../io/stdout.h"
 #include "../string/string.h"
 #include "../exception/exception.h"
-#include "../../../../../common/arch/x86/elf_x86.h"
 #include "../../../../../common/arch/x86/kernel_image.h"
 #include "../memtest/memtest.h"
 

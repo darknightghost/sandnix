@@ -15,8 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef	ELF_X86_H_INCLUDE
-#define	ELF_X86_H_INCLUDE
+#ifndef	ELF_H_INCLUDE
+#define	ELF_H_INCLUDE
+
+#include "../../../../common/common.h"
 
 #pragma	pack(1)
 /* 32-bit ELF base types. */
@@ -128,4 +130,7 @@ typedef struct {
 
 #pragma	pack()
 
-#endif	//!	ELF_X86_H_INCLUDE
+bool	check_elf(char* path);
+void*	load_elf(char* path);
+
+#endif	//!	ELF_H_INCLUDE
