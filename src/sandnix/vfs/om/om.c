@@ -76,8 +76,6 @@ void om_init()
 	vfs_get_dev_major_by_name("filesystem", DEV_TYPE_CHAR);
 	vfs_get_dev_major_by_name("volume", DEV_TYPE_CHAR);
 
-	devfs_init();
-
 	return;
 }
 

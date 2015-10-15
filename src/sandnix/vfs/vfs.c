@@ -23,4 +23,5 @@ void vfs_init()
 	dbg_print("\nInitializing Virtual Filesystem module...\n");
 	om_init();
 	fs_init();
+	devfs_init();
 }
