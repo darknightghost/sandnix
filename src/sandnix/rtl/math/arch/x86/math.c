@@ -100,6 +100,7 @@ double rtl_sqrt(double num)
 	}
 
 	__asm__ __volatile__(
+	    "finit\n\t"
 	    "fldl	(%0)\n\t"
 	    "fsqrt\n\t"
 	    "fstl	(%1)\n\t"

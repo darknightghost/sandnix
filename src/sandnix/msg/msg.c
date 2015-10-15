@@ -182,7 +182,12 @@ k_status msg_send(pmsg_t p_msg,
 		return EFAULT;
 	}
 
-	if(p_msg->flags.flags | MFLAG_ASYNC) {
+	if(&(msg_queue_table[dest_queue]->is_blocked)) {
+		pm_resume_thrd(msg_queue_table[dest_queue]->blocked_thread_id);
+		msg_queue_table[dest_queue]->is_blocked = false;
+	}
+
+	if(p_msg->flags.flags & MFLAG_ASYNC) {
 		pm_rls_mutex(&(msg_queue_table[dest_queue]->lock));
 		pm_rls_mutex(&msg_queue_table_lock);
 
@@ -230,7 +235,7 @@ k_status msg_recv(pmsg_t* p_p_msg, u32 dest_queue, bool if_block)
 
 	p_queue = msg_queue_table[dest_queue];
 
-	if(p_queue->blocked_thread_id != 0) {
+	if(p_queue->is_blocked) {
 		pm_rls_mutex(&msg_queue_table_lock);
 		pm_set_errno(EDEADLK);
 		return EDEADLK;
@@ -243,6 +248,7 @@ k_status msg_recv(pmsg_t* p_p_msg, u32 dest_queue, bool if_block)
 	if(*p_p_msg == NULL) {
 		if(if_block) {
 			//Wait for new message
+			p_queue->is_blocked = true;
 			p_queue->blocked_thread_id = pm_get_crrnt_thrd_id();
 			pm_disable_task_switch();
 			pm_suspend_thrd(p_queue->blocked_thread_id);
@@ -251,12 +257,12 @@ k_status msg_recv(pmsg_t* p_p_msg, u32 dest_queue, bool if_block)
 			pm_enable_task_switch();
 			pm_schedule();
 
-			//Check if the queue_t is being destroyed
+			//Check if the queue is being destroyed
 			pm_acqr_mutex(&(p_queue->lock), TIMEOUT_BLOCK);
 
 			if(p_queue->destroy_flag) {
 				pm_rls_mutex(&(p_queue->lock));
-				p_queue->blocked_thread_id = 0;
+				p_queue->is_blocked = false;
 				pm_set_errno(EINTR);
 				return EINTR;
 			}
@@ -278,8 +284,8 @@ k_status msg_recv(pmsg_t* p_p_msg, u32 dest_queue, bool if_block)
 	if(*p_p_msg == NULL) {
 		pm_rls_mutex(&(p_queue->lock));
 
-		pm_set_errno(EFAULT);
-		return EFAULT;
+		pm_set_errno(EINTR);
+		return EINTR;
 	}
 
 	pm_rls_mutex(&(p_queue->lock));
@@ -332,7 +338,7 @@ k_status msg_complete(pmsg_t p_msg, k_status result)
 	k_status status;
 	pmsg_complete_info_t p_complete_info;
 
-	if(p_msg->flags.flags | MFLAG_ASYNC) {
+	if(p_msg->flags.flags & MFLAG_ASYNC) {
 
 		if(p_msg->message == MSG_COMPLETE
 		   || p_msg->message == MSG_CANCEL
@@ -385,7 +391,7 @@ k_status msg_cancel(pmsg_t p_msg)
 	k_status status;
 	pmsg_cancel_info_t p_cancel_info;
 
-	if(p_msg->flags.flags | MFLAG_ASYNC) {
+	if(p_msg->flags.flags & MFLAG_ASYNC) {
 
 		if(p_msg->message == MSG_COMPLETE
 		   || p_msg->message == MSG_CANCEL) {

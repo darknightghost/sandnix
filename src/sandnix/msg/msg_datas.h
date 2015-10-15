@@ -52,6 +52,7 @@ typedef	struct	_msg {
 typedef	struct {
 	queue_t	msgs;
 	mutex_t	lock;
+	bool	is_blocked;
 	u32		blocked_thread_id;
 	bool	destroy_flag;
 } msg_queue_t, *pmsg_queue_t;

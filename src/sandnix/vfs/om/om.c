@@ -612,7 +612,7 @@ u32 vfs_get_dev_major_by_name(char* major_name, u32 type)
 
 		rtl_strcpy_s(p_info->file_obj.obj.name, len, major_name);
 
-		rtl_array_list_init((&p_info->devices), DEV_MN_NUM_MAX, NULL);
+		rtl_array_list_init(&(p_info->devices), DEV_MN_NUM_MAX, NULL);
 
 		if(!OPERATE_SUCCESS) {
 			pm_rls_mutex(&devices_list_lock);
