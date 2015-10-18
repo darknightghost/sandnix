@@ -125,6 +125,7 @@ void on_open(pmsg_t p_msg)
 
 	p_info->file_size = ramdisk_size;
 	p_info->serial_read = false;
+	p_info->file_object = get_dev(initrd_ramdisk)->file_obj.file_id;
 
 	mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
 	msg_complete(p_msg, ESUCCESS);

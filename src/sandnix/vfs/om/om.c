@@ -61,21 +61,6 @@ void om_init()
 	pm_init_mutex(&devices_list_lock);
 	pm_init_mutex(&dev_filename_index_lock);
 
-	vfs_get_dev_major_by_name("bus", DEV_TYPE_CHAR);
-	vfs_get_dev_major_by_name("bus_dev_info", DEV_TYPE_CHAR);
-	vfs_get_dev_major_by_name("dma", DEV_TYPE_CHAR);
-	vfs_get_dev_major_by_name("memory", DEV_TYPE_CHAR);
-	vfs_get_dev_major_by_name("ramdisk", DEV_TYPE_BLOCK);
-	vfs_get_dev_major_by_name("tty", DEV_TYPE_CHAR);
-	vfs_get_dev_major_by_name("floppy", DEV_TYPE_BLOCK);
-	vfs_get_dev_major_by_name("ata", DEV_TYPE_BLOCK);
-	vfs_get_dev_major_by_name("sata", DEV_TYPE_BLOCK);
-	vfs_get_dev_major_by_name("loop", DEV_TYPE_BLOCK);
-	vfs_get_dev_major_by_name("console", DEV_TYPE_CHAR);
-	vfs_get_dev_major_by_name("partition", DEV_TYPE_BLOCK);
-	vfs_get_dev_major_by_name("filesystem", DEV_TYPE_CHAR);
-	vfs_get_dev_major_by_name("volume", DEV_TYPE_CHAR);
-
 	return;
 }
 
@@ -308,6 +293,8 @@ u32 vfs_add_device(pdevice_obj_t p_device, u32 driver)
 		pm_set_errno(EINVAL);
 		return 0;
 	}
+
+	p_device->file_obj.p_driver = p_drv_obj;
 
 	pm_acqr_mutex(&devices_list_lock, TIMEOUT_BLOCK);
 
@@ -592,7 +579,7 @@ u32 vfs_get_dev_major_by_name(char* major_name, u32 type)
 		}
 
 		//Object
-		vfs_initialize_object((pkobject_t)(&(p_info->file_obj.obj)));
+		vfs_initialize_object((pkobject_t)p_info);
 		p_info->file_obj.p_driver = get_driver(devfs_driver);
 		p_info->file_obj.refered_proc_list = NULL;
 		p_info->file_obj.obj.class_num = OBJ_MJ_FILE | OBJ_MN_NORMAL;

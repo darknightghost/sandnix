@@ -51,7 +51,7 @@ void fs_init()
 	pdriver_obj_t p_drv;
 	u32 process_id;
 
-	dbg_print("Initializing filesystem...\n");
+	dbg_print("Initializing Filesystem...\n");
 
 	//Initialize tables
 	status = rtl_array_list_init(&file_desc_info_table,
@@ -73,6 +73,7 @@ void fs_init()
 	pm_init_mutex(&file_desc_info_table_lock);
 	pm_init_mutex(&mount_point_lock);
 
+	om_init();
 	//Initialize file descriptor for process 0
 	p_proc0_info = mm_hp_alloc(sizeof(vfs_proc_info), NULL);
 
@@ -124,6 +125,21 @@ void fs_init()
 	}
 
 	p_proc0_info->driver_obj = p_drv->driver_id;
+
+	vfs_get_dev_major_by_name("bus", DEV_TYPE_CHAR);
+	vfs_get_dev_major_by_name("bus_dev_info", DEV_TYPE_CHAR);
+	vfs_get_dev_major_by_name("dma", DEV_TYPE_CHAR);
+	vfs_get_dev_major_by_name("memory", DEV_TYPE_CHAR);
+	vfs_get_dev_major_by_name("ramdisk", DEV_TYPE_BLOCK);
+	vfs_get_dev_major_by_name("tty", DEV_TYPE_CHAR);
+	vfs_get_dev_major_by_name("floppy", DEV_TYPE_BLOCK);
+	vfs_get_dev_major_by_name("ata", DEV_TYPE_BLOCK);
+	vfs_get_dev_major_by_name("sata", DEV_TYPE_BLOCK);
+	vfs_get_dev_major_by_name("loop", DEV_TYPE_BLOCK);
+	vfs_get_dev_major_by_name("console", DEV_TYPE_CHAR);
+	vfs_get_dev_major_by_name("partition", DEV_TYPE_BLOCK);
+	vfs_get_dev_major_by_name("filesystem", DEV_TYPE_CHAR);
+	vfs_get_dev_major_by_name("volume", DEV_TYPE_CHAR);
 
 	//Initialize ramdisk and tarfs
 	ramdisk_init();
@@ -179,10 +195,12 @@ k_status vfs_mount(char* src, char* target,
 {
 	path_t k_path;
 	pmsg_t p_msg;
-	k_status status, complete_result;
+	k_status status;
+	k_status complete_result;
 	ppmo_t p_pmo;
 	pmsg_mount_info_t p_info;
-	pmount_point_t p_mount_point, p_parent_point;
+	pmount_point_t p_mount_point;
+	pmount_point_t p_parent_point;
 	u32 send_result;
 	ppmo_t p_stat_buf;
 	pfile_stat_t p_stat;
@@ -570,7 +588,7 @@ k_status vfs_fork(u32 dest_process)
 	                    p_src_info->file_descs.size,
 	                    NULL);
 
-	for(i = 0;
+	for(i = rtl_array_list_get_next_index(&(p_src_info->file_descs), 0);
 	    OPERATE_SUCCESS;
 	    i = rtl_array_list_get_next_index(&(p_src_info->file_descs), i + 1)) {
 
@@ -592,7 +610,7 @@ k_status vfs_fork(u32 dest_process)
 	                    p_src_info->ref_objs.size,
 	                    NULL);
 
-	for(i = 0;
+	for(i = rtl_array_list_get_next_index(&(p_src_info->ref_objs), 0);
 	    OPERATE_SUCCESS;
 	    i = rtl_array_list_get_next_index(&(p_src_info->ref_objs), i + 1)) {
 
@@ -981,12 +999,12 @@ k_status vfs_read(u32 fd, ppmo_t buf)
 	//Get file descriptor
 	p_fd = get_file_descriptor(fd);
 
-	if(p_fd->flags | O_WRONLY) {
+	if(p_fd->flags & O_WRONLY) {
 		pm_set_errno(EBADF);
 		return EBADF;
 	}
 
-	if(p_fd->flags | O_DIRECTORY) {
+	if(p_fd->flags & O_DIRECTORY) {
 		pm_set_errno(EISDIR);
 		return EISDIR;
 	}
@@ -1065,12 +1083,12 @@ size_t vfs_write(u32 fd, ppmo_t buf)
 	//Get file descriptor
 	p_fd = get_file_descriptor(fd);
 
-	if(!((p_fd->flags | O_WRONLY) || (p_fd->flags | O_RDWR))) {
+	if(!((p_fd->flags & O_WRONLY) || (p_fd->flags & O_RDWR))) {
 		pm_set_errno(EBADF);
 		return EBADF;
 	}
 
-	if(p_fd->flags | O_DIRECTORY) {
+	if(p_fd->flags & O_DIRECTORY) {
 		pm_set_errno(EISDIR);
 		return EISDIR;
 	}
@@ -1409,12 +1427,12 @@ k_status vfs_readdir(u32 fd, ppmo_t buf)
 	//Get file descriptor
 	p_fd = get_file_descriptor(fd);
 
-	if(p_fd->flags | O_WRONLY) {
+	if(p_fd->flags & O_WRONLY) {
 		pm_set_errno(EBADF);
 		return EBADF;
 	}
 
-	if(!(p_fd->flags | O_DIRECTORY)) {
+	if(!(p_fd->flags & O_DIRECTORY)) {
 		pm_set_errno(ENOTDIR);
 		return ENOTDIR;
 	}
@@ -1700,8 +1718,7 @@ void set_proc_fs_info(u32 process_id,
 {
 	pm_acqr_mutex(&file_desc_info_table_lock, TIMEOUT_BLOCK);
 
-	ASSERT((rtl_array_list_get(&file_desc_info_table, process_id),
-	        !OPERATE_SUCCESS));
+	ASSERT((rtl_array_list_get(&file_desc_info_table, process_id) == NULL));
 
 	rtl_array_list_set(&file_desc_info_table, process_id, p_new_info, NULL);
 
@@ -1781,7 +1798,7 @@ pfile_obj_t get_file_obj(u32 id)
 
 	pm_acqr_mutex(&file_obj_table_lock, TIMEOUT_BLOCK);
 
-	ret = rtl_array_list_get(&file_desc_info_table, id);
+	ret = rtl_array_list_get(&file_obj_table, id);
 	status = pm_get_errno();
 
 	pm_rls_mutex(&file_obj_table_lock);
@@ -2198,7 +2215,7 @@ u32 get_initrd_fd()
 	p_fd->offset = 0;
 	p_file_obj = get_file_obj(p_fd->file_obj);
 	p_file_obj->size = p_info->file_size;
-	p_fd->flags = 0;
+	p_fd->flags = O_RDONLY;
 	p_fd->serial_read = p_info->serial_read;
 	p_fd->path.p_mount_point = NULL;
 	p_fd->path.path = "";

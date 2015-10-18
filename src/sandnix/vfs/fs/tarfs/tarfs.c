@@ -285,7 +285,7 @@ void analyse_inodes()
 		                | (tar_mode & TAR_OEXEC ? S_IXOTH : 0)
 		                | (p_head->header.linkflag == TAR_LF_DIR ? S_IFDIR : 0);
 
-		if(p_inode->mode & S_IFDIR) {
+		if(p_head->header.linkflag == TAR_LF_DIR) {
 			//Directory
 			status = rtl_array_list_init(&(p_inode->data.dir_entries),
 			                             MAX_DIRENT_NUM,
@@ -306,18 +306,24 @@ void analyse_inodes()
 		p_name = p_head->header.name + rtl_strlen(p_head->header.name);
 		p_name--;
 
+		if(*p_name == '/') {
+			*p_name = '\0';
+		}
+
 		while(1) {
-			p_name--;
 
 			if(p_name == p_head->header.name) {
 				add_dirent(p_head->header.name, p_inode->inode_num, "");
 				break;
 
 			} else if(*p_name == '/') {
-				p_name = '\0';
+				*p_name = '\0';
+				p_name++;
 				add_dirent(p_name, p_inode->inode_num, p_head->header.name);
 				break;
 			}
+
+			p_name--;
 		}
 
 		//Jump to next block
@@ -392,7 +398,8 @@ pinode_t create_inode()
 void add_dirent(char* name, u32 inode, char* path)
 {
 	pinode_t p_dir_inode;
-	pdirent_t p_dirent, p_prev_dirent;;
+	pdirent_t p_dirent;
+	pdirent_t p_prev_dirent;
 	u32 index;
 	k_status status;
 

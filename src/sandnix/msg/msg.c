@@ -64,6 +64,7 @@ u32 msg_queue_create()
 			pm_init_mutex(&(msg_queue_table[new_id]->lock));
 			msg_queue_table[new_id]->blocked_thread_id = 0;
 			msg_queue_table[new_id]->destroy_flag = false;
+			msg_queue_table[new_id]->is_blocked = false;
 
 			pm_rls_mutex(&msg_queue_table_lock);
 

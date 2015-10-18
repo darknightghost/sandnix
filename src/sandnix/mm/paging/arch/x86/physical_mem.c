@@ -56,7 +56,7 @@ void init_phy_mem()
 				if(phy_mem_info[base].status != PHY_PAGE_RESERVED
 				   && phy_mem_info[base].status != PHY_PAGE_UNUSABLE
 				   && phy_mem_info[base].status != PHY_PAGE_SYSTEM) {
-					if(base >= (KERNEL_BASE - VIRTUAL_ADDR_OFFSET) / 4096
+					if(base >= (RAMDISK_BASE - VIRTUAL_ADDR_OFFSET) / 4096
 					   && base <= (TMP_PAGE_TABLE_BASE + TMP_PAGE_SIZE) / 4096) {
 						//Memory of kernel image
 						phy_mem_info[base].status = PHY_PAGE_SYSTEM;

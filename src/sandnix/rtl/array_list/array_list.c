@@ -68,7 +68,7 @@ void* rtl_array_list_get(parray_list_t p_array, u32 index)
 	}
 
 	pm_set_errno(ESUCCESS);
-	return (p_node->p_datas + index % (p_node->scale));
+	return *(p_node->p_datas + index % (p_node->scale));
 }
 
 k_status rtl_array_list_set(parray_list_t p_array, u32 index, void* p_item, void* heap)
@@ -209,7 +209,7 @@ u32 rtl_array_list_get_next_index(parray_list_t p_array, u32 index)
 	scale = p_array->size / p_array->num;
 
 	while(index < p_array->size) {
-		p_node = *(p_array->p_nodes + scale);
+		p_node = *(p_array->p_nodes + index / scale);
 
 		if(p_node == NULL) {
 			//Jump to next node

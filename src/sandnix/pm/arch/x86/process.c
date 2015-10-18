@@ -95,7 +95,7 @@ s32	pm_fork()
 	process_table[new_id].pdt_id = new_pdt;
 
 	//Fork file descrpitors
-	if(vfs_fork(new_id) != OPERATE_SUCCESS) {
+	if(vfs_fork(new_id) != ESUCCESS) {
 		process_table[new_id].alloc_flag = false;
 		mm_pg_tbl_free(new_pdt);
 		pm_rls_spn_lock(&process_table_lock);
@@ -140,12 +140,12 @@ void pm_execve(char* file_name, char* argv[], char* envp[])
 
 	//TODO:exec
 	if(file_name == NULL
-		||argv==NULL
-		||envp==NULL) {
+	   || argv == NULL
+	   || envp == NULL) {
 		pm_set_errno(EINVAL);
 		return;
 	}
-	
+
 	//Check thread number
 	//Check file type
 	//Save arguments
@@ -439,16 +439,18 @@ bool pm_is_driver()
 
 void pm_change_name(char* new_name)
 {
+	size_t name_len;
+
 	//Change the name of process
 	name_len = rtl_strlen(new_name) + 1;
 	pm_acqr_spn_lock(&process_table_lock);
 	mm_hp_free(process_table[current_process].process_name,
-			   process_heap);
+	           process_heap);
 	process_table[current_process].process_name = mm_hp_alloc(name_len,
-			process_heap);
+	        process_heap);
 	rtl_strcpy_s(process_table[current_process].process_name,
-				 name_len,
-				 new_name);
+	             name_len,
+	             new_name);
 	pm_rls_spn_lock(&process_table_lock);
 	pm_set_errno(ESUCCESS);
 	return;

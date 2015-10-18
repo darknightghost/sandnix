@@ -73,91 +73,10 @@ void kernel_main()
 	return;
 }
 
-void recv_theard(u32 id, void* p_args)
-{
-	u32 msg_queue_id;
-	pmsg_t p_msg;
-
-	dbg_print("Recive thread created,thread id = %u.\n", id);
-	msg_queue_id = (u32)p_args;
-
-	while(1) {
-		msg_recv(&p_msg, msg_queue_id, true);
-
-		if(!OPERATE_SUCCESS) {
-			dbg_print("Failed");
-
-			while(1);
-		}
-
-		dbg_print("Received message\n");
-
-		if(p_msg->message == MSG_CLOSE) {
-			msg_complete(p_msg, ESUCCESS);
-			break;
-
-		} else {
-			msg_complete(p_msg, ESUCCESS);
-		}
-	}
-
-	dbg_print("Recive thread exited.\n", id);
-	pm_exit_thrd(0);
-}
-
 void test()
 {
-	u32 queue_id;
-	pmsg_t p_msg;
-	u32 i;
-	k_status complete_status;
-	u32 result;
-
-	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST);
-	dbg_print("\nMessage test started\n");
-
-	queue_id = msg_queue_create();
-	dbg_print("Message queue %u created.\n", queue_id);
-
-	pm_create_thrd(recv_theard, true, false, INT_LEVEL_USR_HIGHEST, (void*)queue_id);
-
-	for(i = 0; i < 30; i++) {
-		msg_create(&p_msg, sizeof(msg_t));
-
-		if(!OPERATE_SUCCESS) {
-			dbg_print("Failed");
-
-			while(1);
-		}
-
-		dbg_print("Created\n");
-
-		if(i != 29) {
-			p_msg->message = MSG_OPEN;
-
-		} else {
-			p_msg->message = MSG_CLOSE;
-		}
-
-		p_msg->flags.flags = MFLAG_DIRECTBUF;
-
-		msg_send(p_msg,
-		         queue_id,
-		         &result,
-		         &complete_status);
-
-		if(!OPERATE_SUCCESS) {
-			dbg_print("Failed");
-
-			while(1);
-		}
-
-		dbg_print("MSTATUS: %d\ncomplete stat: %d\n", result, complete_status);
-	}
-
-	dbg_print("\n/test\n");
-	msg_queue_destroy(queue_id);
-	pm_join(0);
+	dbg_print("<test>\n");
+	dbg_print("</test>\n");
 
 	while(1);
 }

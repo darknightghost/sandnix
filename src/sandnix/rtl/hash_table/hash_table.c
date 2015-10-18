@@ -71,15 +71,17 @@ k_status rtl_hash_table_set(phash_table_t p_table,
 	}
 
 	//Create new index
+	list = rtl_array_list_get(&(p_table->table), hash - p_table->base);
 	status = add_index(&list, index, p_item, heap);
 
 	if(status != ESUCCESS) {
 		return status;
 	}
 
+
 	return rtl_array_list_set(&(p_table->table),
 	                          hash - p_table->base,
-	                          p_node,
+	                          list,
 	                          heap);
 }
 
@@ -111,6 +113,8 @@ void* rtl_hash_table_get(phash_table_t p_table,
 			pm_set_errno(ESUCCESS);
 			return p_node->p_item;
 		}
+
+		p_lst_node = p_lst_node->p_next;
 	} while(p_lst_node != list);
 
 	pm_set_errno(ESUCCESS);
