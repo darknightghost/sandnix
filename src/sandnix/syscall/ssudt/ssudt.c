@@ -18,11 +18,14 @@
 #include "ssudt.h"
 #include "../../../libs/user/syscalls.h"
 #include "../../rtl/rtl.h"
+#include "../../debug/debug.h"
 
 syscall_t	ssudt[SYSCALL_MAX];
 
 void ssudt_init()
 {
+	dbg_print("Initializing SSDDT...\n");
+
 	rtl_memset(ssudt, 0, sizeof(ssudt));
 	return;
 }

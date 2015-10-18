@@ -19,11 +19,13 @@
 #include "ssddt_funcs.h"
 #include "../../../libs/driver/syscalls.h"
 #include "../../rtl/rtl.h"
+#include "../../debug/debug.h"
 
 syscall_t	ssddt[SYSCALL_MAX];
 
 void ssddt_init()
 {
+	dbg_print("Initializing SSDDT...\n");
 	rtl_memset(ssddt, 0, sizeof(ssddt));
 
 	//Filesystem

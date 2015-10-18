@@ -56,14 +56,15 @@ void kernel_main()
 	msg_init();
 	vfs_init();
 
-	test();
-
 	io_int_msg_init();
+
 	syscall_init();
 
 	io_set_crrnt_int_level(INT_LEVEL_USR_HIGHEST);
 
 	//Create driver_init process
+
+	test();
 
 	//IDLE
 	io_set_crrnt_int_level(INT_LEVEL_IDLE);

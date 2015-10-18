@@ -37,8 +37,13 @@
 .code32
 ssddt_addr:		.long		ssddt
 ssudt_addr:		.long		ssudt
+init_str:		.asciz		"\nInitializing System Calls...\n"
 
 syscall_init:
+		pushl	$init_str
+		call	dbg_print
+		addl	$4,%esp
+
 		xorl	%edx,%edx
 		movl	$SELECTOR_K_CODE,%eax
 		movl	$IA32_SYSENTER_CS,%ecx
