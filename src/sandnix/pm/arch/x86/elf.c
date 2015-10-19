@@ -28,6 +28,10 @@ k_status check_elf(char* path)
 	pmsg_read_info_t p_info;
 	pmsg_read_data_t p_data;
 	Elf32_Ehdr* p_head;
+	u32 prog_hdr_num;
+	Elf32_Phdr* p_prog_header;
+	u32 i;
+	u64 file_size;
 
 	//Check if the file is executable
 	status = vfs_access(path, X_OK | R_OK);
@@ -57,6 +61,7 @@ k_status check_elf(char* path)
 
 	if(p_info == NULL) {
 		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
 		vfs_close(fd);
 		pm_set_errno(EFAULT);
 		return EFAULT;
@@ -68,6 +73,7 @@ k_status check_elf(char* path)
 
 	if(status != ESUCCESS) {
 		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
 		vfs_close(fd);
 		pm_set_errno(status);
 		return status;
@@ -77,6 +83,7 @@ k_status check_elf(char* path)
 
 	if(p_data->len != sizeof(Elf32_Ehdr)) {
 		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
 		vfs_close(fd);
 		pm_set_errno(ENOEXEC);
 		return ENOEXEC;
@@ -90,14 +97,192 @@ k_status check_elf(char* path)
 	   || p_head->e_ident[0] != 0x4C
 	   || p_head->e_ident[0] != 0x46) {
 		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
 		vfs_close(fd);
 		pm_set_errno(ENOEXEC);
 		return ENOEXEC;
 	}
 
-	//TODO:
+	if(p_head->e_type != ET_EXEC
+	   || p_head->e_machine != EM_386) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
+		vfs_close(fd);
+		pm_set_errno(ENOEXEC);
+		return ENOEXEC;
+	}
+
+	//Read program headers
+	prog_hdr_num = p_head->e_phnum;
+	fs_seek(fd, SEEK_SET, p_head->e_phoff);
+	mm_pmo_unmap(p_info, p_pmo);
+	mm_pmo_free(p_pmo);
+
+	//Create buffer
+	p_pmo = mm_pmo_create(sizeof(Elf32_Phdr) * prog_hdr_num
+	                      + sizeof(msg_read_info_t));
+
+	if(p_pmo == NULL) {
+		vfs_close(fd);
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+
+	//Map buffer
+	p_info = mm_pmo_map(NULL, p_pmo, false);
+
+	if(p_info == NULL) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
+		vfs_close(fd);
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+
+	p_info->len = sizeof(Elf32_Phdr) * prog_hdr_num;
+	status = vfs_read(fd, p_pmo);
+
+	if(status != ESUCCESS) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
+		vfs_close(fd);
+		pm_set_errno(status);
+		return status;
+	}
+
+	p_data = (pmsg_read_data_t)p_info;
+
+	//Check program header
+	if(p_data->len != sizeof(Elf32_Phdr) * prog_hdr_num) {
+		mm_pmo_unmap(p_info, p_pmo);
+		mm_pmo_free(p_pmo);
+		vfs_close(fd);
+		pm_set_errno(ENOEXEC);
+		return ENOEXEC;
+	}
+
+	p_prog_header = &(p_data->data);
+
+	//Check segments
+	file_size = vfs_seek(fd, SEEK_END, 0);
+
+	for(i = 0; i < prog_hdr_num; i++) {
+		if(p_prog_header->p_filesz > 0
+		   && p_prog_header->p_offset + p_prog_header->p_filesz > file_size) {
+			mm_pmo_unmap(p_info, p_pmo);
+			mm_pmo_free(p_pmo);
+			vfs_close(fd);
+			pm_set_errno(ENOEXEC);
+			return ENOEXEC;
+
+		}
+	}
+
+	mm_pmo_unmap(p_info, p_pmo);
+	mm_pmo_free(p_pmo);
+	vfs_close(fd);
+	pm_set_errno(ESUCCESS);
+	return ESUCCESS;
 }
 
 void* load_elf(char* path)
 {
+	u32 fd;
+	k_status status;
+	ppmo_t p_head_pmo;
+	ppmo_t p_seg_pmo;
+	void* entry;
+	pmsg_read_info_t p_info;
+	pmsg_read_data_t p_data;
+	Elf32_Ehdr* p_head;
+	u32 prog_hdr_num;
+	u32	prog_hdr_off;
+	Elf32_Phdr* p_prog_header;
+	u32 i;
+
+	//Get program header offset&entery address
+	fd = vfs_open(path, O_RDONLY, 0);
+
+	if(!OPERATE_SUCCESS) {
+		pm_exit_thrd(pm_get_errno());
+	}
+
+	//Create buffer
+	p_head_pmo = mm_pmo_create(sizeof(Elf32_Ehdr) + sizeof(msg_read_info_t));
+
+	if(p_head_pmo == NULL) {
+		vfs_close(fd);
+		pm_exit_thrd(EFAULT);
+	}
+
+	//Map buffer
+	p_info = mm_pmo_map(NULL, p_head_pmo, false);
+
+	if(p_info == NULL) {
+		mm_pmo_unmap(p_info, p_head_pmo);
+		mm_pmo_free(p_head_pmo);
+		vfs_close(fd);
+		pm_exit_thrd(EFAULT);
+	}
+
+	p_info->len = sizeof(Elf32_Phdr) * prog_hdr_num;
+	status = vfs_read(fd, p_head_pmo);
+
+	if(status != ESUCCESS) {
+		mm_pmo_unmap(p_info, p_head_pmo);
+		mm_pmo_free(p_head_pmo);
+		vfs_close(fd);
+		pm_set_errno(status);
+		return status;
+	}
+
+	p_data = (pmsg_read_data_t)p_info;
+	p_head = (Elf32_Ehdr*)(&(p_data->data));
+	entry = p_head->e_entry;
+	prog_hdr_off = p_head->e_phoff;
+	prog_hdr_num = p_head->e_phnum;
+
+	//Get segments
+	fs_seek(fd, SEEK_SET, p_head->e_phoff);
+	mm_pmo_unmap(p_info, p_head_pmo);
+	mm_pmo_free(p_head_pmo);
+
+	//Create buffer
+	p_head_pmo = mm_pmo_create(sizeof(Elf32_Phdr) * prog_hdr_num
+	                           + sizeof(msg_read_info_t));
+
+	if(p_head_pmo == NULL) {
+		vfs_close(fd);
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+
+	//Map buffer
+	p_info = mm_pmo_map(NULL, p_head_pmo, false);
+
+	if(p_info == NULL) {
+		mm_pmo_unmap(p_info, p_head_pmo);
+		mm_pmo_free(p_head_pmo);
+		vfs_close(fd);
+		pm_set_errno(EFAULT);
+		return EFAULT;
+	}
+
+	p_info->len = sizeof(Elf32_Phdr) * prog_hdr_num;
+	status = vfs_read(fd, p_head_pmo);
+
+	if(status != ESUCCESS) {
+		mm_pmo_unmap(p_info, p_head_pmo);
+		mm_pmo_free(p_head_pmo);
+		vfs_close(fd);
+		pm_set_errno(status);
+		return status;
+	}
+
+	p_data = (pmsg_read_data_t)p_info;
+	p_prog_header = &(p_data->data);
+
+	//Load segments
+	for(i = 0; i < prog_hdr_num; i++) {
+	}
 }
