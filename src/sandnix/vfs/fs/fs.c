@@ -153,6 +153,7 @@ void fs_init()
 	root_mount_point.gid = 0;
 	root_mount_point.mode = S_IRUSR | S_IRGRP | S_IROTH;
 	root_mount_point.p_parent = NULL;
+	root_mount_point.volume_dev = initrd_volume;
 
 	//Set root dir and work dir of all process
 	pm_acqr_mutex(&file_desc_info_table_lock, TIMEOUT_BLOCK);
@@ -1486,8 +1487,7 @@ k_status vfs_readdir(u32 fd, ppmo_t buf)
 	}
 
 	//Check buffer size
-	if(buf->size < p_info->count * sizeof(dirent_t)
-	   + sizeof(msg_readdir_info_t)
+	if(buf->size < p_info->count + sizeof(msg_readdir_info_t)
 	   - sizeof(dirent_t)) {
 		mm_pmo_unmap(p_info, buf);
 		pm_set_errno(EOVERFLOW);
@@ -1906,9 +1906,10 @@ k_status analyse_path(char* path, ppath_t ret)
 	if(*path == '/') {
 		//The path begins from root directory
 		//Push directories name in the stack
-		for(p = path, rtl_get_next_name_in_path(&p, name_buf, NAME_MAX + 1);
-		    OPERATE_SUCCESS && *name_buf != '\0';
-		    rtl_get_next_name_in_path(&p, name_buf, NAME_MAX + 1)) {
+		p = path;
+		rtl_get_next_name_in_path(&p, name_buf, NAME_MAX + 1);
+
+		while((OPERATE_SUCCESS) && (*name_buf != '\0')) {
 			if(rtl_strcmp(name_buf, ".") == 0) {
 				continue;
 
@@ -1930,6 +1931,8 @@ k_status analyse_path(char* path, ppath_t ret)
 				rtl_strcpy_s(p_name, len , name_buf);
 				rtl_stack_push(&path_stack, p_name , NULL);
 			}
+
+			rtl_get_next_name_in_path(&p, name_buf, NAME_MAX + 1);
 		}
 
 		//Get path
@@ -1993,7 +1996,11 @@ k_status analyse_path(char* path, ppath_t ret)
 
 	//Get mount point
 	p = path_buf;
-	p++;
+
+	if(p == '\0') {
+		p++;
+	}
+
 	p_current_mount_point = p_info->root.p_mount_point;
 
 	while(p_current_mount_point->mount_points != NULL) {
@@ -2055,15 +2062,6 @@ void file_objecj_release_callback(pfile_obj_t p_fo)
 	rtl_array_list_release(&file_obj_table, p_fo->file_id, NULL);
 
 	pm_rls_mutex(&file_obj_table_lock);
-
-	pm_acqr_mutex(&(p_fo->refered_proc_list_lock), TIMEOUT_BLOCK);
-
-	rtl_list_destroy(&(p_fo->refered_proc_list),
-	                 NULL,
-	                 (item_destroyer_callback)ref_proc_destroy_callback,
-	                 p_fo);
-
-	pm_rls_mutex(&(p_fo->refered_proc_list_lock));
 
 	//Free memory
 	mm_hp_free(p_fo, NULL);

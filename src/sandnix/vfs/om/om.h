@@ -88,7 +88,7 @@ typedef	struct	_device_obj {
 #define	DEV_MJ_NUM_MAX		512
 #define	DEV_MN_NUM_MAX		512
 
-#define	DEV_NUM_MJ(dev_num)	((0xFFFF0001 & (dev_num)) >> 16)
+#define	DEV_NUM_MJ(dev_num)	((0xFFFF0000 & (dev_num)) >> 16)
 #define	DEV_NUM_MN(dev_num)	(0x0000FFFF & (dev_num))
 #define	MK_DEV(mj,mn)		(((mj) << 16) | (0x0000FFFF & (mn)))
 

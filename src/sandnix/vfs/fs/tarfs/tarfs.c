@@ -56,7 +56,7 @@ static	bool				checksum(ptar_record_header_t p_head);
 static	u32					get_num(char* buf, size_t len);
 static	u32					path_hash(char* path);
 static	bool				path_comparer(char* path1, char* path2);
-static	pfile_obj_info_t	get_fileobj_info(char* path, u32 mode, u32 process);
+static	pfile_obj_info_t	get_fileobj_info(char* path, u32 flags, u32 process);
 static	u64					get_dir_size(pinode_t p_inode);
 
 void tarfs_init()
@@ -590,7 +590,7 @@ bool path_comparer(char* path1, char* path2)
 	return false;
 }
 
-pfile_obj_info_t get_fileobj_info(char* path, u32 mode, u32 process)
+pfile_obj_info_t get_fileobj_info(char* path, u32 flags, u32 process)
 {
 	pfile_obj_info_t p_info;
 	pinode_t p_inode;
@@ -615,22 +615,22 @@ pfile_obj_info_t get_fileobj_info(char* path, u32 mode, u32 process)
 	}
 
 	//Check privilege
-	if(mode & O_CREAT) {
+	if(flags & O_CREAT) {
 		pm_set_errno(EROFS);
 		return NULL;
 	}
 
-	if((mode & O_WRONLY) || (mode & O_RDWR)) {
+	if((flags & O_WRONLY) || (flags & O_RDWR)) {
 		pm_set_errno(EROFS);
 		return NULL;
 	}
 
-	if((mode & O_DIRECTORY) && !(p_inode->mode & S_IFDIR)) {
+	if((flags & O_DIRECTORY) && !(p_inode->mode & S_IFDIR)) {
 		pm_set_errno(ENOTDIR);
 		return NULL;
 	}
 
-	if((!(mode & O_DIRECTORY)) && (p_inode->mode & S_IFDIR)) {
+	if((!(flags & O_DIRECTORY)) && (p_inode->mode & S_IFDIR)) {
 		pm_set_errno(EISDIR);
 		return NULL;
 	}
@@ -647,14 +647,14 @@ pfile_obj_info_t get_fileobj_info(char* path, u32 mode, u32 process)
 
 	if(p_inode->uid == uid) {
 		//Owner
-		if(mode & O_RDONLY) {
+		if(flags & O_RDONLY) {
 			if(!(p_inode->mode & S_IRUSR)) {
 				pm_set_errno(EACCES);
 				return NULL;
 			}
 		}
 
-		if(mode & O_EXCL) {
+		if(flags & O_EXCL) {
 			if(!(p_inode->mode & S_IXUSR)) {
 				pm_set_errno(EACCES);
 				return NULL;
@@ -663,14 +663,14 @@ pfile_obj_info_t get_fileobj_info(char* path, u32 mode, u32 process)
 
 	} else if(p_inode->gid == gid) {
 		//Group
-		if(mode & O_RDONLY) {
+		if(flags & O_RDONLY) {
 			if(!(p_inode->mode & S_IRGRP)) {
 				pm_set_errno(EACCES);
 				return NULL;
 			}
 		}
 
-		if(mode & O_EXCL) {
+		if(flags & O_EXCL) {
 			if(!(p_inode->mode & S_IXGRP)) {
 				pm_set_errno(EACCES);
 				return NULL;
@@ -679,14 +679,14 @@ pfile_obj_info_t get_fileobj_info(char* path, u32 mode, u32 process)
 
 	} else {
 		//Others
-		if(mode & O_RDONLY) {
+		if(flags & O_RDONLY) {
 			if(!(p_inode->mode & S_IROTH)) {
 				pm_set_errno(EACCES);
 				return NULL;
 			}
 		}
 
-		if(mode & O_EXCL) {
+		if(flags & O_EXCL) {
 			if(!(p_inode->mode & S_IXOTH)) {
 				pm_set_errno(EACCES);
 				return NULL;
@@ -757,7 +757,6 @@ void on_open(pmsg_t p_msg)
 {
 	pmsg_open_info_t p_info;
 	pfile_obj_info_t p_fo_info;
-	k_status status;
 
 	if(!(p_msg->flags.properties.pmo_buf)) {
 		msg_complete(p_msg, EINVAL);
@@ -773,18 +772,17 @@ void on_open(pmsg_t p_msg)
 	}
 
 	//Get file object
-	p_fo_info = get_fileobj_info(&(p_info->path), p_info->mode, p_info->process);
+	p_fo_info = get_fileobj_info(&(p_info->path), p_info->flags, p_info->process);
 
 	if(p_fo_info == NULL) {
-		status = pm_get_errno();
 		mm_pmo_unmap(p_info, p_msg->buf.pmo_addr);
-		msg_complete(p_msg, status);
+		msg_complete(p_msg, pm_get_errno());
 		return;
 	}
 
 	p_info->file_object = p_fo_info->file_id;
 
-	if(p_info->mode & O_DIRECTORY) {
+	if(p_info->flags & O_DIRECTORY) {
 		p_info->file_size = get_dir_size(p_fo_info->p_inode);
 
 	} else {
@@ -940,10 +938,12 @@ void on_readdir(pmsg_t p_msg)
 		if(sizeof(dirent_t) + p_dir_entry->d_reclen - 1 <= count - read_len) {
 			rtl_memcpy(p_buf, p_dir_entry, sizeof(dirent_t) + p_dir_entry->d_reclen - 1);
 			read_len += sizeof(dirent_t) + p_dir_entry->d_reclen - 1;
+			p_buf = &(p_data->data) + read_len;
 
 		} else {
 			rtl_memcpy(p_buf, p_dir_entry, count - read_len);
 			read_len = count;
+			p_buf = &(p_data->data) + read_len;
 		}
 
 	}

@@ -60,7 +60,7 @@ void mm_hp_destroy(void* heap_addr)
 
 	while(p_head != NULL) {
 		p_next_head = p_head->p_next;
-		mm_virt_free(p_head, p_head->scale, MEM_RELEASE);
+		mm_virt_free(p_head, p_head->scale, MEM_UNCOMMIT | MEM_RELEASE);
 		p_head = p_next_head;
 	}
 
@@ -220,6 +220,7 @@ void mm_hp_free(void* addr, void* heap_addr)
 	pheap_head_t p_head;
 	pmem_block_head_t p_block;
 	pspinlock_t p_lock;
+	bool b_multi_thread;
 
 	//Get heap address
 	if(heap_addr == NULL) {
@@ -271,6 +272,8 @@ void mm_hp_free(void* addr, void* heap_addr)
 	//Merge memory blocks
 	merge_mem_blocks(p_head);
 
+	b_multi_thread = p_head->attr & HEAP_MULTITHREAD;
+
 	if(p_head->p_prev != NULL
 	   && p_head->p_first_empty_block != NULL
 	   && (p_head->scale == p_head->p_first_empty_block->size
@@ -282,10 +285,10 @@ void mm_hp_free(void* addr, void* heap_addr)
 		}
 
 		p_head->p_prev->p_next = p_head->p_next;
-		mm_virt_free(p_head, p_head->scale, MEM_RELEASE);
+		mm_virt_free(p_head, p_head->scale, MEM_UNCOMMIT | MEM_RELEASE);
 	}
 
-	if(p_head->attr & HEAP_MULTITHREAD) {
+	if(b_multi_thread) {
 		pm_rls_spn_lock(p_lock);
 	}
 

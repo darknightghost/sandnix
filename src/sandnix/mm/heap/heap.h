@@ -40,7 +40,7 @@ typedef	struct _mem_block_head {
 typedef	struct _heap_head {
 	struct _heap_head*			p_prev;
 	struct _heap_head*			p_next;
-	pmem_block_head_t				p_first_empty_block;
+	pmem_block_head_t			p_first_empty_block;
 	size_t						scale;
 	u32							attr;
 	spinlock_t					lock;

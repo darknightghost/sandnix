@@ -32,7 +32,9 @@ export SOURCES = init/main.c \
 					syscall/ssddt/mutex.c \
 					syscall/ssddt/semaphore.c \
 					syscall/ssddt/message.c \
-					syscall/ssddt/io.c
+					syscall/ssddt/io.c	\
+					demo/demo.c \
+					demo/stdio.c
 
 x86_build :
 		$(MAKE) -f makefile.x86 all
