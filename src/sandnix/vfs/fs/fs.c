@@ -640,7 +640,6 @@ void vfs_clean(u32 process_id)
 	p_info = get_proc_fs_info(process_id);
 
 	if(p_info == NULL) {
-		pm_rls_mutex(&file_desc_info_table_lock);
 		pm_set_errno(EFAULT);
 		return;
 	}
@@ -666,6 +665,47 @@ void vfs_clean(u32 process_id)
 	                       (item_destroyer_callback)vfs_dec_obj_reference,
 	                       NULL,
 	                       NULL);
+	pm_set_errno(ESUCCESS);
+	return;
+}
+
+void vfs_clear()
+{
+	pvfs_proc_info p_info;
+	u32 desc_size;
+	u32 obj_size;
+
+	//Get info
+	p_info = get_proc_fs_info(pm_get_crrnt_process());
+
+	if(p_info == NULL) {
+		pm_set_errno(EFAULT);
+		return;
+	}
+
+	if(pm_is_driver()) {
+		io_int_msg_clean(ALL_INTERRUPT);
+		vfs_dec_obj_reference((pkobject_t)get_driver(p_info->driver_obj));
+	}
+
+	//Release info
+	desc_size = p_info->file_descs.size;
+	obj_size = p_info->ref_objs.size;
+	rtl_array_list_destroy(&(p_info->file_descs),
+	                       (item_destroyer_callback)file_desc_destroy_callback,
+	                       NULL,
+	                       NULL);
+	rtl_array_list_destroy(&(p_info->ref_objs),
+	                       (item_destroyer_callback)vfs_dec_obj_reference,
+	                       NULL,
+	                       NULL);
+
+	rtl_array_list_init(&(p_info->file_descs),
+	                    desc_size,
+	                    NULL);
+	rtl_array_list_init(&(p_info->ref_objs),
+	                    obj_size ,
+	                    NULL);
 	pm_set_errno(ESUCCESS);
 	return;
 }

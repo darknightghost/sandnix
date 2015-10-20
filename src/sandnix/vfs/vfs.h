@@ -101,6 +101,7 @@ k_status		vfs_getcwd(char* buf, size_t size);
 //File descriptors
 k_status		vfs_fork(u32 dest_process);
 void			vfs_clean(u32 process_id);
+void			vfs_clear();
 
 //Files
 u32				vfs_open(char* path, u32 flags, u32 mode);

@@ -19,6 +19,7 @@
 #include "../../../vfs/vfs.h"
 #include "../../../mm/mm.h"
 #include "../../../msg/msg.h"
+#include "../../../exceptions/exceptions.h"
 
 k_status check_elf(char* path)
 {
@@ -114,7 +115,7 @@ k_status check_elf(char* path)
 
 	//Read program headers
 	prog_hdr_num = p_head->e_phnum;
-	fs_seek(fd, SEEK_SET, p_head->e_phoff);
+	vfs_seek(fd, SEEK_SET, p_head->e_phoff);
 	mm_pmo_unmap(p_info, p_pmo);
 	mm_pmo_free(p_pmo);
 
@@ -161,7 +162,7 @@ k_status check_elf(char* path)
 		return ENOEXEC;
 	}
 
-	p_prog_header = &(p_data->data);
+	p_prog_header = (Elf32_Phdr*)(&(p_data->data));
 
 	//Check segments
 	file_size = vfs_seek(fd, SEEK_END, 0);
@@ -197,7 +198,6 @@ void* load_elf(char* path)
 	pmsg_read_data_t p_data;
 	Elf32_Ehdr* p_head;
 	u32 prog_hdr_num;
-	u32	prog_hdr_off;
 	Elf32_Phdr* p_prog_header;
 	u32 i;
 	u32 attr;
@@ -230,7 +230,7 @@ void* load_elf(char* path)
 		pm_exit_thrd(EFAULT);
 	}
 
-	p_info->len = sizeof(Elf32_Phdr) * prog_hdr_num;
+	p_info->len = sizeof(Elf32_Ehdr);
 	status = vfs_read(fd, p_head_pmo);
 
 	if(status != ESUCCESS) {
@@ -242,12 +242,11 @@ void* load_elf(char* path)
 
 	p_data = (pmsg_read_data_t)p_info;
 	p_head = (Elf32_Ehdr*)(&(p_data->data));
-	entry = p_head->e_entry;
-	prog_hdr_off = p_head->e_phoff;
+	entry = (void*)(p_head->e_entry);
 	prog_hdr_num = p_head->e_phnum;
 
 	//Get segments
-	fs_seek(fd, SEEK_SET, p_head->e_phoff);
+	vfs_seek(fd, SEEK_SET, p_head->e_phoff);
 	mm_pmo_unmap(p_info, p_head_pmo);
 	mm_pmo_free(p_head_pmo);
 
@@ -281,7 +280,7 @@ void* load_elf(char* path)
 	}
 
 	p_data = (pmsg_read_data_t)p_info;
-	p_prog_header = &(p_data->data);
+	p_prog_header = (Elf32_Phdr*)(&(p_data->data));
 
 	//Load segments
 	for(i = 0; i < prog_hdr_num; i++, p_prog_header++) {
@@ -296,7 +295,7 @@ void* load_elf(char* path)
 			attr |= PAGE_WRITEABLE;
 		}
 
-		p_mem = mm_virt_alloc(p_prog_header->p_vaddr,
+		p_mem = mm_virt_alloc((void*)(p_prog_header->p_vaddr),
 		                      p_prog_header->p_memsz,
 		                      MEM_USER | MEM_RESERVE | MEM_COMMIT, attr);
 
@@ -308,11 +307,11 @@ void* load_elf(char* path)
 		}
 
 		//Clear pages
-		rtl_memset(p_mem + p_prog_header->file_size,
-		           0, p_prog_header->p_memsz - p_prog_header->file_size);
+		rtl_memset(p_mem + p_prog_header->p_filesz,
+		           0, p_prog_header->p_memsz - p_prog_header->p_filesz);
 
 		//Load segment
-		if(p_prog_header->file_size > 0) {
+		if(p_prog_header->p_filesz > 0) {
 			p_seg_pmo = mm_pmo_create(p_prog_header->p_filesz
 			                          + sizeof(msg_read_info_t));
 

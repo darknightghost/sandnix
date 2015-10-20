@@ -32,6 +32,9 @@ void*			process_heap;
 static	u32			get_free_proc_id();
 static	u32			release_process(u32 process_id);
 static	void		awake_threads(list_t lst, u32 status);
+static	size_t		get_arglist_size(char** args, u32* p_num);
+static	void		call_main(void* entry, char* argv[], size_t argv_lst_len,
+                              char* envp[], size_t envp_lst_len);
 
 void init_process()
 {
@@ -61,6 +64,7 @@ void init_process()
 	    process_heap);
 	process_table[0].process_name = "system";
 	process_table[0].is_driver = true;
+	process_table[0].thread_num = 0;
 	return;
 }
 
@@ -136,10 +140,17 @@ s32	pm_fork()
 
 void pm_execve(char* file_name, char* argv[], char* envp[])
 {
-	size_t name_len;
 	k_status status;
+	void* entry;
+	size_t argv_lst_len;
+	size_t envp_lst_len;
+	char** argv_buf;
+	char** envp_buf;
+	u32 argv_num;
+	u32 envp_num;
+	u32 i;
+	char* p;
 
-	//TODO:exec
 	if(file_name == NULL
 	   || argv == NULL
 	   || envp == NULL) {
@@ -148,21 +159,105 @@ void pm_execve(char* file_name, char* argv[], char* envp[])
 	}
 
 	//Check thread number
+	if(process_table[current_process].thread_num > 1) {
+		pm_set_errno(EWOULDBLOCK);
+		return;
+	}
+
 	//Check file type
 	status = check_elf(file_name);
 
 	if(status != ESUCCESS) {
-		return status;
+		return;
 	}
 
 	//Save arguments
-	//Close all file descriptors
-	//Clear user memory
-	//Load elf file
-	//Return to user memory
+	argv_lst_len = get_arglist_size(argv, &argv_num);
 
-	UNREFERRED_PARAMETER(envp);
-	UNREFERRED_PARAMETER(argv);
+	if(!OPERATE_SUCCESS) {
+		return;
+	}
+
+	envp_lst_len = get_arglist_size(envp, &envp_num);
+
+	if(!OPERATE_SUCCESS) {
+		return;
+	}
+
+	argv_buf = mm_hp_alloc(argv_lst_len, NULL);
+
+	if(argv_buf == NULL) {
+		pm_set_errno(EFAULT);
+		return;
+	}
+
+	envp_buf = mm_hp_alloc(envp_lst_len, NULL);
+
+	if(envp_buf == NULL) {
+		mm_hp_free(argv_buf, NULL);
+		pm_set_errno(EFAULT);
+		return;
+	}
+
+	rtl_memset(argv_buf, 0, argv_lst_len);
+	rtl_memset(envp_buf, 0, envp_lst_len);
+
+	//argv
+	for(i = 0, p = (char*)argv_buf + sizeof(char**) * (argv_num + 1);
+	    i < argv_num;
+	    i++) {
+		argv_buf[i] = p;
+		rtl_strcpy_s(p,
+		             argv_lst_len - (p - (char*)argv_buf),
+		             argv[i]);
+		p += rtl_strlen(p) + 1;
+	}
+
+	//envp
+	for(i = 0, p = (char*)envp_buf + sizeof(char**) * (envp_num + 1);
+	    i < envp_num;
+	    i++) {
+		envp_buf[i] = p;
+		rtl_strcpy_s(p,
+		             envp_lst_len - (p - (char*)envp_buf),
+		             envp[i]);
+		p += rtl_strlen(p) + 1;
+
+	}
+
+	//Close all file descriptors
+	vfs_clear();
+
+	//Clear user memory
+	mm_pg_tbl_usr_spc_clear(process_table[current_process].pdt_id);
+
+	//Load elf file
+	entry = load_elf(file_name);
+
+	//Create user stack
+	thread_table[pm_get_crrnt_thrd_id()].user_stack_size = USER_STACK_SIZE;
+	thread_table[pm_get_crrnt_thrd_id()].user_stack = mm_virt_alloc(NULL,
+	        USER_STACK_SIZE, MEM_RESERVE | MEM_COMMIT | MEM_USER,
+	        PAGE_WRITEABLE);
+
+	if(thread_table[pm_get_crrnt_thrd_id()].user_stack == NULL) {
+		pm_exit_thrd(EFAULT);
+	}
+
+	//Change process name
+	for(p = argv_buf[0] + rtl_strlen(argv_buf[0]);
+	    p >= argv_buf[0];
+	    p--) {
+		if(*p == '/') {
+			*p = '\0';
+			break;
+		}
+	}
+
+	pm_change_name(p);
+
+	//Run user code
+	call_main(entry, argv_buf, argv_lst_len, envp_buf, envp_lst_len);
 }
 
 u32 pm_wait(u32 child_id, u32* p_id, bool if_block)
@@ -480,6 +575,7 @@ void add_proc_thrd(u32 thrd_id, u32 proc_id)
 		            "Failed to add thread!\n");
 	}
 
+	(process_table[proc_id].thread_num)++;
 	return;
 }
 
@@ -641,6 +737,7 @@ u32 get_free_proc_id()
 			process_table[id].suid = process_table[current_process].suid;
 			process_table[id].euid = process_table[current_process].euid;
 			process_table[id].is_driver = process_table[current_process].is_driver;
+			process_table[id].thread_num = 1;
 			return id;
 		}
 	}
@@ -695,4 +792,59 @@ void awake_threads(list_t lst, u32 status)
 	}
 
 	return;
+}
+
+size_t get_arglist_size(char** args, u32* p_num)
+{
+	char** p;
+	size_t ret;
+
+	*p_num = 0;
+
+	for(ret = 0, p = args;
+	    *p != NULL;
+	    p++, ret += sizeof(char*) + rtl_strlen(*p)) {
+		if(ret > 1024) {
+			pm_set_errno(E2BIG);
+			return 0;
+		}
+
+		(*p_num)++;
+	}
+
+	ret += sizeof(char*);
+	pm_set_errno(ESUCCESS);
+	return ret;
+}
+
+void call_main(void* entry, char* argv[], size_t argv_lst_len,
+               char* envp[], size_t envp_lst_len)
+{
+	u8* p_stack;
+	char** p_argv;
+	char** p_envp;
+
+	p_stack = thread_table[pm_get_crrnt_thrd_id()].user_stack
+	          + thread_table[pm_get_crrnt_thrd_id()].user_stack_size;
+
+	//Push parameters
+	p_stack -= argv_lst_len;
+	p_argv = (char**)(p_stack);
+	p_stack -= envp_lst_len;
+	p_envp = (char**)(p_stack);
+	rtl_memcpy(p_argv, argv, argv_lst_len);
+	rtl_memcpy(p_envp, envp, envp_lst_len);
+
+	p_stack -= sizeof(char**);
+	p_stack = (u8*)p_envp;
+	p_stack -= sizeof(char**);
+	p_stack = (u8*)p_argv;
+
+	p_stack -= sizeof(char**);
+	*((void**)p_stack) = NULL;
+
+	//Call kernel code
+	__asm__ __volatile__(
+	    "sysexit\n"
+	    ::"ecx"(p_stack), "edx"(entry));
 }

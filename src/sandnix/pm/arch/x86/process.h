@@ -25,6 +25,7 @@ typedef struct _process_info {
 	char*		process_name;		//Name
 	bool		wait_flag;			//Is been waited
 	u32			parent_id;			//Parent process
+	u32			thread_num;			//Number of threads
 	u32			pdt_id;				//Page table id
 	u32			exit_code;			//Exit code
 	u32			status;				//Status,alive or zombie

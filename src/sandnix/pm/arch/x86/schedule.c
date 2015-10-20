@@ -828,6 +828,7 @@ u32 pm_join(u32 thread_id)
 							}
 
 							exit_code = thread_table[thread_id].exit_code;
+							(process_table[proc_id].thread_num)--;
 							pm_rls_spn_lock(&thread_table_lock);
 							pm_rls_spn_lock(&process_table_lock);
 							pm_set_errno(ESUCCESS);
