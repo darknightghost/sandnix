@@ -166,9 +166,10 @@ k_status check_elf(char* path)
 	//Check segments
 	file_size = vfs_seek(fd, SEEK_END, 0);
 
-	for(i = 0; i < prog_hdr_num; i++) {
+	for(i = 0; i < prog_hdr_num; i++, p_prog_header++) {
 		if(p_prog_header->p_filesz > 0
-		   && p_prog_header->p_offset + p_prog_header->p_filesz > file_size) {
+		   || p_prog_header->p_offset + p_prog_header->p_filesz > file_size
+		   || p_prog_header->p_vaddr + p_prog_header->p_memsz >= KERNEL_MEM_BASE) {
 			mm_pmo_unmap(p_info, p_pmo);
 			mm_pmo_free(p_pmo);
 			vfs_close(fd);
@@ -199,6 +200,10 @@ void* load_elf(char* path)
 	u32	prog_hdr_off;
 	Elf32_Phdr* p_prog_header;
 	u32 i;
+	u32 attr;
+	char* p_mem;
+	pmsg_read_info_t p_seg_info;
+	pmsg_read_data_t p_seg_data;
 
 	//Get program header offset&entery address
 	fd = vfs_open(path, O_RDONLY, 0);
@@ -232,8 +237,7 @@ void* load_elf(char* path)
 		mm_pmo_unmap(p_info, p_head_pmo);
 		mm_pmo_free(p_head_pmo);
 		vfs_close(fd);
-		pm_set_errno(status);
-		return status;
+		pm_exit_thrd(status);
 	}
 
 	p_data = (pmsg_read_data_t)p_info;
@@ -253,8 +257,7 @@ void* load_elf(char* path)
 
 	if(p_head_pmo == NULL) {
 		vfs_close(fd);
-		pm_set_errno(EFAULT);
-		return EFAULT;
+		pm_exit_thrd(EFAULT);
 	}
 
 	//Map buffer
@@ -264,8 +267,7 @@ void* load_elf(char* path)
 		mm_pmo_unmap(p_info, p_head_pmo);
 		mm_pmo_free(p_head_pmo);
 		vfs_close(fd);
-		pm_set_errno(EFAULT);
-		return EFAULT;
+		pm_exit_thrd(EFAULT);
 	}
 
 	p_info->len = sizeof(Elf32_Phdr) * prog_hdr_num;
@@ -275,14 +277,83 @@ void* load_elf(char* path)
 		mm_pmo_unmap(p_info, p_head_pmo);
 		mm_pmo_free(p_head_pmo);
 		vfs_close(fd);
-		pm_set_errno(status);
-		return status;
+		pm_exit_thrd(status);
 	}
 
 	p_data = (pmsg_read_data_t)p_info;
 	p_prog_header = &(p_data->data);
 
 	//Load segments
-	for(i = 0; i < prog_hdr_num; i++) {
+	for(i = 0; i < prog_hdr_num; i++, p_prog_header++) {
+		//Allocate pages
+		attr = 0;
+
+		if(p_prog_header->p_flags & PF_X) {
+			attr |= PAGE_EXECUTABLE;
+		}
+
+		if(p_prog_header->p_flags & PF_W) {
+			attr |= PAGE_WRITEABLE;
+		}
+
+		p_mem = mm_virt_alloc(p_prog_header->p_vaddr,
+		                      p_prog_header->p_memsz,
+		                      MEM_USER | MEM_RESERVE | MEM_COMMIT, attr);
+
+		if(p_mem == NULL) {
+			mm_pmo_unmap(p_info, p_head_pmo);
+			mm_pmo_free(p_head_pmo);
+			vfs_close(fd);
+			pm_exit_thrd(EFAULT);
+		}
+
+		//Clear pages
+		rtl_memset(p_mem + p_prog_header->file_size,
+		           0, p_prog_header->p_memsz - p_prog_header->file_size);
+
+		//Load segment
+		if(p_prog_header->file_size > 0) {
+			p_seg_pmo = mm_pmo_create(p_prog_header->p_filesz
+			                          + sizeof(msg_read_info_t));
+
+			if(p_seg_pmo == NULL) {
+				mm_pmo_unmap(p_info, p_head_pmo);
+				mm_pmo_free(p_head_pmo);
+				vfs_close(fd);
+				pm_exit_thrd(EFAULT);
+			}
+
+			p_seg_info = mm_pmo_map(NULL, p_seg_pmo, false);
+
+			if(p_seg_info == NULL) {
+				mm_pmo_free(p_seg_pmo);
+				mm_pmo_unmap(p_info, p_head_pmo);
+				mm_pmo_free(p_head_pmo);
+				vfs_close(fd);
+				pm_exit_thrd(EFAULT);
+			}
+
+			p_seg_info->len = p_prog_header->p_filesz;
+			vfs_seek(fd, SEEK_SET, p_prog_header->p_offset);
+			status = vfs_read(fd, p_seg_pmo);
+
+			if(status != ESUCCESS) {
+				mm_pmo_unmap(p_seg_info, p_seg_pmo);
+				mm_pmo_free(p_seg_pmo);
+				mm_pmo_unmap(p_info, p_head_pmo);
+				mm_pmo_free(p_head_pmo);
+				vfs_close(fd);
+				pm_exit_thrd(status);
+			}
+
+			p_seg_data = (pmsg_read_data_t)p_seg_info;
+			rtl_memcpy(p_mem, &(p_seg_data->data), p_seg_data->len);
+			mm_pmo_unmap(p_seg_info, p_seg_pmo);
+			mm_pmo_free(p_seg_pmo);
+
+		}
 	}
+
+	pm_set_errno(ESUCCESS);
+	return entry;
 }

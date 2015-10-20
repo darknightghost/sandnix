@@ -137,6 +137,7 @@ s32	pm_fork()
 void pm_execve(char* file_name, char* argv[], char* envp[])
 {
 	size_t name_len;
+	k_status status;
 
 	//TODO:exec
 	if(file_name == NULL
@@ -148,7 +149,14 @@ void pm_execve(char* file_name, char* argv[], char* envp[])
 
 	//Check thread number
 	//Check file type
+	status = check_elf(file_name);
+
+	if(status != ESUCCESS) {
+		return status;
+	}
+
 	//Save arguments
+	//Close all file descriptors
 	//Clear user memory
 	//Load elf file
 	//Return to user memory
