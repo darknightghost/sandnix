@@ -24,7 +24,7 @@ syscall_t	ssudt[SYSCALL_MAX];
 
 void ssudt_init()
 {
-	dbg_print("Initializing SSDDT...\n");
+	dbg_print("Initializing SSUDT...\n");
 
 	rtl_memset(ssudt, 0, sizeof(ssudt));
 	return;
