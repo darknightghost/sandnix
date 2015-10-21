@@ -166,12 +166,8 @@ void int_clock_dispatcher(pret_regs_t p_regs)
 		}
 	}
 
-
 	//Enable next clock interrupt
-	__asm__ __volatile__(
-	    "movb	$0x20,%%al\n\t"
-	    "outb	%%al,$0x20\n\t"
-	    :::"ax");
+	io_write_port_byte(0x20, 0x20);
 
 	//Schedule
 	__asm__ __volatile__(

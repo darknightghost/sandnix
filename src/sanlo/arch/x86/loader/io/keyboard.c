@@ -25,6 +25,7 @@ u32 get_keyboard_input()
 	pressed_key = 0;
 
 	while(pressed_key == 0) {
+
 		scan_code = in_byte(0x60);
 
 		//Analyze scan code

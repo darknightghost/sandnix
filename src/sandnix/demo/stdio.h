@@ -18,4 +18,7 @@
 #ifndef	STDIO_H_INCLUDE
 #define	STDIO_H_INCLUDE
 
+void	stdio_init();
+void	read_line(char* buf);
+
 #endif	//!	STDIO_H_INCLUDE

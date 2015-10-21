@@ -18,7 +18,7 @@
 #ifndef	ELF_H_INCLUDE
 #define	ELF_H_INCLUDE
 
-#include "./../../../../common/common.h"
+#include "../../../../../common/common.h"
 
 #pragma	pack(1)
 /* 32-bit ELF base types. */

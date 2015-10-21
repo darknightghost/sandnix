@@ -67,6 +67,7 @@ void kernel_main()
 	test();
 
 	//IDLE
+	dbg_print("Changing thread 0 to IDLE thread...\n");
 	io_set_crrnt_int_level(INT_LEVEL_IDLE);
 
 	while(1);
@@ -74,67 +75,18 @@ void kernel_main()
 	return;
 }
 
-void fs_test()
-{
-	u32 fd;
-	ppmo_t p_pmo;
-	pmsg_readdir_info_t p_info;
-	pmsg_readdir_data_t p_data;
-	pdirent_t p_dir;
-	u8* p;
-
-	fd = vfs_open("/drivers", O_RDONLY | O_DIRECTORY, 0);
-	p_pmo = mm_pmo_create(4096);
-
-	if(p_pmo == NULL) {
-		dbg_print("Failed\n");
-
-		while(1);
-	}
-
-	p_info = mm_pmo_map(NULL, p_pmo, false);
-
-	if(p_info == NULL) {
-		dbg_print("Failed\n");
-
-		while(1);
-	}
-
-	p_info->count = 200;
-
-	vfs_readdir(fd, p_pmo);
-
-	if(!OPERATE_SUCCESS) {
-		dbg_print("Failed\n");
-
-		while(1);
-	}
-
-	p_data = (pmsg_readdir_data_t)p_info;
-	p = &(p_data->data);
-
-	while(p - & (p_data->data) < p_data->count) {
-		p_dir = (pdirent_t)(p);
-		dbg_print("%s\n", &(p_dir->d_name));
-		p += p_dir->d_reclen + sizeof(dirent_t) - 1;
-	}
-
-	mm_pmo_unmap(p_info, p_pmo);
-	mm_pmo_free(p_pmo);
-	vfs_close(fd);
-
-	return;
-}
-
 void test()
 {
 
-	dbg_print("<test>\n");
+	void demo_main(u32 thread_id, void* p_null);
+	dbg_print("Calling test demo...\n");
 
-	fs_test();
-	fs_test();
 
-	dbg_print("</test>\n");
+	if(pm_fork() == 0) {
+		pm_change_name("demo_shell");
+		pm_clear_kernel_stack(demo_main, NULL);
 
-	while(1);
+	} else {
+		pm_suspend_thrd(pm_get_crrnt_thrd_id());
+	}
 }

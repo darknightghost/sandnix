@@ -213,6 +213,8 @@ char* rtl_strcat_s(char* dest, size_t buf_size, char* src)
 		len = rtl_strlen(src);
 	}
 
+	dest += rtl_strlen(dest);
+
 	//Copy string
 	__asm__ __volatile__(
 	    "cld\n\t"
