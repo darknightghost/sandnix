@@ -7,3 +7,6 @@
 tags
 cscope*
 *.swp
+*.pyc
+Makefile
+*.dep
