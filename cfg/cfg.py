@@ -19,7 +19,7 @@ from xml.dom import minidom
 from cfg_excpt import *
 import os
 
-#target_list : [[path,options,[children]],[path,options,[children]],...]
+#target_list : [[path,options,output,[children]],[path,options,output,[children]],...]
 
 class cfg:
 	def __init__(self,path):
@@ -178,7 +178,7 @@ class target:
 		except KeyError:
 			options = options + arch.get_build_options(macros)
 		options = "%sOBJDIR = %s\nOUTPUT = %s\n"%(options,self.objdir,self.output)
-		target_list.append([self.path,options,children])
+		target_list.append([self.path,options,self.output,children])
 		return ""
 
 

@@ -94,18 +94,24 @@ def create_target_makefile(target,arch):
 		elif ext_name in [".s",".S"]:
 			#.s,.S
 			make_file.write("\t$(ASRULE)\n")
+			
+	#Subtargets
+	subtargets = target[3]
+	for t in subtargets:
+		make_file.write("%s/%s :\n"%(t[0],t[2]))
+		make_file.write("\tcd %s;make all\n"%(t[0]))
+		create_target_makefile(t,arch)
 	
 	#Link
 	make_file.write("$(OUTPUT) : %s\n"%(objs))
 	make_file.write("\tmkdir -p $(dir $(OUTPUT))\n")
 	make_file.write("\t$(LDRULE)\n")
 	
-	#Children
-	subtargets = target[2]
-	make_file.write("$(TARGET) : $(OUTPUT)\n")
+	#Target
+	make_file.write("$(TARGET) :")
 	for t in subtargets:
-		make_file.write("\tcd %s;make all\n"%(t[0]))
-		create_target_makefile(t,arch)
+		make_file.write(" %s/%s"%(t[0],t[2]))
+	make_file.write(" $(OUTPUT)\n")
 	make_file.write("\t$(AFTER)\n")
 	make_file.write("\trm -f %s\n"%(deps))
 	

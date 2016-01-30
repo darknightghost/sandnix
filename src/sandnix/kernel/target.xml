@@ -3,10 +3,10 @@
 		<arch name="x86">
 			<!--Build options,projects's private options can override them-->			
 			<AS type="textbox">gcc</AS>			
-			<ASFLAGS type="textbox">-x assembler-with-cpp -fno-zero-initialized-in-bss -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -fno-builtin -c -D_ASM</ASFLAGS>
+			<ASFLAGS type="textbox">-x assembler-with-cpp -fno-zero-initialized-in-bss -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -fno-builtin -c -D_ASM -Werror</ASFLAGS>
 			<ASRULE type="textbox">$(AS) $(ASFLAGS) -o $@ $&lt;</ASRULE>
 			<CC type="textbox">gcc</CC>	
-			<CFLAGS type="textbox">-fno-zero-initialized-in-bss -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -fno-builtin -c -O2</CFLAGS>
+			<CFLAGS type="textbox">-fno-zero-initialized-in-bss -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -fno-builtin -c -O2 -Werror</CFLAGS>
 			<CCRULE type="textbox">$(CC) $(CFLAGS) -o $@ $&lt;</CCRULE>
 			<LD type="textbox">ld</LD>
 			<LDFLAGS type="textbox">-m elf_i386 --gc-sections -Ttext 0xc0100000 -e _start</LDFLAGS>

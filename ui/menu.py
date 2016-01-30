@@ -345,7 +345,7 @@ class menu:
 	def on_up(self):
 		if self.focus > 0 and len(self.page) > 0:
 			i = self.focus - 1
-			while i > 0:
+			while i >= 0:
 				if self.page[self.index][i][4]:
 					self.page[self.index][self.focus][0].on_lost_focus()
 					self.focus = i
