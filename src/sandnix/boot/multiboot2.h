@@ -237,7 +237,7 @@ typedef	struct	_multiboot_tag_framebuffer_common_t {
 } multiboot_tag_framebuffer_common_t, *pmultiboot_tag_framebuffer_common_t;
 
 typedef	struct	_multiboot_tag_framebuffer_t {
-	struct multiboot_tag_framebuffer_common common;
+	multiboot_tag_framebuffer_common_t common;
 
 	union {
 		struct {
