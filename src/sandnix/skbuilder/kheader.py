@@ -19,4 +19,6 @@ import sys
 import os
 import struct
 
-
+class kheader:
+	def __init__(self,text):
+		self.text = text

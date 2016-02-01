@@ -18,10 +18,14 @@
 #include "../../../common/common.h"
 #include "../../boot/multiboot2.h"
 
-void kernel_main(char* args, void* ramdisk, size_t ramdisk_size)
+#define	KERNEL_STACK_SIZE	(4096 + 2)
+
+u8		init_stack[KERNEL_STACK_SIZE];
+
+void kernel_main(u32 magic, void* boot_info)
 {
-	UNREFERRED_PARAMETER(args);
-	UNREFERRED_PARAMETER(ramdisk);
-	UNREFERRED_PARAMETER(ramdisk_size);
+	UNREFERRED_PARAMETER(magic);
+	UNREFERRED_PARAMETER(boot_info);
+
 	return;
 }
