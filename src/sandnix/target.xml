@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?><target>
-	<build objdir="../../obj/sandnix/$(ARCH)" output="../../bin/sandnix/$(ARCH)">
+	<build objdir="../../obj/sandnix" output="../../bin/sandnix/$(ARCH)/sandnix">
 		<arch name="x86">			
 			<!--Build options,projects's private options can override them-->			
 			<AS type="textbox">gcc</AS>			
@@ -13,7 +13,7 @@
 			<LDRULE type="textbox"></LDRULE>
 			<DEP type="textbox">gcc</DEP>
 			<DEPRULE type="textbox">$(DEP) -MM -o $@ $&lt;;echo $(OBJDIR)/$(ARCH)/`cat $@` &gt; $@</DEPRULE>
-			<AFTER type="textbox"></AFTER>		
+			<AFTER type="textbox">skbuilder/skbuilder -l 0x00100000 -v 0xc0100000 -a $(ARCH) -h ../../bin/sandnix/$(ARCH)/header -k ../../bin/sandnix/$(ARCH)/kernel -o $(OUTPUT)</AFTER>
 		</arch>
 		<arch name="amd64">			
 			<!--Build options,projects's private options can override them-->			
@@ -28,7 +28,7 @@
 			<LDRULE type="textbox"></LDRULE>
 			<DEP type="textbox">gcc</DEP>
 			<DEPRULE type="textbox">$(DEP) -MM -o $@ $&lt;;echo $(OBJDIR)/$(ARCH)/`cat $@` &gt; $@</DEPRULE>
-			<AFTER type="textbox"></AFTER>	
+			<AFTER type="textbox">skbuilder/skbuilder -l 0x00100000 -v 0xc0100000 -a $(ARCH) -h ../../bin/sandnix/$(ARCH)/header -k ../../bin/sandnix/$(ARCH)/kernel -o $(OUTPUT)</AFTER>
 		</arch>	
 	</build>
 	<menu>

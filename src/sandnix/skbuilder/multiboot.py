@@ -27,19 +27,20 @@ class UnknowHeader(Exception):
 
 class multiboot_header:
 	ADDR_MAGIC = 0xFFFFFFFF
-	def __init__(self,path)
+	def __init__(self,path):
 		self.file = open(path,"rb")
 		print("Header file \"%s\" opened."%(path))
 		self.header_addr_off = self.search_magic()
-		print("Header address offset : %0.8X."%(self.header_addr_off))
+		print("Header address offset : 0x%0.8X."%(self.header_addr_off))
 		self.load_addr_off = self.search_magic()
-		print("Load address offset : %0.8X."%(self.load_addr_off))
+		print("Load address offset : 0x%0.8X."%(self.load_addr_off))
 		self.load_end_addr_off = self.search_magic()
-		print("Load end address offset : %0.8X."%(self.load_end_addr_off))
+		print("Load end address offset : 0x%0.8X."%(self.load_end_addr_off))
 		self.bss_end_addr_off = self.search_magic()
-		print("Bss end address offset : %0.8X."%(self.bss_end_addr_off))
+		print("Bss end address offset : 0x%0.8X."%(self.bss_end_addr_off))
 		self.entry_addr_off = self.search_magic()
-		print("Entery address offset : %0.8X."%(self.entry_addr_off))
+		print("Entery address offset : 0x%0.8X."%(self.entry_addr_off))
+		print("")
 		
 		if None in (self.header_addr_off,self.load_addr_off,self.load_end_addr_off,
 			self.bss_end_addr_off,self.entry_addr_off):
@@ -59,7 +60,7 @@ class multiboot_header:
 		self.load_addr = num
 		return
 	
-	def set_load_end_addr(self.num):
+	def set_load_end_addr(self,num):
 		self.load_end_addr = num
 		return
 		

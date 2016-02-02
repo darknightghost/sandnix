@@ -5,13 +5,10 @@
 .global		kernel_header
 
 .code32
+.align	4
 kernel_header:
 //magic
 	.long		KERNEL_HEADER_MAGIC
-//phy_addr
-	.long		0
-//virt_addr
-	.long		0
 //text_begin
 	.long		0
 //text_end
@@ -19,10 +16,6 @@ kernel_header:
 //data_begin
 	.long		0
 //data_end
-	.long		0
-//bss_begin
-	.long		0
-//bss_end
 	.long		0
 //checksum
 	.long		0 -	KERNEL_HEADER_MAGIC

@@ -9,7 +9,7 @@
 			<CFLAGS type="textbox">-fno-zero-initialized-in-bss -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -fno-builtin -c -O2 -Werror</CFLAGS>
 			<CCRULE type="textbox">$(CC) $(CFLAGS) -o $@ $&lt;</CCRULE>
 			<LD type="textbox">ld</LD>
-			<LDFLAGS type="textbox">-m elf_i386 --gc-sections -Ttext 0xc0100200 -e _start</LDFLAGS>
+			<LDFLAGS type="textbox">-m elf_i386 -Ttext 0xc0101000 -e _start --no-omagic</LDFLAGS>
 			<LDRULE type="textbox">$(LD) $(LDFLAGS) -o $@ -Map $(basename $@).map $^</LDRULE>		
 			<DEP type="textbox">gcc</DEP>
 			<DEPRULE type="textbox">$(DEP) -MM -o $@ $&lt;;echo $(OBJDIR)/$(ARCH)/`cat $@` &gt; $@</DEPRULE>

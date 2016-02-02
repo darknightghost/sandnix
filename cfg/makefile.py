@@ -108,10 +108,9 @@ def create_target_makefile(target,arch):
 	make_file.write("\t$(LDRULE)\n")
 	
 	#Target
-	make_file.write("$(TARGET) :")
+	make_file.write("$(TARGET) : $(OUTPUT)\n")
 	for t in subtargets:
-		make_file.write(" %s/%s"%(t[0],t[2]))
-	make_file.write(" $(OUTPUT)\n")
+		make_file.write("\tmake %s/%s\n"%(t[0],t[2]))
 	make_file.write("\t$(AFTER)\n")
 	make_file.write("\trm -f %s\n"%(deps))
 	
@@ -119,7 +118,7 @@ def create_target_makefile(target,arch):
 	make_file.write("clean :\n")
 	for t in subtargets:
 		make_file.write("\tcd %s;make clean\n"%(t[0]))
-	make_file.write("\trm -r $(OBJDIR)/$(ARCH)\n")
+	make_file.write("\trm -rf $(OBJDIR)/$(ARCH)\n")
 	
 	#delete
 	make_file.write("delete :\n")

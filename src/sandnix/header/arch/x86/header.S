@@ -83,5 +83,3 @@ _ADDR_4:
 	//size
 	.long	_end - _ADDR_4
 _end:
-
-.org	0x200,0

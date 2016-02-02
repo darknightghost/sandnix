@@ -31,14 +31,10 @@ extern	u8		init_stack[KERNEL_STACK_SIZE]
 #pragma pack(1)
 typedef	struct	_kernel_header_t {
 	le32	magic;
-	u32		phy_addr;
-	u32		virt_addr;
 	u32		text_begin;
 	u32		text_end;
 	u32		data_begin;
 	u32		data_end;
-	u32		bss_begin;
-	u32		bss_end;
 	u32		checksum;
 } kernel_header_t, *pkernel_header_t;
 #pragma pack(pop)
