@@ -52,4 +52,12 @@ _start:
 	//Jump to kernel memory
 
 	_loop:
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
 	jmp		_loop
+
+.section	.data

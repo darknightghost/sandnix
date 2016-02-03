@@ -48,6 +48,8 @@ _ADDR_1:
 	.long	MULTIBOOT_TAG_TYPE_MMAP
 	.long	MULTIBOOT_TAG_TYPE_MODULE
 	.long	MULTIBOOT_TAG_TYPE_CMDLINE
+	.long	MULTIBOOT_TAG_TYPE_END
+
 //The address tag of Multiboot header
 _ADDR_2:
 	//type
@@ -78,8 +80,4 @@ _ADDR_3:
 _ADDR_4:
 	//type
 	.word	MULTIBOOT_HEADER_TAG_END
-	//flags
-	.word	0
-	//size
-	.long	_end - _ADDR_4
 _end:
