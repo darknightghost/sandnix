@@ -17,25 +17,3 @@
 
 #pragma once
 
-typedef	unsigned char		u8;
-typedef unsigned short		u16;
-typedef unsigned int		u32;
-typedef unsigned long		u64;
-
-typedef signed char			s8;
-typedef signed short		s16;
-typedef signed int			s32;
-typedef signed long			s64;
-
-typedef	u8		le8;
-typedef	u16		le16;
-typedef	u32		le32;
-typedef	u64		le64;
-
-typedef	u8					bool;
-#define	true	1
-#define	false	0
-
-typedef u64					size_t;
-
-#define	NULL	((void*)0)

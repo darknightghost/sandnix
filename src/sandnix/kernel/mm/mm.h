@@ -17,25 +17,10 @@
 
 #pragma once
 
-typedef	unsigned char		u8;
-typedef unsigned short		u16;
-typedef unsigned int		u32;
-typedef unsigned long		u64;
+#ifdef	X86
+	#include "arch/x86/page_table.h"
+#endif
 
-typedef signed char			s8;
-typedef signed short		s16;
-typedef signed int			s32;
-typedef signed long			s64;
-
-typedef	u8		le8;
-typedef	u16		le16;
-typedef	u32		le32;
-typedef	u64		le64;
-
-typedef	u8					bool;
-#define	true	1
-#define	false	0
-
-typedef u64					size_t;
-
-#define	NULL	((void*)0)
+#ifdef	AMD64
+	#include "arch/amd64/page_table.h"
+#endif

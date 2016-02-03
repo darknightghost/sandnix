@@ -1,1 +1,2 @@
 init/arch/x86/init.S
+init/arch/x86/start_paging.c

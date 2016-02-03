@@ -37,3 +37,5 @@ typedef	u8		bool;
 #define	false	0
 
 typedef u32		size_t;
+
+#define	NULL	((void*)0)

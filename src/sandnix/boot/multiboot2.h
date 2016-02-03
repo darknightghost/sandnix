@@ -19,6 +19,10 @@
  *  IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/*
+	Edited by 暗夜幽灵，2016
+ */
+
 
 /*
 	This file is copied from grub2

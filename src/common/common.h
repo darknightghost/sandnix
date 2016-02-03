@@ -18,15 +18,15 @@
 #pragma once
 
 #ifndef _ASM
-#ifdef X86
-	#include "arch/x86/types.h"
-#endif
+	#ifdef X86
+		#include "arch/x86/types.h"
+	#endif
 
-#ifdef AMD64
-	#include "arch/amd64/types.h"
-#endif
+	#ifdef AMD64
+		#include "arch/amd64/types.h"
+	#endif
 
-#define	UNREFERRED_PARAMETER(x)		((void)(x))
+	#define	UNREFERRED_PARAMETER(x)		((void)(x))
 
 #endif
 

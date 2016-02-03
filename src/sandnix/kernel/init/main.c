@@ -22,10 +22,12 @@
 
 u8		init_stack[KERNEL_STACK_SIZE];
 
-void kernel_main(u32 magic, void* boot_info)
+void kernel_main(void* p_init_pgtbl, u32 magic, pmultiboot_tag_t p_boot_info)
 {
-	UNREFERRED_PARAMETER(magic);
-	UNREFERRED_PARAMETER(boot_info);
+	while(1);
 
+	UNREFERRED_PARAMETER(magic);
+	UNREFERRED_PARAMETER(p_boot_info);
+	UNREFERRED_PARAMETER(p_init_pgtbl);
 	return;
 }

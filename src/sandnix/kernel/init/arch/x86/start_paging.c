@@ -17,11 +17,44 @@
 
 #include "../../../../../common/common.h"
 #include "../../../../boot/multiboot2.h"
+#include "../../init.h"
+#include "../../../mm/mm.h"
 
-void start_paging(u32 offset)
+static	void	get_needed_pages(u32 offset, void* p_boot_info,
+                                 void** p_base, u32* p_num);
+
+void* start_paging(u32 offset, u32 magic, void* p_boot_info)
 {
+	void* base;
+	u32 page_num;
+
+	get_needed_pages(offset, p_boot_info, &base, &page_num);
+
 	while(1);
 
+	UNREFERRED_PARAMETER(magic);
+	UNREFERRED_PARAMETER(p_boot_info);
 	UNREFERRED_PARAMETER(offset);
+	return NULL;
+}
+
+void get_needed_pages(u32 offset, void* p_boot_info,
+                      void** p_base, u32* p_num)
+{
+	//void* p_current;
+	u32 boot_info_size = *((u32*)p_boot_info);
+
+	__asm__ __volatile__(
+	    "movl	%0,%%eax\n"
+	    "movl	%1,%%ebx\n"
+	    "_loop:\n"
+	    "jmp	_loop\n"
+	    ::"m"(p_boot_info), "m"(boot_info_size));
+
+	UNREFERRED_PARAMETER(offset);
+	UNREFERRED_PARAMETER(p_boot_info);
+	UNREFERRED_PARAMETER(p_base);
+	UNREFERRED_PARAMETER(p_num);
 	return;
 }
+
