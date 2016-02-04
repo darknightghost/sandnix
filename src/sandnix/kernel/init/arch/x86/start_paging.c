@@ -43,13 +43,10 @@ void get_needed_pages(u32 offset, void* p_boot_info,
 {
 	void* p_current;
 	u32 boot_info_size;
-	u32 tag_type;
-	u32 tag_size;
+	pmultiboot_tag_t p_tag;
 	void* initrd_begin;
 	void* initrd_end;
 	pmultiboot_tag_module_t p_module_info;
-
-	u32 test_flag = 0;
 
 	//Boot info size
 	p_current = p_boot_info;
@@ -60,29 +57,23 @@ void get_needed_pages(u32 offset, void* p_boot_info,
 	initrd_end = 0;
 
 	//Read tags to find the position of initrd
-	while((u32)p_current - (u32)p_boot_info > boot_info_size) {
-		tag_type = *(u32*)p_current;
-		p_current = (void*)((u32)p_current + sizeof(u32));
-		tag_size =  *(u32*)p_current;
+	while((u32)p_current - (u32)p_boot_info < boot_info_size) {
+		p_tag = (pmultiboot_tag_t)p_current;
 
-		if(tag_type == MULTIBOOT_TAG_TYPE_END) {
+		if(p_tag->type == MULTIBOOT_TAG_TYPE_END) {
 			break;
 		}
 
-		switch(tag_type) {
+		switch(p_tag->type) {
 			case MULTIBOOT_TAG_TYPE_MODULE:
-				p_current = (void*)((u32)p_current + sizeof(u32));
-				p_current = (void*)((u32)p_current + (8 - (u32)p_current % 8));
-				p_module_info = (pmultiboot_tag_module_t)p_current;
+				p_module_info = (pmultiboot_tag_module_t)p_tag;
 				initrd_begin = (void*)p_module_info->mod_start;
 				initrd_end = (void*)p_module_info->mod_end;
-				test_flag = 1;
 
 				goto _TAG_END;
-
-			default:
-				p_current = (void*)((u32)p_current + tag_size - sizeof(u32));
 		}
+
+		p_current = (void*)((u32)p_current + p_tag->size);
 
 		//Make the pointer 8-bytes aligned
 		if((u32)p_current % 8 != 0) {
