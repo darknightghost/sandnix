@@ -89,7 +89,7 @@ _addr2:
 	//Start paging
 	call	start_paging
 	movl	%esp,%eax
-	addl	(%esp),%eax
+	subl	(%esp),%eax
 	movl	%eax,%esp
 
 	//Load kernel GDT
@@ -113,6 +113,13 @@ _kernel_mem_entry:
 	movw	%ax,%ss
 	movw	$SELECTOR_TSS,%ax
 	ltr		%ax
+
+	//FPU
+	fninit
+	//Clear NE,EM,TS,MP
+	movl	%cr0,%eax
+	andl	$0xFFFFFFD1,%eax
+	movl	%eax,%cr0
 
 	//Call kernel
 	addl	$4,%esp

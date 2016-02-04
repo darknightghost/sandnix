@@ -20,6 +20,8 @@
 #include "../../init.h"
 #include "../../../mm/mm.h"
 
+#define	KERNEL_PDE_INDEX	(KERNEL_MEM_BASE / (4096 * 1024))
+
 static	void	get_needed_pages(u32 offset, void* p_boot_info,
                                  void** p_base, u32* p_num);
 
@@ -99,11 +101,10 @@ void start_paging(u32 offset, u32 magic, void* p_boot_info)
 			p_pde->page_table_base_addr = (i * 4096
 			                               + (u32)page_table_base) >> 12;
 
-		} else if(i >= KERNEL_MEM_BASE / (4096 * 1024)
-		          && i < KERNEL_MEM_BASE / (4096 * 1024) + pde_num) {
+		} else if(i >= KERNEL_PDE_INDEX
+		          && i < KERNEL_PDE_INDEX + pde_num) {
 			p_pde->present = PG_P;
-			p_pde->page_table_base_addr = (i * 4096
-			                               - KERNEL_MEM_BASE / (4096 * 1024)
+			p_pde->page_table_base_addr = ((i - KERNEL_PDE_INDEX) * 4096
 			                               + (u32)page_table_base) >> 12;
 
 		} else {
@@ -195,6 +196,7 @@ _TAG_END:
 	if(last_addr % 4096 != 0) {
 		last_addr += 4096 - last_addr % 4096;
 	}
+
 
 	*(void**)((u32)&kernel_address_offset + offset) = (void*)(offset);
 	//Memory managment page

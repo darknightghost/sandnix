@@ -24,15 +24,6 @@ u8		init_stack[KERNEL_STACK_SIZE];
 
 void kernel_main(u32 magic, pmultiboot_tag_t p_boot_info)
 {
-	__asm__ __volatile__(
-	    "movl	%0,%%eax\n"
-	    "movl	%1,%%ebx\n"
-	    "_loop:\n"
-	    "nop\n"
-	    "nop\n"
-	    "jmp	_loop\n"
-	    ::"m"(magic), "m"(p_boot_info));
-
 	while(1);
 
 	UNREFERRED_PARAMETER(magic);
