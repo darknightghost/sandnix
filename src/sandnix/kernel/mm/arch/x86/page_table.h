@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "../../../../../common/common.h"
+
 #define	PG_NP				0
 #define	PG_P				1
 #define	PG_RDONLY			0

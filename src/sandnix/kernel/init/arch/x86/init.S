@@ -88,7 +88,6 @@ _addr2:
 
 	//Start paging
 	call	start_paging
-	movl	%eax,%ebx
 	movl	%esp,%eax
 	addl	(%esp),%eax
 	movl	%eax,%esp
@@ -112,16 +111,11 @@ _kernel_mem_entry:
 	movw	%ax,%fs
 	movw	%ax,%gs
 	movw	%ax,%ss
+	movw	$SELECTOR_TSS,%ax
+	ltr		%ax
 
 	//Call kernel
-	movl	%ebx,(%esp)
-	//*esp			: Initialize page table 
-	//*(esp + 4)	: magic
-	//*(esp + 8)	: p_boot_info
-	movl	0x08(%esp),%eax
-	subl	(%esp),%eax
-	movl	%eax,0x08(%esp)
+	addl	$4,%esp
+	//*(esp)	: magic
+	//*(esp + 4): p_boot_info
 	call	kernel_main
-
-_loop:
-	jmp		_loop

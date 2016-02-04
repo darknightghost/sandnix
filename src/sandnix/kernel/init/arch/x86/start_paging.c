@@ -23,19 +23,111 @@
 static	void	get_needed_pages(u32 offset, void* p_boot_info,
                                  void** p_base, u32* p_num);
 
-void* start_paging(u32 offset, u32 magic, void* p_boot_info)
+void start_paging(u32 offset, u32 magic, void* p_boot_info)
 {
 	void* base;
 	u32 page_num;
+	u32 i;
+	ppte_t p_pte;
+	void* page_table_base;
+	ppde_t p_pde;
+	u32 pde_num;
+	u32 pte_num;
 
 	get_needed_pages(offset, p_boot_info, &base, &page_num);
 
-	while(1);
+	page_table_base = (void*)((u32)base + 4096);
+
+	//Ptes
+	for(i = 0, p_pte = (ppte_t)page_table_base;
+	    i < page_num;
+	    i++, p_pte++) {
+		p_pte->present = PG_P;
+		p_pte->read_write = PG_RW;
+		p_pte->user_supervisor = PG_SUPERVISOR;
+		p_pte->write_through = PG_WRITE_THROUGH;
+		p_pte->cache_disabled = 0;
+		p_pte->accessed = 0;
+		p_pte->dirty = 0;
+		p_pte->page_table_attr_index = 0;
+		p_pte->global_page = 1;
+		p_pte->avail = PG_NORMAL;
+		p_pte->page_base_addr = (i * 4096) >> 12;
+	}
+
+	if(i % 4096 > 0) {
+		pte_num = 4096 - i % 4096;
+
+		for(; i < pte_num;
+		    i++, p_pte++) {
+			p_pte->present = PG_NP;
+			p_pte->read_write = PG_RW;
+			p_pte->user_supervisor = PG_SUPERVISOR;
+			p_pte->write_through = PG_WRITE_THROUGH;
+			p_pte->cache_disabled = 0;
+			p_pte->accessed = 0;
+			p_pte->dirty = 0;
+			p_pte->page_table_attr_index = 0;
+			p_pte->global_page = 0;
+			p_pte->avail = PG_NORMAL;
+			p_pte->page_base_addr = 0;
+		}
+	}
+
+	//Pdes
+	pde_num = i / 1024;
+
+	if(i % 1024 > 0) {
+		pde_num++;
+	}
+
+	for(i = 0, p_pde = (ppde_t)base;
+	    i < 1024;
+	    i++, p_pde++) {
+		p_pde->read_write = PG_RW;
+		p_pde->user_supervisor = PG_SUPERVISOR;
+		p_pde->write_through = PG_WRITE_THROUGH;
+		p_pde->cache_disabled = PG_ENCACHE;
+		p_pde->accessed = 0;
+		p_pde->reserved = 0;
+		p_pde->page_size = PG_SIZE_4K;
+		p_pde->global_page = 0;
+		p_pde->avail = PG_NORMAL;
+
+		if(i < pde_num) {
+			p_pde->present = PG_P;
+			p_pde->page_table_base_addr = (i * 4096
+			                               + (u32)page_table_base) >> 12;
+
+		} else if(i >= KERNEL_MEM_BASE / (4096 * 1024)
+		          && i < KERNEL_MEM_BASE / (4096 * 1024) + pde_num) {
+			p_pde->present = PG_P;
+			p_pde->page_table_base_addr = (i * 4096
+			                               - KERNEL_MEM_BASE / (4096 * 1024)
+			                               + (u32)page_table_base) >> 12;
+
+		} else {
+			p_pde->present = PG_NP;
+			p_pde->page_table_base_addr = 0;
+		}
+	}
+
+	//Start paging
+	__asm__ __volatile__(
+	    //Prepare for CR3
+	    "movl	%0,%%eax\n"
+	    "andl	$0xFFFFF000,%%eax\n"
+	    "orl	$0x008,%%eax\n"
+	    "movl	%%eax,%%cr3\n"
+	    //Start paging
+	    "movl	%%cr0,%%eax\n"
+	    //Set CR0.PG
+	    "orl	$0x80010000,%%eax\n"
+	    "movl	%%eax,%%cr0\n"
+	    ::"m"(base));
 
 	UNREFERRED_PARAMETER(magic);
-	UNREFERRED_PARAMETER(p_boot_info);
-	UNREFERRED_PARAMETER(offset);
-	return NULL;
+	return;
 }
 
 void get_needed_pages(u32 offset, void* p_boot_info,
@@ -44,16 +136,18 @@ void get_needed_pages(u32 offset, void* p_boot_info,
 	void* p_current;
 	u32 boot_info_size;
 	pmultiboot_tag_t p_tag;
-	void* initrd_begin;
 	void* initrd_end;
 	pmultiboot_tag_module_t p_module_info;
+	u32 last_addr;
+	pkernel_header_t p_kernel_header;
+	u32 page_num;
+	u32 i;
 
 	//Boot info size
 	p_current = p_boot_info;
 	boot_info_size = *((u32*)p_current);
 	p_current = (void*)((u32)p_current + sizeof(u32) * 2);
 
-	initrd_begin = NULL;
 	initrd_end = 0;
 
 	//Read tags to find the position of initrd
@@ -67,7 +161,6 @@ void get_needed_pages(u32 offset, void* p_boot_info,
 		switch(p_tag->type) {
 			case MULTIBOOT_TAG_TYPE_MODULE:
 				p_module_info = (pmultiboot_tag_module_t)p_tag;
-				initrd_begin = (void*)p_module_info->mod_start;
 				initrd_end = (void*)p_module_info->mod_end;
 
 				goto _TAG_END;
@@ -82,19 +175,52 @@ void get_needed_pages(u32 offset, void* p_boot_info,
 	}
 
 _TAG_END:
+	//Make the last_addr the end of all images
+	last_addr = (u32)initrd_end;
+	p_kernel_header = (pkernel_header_t)((u32)&kernel_header + offset);
 
-	__asm__ __volatile__(
-	    "movl	%0,%%eax\n"
-	    "movl	%1,%%ebx\n"
-	    "movl	%2,%%ecx\n"
-	    "_loop:\n"
-	    "jmp	_loop\n"
-	    ::"m"(initrd_begin), "m"(initrd_end), "m"(test_flag));
+	if(last_addr < p_kernel_header->data_end) {
+		last_addr = p_kernel_header->data_end;
+	}
 
-	UNREFERRED_PARAMETER(offset);
-	UNREFERRED_PARAMETER(p_boot_info);
-	UNREFERRED_PARAMETER(p_base);
-	UNREFERRED_PARAMETER(p_num);
+	if(last_addr < p_kernel_header->text_end) {
+		last_addr = p_kernel_header->text_end;
+	}
+
+	if(last_addr < (u32)p_boot_info + boot_info_size) {
+		last_addr = (u32)p_boot_info + boot_info_size;
+	}
+
+	//4KB align
+	if(last_addr % 4096 != 0) {
+		last_addr += 4096 - last_addr % 4096;
+	}
+
+	*(void**)((u32)&kernel_address_offset + offset) = (void*)(offset);
+	//Memory managment page
+	*(void**)((u32)&mm_mgr_page_addr + offset) = (void*)(last_addr - offset);
+
+	//Beging of the initialize page table
+	last_addr += 4096;
+	*(void**)((u32)&mm_init_pt_addr + offset) = (void*)(last_addr - offset);
+	*p_base = (void*)last_addr;
+
+	//Compute pages required to map
+	//Pages required for 0 - last_addr
+	page_num = last_addr / 4096;
+
+	//Pages required for itself
+	//PDT
+	page_num += 1;
+
+	//Page tables
+	for(i = page_num / 1024; i > 0; i = i / 1024) {
+		page_num += i;
+	}
+
+	*p_num = page_num;
+	*(u32*)((u32)&init_page_num + offset) = page_num;
+
 	return;
 }
 

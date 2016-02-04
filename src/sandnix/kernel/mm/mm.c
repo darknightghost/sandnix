@@ -15,27 +15,9 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../../../common/common.h"
-#include "../../boot/multiboot2.h"
+#include "mm.h"
 
-#define	KERNEL_STACK_SIZE	(4096 + 2)
-
-u8		init_stack[KERNEL_STACK_SIZE];
-
-void kernel_main(u32 magic, pmultiboot_tag_t p_boot_info)
-{
-	__asm__ __volatile__(
-	    "movl	%0,%%eax\n"
-	    "movl	%1,%%ebx\n"
-	    "_loop:\n"
-	    "nop\n"
-	    "nop\n"
-	    "jmp	_loop\n"
-	    ::"m"(magic), "m"(p_boot_info));
-
-	while(1);
-
-	UNREFERRED_PARAMETER(magic);
-	UNREFERRED_PARAMETER(p_boot_info);
-	return;
-}
+void*	mm_mgr_page_addr;
+void*	mm_init_pt_addr;
+void*	kernel_address_offset;
+u32		init_page_num;

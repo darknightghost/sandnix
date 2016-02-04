@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "../../../common/common.h"
+
 #ifdef	X86
 	#include "arch/x86/page_table.h"
 #endif
@@ -24,3 +26,8 @@
 #ifdef	AMD64
 	#include "arch/amd64/page_table.h"
 #endif
+
+extern	void*	mm_mgr_page_addr;
+extern	void*	mm_init_pt_addr;
+extern	void*	kernel_address_offset;
+extern	u32		init_page_num;
