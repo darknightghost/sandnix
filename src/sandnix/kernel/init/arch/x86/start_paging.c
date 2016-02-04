@@ -41,15 +41,64 @@ void* start_paging(u32 offset, u32 magic, void* p_boot_info)
 void get_needed_pages(u32 offset, void* p_boot_info,
                       void** p_base, u32* p_num)
 {
-	//void* p_current;
-	u32 boot_info_size = *((u32*)p_boot_info);
+	void* p_current;
+	u32 boot_info_size;
+	u32 tag_type;
+	u32 tag_size;
+	void* initrd_begin;
+	void* initrd_end;
+	pmultiboot_tag_module_t p_module_info;
+
+	u32 test_flag = 0;
+
+	//Boot info size
+	p_current = p_boot_info;
+	boot_info_size = *((u32*)p_current);
+	p_current = (void*)((u32)p_current + sizeof(u32) * 2);
+
+	initrd_begin = NULL;
+	initrd_end = 0;
+
+	//Read tags to find the position of initrd
+	while((u32)p_current - (u32)p_boot_info > boot_info_size) {
+		tag_type = *(u32*)p_current;
+		p_current = (void*)((u32)p_current + sizeof(u32));
+		tag_size =  *(u32*)p_current;
+
+		if(tag_type == MULTIBOOT_TAG_TYPE_END) {
+			break;
+		}
+
+		switch(tag_type) {
+			case MULTIBOOT_TAG_TYPE_MODULE:
+				p_current = (void*)((u32)p_current + sizeof(u32));
+				p_current = (void*)((u32)p_current + (8 - (u32)p_current % 8));
+				p_module_info = (pmultiboot_tag_module_t)p_current;
+				initrd_begin = (void*)p_module_info->mod_start;
+				initrd_end = (void*)p_module_info->mod_end;
+				test_flag = 1;
+
+				goto _TAG_END;
+
+			default:
+				p_current = (void*)((u32)p_current + tag_size - sizeof(u32));
+		}
+
+		//Make the pointer 8-bytes aligned
+		if((u32)p_current % 8 != 0) {
+			p_current = (void*)((u32)p_current + (8 - (u32)p_current % 8));
+		}
+	}
+
+_TAG_END:
 
 	__asm__ __volatile__(
 	    "movl	%0,%%eax\n"
 	    "movl	%1,%%ebx\n"
+	    "movl	%2,%%ecx\n"
 	    "_loop:\n"
 	    "jmp	_loop\n"
-	    ::"m"(p_boot_info), "m"(boot_info_size));
+	    ::"m"(initrd_begin), "m"(initrd_end), "m"(test_flag));
 
 	UNREFERRED_PARAMETER(offset);
 	UNREFERRED_PARAMETER(p_boot_info);

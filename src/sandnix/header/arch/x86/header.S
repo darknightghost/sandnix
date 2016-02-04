@@ -76,8 +76,19 @@ _ADDR_3:
 	.long	_ADDR_4 - _ADDR_3
 	//entry_addr
 	.long	ADDR_MAGIC
-//End tag
+	.long	0
 _ADDR_4:
+	.word	MULTIBOOT_HEADER_TAG_MODULE_ALIGN
+	//flags
+	.word	0
+	//size
+	.long	12
+//End tag
+_ADDR_5:
 	//type
 	.word	MULTIBOOT_HEADER_TAG_END
+	//flags
+	.word	0
+	//size
+	.long	8
 _end:
