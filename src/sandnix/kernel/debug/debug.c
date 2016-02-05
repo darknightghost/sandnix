@@ -15,22 +15,12 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../../../common/common.h"
-#include "../../boot/multiboot2.h"
-#include "../debug/debug.h"
+#include "debug.h"
+#include "kconsole.h"
 
-#define	KERNEL_STACK_SIZE	(4096 + 2)
-
-u8		init_stack[KERNEL_STACK_SIZE];
-
-void kernel_main(u32 magic, pmultiboot_tag_t p_boot_info)
+void dbg_init()
 {
-	dbg_init();
-	dbg_kprint("Sandnix 0.0.2 loading...\n");
-
-	while(1);
-
-	UNREFERRED_PARAMETER(magic);
-	UNREFERRED_PARAMETER(p_boot_info);
+	kconsole_init();
 	return;
 }
+

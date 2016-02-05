@@ -23,7 +23,7 @@
 .global		kernel_header
 
 .code32
-.align	4
+.align	8
 kernel_header:
 //magic
 	.long		KERNEL_HEADER_MAGIC

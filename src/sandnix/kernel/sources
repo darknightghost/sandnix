@@ -1,2 +1,12 @@
+#init
 init/main.c
+
+#mm
 mm/mm.c
+
+#debug
+debug/debug.c
+debug/kconsole.c
+
+#rtl
+rtl/string/string.c

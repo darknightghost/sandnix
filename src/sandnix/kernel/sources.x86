@@ -1,2 +1,12 @@
+#init
 init/arch/x86/init.S
 init/arch/x86/start_paging.c
+
+#io
+io/arch/x86/ports.c
+
+#debug
+debug/arch/x86/early_print.c
+
+#pm
+pm/spinlock/arch/x86/spinlock.c

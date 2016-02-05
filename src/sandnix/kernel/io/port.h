@@ -15,22 +15,26 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#pragma once
+
 #include "../../../common/common.h"
-#include "../../boot/multiboot2.h"
-#include "../debug/debug.h"
 
-#define	KERNEL_STACK_SIZE	(4096 + 2)
+void		io_read_port_bytes(u32 port, u8* buf, u32 num);
+void		io_write_port_bytes(u32 port, u8* buf, u32 num);
 
-u8		init_stack[KERNEL_STACK_SIZE];
+void		io_read_port_words(u32 port, u16* buf, u32 num);
+void		io_write_port_words(u32 port, u16* buf, u32 num);
 
-void kernel_main(u32 magic, pmultiboot_tag_t p_boot_info)
-{
-	dbg_init();
-	dbg_kprint("Sandnix 0.0.2 loading...\n");
+void		io_read_port_dwords(u32 port, u32* buf, u32 num);
+void		io_write_port_dwords(u32 port, u32* buf, u32 num);
 
-	while(1);
+u8			io_read_port_byte(u32 port);
+void		io_write_port_byte(u8 data, u32 port);
 
-	UNREFERRED_PARAMETER(magic);
-	UNREFERRED_PARAMETER(p_boot_info);
-	return;
-}
+u16			io_read_port_word(u32 port);
+void		io_write_port_word(u16 data, u32 port);
+
+u32			io_read_port_dword(u32 port);
+void		io_write_port_dword(u32 data, u32 port);
+
+void		io_delay();

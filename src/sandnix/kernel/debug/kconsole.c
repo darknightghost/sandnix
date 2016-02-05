@@ -16,21 +16,23 @@
 */
 
 #include "../../../common/common.h"
-#include "../../boot/multiboot2.h"
-#include "../debug/debug.h"
+#include "kconsole.h"
+#include "early_print.h"
+#include "../pm/pm.h"
 
-#define	KERNEL_STACK_SIZE	(4096 + 2)
+static	spinlock_t	print_lock;
 
-u8		init_stack[KERNEL_STACK_SIZE];
-
-void kernel_main(u32 magic, pmultiboot_tag_t p_boot_info)
+void kconsole_init()
 {
-	dbg_init();
-	dbg_kprint("Sandnix 0.0.2 loading...\n");
+	pm_init_spn_lock(&print_lock);
+	early_cls();
+	return;
+}
 
-	while(1);
-
-	UNREFERRED_PARAMETER(magic);
-	UNREFERRED_PARAMETER(p_boot_info);
+void dbg_kprint(char* fmt, ...)
+{
+	pm_acqr_spn_lock(&print_lock);
+	early_print(fmt);
+	pm_rls_spn_lock(&print_lock);
 	return;
 }

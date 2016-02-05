@@ -37,16 +37,25 @@ class kheader:
 		self.end_type = end_type
 		self.off = 0
 		
+		found = False
+		
 		try:
-			for i in range(0,64):
-				self.off = i
+			for i in range(0,len(data) / 8):
+				self.off = i * 8
 				if struct.unpack("<I",data[self.MAGIC_OFF + self.off: self.MAGIC_OFF + self.off + 4])[0] == self.MAGIC:
-					break
+					if struct.unpack("<I",data[self.TEXT_BEGIN_OFF + self.off: self.TEXT_BEGIN_OFF + self.off + 4])[0] == 0:
+						if struct.unpack("<I",data[self.TEXT_END_OFF + self.off: self.TEXT_END_OFF + self.off + 4])[0] == 0:
+							if struct.unpack("<I",data[self.DATA_BEGIN_OFF + self.off: self.DATA_BEGIN_OFF + self.off + 4])[0] == 0:
+								if struct.unpack("<I",data[self.DATA_END_OFF + self.off: self.DATA_END_OFF + self.off + 4])[0] == 0:
+									t = struct.unpack("<I",data[self.CHECKSUM_OFF + self.off: self.CHECKSUM_OFF + self.off + 4])[0]
+									if t + self.MAGIC - (t + self.MAGIC) / 0x100000000 * 0x100000000  == 0:
+										found = True
+										break
 		except:
 			print("Illegal kernel header.")
 			raise IllegaleKernelHeader()
 			
-		if struct.unpack("<I",data[self.MAGIC_OFF + self.off: self.MAGIC_OFF + self.off + 4])[0] != self.MAGIC:
+		if not found:
 			print("Illegal kernel header.")
 			raise IllegaleKernelHeader()
 			

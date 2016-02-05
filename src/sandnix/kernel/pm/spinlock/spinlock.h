@@ -15,22 +15,17 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../../../common/common.h"
-#include "../../boot/multiboot2.h"
-#include "../debug/debug.h"
+#pragma once
 
-#define	KERNEL_STACK_SIZE	(4096 + 2)
+#include "../../../../common/common.h"
 
-u8		init_stack[KERNEL_STACK_SIZE];
+typedef	struct _spinlock_t {
+	u32		owner;
+	u32		next;
+	u32		int_level;
+} spinlock_t, *pspinlock_t;
 
-void kernel_main(u32 magic, pmultiboot_tag_t p_boot_info)
-{
-	dbg_init();
-	dbg_kprint("Sandnix 0.0.2 loading...\n");
-
-	while(1);
-
-	UNREFERRED_PARAMETER(magic);
-	UNREFERRED_PARAMETER(p_boot_info);
-	return;
-}
+void		pm_init_spn_lock(pspinlock_t p_lock);
+void		pm_acqr_spn_lock(pspinlock_t p_lock);
+bool		pm_try_acqr_spn_lock(pspinlock_t p_lock);
+void		pm_rls_spn_lock(pspinlock_t p_lock);
