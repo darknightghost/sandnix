@@ -25,6 +25,28 @@
 
 #define	WORD_LEN	4
 
+#define	GET_CHAR_NUM(c,n){ \
+		if((c) >= '0' && (c) <= '9') { \
+			(n) = (c) - '0'; \
+		} else if((c) >= 'a' && (c) <= 'z') { \
+			(n) = (c) - 'a' + 10; \
+		} else if((c) >= 'A' && (c) <= 'Z') { \
+			(n) = (c) - 'A' + 10; \
+		} \
+	}
+
+#define	GET_NUM_CHAR(n,c,capital){ \
+		if((n) < 10) { \
+			(c) = (n) + '0'; \
+		} else { \
+			if((capital)) { \
+				(c) = (n) + 'A'; \
+			} else { \
+				(c) = (n) + 'a'; \
+			} \
+		} \
+	}
+
 #define	BYTE_CP_FWD(p_dest,p_src,len){ \
 		__asm__ __volatile__( \
 		                      "cld\n" \
@@ -95,7 +117,7 @@ void* rtl_memcpy(void* dest, void* src, size_t len)
 		BYTE_CP_FWD(p_dest, p_src, len);
 
 	} else {
-		//I don't know why,I learnt it form glibc and it really works.
+		//I don't know why, I learnt it form glibc and it really works.
 		len_to_cp = (-(size_t)p_dest) % WORD_LEN;
 		len -= len_to_cp;
 		BYTE_CP_FWD(p_dest, p_src, len_to_cp);
@@ -211,31 +233,182 @@ size_t rtl_strlen(char* str)
 		    & ~STRLEN_MAGIC) != 0) {
 			const u8 *cp = (u8*)(*p_long_word - 1);
 
-			if(cp[0] == '\0')
-				return cp - (u8*)str;
-
-			if(cp[1] == '\0')
-				return cp - (u8*)str + 1;
-
-			if(cp[2] == '\0')
-				return cp - (u8*)str + 2;
-
-			if(cp[3] == '\0')
-				return cp - (u8*)str + 3;
+			for(int i = 0; i < WORD_LEN; i++) {
+				if(cp[i] == '\0') {
+					return cp - (u8*)str + i;
+				}
+			}
 		}
 
 		p_long_word++;
 	}
 }
 
-char* rtl_strcpy_s(char* dest, size_t buf_size, char* src);
-s32 rtl_strcmp(char* str1, char* str2);
-char* rtl_strcat_s(char* dest, size_t buf_size, char* src);
-bool rtl_is_sub_string(char* str, char* substr);
-s32 rtl_atoi(char* str, int num_sys);
-char* rtl_itoa(char* buf, u64 num);
-char* rtl_htoa(char* buf, u64 num, bool capital_flag);
-char* rtl_otoa(char* buf, u64 num);
-char* rtl_ftoa(char* buf, u64 num);
-u32 rtl_sprintf_s(char* buf, size_t buf_size, char* fmt, ...);
-u32 rtl_vprintf_s(char* buf, size_t buf_size, char* fmt, va_list args);
+char* rtl_strncpy(char* dest, size_t buf_size, char* src)
+{
+	char* p_src;
+	char* p_dest;
+
+	p_src = src;
+	p_dest = dest;
+
+	while(1) {
+		if(p_src - src >= buf_size) {
+			*p_dest = '\0';
+			break;
+
+		} else if(*p_src == '\0') {
+			*p_dest = '\0';
+			break;
+
+		} else {
+			*p_dest = *p_src;
+		}
+
+		p_dest++;
+		p_src++;
+	}
+
+	return dest;
+}
+
+s32 rtl_strcmp(char* str1, char* str2)
+{
+	char* p1;
+	char* p2;
+
+	for(p1 = str1, p2 = str2;
+	    *p1 == *p2;
+	    p1++, p2++) {
+		if(*p1 == '\0') {
+			break;
+		}
+	}
+
+	return *p1 - *p2;
+}
+
+char* rtl_strncat(char* dest, size_t buf_size, char* src)
+{
+	size_t len;
+	size_t dest_len;
+
+	dest_len = rtl_strlen(dest);
+
+	len = buf_size - dest_len;
+	rtl_strncpy(dest + dest_len, len, src);
+
+	return dest;
+}
+
+bool rtl_strcontain(char* str, char* substr)
+{
+	char* p_str1;
+	char* p_str2;
+	char* p_substr;
+
+	if(*substr == '\0') {
+		return true;
+	}
+
+	for(p_str1 = str; *p_str1 != '\0'; p_str1++) {
+		if(*p_str1 == *substr) {
+			//If the first character matched
+			for(p_str2 = p_str1, p_substr = substr;
+			    true;
+			    p_str2++, p_substr++) {
+				//Match other characters
+				if(*p_substr == '\0') {
+					//Matched
+					return true;
+
+				} else if(*p_str2 != *p_substr) {
+					break;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+s64 rtl_atoi(char* str, int num_sys)
+{
+	int sign;
+	char* p;
+	s64 ret;
+	int tmp;
+
+	p = str;
+
+	if(*p == '-') {
+		sign = -1;
+		p++;
+
+	} else {
+		sign = 1;
+	}
+
+	ret = 0;
+
+	for(; p != '\0'; p++) {
+		GET_CHAR_NUM(*p, tmp);
+
+		if(tmp >= num_sys) {
+			return ret * sign;
+		}
+
+		ret = ret * num_sys + tmp;
+	}
+
+	return ret * sign;
+}
+
+char* rtl_itoa(char* buf, u64 num, int num_sys, bool capital)
+{
+	char* p1;
+	char* p2;
+	char* start;
+
+	//Sign
+	if(num < 0) {
+		*buf = '-';
+		start = buf + 1;
+		num = -num;
+
+	} else {
+		start = buf;
+	}
+
+	//Num
+	for(p1 = start; num != 0; p1++) {
+		int t = num - num / num_sys * num_sys;
+		num = num / num_sys;
+		GET_NUM_CHAR(t, *p1, capital);
+	}
+
+	*p1 = '\0';
+
+	//Reserve
+	p2 = p1 - 1;
+
+	for(p1 = start; p2 > p1; p1++, p2--) {
+		char t = *p1;
+		*p1 = *p2;
+		*p2 = t;
+	}
+
+	return buf;
+}
+
+u32 rtl_snprintf(char* buf, size_t buf_size, char* fmt, ...)
+{
+	va_list args;
+	u32 ret;
+	va_start(args, fmt);
+	ret = rtl_vnprintf(buf, buf_size, fmt, args);
+	va_end(args);
+	return ret;
+}
+
+u32 rtl_vnprintf(char* buf, size_t buf_size, char* fmt, va_list args);
