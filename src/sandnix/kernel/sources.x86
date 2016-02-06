@@ -10,3 +10,6 @@ debug/arch/x86/early_print.c
 
 #pm
 pm/spinlock/arch/x86/spinlock.c
+
+#rtl
+rtl/math/arch/x86/math.c

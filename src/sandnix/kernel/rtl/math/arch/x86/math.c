@@ -100,10 +100,11 @@ double rtl_sqrt(double num)
 	}
 
 	__asm__ __volatile__(
-	    "fldl	(%0)\n\t"
-	    "fsqrt\n\t"
-	    "fstl	(%1)\n\t"
-	    ::"r"(&num), "r"(&ret));
+	    "fldl	(%0)\n"
+	    "fsqrt\n"
+	    "fstl	(%1)\n"
+	    ::"r"(&num), "r"(&ret)
+	    :"memory");
 
 	return ret;
 }

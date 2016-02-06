@@ -20,6 +20,7 @@
 */
 
 #include "string.h"
+#include "../math/math.h"
 
 #ifdef	X86
 
@@ -32,6 +33,8 @@
 			(n) = (c) - 'a' + 10; \
 		} else if((c) >= 'A' && (c) <= 'Z') { \
 			(n) = (c) - 'A' + 10; \
+		} else { \
+			(n) = -1; \
 		} \
 	}
 
@@ -354,7 +357,7 @@ s64 rtl_atoi(char* str, int num_sys)
 	for(; p != '\0'; p++) {
 		GET_CHAR_NUM(*p, tmp);
 
-		if(tmp >= num_sys) {
+		if(tmp >= num_sys || tmp < 0) {
 			return ret * sign;
 		}
 
@@ -382,8 +385,8 @@ char* rtl_itoa(char* buf, u64 num, int num_sys, bool capital)
 
 	//Num
 	for(p1 = start; num != 0; p1++) {
-		int t = num - num / num_sys * num_sys;
-		num = num / num_sys;
+		int t = num - rtl_div64(num, num_sys) * num_sys;
+		num = rtl_div64(num, num_sys);
 		GET_NUM_CHAR(t, *p1, capital);
 	}
 
@@ -401,14 +404,3 @@ char* rtl_itoa(char* buf, u64 num, int num_sys, bool capital)
 	return buf;
 }
 
-u32 rtl_snprintf(char* buf, size_t buf_size, char* fmt, ...)
-{
-	va_list args;
-	u32 ret;
-	va_start(args, fmt);
-	ret = rtl_vnprintf(buf, buf_size, fmt, args);
-	va_end(args);
-	return ret;
-}
-
-u32 rtl_vnprintf(char* buf, size_t buf_size, char* fmt, va_list args);

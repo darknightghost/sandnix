@@ -10,3 +10,4 @@ debug/kconsole.c
 
 #rtl
 rtl/string/string.c
+rtl/string/sprintf.c
