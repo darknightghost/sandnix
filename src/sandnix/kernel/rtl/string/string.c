@@ -15,6 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+	  I learnt a lot from glic.The art of codes in glibc is brilliant.
+*/
+
 #include "string.h"
 
 #ifdef	X86
@@ -30,7 +34,14 @@
 		                      :"memory"); \
 	}
 
-#define	BYTE_CP_BWD
+#define	BYTE_CP_BWD(p_dest,p_src,len){ \
+		__asm__ __volatile__( \
+		                      "std\n" \
+		                      "rep	movsb\n" \
+		                      :"=S"(p_src),"=D"(p_dest) \
+		                      :"0"(p_src),"1"(p_dest),"cx"(len) \
+		                      :"memory"); \
+	}
 
 #define	WORD_CP_FWD(p_dest,p_src,len){ \
 		__asm__ __volatile__( \
@@ -41,7 +52,14 @@
 		                      :"memory"); \
 	}
 
-#define	WORD_CP_BWD
+#define	WORD_CP_BWD(p_dest,p_src,len){ \
+		__asm__ __volatile__( \
+		                      "std\n" \
+		                      "rep	movsl\n" \
+		                      : "=S"(p_src), "=D"(p_dest) \
+		                      :"0"(p_src), "1"(p_dest),"cx"(len / 4) \
+		                      :"memory"); \
+	}
 
 #define	BYTES_FILL(p_dest,len,value){ \
 		__asm__ __volatile__( \
@@ -61,6 +79,7 @@
 		                      :"memory"); \
 	}
 
+#define STRLEN_MAGIC	0x7EFEFEFFL
 #endif	//X86
 
 void* rtl_memcpy(void* dest, void* src, size_t len)
@@ -77,14 +96,17 @@ void* rtl_memcpy(void* dest, void* src, size_t len)
 
 	} else {
 		//I don't know why,I learnt it form glibc and it really works.
-		len_to_cp = (-len) % WORD_LEN;
+		len_to_cp = (-(size_t)p_dest) % WORD_LEN;
 		len -= len_to_cp;
 		BYTE_CP_FWD(p_dest, p_src, len_to_cp);
 
 		WORD_CP_FWD(p_dest, p_src, len);
 
 		len_to_cp = len % WORD_LEN;
-		BYTE_CP_FWD(p_dest, p_src, len_to_cp);
+
+		if(len_to_cp > 0) {
+			BYTE_CP_FWD(p_dest, p_src, len_to_cp);
+		}
 	}
 
 	return dest;
@@ -109,19 +131,103 @@ void* rtl_memset(void* dest, u8 val, size_t len)
 			val_word = (val_word << 8) | val;
 		}
 
-		len_to_fill = (-len) % WORD_LEN;
+		len_to_fill = (-(size_t)p_dest) % WORD_LEN;
 		len -= len_to_fill;
 		BYTES_FILL(p_dest, len_to_fill, val);
 		WORDS_FILL(p_dest, len, val_word);
 		len_to_fill = len % WORD_LEN;
-		BYTES_FILL(p_dest, len_to_fill, val);
+
+		if(len_to_fill > 0) {
+			BYTES_FILL(p_dest, len_to_fill, val);
+		}
 	}
 
 	return dest;
 }
 
-void* rtl_memmove(void* dest, void* src, size_t len);
-u32 rtl_strlen(char* str);
+void* rtl_memmove(void* dest, void* src, size_t len)
+{
+	u8* p_src;
+	u8* p_dest;
+	size_t len_to_cp;
+
+	if((size_t)dest + len <= (size_t)src || (size_t)src < (size_t)dest) {
+		//Memory not overlapped or src < dest
+		rtl_memcpy(dest, src, len);
+
+	} else {
+		//Memory overlapped and src > dest
+		p_dest = dest + len - 1;
+		p_src = src + len - 1;
+
+		if(len < WORD_LEN * 2) {
+			BYTE_CP_BWD(p_dest, p_src, len);
+
+		} else {
+			len_to_cp = (size_t)dest % WORD_LEN;
+
+			if(len_to_cp > 0) {
+				BYTE_CP_BWD(p_dest, p_src, len_to_cp);
+			}
+
+			p_dest -= WORD_LEN - 1;
+			p_src -= WORD_LEN - 1;
+			len -= len_to_cp;
+			WORD_CP_BWD(p_dest, p_src, len);
+
+			len_to_cp = len % WORD_LEN;
+
+			if(len_to_cp > 0) {
+				BYTE_CP_BWD(p_dest, p_src, len_to_cp);
+			}
+		}
+	}
+
+	return dest;
+}
+
+size_t rtl_strlen(char* str)
+{
+	u8* p;
+	size_t* p_long_word;
+	size_t len_to_align;
+
+	len_to_align = (-(size_t)str) % WORD_LEN;
+
+	//Align the pointer with 8 bytes
+	for(p = (u8*)str;
+	    p - (u8*)str < len_to_align;
+	    p++) {
+		if(*p == '\0') {
+			return p - (u8*)str;
+		}
+	}
+
+	//These codes are learnt form glibc.Test a word each time
+	p_long_word = (size_t*)str;
+
+	while(1) {
+		if((((*p_long_word + STRLEN_MAGIC) ^ ~*p_long_word)
+		    & ~STRLEN_MAGIC) != 0) {
+			const u8 *cp = (u8*)(*p_long_word - 1);
+
+			if(cp[0] == '\0')
+				return cp - (u8*)str;
+
+			if(cp[1] == '\0')
+				return cp - (u8*)str + 1;
+
+			if(cp[2] == '\0')
+				return cp - (u8*)str + 2;
+
+			if(cp[3] == '\0')
+				return cp - (u8*)str + 3;
+		}
+
+		p_long_word++;
+	}
+}
+
 char* rtl_strcpy_s(char* dest, size_t buf_size, char* src);
 s32 rtl_strcmp(char* str1, char* str2);
 char* rtl_strcat_s(char* dest, size_t buf_size, char* src);

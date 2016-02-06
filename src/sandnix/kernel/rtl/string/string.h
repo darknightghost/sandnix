@@ -24,7 +24,7 @@ void*		rtl_memcpy(void* dest, void* src, size_t len);
 void*		rtl_memset(void* dest, u8 val, size_t len);
 void*		rtl_memmove(void* dest, void* src, size_t len);
 char*		rtl_strcpy_s(char* dest, size_t buf_size, char* src);
-u32			rtl_strlen(char* str);
+size_t		rtl_strlen(char* str);
 s32			rtl_strcmp(char* str1, char* str2);
 char*		rtl_strcat_s(char* dest, size_t buf_size, char* src);
 bool		rtl_is_sub_string(char* str, char* substr);
