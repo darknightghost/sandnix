@@ -116,9 +116,7 @@ _kernel_mem_entry:
 
 	//FPU
 	fninit
-	//Clear NE,EM,TS,MP
-	movl	%cr0,%eax
-	andl	$0xFFFFFFD1,%eax
+	movl	$0x80010021,%eax
 	movl	%eax,%cr0
 
 	//Call kernel

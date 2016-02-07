@@ -20,5 +20,5 @@
 #include "../../../common/common.h"
 
 void		kconsole_init();
-void		dbg_kprint(char* fmt, ...);
+u32			dbg_kprint(char* fmt, ...);
 

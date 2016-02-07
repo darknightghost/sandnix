@@ -21,14 +21,18 @@
 
 #ifdef	X86
 
-	//Variable Arguments
-	typedef	u8*				va_list;
+//Variable Arguments
+typedef	u8*				va_list;
 
-	#define	va_start(ap,v)	((ap) = (va_list)&(v) + 4)
+#define	va_start(ap,v)	((ap) = (va_list)&(v) \
+                                + (sizeof(v) > 4 ? sizeof(v) : 4))
 
-	#define	va_arg(ap,t)	((ap) += 4 ,(**((t**)((ap)-4))))
+#define	VA_SIZE(t)		(sizeof(t) > 4 ? sizeof(t) : 4)
 
-	#define	va_end(ap)		((ap) = (va_list)0)
+#define	va_arg(ap,t)	((ap) += VA_SIZE(t), \
+                         *(t*)((ap) - VA_SIZE(t)))
+
+#define	va_end(ap)		((ap) = (va_list)0)
 #endif	//!	X86
 
 #include "string/string.h"

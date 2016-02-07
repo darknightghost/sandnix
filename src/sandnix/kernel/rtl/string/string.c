@@ -43,9 +43,9 @@
 			(c) = (n) + '0'; \
 		} else { \
 			if((capital)) { \
-				(c) = (n) + 'A'; \
+				(c) = (n) - 10 + 'A'; \
 			} else { \
-				(c) = (n) + 'a'; \
+				(c) = (n) - 10 + 'a'; \
 			} \
 		} \
 	}
@@ -104,7 +104,7 @@
 		                      :"memory"); \
 	}
 
-#define STRLEN_MAGIC	0x7EFEFEFFL
+#define STRLEN_MAGIC	0x7EFEFEFF
 #endif	//X86
 
 void* rtl_memcpy(void* dest, void* src, size_t len)
@@ -176,8 +176,8 @@ void* rtl_memmove(void* dest, void* src, size_t len)
 	u8* p_dest;
 	size_t len_to_cp;
 
-	if((size_t)dest + len <= (size_t)src || (size_t)src < (size_t)dest) {
-		//Memory not overlapped or src < dest
+	if((size_t)dest + len <= (size_t)src || (size_t)src >= (size_t)dest) {
+		//Memory not overlapped or src >= dest
 		rtl_memcpy(dest, src, len);
 
 	} else {
@@ -190,6 +190,7 @@ void* rtl_memmove(void* dest, void* src, size_t len)
 
 		} else {
 			len_to_cp = (size_t)dest % WORD_LEN;
+			len -= len_to_cp;
 
 			if(len_to_cp > 0) {
 				BYTE_CP_BWD(p_dest, p_src, len_to_cp);
@@ -197,10 +198,11 @@ void* rtl_memmove(void* dest, void* src, size_t len)
 
 			p_dest -= WORD_LEN - 1;
 			p_src -= WORD_LEN - 1;
-			len -= len_to_cp;
 			WORD_CP_BWD(p_dest, p_src, len);
 
 			len_to_cp = len % WORD_LEN;
+			p_src += WORD_LEN - 1;
+			p_dest += WORD_LEN - 1;
 
 			if(len_to_cp > 0) {
 				BYTE_CP_BWD(p_dest, p_src, len_to_cp);
@@ -229,12 +231,12 @@ size_t rtl_strlen(char* str)
 	}
 
 	//These codes are learnt form glibc.Test a word each time
-	p_long_word = (size_t*)str;
+	p_long_word = (size_t*)p;
 
 	while(1) {
-		if((((*p_long_word + STRLEN_MAGIC) ^ ~*p_long_word)
-		    & ~STRLEN_MAGIC) != 0) {
-			const u8 *cp = (u8*)(*p_long_word - 1);
+		if(((((*p_long_word) + STRLEN_MAGIC) ^ ~(*p_long_word)) & ~STRLEN_MAGIC)
+		   != 0) {
+			const u8 *cp = (u8*)p_long_word;
 
 			for(int i = 0; i < WORD_LEN; i++) {
 				if(cp[i] == '\0') {
@@ -403,4 +405,3 @@ char* rtl_itoa(char* buf, u64 num, int num_sys, bool capital)
 
 	return buf;
 }
-

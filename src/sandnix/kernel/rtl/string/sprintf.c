@@ -311,9 +311,10 @@ u32 rtl_vnprintf(char* buf, size_t buf_size, char* fmt, va_list args)
 									write_buf(buf, 1, &p_output, " ");
 								}
 
-								write_buf(buf, data_str_len, &p_output, data_str);
 							}
 						}
+
+						write_buf(buf, buf_size, &p_output, data_str);
 
 						break;
 

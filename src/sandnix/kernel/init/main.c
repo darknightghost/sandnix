@@ -18,6 +18,7 @@
 #include "../../../common/common.h"
 #include "../../boot/multiboot2.h"
 #include "../debug/debug.h"
+#include "../rtl/rtl.h"
 
 #define	KERNEL_STACK_SIZE	(4096 + 2)
 
@@ -26,7 +27,7 @@ u8		init_stack[KERNEL_STACK_SIZE];
 void kernel_main(u32 magic, pmultiboot_tag_t p_boot_info)
 {
 	dbg_init();
-	dbg_kprint("Sandnix 0.0.2 loading...\n");
+	dbg_kprint("%s loading...\n", VER_STR);
 
 	while(1);
 

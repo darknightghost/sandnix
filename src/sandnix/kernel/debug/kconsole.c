@@ -16,11 +16,13 @@
 */
 
 #include "../../../common/common.h"
+#include "../pm/pm.h"
+#include "../rtl/rtl.h"
 #include "kconsole.h"
 #include "early_print.h"
-#include "../pm/pm.h"
 
 static	spinlock_t	print_lock;
+static	char		kprint_buf[1024];
 
 void kconsole_init()
 {
@@ -29,10 +31,19 @@ void kconsole_init()
 	return;
 }
 
-void dbg_kprint(char* fmt, ...)
+u32 dbg_kprint(char* fmt, ...)
 {
+	va_list args;
+	u32 ret;
+
 	pm_acqr_spn_lock(&print_lock);
-	early_print(fmt);
+
+	va_start(args, fmt);
+	ret = rtl_vnprintf(kprint_buf, 1024, fmt, args);
+	va_end(args);
+
+	early_print(kprint_buf);
+
 	pm_rls_spn_lock(&print_lock);
-	return;
+	return ret;
 }
