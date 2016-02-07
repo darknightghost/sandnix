@@ -15,26 +15,25 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#pragma once
+
 #include "../../../common/common.h"
-#include "../../boot/multiboot2.h"
-#include "init.h"
-#include "../io/io.h"
-#include "../debug/debug.h"
-#include "../exceptions/exceptions.h"
-#include "../rtl/rtl.h"
+#include "port.h"
 
+//Interrupt level
+#define		INT_LEVEL_HIGHEST		0xFF
+#define		INT_LEVEL_LOWEST		0x00
 
-u8		init_stack[KERNEL_STACK_SIZE];
+#define		INT_LEVEL_EXCEPTION		0xFF
+#define		INT_LEVEL_IO			0xD0
+#define		INT_LEVEL_DISPATCH		0x40	//Dispatch messages and signals,the task will not switch.
+#define		INT_LEVEL_USR_HIGHEST	0x0F
+#define		INT_LEVEL_IDLE			0x00
 
-void kernel_main(u32 magic, pmultiboot_tag_t p_boot_info)
-{
-	dbg_init();
-	dbg_kprint("%s loading...\n", VER_STR);
-	excpt_panic(EXFULL, "%s\n", "hahahaha");
+//System time
+#define		SYS_TICK				10
 
-	while(1);
-
-	UNREFERRED_PARAMETER(magic);
-	UNREFERRED_PARAMETER(p_boot_info);
-	return;
-}
+//Init
+void		io_init();
+void		io_enable_interrupt();
+void		io_disable_interrupt();

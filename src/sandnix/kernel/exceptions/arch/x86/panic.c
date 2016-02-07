@@ -16,6 +16,9 @@
 */
 
 #include "../../exceptions.h"
+#include "../../../init/init.h"
+#include "../../../io/io.h"
+#include "../../../rtl/rtl.h"
 
 #define	DEFAULT_STDOUT_WIDTH	80
 #define	DEFAULT_STDOUT_HEIGHT	25
@@ -61,11 +64,11 @@ void excpt_panic(u32 reason, char* fmt, ...)
 	cls();
 
 	//Print infomations of exceptions
-	print_string(">_<|||\nIt\'s a pity that an exception has been happend and sandnix cannot continue running.The reason of the crash is:\n\n", FG_BRIGHT_WHITE, BG_RED);
+	print_string("\t\t\t\t\t\t>_<||| Sandnix kernel Paniced\nIt\'s a pity that an exception has been happend and sandnix cannot continue running.The reason of the crash is:\n\n", FG_BRIGHT_WHITE, BG_RED);
 	print_string(excpt_tbl[reason], FG_BRIGHT_WHITE, BG_RED);
 	print_string("\n\n", FG_BRIGHT_WHITE, BG_RED);
 	va_start(args, fmt);
-	rtl_vprintf_s(panic_buf, 1024, fmt, args);
+	rtl_vnprintf(panic_buf, 1024, fmt, args);
 	va_end(args);
 	print_string(panic_buf, FG_BRIGHT_WHITE, BG_RED);
 

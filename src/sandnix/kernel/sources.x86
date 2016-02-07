@@ -13,3 +13,6 @@ pm/spinlock/arch/x86/spinlock.c
 
 #rtl
 rtl/math/arch/x86/math.c
+
+#exceptions
+exceptions/arch/x86/panic.c

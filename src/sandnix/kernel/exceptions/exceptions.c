@@ -15,9 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
-
-static	char*		excpt_tbl[] = {
+char*		excpt_tbl[] = {
 	"Succeed",
 	"Operation not permitted",
 	"No such file or directory",

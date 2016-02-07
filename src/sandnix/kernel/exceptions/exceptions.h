@@ -21,4 +21,6 @@
 #include "err.h"
 #include "panic.h"
 
+extern	char*		excpt_tbl[];
+
 void	excpt_init();
