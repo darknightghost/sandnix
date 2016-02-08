@@ -15,9 +15,7 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "8259a.h"
 
-#include "apic.h"
-
-void	apic_init();
+void	8259a_init();
 

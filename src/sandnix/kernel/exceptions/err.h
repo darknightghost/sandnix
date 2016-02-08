@@ -160,3 +160,4 @@
 //Kernel excepions
 #define	EKERNELARG		135		//Kernel argument error
 #define	EASSERT			136		//Assert
+#define	EINTERRUPT		137		//Unhandled exception interrupt

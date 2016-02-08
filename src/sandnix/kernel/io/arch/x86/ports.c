@@ -20,71 +20,53 @@
 void io_read_port_bytes(u32 port, u8* buf, u32 num)
 {
 	__asm__ __volatile__(
-	    "cld\n\t"
-	    "movl		%0,%%edx\n\t"
-	    "movl		%1,%%edi\n\t"
-	    "movl		%2,%%ecx\n\t"
-	    "rep		insb\n\t"
-	    ::"m"(port), "m"(buf), "m"(num));
+	    "cld\n"
+	    "rep		insb\n"
+	    ::"d"(port), "D"(buf), "c"(num));
 	return;
 }
 
 void io_write_port_bytes(u32 port, u8* buf, u32 num)
 {
 	__asm__ __volatile__(
-	    "cld\n\t"
-	    "movl		%0,%%edx\n\t"
-	    "movl		%1,%%esi\n\t"
-	    "movl		%2,%%ecx\n\t"
-	    "rep		outsb\n\t"
-	    ::"m"(port), "m"(buf), "m"(num));
+	    "cld\n"
+	    "rep		outsb\n"
+	    ::"d"(port), "S"(buf), "c"(num));
 	return;
 }
 
 void io_read_port_words(u32 port, u16* buf, u32 num)
 {
 	__asm__ __volatile__(
-	    "cld\n\t"
-	    "movl		%0,%%edx\n\t"
-	    "movl		%1,%%edi\n\t"
-	    "movl		%2,%%ecx\n\t"
-	    "rep		insw\n\t"
-	    ::"m"(port), "m"(buf), "m"(num));
+	    "cld\n"
+	    "rep		insw\n"
+	    ::"d"(port), "D"(buf), "c"(num));
 	return;
 }
 void io_write_port_words(u32 port, u16* buf, u32 num)
 {
 	__asm__ __volatile__(
-	    "cld\n\t"
-	    "movl		%0,%%edx\n\t"
-	    "movl		%1,%%esi\n\t"
-	    "movl		%2,%%ecx\n\t"
-	    "rep		outsw\n\t"
-	    ::"m"(port), "m"(buf), "m"(num));
+	    "cld\n"
+	    "rep		outsw\n"
+	    ::"d"(port), "S"(buf), "c"(num));
 	return;
 }
 
 void io_read_port_dwords(u32 port, u32* buf, u32 num)
 {
 	__asm__ __volatile__(
-	    "cld\n\t"
-	    "movl		%0,%%edx\n\t"
-	    "movl		%1,%%edi\n\t"
-	    "movl		%2,%%ecx\n\t"
-	    "rep		insl\n\t"
-	    ::"m"(port), "m"(buf), "m"(num));
+	    "cld\n"
+	    "rep		insl\n"
+	    ::"d"(port), "D"(buf), "c"(num));
 	return;
 }
 
 void io_write_port_dwords(u32 port, u32* buf, u32 num)
 {
 	__asm__ __volatile__(
-	    "cld\n\t"
-	    "movl		%0,%%edx\n\t"
-	    "movl		%1,%%esi\n\t"
-	    "movl		%2,%%ecx\n\t"
-	    "rep		outsl\n\t"
-	    ::"m"(port), "m"(buf), "m"(num));
+	    "cld\n"
+	    "rep		outsl\n"
+	    ::"d"(port), "S"(buf), "c"(num));
 	return;
 }
 
@@ -92,7 +74,7 @@ u8 io_read_port_byte(u32 port)
 {
 	u8 data;
 	__asm__ __volatile__(
-	    "inb		%1,%%al\n\t"
+	    "inb		%1,%%al\n"
 	    :"=%%al"(data)
 	    :"dx"((u16)port));
 	return data;
@@ -101,7 +83,7 @@ u8 io_read_port_byte(u32 port)
 void io_write_port_byte(u8 data, u32 port)
 {
 	__asm__ __volatile__(
-	    "outb		%0,%1\n\t"
+	    "outb		%0,%1\n"
 	    ::"al"(data), "dx"((u16)port));
 	return;
 }
@@ -110,7 +92,7 @@ u16 io_read_port_word(u32 port)
 {
 	u16 data;
 	__asm__ __volatile__(
-	    "inw		%1,%%ax\n\t"
+	    "inw		%1,%%ax\n"
 	    :"=%%ax"(data)
 	    :"dx"((u16)port));
 	return data;
@@ -119,7 +101,7 @@ u16 io_read_port_word(u32 port)
 void io_write_port_word(u16 data, u32 port)
 {
 	__asm__ __volatile__(
-	    "outw		%0,%1\n\t"
+	    "outw		%0,%1\n"
 	    ::"ax"(data), "dx"((u16)port));
 	return;
 }
@@ -128,7 +110,7 @@ u32 io_read_port_dword(u32 port)
 {
 	u32 data;
 	__asm__ __volatile__(
-	    "inl		%1,%%eax\n\t"
+	    "inl		%1,%%eax\n"
 	    :"=%%eax"(data)
 	    :"dx"((u16)port));
 	return data;
@@ -137,7 +119,7 @@ u32 io_read_port_dword(u32 port)
 void io_write_port_dword(u32 data, u32 port)
 {
 	__asm__ __volatile__(
-	    "outl		%0,%1\n\t"
+	    "outl		%0,%1\n"
 	    ::"eax"(data), "dx"((u16)port));
 	return;
 }
@@ -145,10 +127,10 @@ void io_write_port_dword(u32 data, u32 port)
 void io_delay()
 {
 	__asm__ __volatile__(
-	    "nop\n\t"
-	    "nop\n\t"
-	    "nop\n\t"
-	    "nop\n\t"
+	    "nop\n"
+	    "nop\n"
+	    "nop\n"
+	    "nop\n"
 	);
 	return;
 }

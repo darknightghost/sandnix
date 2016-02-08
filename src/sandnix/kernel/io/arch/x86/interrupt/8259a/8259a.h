@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "../../../../../common/common.h"
+#include "../../../../../../../common/common.h"
 
-void	8259a_init();
+void	_8259a_init();
 

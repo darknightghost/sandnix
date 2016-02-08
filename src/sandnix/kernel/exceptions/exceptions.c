@@ -152,5 +152,6 @@ char*		excpt_tbl[] = {
 	"Memory page has hardware Error",
 	"Not supported",
 	"Kernel argument error",
-	"Assert"
+	"Assert",
+	"Unhandled exception interrupt"
 };

@@ -5,7 +5,7 @@ init/arch/x86/start_paging.c
 #io
 io/arch/x86/ports.c
 io/arch/x86/interrupt/interrupt.c
-
+io/arch/x86/interrupt/int_entry.S
 #debug
 debug/arch/x86/early_print.c
 
