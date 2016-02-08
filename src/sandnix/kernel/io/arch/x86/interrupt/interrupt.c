@@ -15,25 +15,21 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
 
-#include "../../../common/common.h"
-#include "port.h"
+#include "../../../../../common/common.h"
 
-//Interrupt level
-#define		INT_LEVEL_HIGHEST		0xFF
-#define		INT_LEVEL_LOWEST		0x00
+static	bool	is_apic_supported();
 
-#define		INT_LEVEL_EXCEPTION		0xFF
-#define		INT_LEVEL_IO			0xD0
-#define		INT_LEVEL_DISPATCH		0x40	//Dispatch messages and signals,the task will not switch.
-#define		INT_LEVEL_USR_HIGHEST	0x0F
-#define		INT_LEVEL_IDLE			0x00
+void interrupt_init()
+{
+	return;
+}
 
-//System time
-#define		SYS_TICK				10
-
-//Init
-void		io_init();
 void		io_enable_interrupt();
 void		io_disable_interrupt();
+
+
+bool is_apic_supported()
+{
+	return true;
+}

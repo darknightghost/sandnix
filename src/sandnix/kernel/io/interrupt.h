@@ -30,10 +30,7 @@
 #define		INT_LEVEL_USR_HIGHEST	0x0F
 #define		INT_LEVEL_IDLE			0x00
 
-//System time
-#define		SYS_TICK				10
+void		interrupt_init();
 
-//Init
-void		io_init();
 void		io_enable_interrupt();
 void		io_disable_interrupt();
