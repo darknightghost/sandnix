@@ -30,9 +30,11 @@ void interrupt_init()
 	dbg_kprint("Initializing interrupt controller...\n");
 
 	if(is_apic_supported()) {
+		dbg_kprint("APIC supported...\n");
 		int_controller = INT_APIC;
 
 	} else {
+		dbg_kprint("APIC not supported...\n");
 		int_controller = INT_8359A;
 	}
 

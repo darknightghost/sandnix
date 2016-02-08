@@ -32,6 +32,8 @@ void kernel_main(u32 magic, pmultiboot_tag_t p_boot_info)
 	dbg_kprint("%s loading...\n", VER_STR);
 	excpt_panic(EXFULL, "%s\n", "hahahaha");
 
+	io_init();
+
 	while(1);
 
 	UNREFERRED_PARAMETER(magic);
