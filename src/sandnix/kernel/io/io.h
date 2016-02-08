@@ -18,7 +18,7 @@
 #pragma once
 
 #include "../../../common/common.h"
-#include "Interrupt.h"
+#include "interrupt.h"
 #include "port.h"
 
 //System time

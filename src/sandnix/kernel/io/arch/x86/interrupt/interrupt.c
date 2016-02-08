@@ -16,12 +16,26 @@
 */
 
 
-#include "../../../../../common/common.h"
+#include "../../../../../../common/common.h"
+#include "../../../../debug/debug.h"
+
+#define	INT_8359A		0
+#define	INT_APIC		1
 
 static	bool	is_apic_supported();
+static	u32		int_controller;
 
 void interrupt_init()
 {
+	dbg_kprint("Initializing interrupt controller...\n");
+
+	if(is_apic_supported()) {
+		int_controller = INT_APIC;
+
+	} else {
+		int_controller = INT_8359A;
+	}
+
 	return;
 }
 
@@ -31,5 +45,15 @@ void		io_disable_interrupt();
 
 bool is_apic_supported()
 {
-	return true;
+	bool ret;
+
+	__asm__ __volatile__(
+	    "movl	$1,%%eax\n"
+	    "cpuid\n"
+	    "bt		$21,%%ecx\n"
+	    "setcb	%0\n"
+	    :"=a"(ret)
+	    ::);
+
+	return ret;
 }

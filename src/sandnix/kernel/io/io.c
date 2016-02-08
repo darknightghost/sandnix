@@ -16,8 +16,13 @@
 */
 
 #include "../../../common/common.h"
+#include "../debug/debug.h"
 
 #include "interrupt.h"
 
 //Init
-void io_init();
+void io_init()
+{
+	dbg_kprint("\nInitializing io module...\n");
+	interrupt_init();
+}
