@@ -52,10 +52,10 @@ bool is_apic_supported()
 	__asm__ __volatile__(
 	    "movl	$1,%%eax\n"
 	    "cpuid\n"
-	    "bt		$21,%%ecx\n"
+	    "bt		$9,%%edx\n"
 	    "setcb	%0\n"
 	    :"=a"(ret)
-	    ::);
+	    ::"bx", "cx", "dx");
 
 	return ret;
 }

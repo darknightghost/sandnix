@@ -30,7 +30,6 @@ void kernel_main(u32 magic, pmultiboot_tag_t p_boot_info)
 {
 	dbg_init();
 	dbg_kprint("%s loading...\n", VER_STR);
-	excpt_panic(EXFULL, "%s\n", "hahahaha");
 
 	io_init();
 
