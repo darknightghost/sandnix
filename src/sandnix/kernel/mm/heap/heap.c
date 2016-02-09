@@ -15,37 +15,9 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "mm.h"
 
-#include "../../../common/common.h"
-#include "../../boot/multiboot2.h"
-
-#ifdef	X86
-	#include "arch/x86/arch.h"
-#endif
-
-#define	KERNEL_HEADER_MAGIC		0x444E4153
-#define	KERNEL_STACK_SIZE		(4096 * 2)
-
-#ifndef	_ASM
-extern	u8		init_stack[KERNEL_STACK_SIZE];
-
-#pragma pack(push)
-#pragma pack(1)
-typedef	struct	_kernel_header_t {
-	le32	magic;
-	u32		text_begin;
-	u32		text_end;
-	u32		data_begin;
-	u32		data_end;
-	u32		checksum;
-} kernel_header_t, *pkernel_header_t;
-#pragma pack(pop)
-
-extern	kernel_header_t		kernel_header;
-
-typedef	struct	_kernel_param {
-	char*		name;
-	char*		value;
-} kernel_param_t, *pkernel_param_t;
-#endif
+void*	mm_mgr_page_addr;
+void*	mm_init_pt_addr;
+void*	kernel_address_offset;
+u32		init_page_num;

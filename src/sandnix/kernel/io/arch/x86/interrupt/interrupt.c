@@ -66,6 +66,7 @@ void interrupt_init()
 	if(is_apic_supported()) {
 		dbg_kprint("APIC supported...\n");
 		int_controller = INT_APIC;
+		apic_init();
 
 	} else {
 		dbg_kprint("APIC not supported...\n");
