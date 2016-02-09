@@ -21,28 +21,15 @@
 
 #define	IA32_APIC_BASE		0x001B
 
-void*	apic_phy_addr;
-void*	apic_addr;
+u32		apic_base_addr;
 
 static	void	disable_8259a();
-static	u32		apic_base_addr;
 
 void apic_init()
 {
 	dbg_kprint("Initializing APIC...\n");
 	disable_8259a();
 
-	//Enable APIC
-	__asm__ __volatile__(
-	    "rdmsr\n"
-	    "btsl	$11,%%eax\n"
-	    "wrmsr\n"
-	    "andl	$0xfffff000,%%eax\n"
-	    :"=a"(apic_base_addr)
-	    :"c"(IA32_APIC_BASE)
-	    :"dx");
-
-	apic_base_addr = apic_base_addr - (u32)apic_phy_addr + (u32)apic_addr;
 	dbg_kprint("APIC base address : %P\n", apic_base_addr);
 }
 

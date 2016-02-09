@@ -22,8 +22,7 @@
 #include "port.h"
 
 #ifdef	X86
-	extern	void*	apic_phy_addr;
-	extern	void*	apic_addr;
+	extern	u32	apic_base_addr;
 #endif	//	X86
 
 //System time

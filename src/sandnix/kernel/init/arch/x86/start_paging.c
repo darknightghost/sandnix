@@ -24,32 +24,32 @@
 #define	KERNEL_PDE_INDEX	(KERNEL_MEM_BASE / (4096 * 1024))
 
 static	void	get_needed_pages(u32 offset, void* p_boot_info,
-                                 void** p_base, void** p_apic_phy_base,
-                                 size_t* p_apic_size, u32* p_num);
+                                 void** p_base,
+                                 u32* p_num);
+
+static	bool	is_apic_supported();
 
 void start_paging(u32 offset, u32 magic, void* p_boot_info)
 {
 	void* base;
 	u32 page_num;
 	u32 i;
-	u32 j;
 	ppte_t p_pte;
 	void* page_table_base;
 	ppde_t p_pde;
 	u32 pde_num;
 	u32 pte_num;
-	void* apic_base;
 	void* apic_phy_base;
-	size_t apic_size;
 
-	get_needed_pages(offset, p_boot_info, &base, &apic_phy_base, &apic_size,
+	get_needed_pages(offset, p_boot_info, &base,
 	                 &page_num);
 
 	page_table_base = (void*)((u32)base + 4096);
 
 	//Ptes
 	for(i = 0, p_pte = (ppte_t)page_table_base;
-	    i < (page_num - apic_size / 4096 - (apic_size % 4096 ? 1 : 0));
+	    i < page_num;
+
 	    i++, p_pte++) {
 		p_pte->present = PG_P;
 		p_pte->read_write = PG_RW;
@@ -64,24 +64,27 @@ void start_paging(u32 offset, u32 magic, void* p_boot_info)
 		p_pte->page_base_addr = (i * 4096) >> 12;
 	}
 
-	//APIC
-	if(apic_size > 0) {
-		apic_addr = (void*)(i * 4096 + KERNEL_MEM_BASE);
-		apic_phy_addr = apic_phy_base;
 
-		for(j = 0; i < page_num; i++, j++) {
-			p_pte->present = PG_P;
-			p_pte->read_write = PG_RW;
-			p_pte->user_supervisor = PG_SUPERVISOR;
-			p_pte->write_through = PG_WRITE_THROUGH;
-			p_pte->cache_disabled = 0;
-			p_pte->accessed = 0;
-			p_pte->dirty = 0;
-			p_pte->page_table_attr_index = 0;
-			p_pte->global_page = 1;
-			p_pte->avail = PG_NORMAL;
-			p_pte->page_base_addr = ((u32)apic_phy_base + j * 4096) >> 12;
-		}
+	if(is_apic_supported()) {
+		__asm__ __volatile__(
+		    "rdmsr\n"
+		    "btsl	$11,%%eax\n"
+		    "andl	$0xfffff000,%%eax\n"
+		    :"=a"(apic_phy_base)
+		    ::"dx");
+		p_pte->present = PG_P;
+		p_pte->read_write = PG_RW;
+		p_pte->user_supervisor = PG_SUPERVISOR;
+		p_pte->write_through = PG_WRITE_THROUGH;
+		p_pte->cache_disabled = 0;
+		p_pte->accessed = 0;
+		p_pte->dirty = 0;
+		p_pte->page_table_attr_index = 0;
+		p_pte->global_page = 1;
+		p_pte->avail = PG_NORMAL;
+		p_pte->page_base_addr = ((u32)apic_phy_base) >> 12;
+
+		*(u32*)(((u32)&apic_base_addr) + offset) = i * 4096 + KERNEL_MEM_BASE;
 	}
 
 	for(i = 0, p_pte = (ppte_t)page_table_base;
@@ -175,22 +178,17 @@ void start_paging(u32 offset, u32 magic, void* p_boot_info)
 }
 
 void get_needed_pages(u32 offset, void* p_boot_info,
-                      void** p_base, void** p_apic_phy_base,
-                      size_t* p_apic_size, u32* p_num)
+                      void** p_base, u32* p_num)
 {
 	void* p_current;
 	u32 boot_info_size;
 	pmultiboot_tag_t p_tag;
 	void* initrd_end;
 	pmultiboot_tag_module_t p_module_info;
-	pmultiboot_tag_mmap_t p_mmap_info;
-	pmultiboot_mmap_entry_t p_mmap_entry;
 	u32 last_addr;
 	pkernel_header_t p_kernel_header;
 	u32 page_num;
 	u32 i;
-
-	*p_apic_size = 0;
 
 	//Boot info size
 	p_current = p_boot_info;
@@ -211,23 +209,6 @@ void get_needed_pages(u32 offset, void* p_boot_info,
 			case MULTIBOOT_TAG_TYPE_MODULE:
 				p_module_info = (pmultiboot_tag_module_t)p_tag;
 				initrd_end = (void*)p_module_info->mod_end;
-
-				break;
-
-			case MULTIBOOT_TAG_TYPE_MMAP:
-				p_mmap_info = (pmultiboot_tag_mmap_t)p_tag;
-
-				for(p_mmap_entry = (pmultiboot_mmap_entry_t)(
-				                       &(p_mmap_info->entries));
-				    (u32)p_mmap_entry - (u32)p_mmap_info < p_mmap_info->size;
-				    p_mmap_entry = (pmultiboot_mmap_entry_t)(
-				                       (u32)p_mmap_entry + p_mmap_info->size)) {
-					if(p_mmap_entry->type == MULTIBOOT_MEMORY_ACPI_RECLAIMABLE) {
-						*p_apic_phy_base = (void*)(p_mmap_entry->addr);
-						*p_apic_size = (size_t)(p_mmap_entry->len);
-						break;
-					}
-				}
 
 				break;
 		}
@@ -271,9 +252,13 @@ void get_needed_pages(u32 offset, void* p_boot_info,
 	*p_base = (void*)last_addr;
 
 	//Compute pages required to map
-	//Pages required for 0 - last_addr & APIC memory
-	page_num = last_addr / 4096 + *p_apic_size / 4096
-	           + (*p_apic_size % 4096 ? 1 : 0);
+	//Pages required for 0 - last_addr
+	page_num = last_addr / 4096;
+
+	//APIC
+	if(is_apic_supported()) {
+		page_num++;
+	}
 
 	//Pages required for itself
 	//PDT
@@ -290,3 +275,17 @@ void get_needed_pages(u32 offset, void* p_boot_info,
 	return;
 }
 
+bool is_apic_supported()
+{
+	bool ret;
+
+	__asm__ __volatile__(
+	    "movl	$1,%%eax\n"
+	    "cpuid\n"
+	    "bt		$9,%%edx\n"
+	    "setcb	%0\n"
+	    :"=a"(ret)
+	    ::"bx", "cx", "dx");
+
+	return ret;
+}
