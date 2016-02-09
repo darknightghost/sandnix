@@ -15,9 +15,4 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "mm.h"
 
-void*	mm_mgr_page_addr;
-void*	mm_init_pt_addr;
-void*	kernel_address_offset;
-u32		init_page_num;
