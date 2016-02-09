@@ -3,6 +3,7 @@ init/main.c
 
 #mm
 mm/mm.c
+mm/heap/heap.c
 
 #debug
 debug/debug.c
@@ -11,6 +12,7 @@ debug/kconsole.c
 #rtl
 rtl/string/string.c
 rtl/string/sprintf.c
+rtl/list/list.c
 
 #exceptions
 exceptions/exceptions.c

@@ -26,7 +26,7 @@
 
 u8		init_stack[KERNEL_STACK_SIZE];
 
-void kernel_main(u32 magic, pmultiboot_tag_t p_boot_info)
+void kernel_main(u32 magic, pmultiboot_tag_t p_load_info)
 {
 	dbg_init();
 	dbg_kprint("%s loading...\n", VER_STR);
@@ -36,6 +36,6 @@ void kernel_main(u32 magic, pmultiboot_tag_t p_boot_info)
 	while(1);
 
 	UNREFERRED_PARAMETER(magic);
-	UNREFERRED_PARAMETER(p_boot_info);
+	UNREFERRED_PARAMETER(p_load_info);
 	return;
 }

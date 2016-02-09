@@ -18,6 +18,7 @@
 #pragma once
 
 #include "../../../common/common.h"
+#include "heap/heap.h"
 
 #ifdef	X86
 	#include "arch/x86/page_table.h"

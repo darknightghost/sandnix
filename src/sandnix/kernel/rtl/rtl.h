@@ -35,9 +35,9 @@ typedef	u8*				va_list;
 #define	va_end(ap)		((ap) = (va_list)0)
 #endif	//!	X86
 
+#include "list/list.h"
 #include "string/string.h"
 /*#include "math/math.h"
-#include "list/list.h"
 #include "queue/queue.h"
 #include "stack/stack.h"
 #include "array_list/array_list.h"

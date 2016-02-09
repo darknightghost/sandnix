@@ -1,6 +1,7 @@
 #init
 init/arch/x86/init.S
 init/arch/x86/start_paging.c
+init/boot_info/arch/x86/boot_info.c
 
 #io
 io/arch/x86/ports.c

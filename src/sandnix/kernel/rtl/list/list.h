@@ -19,7 +19,7 @@
 
 #include "../../../../common/common.h"
 
-typedef		void	(*item_destroyer_callback)(void*, void*);
+typedef		void	(*item_destroy_callback)(void*, void*);
 
 typedef	struct _list_node {
 	struct _list_node*	p_prev;
@@ -40,4 +40,4 @@ plist_node_t		rtl_list_insert_after(
 
 void				rtl_list_remove(list_t* p_list, plist_node_t p_node, void* heap);
 plist_node_t		rtl_list_get_node_by_item(list_t lst, void* p_item);
-void				rtl_list_destroy(list_t* p_list, void* heap, item_destroyer_callback callback, void* p_arg);
+void				rtl_list_destroy(list_t* p_list, void* heap, item_destroy_callback callback, void* p_arg);

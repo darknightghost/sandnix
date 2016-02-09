@@ -17,32 +17,24 @@
 
 #pragma once
 
-#include "../../../common/common.h"
-#include "../../boot/multiboot2.h"
+#include "../../../../common/common.h"
+#include "../../../boot/multiboot2.h"
+#include "../../rtl/rtl.h"
 
-#ifdef	X86
-	#include "arch/x86/arch.h"
-#endif
+typedef	struct	_boot_info {
+	void*	initrd_begin;
+	size_t	initrd_size;
+	list_t	phy_mem_info;
+	list_t	kernel_params;
+} boot_info_t, *pboot_info_t;
 
-#define	KERNEL_HEADER_MAGIC		0x444E4153
-#define	KERNEL_STACK_SIZE		(4096 * 2)
+typedef	struct	_kernel_param {
+	char*		name;
+	char*		value;
+} kernel_param_t, *pkernel_param_t;
 
-#ifndef	_ASM
-
-#include "boot_info/boot_info.h"
-
-#pragma pack(push)
-#pragma pack(1)
-typedef	struct	_kernel_header_t {
-	le32	magic;
-	u32		text_begin;
-	u32		text_end;
-	u32		data_begin;
-	u32		data_end;
-	u32		checksum;
-} kernel_header_t, *pkernel_header_t;
-#pragma pack(pop)
-
-extern	u8				init_stack[KERNEL_STACK_SIZE];
-extern	kernel_header_t	kernel_header;
-#endif
+typedef	struct	_phy_mem_info {
+	void*	start_addr;
+	size_t	size;
+	u32		type;
+} phy_mem_info_t, *pphy_mem_info_t;

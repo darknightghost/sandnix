@@ -1,17 +1,17 @@
 /*
-	Copyright 2015,暗夜幽灵 <darknightghost.cn@gmail.com>
+	  Copyright 2015,暗夜幽灵 <darknightghost.cn@gmail.com>
 
-	This program is free software: you can redistribute it and/or modify
+	  This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
+      This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+      You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
@@ -141,7 +141,7 @@ plist_node_t rtl_list_get_node_by_item(list_t lst, void* p_item)
 	return NULL;
 }
 
-void rtl_list_destroy(list_t* p_list, void* heap, item_destroyer_callback callback, void* p_arg)
+void rtl_list_destroy(list_t* p_list, void* heap, item_destroy_callback callback, void* p_arg)
 {
 	while(*p_list != NULL) {
 		if(callback != NULL) {

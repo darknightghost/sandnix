@@ -21,6 +21,11 @@
 #include "interrupt.h"
 #include "port.h"
 
+#ifdef	X86
+	extern	void*	apic_phy_addr;
+	extern	void*	apic_addr;
+#endif	//	X86
+
 //System time
 #define		SYS_TICK				10
 
