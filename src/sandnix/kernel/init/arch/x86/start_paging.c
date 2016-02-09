@@ -66,7 +66,7 @@ void start_paging(u32 offset, u32 magic, void* p_boot_info)
 
 	//APIC
 	if(apic_size > 0) {
-		apic_addr = i * 4096 + KERNEL_MEM_BASE;
+		apic_addr = (void*)(i * 4096 + KERNEL_MEM_BASE);
 		apic_phy_addr = apic_phy_base;
 
 		for(j = 0; i < page_num; i++, j++) {
