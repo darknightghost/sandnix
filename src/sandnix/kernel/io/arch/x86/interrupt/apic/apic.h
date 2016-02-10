@@ -17,7 +17,32 @@
 
 #pragma once
 
-#include "apic.h"
+#define IRQ0_HI_INDEX	0x10
+#define IRQ0_LO_INDEX	0x11
+#define IRQ0_INDEX		0x10
+#define IRQ1_INDEX		0x12
+#define IRQ2_INDEX		0x14
+#define IRQ3_INDEX		0x16
+#define IRQ4_INDEX		0x18
+#define IRQ5_INDEX		0x1A
+#define IRQ6_INDEX		0x1C
+#define IRQ7_INDEX		0x1E
+#define IRQ8_INDEX		0x20
+#define IRQ9_INDEX		0x22
+#define IRQ10_INDEX		0x24
+#define IRQ11_INDEX		0x26
+#define IRQ12_INDEX		0x28
+#define IRQ13_INDEX		0x2A
+#define IRQ14_INDEX		0x2C
+#define IRQ15_INDEX		0x2E
+#define IRQ16_INDEX		0x30
+#define IRQ17_INDEX		0x32
+#define IRQ18_INDEX		0x34
+#define IRQ19_INDEX		0x36
+#define IRQ20_INDEX		0x38
+#define IRQ21_INDEX		0x3A
+#define IRQ22_INDEX		0x3C
+#define IRQ23_INDEX		0x3E
 
 void	apic_init();
 

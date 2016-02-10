@@ -21,7 +21,6 @@
 #include "../../../../debug/debug.h"
 #include "../../../../rtl/rtl.h"
 #include "apic/apic.h"
-#include "8259a/8259a.h"
 
 #define	INT_8359A		0
 #define	INT_APIC		1
@@ -66,8 +65,16 @@
 #define	IRQ13			0x2D
 #define	IRQ14			0x2E
 #define	IRQ15			0x2F
+#define	IRQ16			0x30
+#define	IRQ17			0x31
+#define	IRQ18			0x32
+#define	IRQ19			0x33
+#define	IRQ20			0x34
+#define	IRQ21			0x35
+#define	IRQ22			0x36
+#define	IRQ23			0x37
 
-#define	INT_CLOCK		IRQ0
+#define	INT_CLOCK		IRQ2
 
 #pragma	pack(push)
 #pragma	pack(1)

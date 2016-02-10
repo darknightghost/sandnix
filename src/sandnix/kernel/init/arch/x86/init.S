@@ -86,6 +86,19 @@ _addr2:
 	subl	$_addr2,%eax
 	pushl	%eax			//*esp = offset
 
+	//Enable I/O APIC
+	movw	$0xCF8,%dx
+	movl	$(0x80000001 | (31 << 11) | (0x0F0 & 0xFC)),%eax
+	outl	%eax,%dx
+	movw	$0xCFC,%dx
+	inl		%dx,%eax
+	andl	$0xFFFFC000,%eax
+	addl	$0x31FE,%eax
+	movl	%eax,%ebx
+	xorl	%eax,%eax
+	btsl	$8,%eax
+	movl	%eax,(%ebx)
+
 	//Start paging
 	call	start_paging
 	movl	%esp,%eax
@@ -124,3 +137,4 @@ _kernel_mem_entry:
 	//*(esp)	: magic
 	//*(esp + 4): p_boot_info
 	call	kernel_main
+

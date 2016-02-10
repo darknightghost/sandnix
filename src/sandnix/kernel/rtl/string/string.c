@@ -375,6 +375,12 @@ char* rtl_itoa(char* buf, u64 num, int num_sys, bool capital)
 	char* p2;
 	char* start;
 
+	if(num == 0) {
+		buf[0] = '0';
+		buf[1] = '\0';
+		return buf;
+	}
+
 	//Sign
 	if(num < 0) {
 		*buf = '-';

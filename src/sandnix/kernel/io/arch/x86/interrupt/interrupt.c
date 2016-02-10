@@ -23,14 +23,9 @@
 #include "../../../../init/init.h"
 #include "../../../interrupt.h"
 #include "apic/apic.h"
-#include "8259a/8259a.h"
 #include "int_entry.h"
 
-#define	INT_8259A		0
-#define	INT_APIC		1
-
 static	bool	is_apic_supported();
-static	u32		int_controller;
 static	void	idt_init();
 
 int_info_t	hndlr_table[256];
@@ -65,12 +60,10 @@ void interrupt_init()
 
 	if(is_apic_supported()) {
 		dbg_kprint("APIC supported...\n");
-		int_controller = INT_APIC;
 		apic_init();
 
 	} else {
-		dbg_kprint("APIC not supported...\n");
-		int_controller = INT_8259A;
+		excpt_panic(ENOCSI, "The hardware is too old.Sandnix requited APIC support.\n");
 	}
 
 	return;
@@ -392,6 +385,8 @@ void int_dispatcher(u32 int_num, void* context,
                     u32 err_code)
 {
 	if(int_num < 0x20) {
+		//Look for handler
+		//Handler didn't found or the exception did not be handled
 		excpt_panic(EINTERRUPT,
 		            "Interrupt number = 0x%.2X\nError code = 0x%.8X\n",
 		            int_num, err_code);
