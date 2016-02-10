@@ -20,61 +20,33 @@
 #include "../../../../port.h"
 
 #define	IA32_APIC_BASE		0x001B
+#define	LVT_LINT0			0x0350
 
 u32		apic_base_addr;
-
-static	void	disable_8259a();
+u32		io_apic_base_addr;
 
 void apic_init()
 {
 	dbg_kprint("Initializing APIC...\n");
-	disable_8259a();
 
 	dbg_kprint("APIC base address : %P\n", apic_base_addr);
-}
+	dbg_kprint("I/O APIC base address : %P\n", io_apic_base_addr);
 
+	//Disable 8259A
+	__asm__ __volatile__(
+	    "movl	(%0),%%eax\n"
+	    "btsl	$16,%%eax\n"
+	    "movl	%%eax,(%0)\n"
+	    ::"b"(apic_base_addr+LVT_LINT0)
+	    :"ax");
 
-void disable_8259a()
-{
-	dbg_kprint("Disabling 8259A...\n");
-	//Master ICW1
-	io_write_port_byte(0x11, 0x20);
-	io_delay();
+	dbg_kprint("8259A disabled.\n");
 
-	//Slave	ICW1
-	io_write_port_byte(0x11, 0xA0);
-	io_delay();
-
-	//Master ICW2
-	io_write_port_byte(0x20, 0x21);
-	io_delay();
-
-	//Slave ICW2
-	io_write_port_byte(0x28, 0xA1);
-	io_delay();
-
-	//Master ICW3
-	io_write_port_byte(0x04, 0x21);
-	io_delay();
-
-	//Slave ICW3
-	io_write_port_byte(0x02, 0xA1);
-	io_delay();
-
-	//Master ICW4
-	io_write_port_byte(0x01, 0x21);
-	io_delay();
-
-	//Slave ICW4
-	io_write_port_byte(0x01, 0xA1);
-	io_delay();
-
-	//Master OCW1
-	io_write_port_byte(0xFF, 0x21);
-	io_delay();
-
-	//Slave OCW1
-	io_write_port_byte(0xFF, 0xA1);
-	io_delay();
-	return;
+	//Enable APIC
+	__asm__ __volatile__(
+	    "rdmsr\n"
+	    "btsl	$11,%%eax\n"
+	    "wrmsr\n"
+	    ::"c"(IA32_APIC_BASE)
+	    :"ax", "dx");
 }

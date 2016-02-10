@@ -26,6 +26,9 @@
 #define	INT_8359A		0
 #define	INT_APIC		1
 
+#define	APIC_PHY_BASE		0xFEE00000
+#define	IO_APIC_PHY_BASE	0xFEC00000
+
 //Interrupt number
 #define	INT_DE			0x00
 #define	INT_DB			0x01
@@ -106,6 +109,9 @@ typedef	struct	_idt {
 
 #define		SET_NORMAL_IDT(base,num)	SET_IDT((base), num, int_##num, \
         SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1)
+
+extern	u32	apic_base_addr;
+extern	u32	io_apic_base_addr;
 
 void	int_dispatcher(u32 int_num, void* context,
                        u32 err_code);

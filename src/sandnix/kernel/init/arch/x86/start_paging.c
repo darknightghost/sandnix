@@ -39,7 +39,6 @@ void start_paging(u32 offset, u32 magic, void* p_boot_info)
 	ppde_t p_pde;
 	u32 pde_num;
 	u32 pte_num;
-	void* apic_phy_base;
 
 	get_needed_pages(offset, p_boot_info, &base,
 	                 &page_num);
@@ -66,12 +65,8 @@ void start_paging(u32 offset, u32 magic, void* p_boot_info)
 
 
 	if(is_apic_supported()) {
-		__asm__ __volatile__(
-		    "rdmsr\n"
-		    "btsl	$11,%%eax\n"
-		    "andl	$0xfffff000,%%eax\n"
-		    :"=a"(apic_phy_base)
-		    ::"dx");
+		i -= 2;
+		//APIC
 		p_pte->present = PG_P;
 		p_pte->read_write = PG_RW;
 		p_pte->user_supervisor = PG_SUPERVISOR;
@@ -82,9 +77,26 @@ void start_paging(u32 offset, u32 magic, void* p_boot_info)
 		p_pte->page_table_attr_index = 0;
 		p_pte->global_page = 1;
 		p_pte->avail = PG_NORMAL;
-		p_pte->page_base_addr = ((u32)apic_phy_base) >> 12;
+		p_pte->page_base_addr = ((u32)APIC_PHY_BASE) >> 12;
 
 		*(u32*)(((u32)&apic_base_addr) + offset) = i * 4096 + KERNEL_MEM_BASE;
+		i++;
+
+		//I/O APIC
+		p_pte->present = PG_P;
+		p_pte->read_write = PG_RW;
+		p_pte->user_supervisor = PG_SUPERVISOR;
+		p_pte->write_through = PG_WRITE_THROUGH;
+		p_pte->cache_disabled = 0;
+		p_pte->accessed = 0;
+		p_pte->dirty = 0;
+		p_pte->page_table_attr_index = 0;
+		p_pte->global_page = 1;
+		p_pte->avail = PG_NORMAL;
+		p_pte->page_base_addr = ((u32)IO_APIC_PHY_BASE) >> 12;
+
+		*(u32*)(((u32)&io_apic_base_addr) + offset) = i * 4096 + KERNEL_MEM_BASE;
+		i++;
 	}
 
 	for(i = 0, p_pte = (ppte_t)page_table_base;
@@ -255,9 +267,9 @@ void get_needed_pages(u32 offset, void* p_boot_info,
 	//Pages required for 0 - last_addr
 	page_num = last_addr / 4096;
 
-	//APIC
+	//APIC & I/O APIC
 	if(is_apic_supported()) {
-		page_num++;
+		page_num += 2;
 	}
 
 	//Pages required for itself
