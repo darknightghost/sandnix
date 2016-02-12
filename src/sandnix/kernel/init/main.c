@@ -17,12 +17,11 @@
 
 #include "../../../common/common.h"
 #include "../../boot/multiboot2.h"
-#include "init.h"
 #include "../io/io.h"
 #include "../debug/debug.h"
 #include "../exceptions/exceptions.h"
 #include "../rtl/rtl.h"
-
+#include "init.h"
 
 u8		init_stack[KERNEL_STACK_SIZE];
 
@@ -32,6 +31,7 @@ void kernel_main(u32 magic, pmultiboot_tag_t p_load_info)
 	dbg_kprint("%s loading...\n", VER_STR);
 
 	io_init();
+	//io_enable_interrupt();
 
 	while(1);
 

@@ -37,7 +37,8 @@ typedef	u8*				va_list;
 
 #include "list/list.h"
 #include "string/string.h"
-/*#include "math/math.h"
+#include "math/math.h"
+/*
 #include "queue/queue.h"
 #include "stack/stack.h"
 #include "array_list/array_list.h"

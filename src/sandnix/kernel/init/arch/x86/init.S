@@ -18,6 +18,24 @@
 #include "arch.h"
 #include "../../init.h"
 
+#define	PCI_CONFIG_ADDRESS	0xCF8
+#define	PCI_CONFIG_DATA		0xCFC
+#define	IOAPIC_INDEX_REG	0xFEC00000
+#define	IOAPIC_ID_INDEX		0x00
+#define	IOAPIC_DATA_REG		0xFEC00010
+
+.macro	MAKE_PCI_ADDRESS	bus,device,function,offset
+	movl	$(0x80000000 | (\bus << 16) | (\device << 11)|(\function << 8) | (\offset & 0xfc)),%eax
+.endm
+
+.macro	READ_PCI_DWORD		bus,device,function,offset
+	movw	$PCI_CONFIG_ADDRESS,%dx
+	MAKE_PCI_ADDRESS	\bus,\device,\function,\offset
+	outl	%eax,%dx
+	movw	$PCI_CONFIG_DATA,%dx
+	inl		%dx,%eax
+.endm
+
 .section	.text
 .global		_start
 .global		kernel_header
@@ -87,7 +105,18 @@ _addr2:
 	pushl	%eax			//*esp = offset
 
 	//Enable I/O APIC
-	movw	$0xCF8,%dx
+	READ_PCI_DWORD	0, 31, 0, 0xF0
+	andl	$0xFFFFC000,%eax
+	movl	%eax,%ebx
+	movl	%eax,0x31FE(%ebx)
+	bts		$8,%eax
+	andl	$0xFFFFFF00,%eax
+	movl	%eax,0x31FE(%ebx)
+
+	movl	$IOAPIC_ID_INDEX,(IOAPIC_INDEX_REG)
+	movl	$0xF000000,(IOAPIC_DATA_REG)
+	
+/*	movw	$0xCF8,%dx
 	movl	$(0x80000001 | (31 << 11) | (0x0F0 & 0xFC)),%eax
 	outl	%eax,%dx
 	movw	$0xCFC,%dx
@@ -96,8 +125,10 @@ _addr2:
 	addl	$0x31FE,%eax
 	movl	%eax,%ebx
 	xorl	%eax,%eax
-	btsl	$8,%eax
-	movl	%eax,(%ebx)
+	movw	(%ebx),%ax
+	btsw	$8,%ax
+	andw	$0xFF00,%ax
+	movw	%ax,(%ebx)*/
 
 	//Start paging
 	call	start_paging

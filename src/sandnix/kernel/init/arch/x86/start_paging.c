@@ -66,6 +66,7 @@ void start_paging(u32 offset, u32 magic, void* p_boot_info)
 
 	if(is_apic_supported()) {
 		i -= 2;
+		p_pte -= 2;
 		//APIC
 		p_pte->present = PG_P;
 		p_pte->read_write = PG_RW;
@@ -81,6 +82,7 @@ void start_paging(u32 offset, u32 magic, void* p_boot_info)
 
 		*(u32*)(((u32)&apic_base_addr) + offset) = i * 4096 + KERNEL_MEM_BASE;
 		i++;
+		p_pte++;
 
 		//I/O APIC
 		p_pte->present = PG_P;
@@ -97,26 +99,11 @@ void start_paging(u32 offset, u32 magic, void* p_boot_info)
 
 		*(u32*)(((u32)&io_apic_base_addr) + offset) = i * 4096 + KERNEL_MEM_BASE;
 		i++;
-	}
-
-	for(i = 0, p_pte = (ppte_t)page_table_base;
-	    i < page_num;
-	    i++, p_pte++) {
-		p_pte->present = PG_P;
-		p_pte->read_write = PG_RW;
-		p_pte->user_supervisor = PG_SUPERVISOR;
-		p_pte->write_through = PG_WRITE_THROUGH;
-		p_pte->cache_disabled = 0;
-		p_pte->accessed = 0;
-		p_pte->dirty = 0;
-		p_pte->page_table_attr_index = 0;
-		p_pte->global_page = 1;
-		p_pte->avail = PG_NORMAL;
-		p_pte->page_base_addr = (i * 4096) >> 12;
+		p_pte++;
 	}
 
 	if(i % 4096 > 0) {
-		pte_num = 4096 - i % 4096;
+		pte_num = page_num + (4096 - i % 4096);
 
 		for(; i < pte_num;
 		    i++, p_pte++) {

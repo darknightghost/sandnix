@@ -44,5 +44,11 @@
 #define IRQ22_INDEX		0x3C
 #define IRQ23_INDEX		0x3E
 
+extern	u32		apic_base_addr;
+extern	u32		io_apic_base_addr;
+extern	u32*	p_io_apic_index;
+extern	u32*	p_io_apic_data;
+extern	u32*	p_io_apic_eoi;
+
 void	apic_init();
 

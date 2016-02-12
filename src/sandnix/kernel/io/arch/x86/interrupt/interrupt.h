@@ -74,7 +74,7 @@
 #define	IRQ22			0x36
 #define	IRQ23			0x37
 
-#define	INT_CLOCK		IRQ2
+#define	INT_CLOCK		IRQ0
 
 #pragma	pack(push)
 #pragma	pack(1)
@@ -114,11 +114,8 @@ typedef	struct	_idt {
 		(base)[(num)].attr.p = s_p;\
 	}
 
-#define		SET_NORMAL_IDT(base,num)	SET_IDT((base), num, int_##num, \
-        SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1)
-
-extern	u32	apic_base_addr;
-extern	u32	io_apic_base_addr;
+#define		SET_NORMAL_IDT(base,num,address)	SET_IDT((base), (num), \
+        (address),SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1)
 
 void	int_dispatcher(u32 int_num, void* context,
                        u32 err_code);
