@@ -153,7 +153,8 @@ void clock_init()
 	dbg_kprint("%d clock cycles per tick.\n", init_count);
 
 	*p_divide_conf_reg |= 0x0000000B;
-	*p_timer_reg = INT_CLOCK | 0x20000;
+	//*p_timer_reg = INT_CLOCK | 0x20000;
+	UNREFERRED_PARAMETER(p_timer_reg);
 }
 
 u32 get_init_count()
@@ -176,6 +177,7 @@ u32 get_init_count()
 
 	tsc2 = READ_TSC();
 	dbg_kprint("%d\n", second2 - second1);
+	dbg_kprint("%lld\n", tsc2 - tsc1);
 
 	//Return value = number-of-clock-cycles-per-second / number-of-ticks-per-second
 	return (u32)rtl_div64(tsc2 - tsc1, (second2 - second1) * 1000 / SYS_TICK);
