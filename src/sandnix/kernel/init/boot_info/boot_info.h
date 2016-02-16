@@ -21,6 +21,12 @@
 #include "../../../boot/multiboot2.h"
 #include "../../rtl/rtl.h"
 
+#define BOOTINFO_MEMORY_AVAILABLE			1
+#define BOOTINFO_MEMORY_RESERVED			2
+#define BOOTINFO_MEMORY_ACPI_RECLAIMABLE	3
+#define BOOTINFO_MEMORY_NVS					4
+#define BOOTINFO_MEMORY_BADRAM				5
+
 typedef	struct	_boot_info {
 	void*	initrd_begin;
 	size_t	initrd_size;
@@ -34,7 +40,12 @@ typedef	struct	_kernel_param {
 } kernel_param_t, *pkernel_param_t;
 
 typedef	struct	_phy_mem_info {
-	void*	start_addr;
+	u64		start_addr;
 	size_t	size;
 	u32		type;
 } phy_mem_info_t, *pphy_mem_info_t;
+
+void		analyse_boot_info(u32 magic, void* p_load_info);
+void*		init_get_kernel_param(char* name);
+void*		init_get_phy_mem_info();
+void		init_get_initrd_info();

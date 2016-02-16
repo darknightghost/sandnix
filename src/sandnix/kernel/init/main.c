@@ -22,14 +22,16 @@
 #include "../exceptions/exceptions.h"
 #include "../rtl/rtl.h"
 #include "init.h"
+#include "boot_info/boot_info.h"
 
-u8		init_stack[KERNEL_STACK_SIZE];
+u8				init_stack[KERNEL_STACK_SIZE];
 
-void kernel_main(u32 magic, pmultiboot_tag_t p_load_info)
+void kernel_main(u32 magic, void* p_load_info)
 {
 	dbg_init();
 	dbg_kprint("%s loading...\n", VER_STR);
 
+	analyse_boot_info(magic, p_load_info);
 	io_init();
 
 	while(1);

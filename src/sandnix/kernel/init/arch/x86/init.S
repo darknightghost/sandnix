@@ -151,6 +151,9 @@ _kernel_mem_entry:
 
 	//Call kernel
 	addl	$4,%esp
+	movl	4(%esp),%eax
+	addl	$KERNEL_MEM_BASE,%eax
+	movl	%eax,4(%esp)
 	//*(esp)	: magic
 	//*(esp + 4): p_boot_info
 	call	kernel_main

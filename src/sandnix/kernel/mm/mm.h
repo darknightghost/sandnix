@@ -28,6 +28,9 @@
 	#include "arch/amd64/page_table.h"
 #endif
 
+void	mm_init();
+void	mm_excpt_hndlr_init();
+
 extern	void*	mm_mgr_page_addr;
 extern	void*	mm_init_pt_addr;
 extern	void*	kernel_address_offset;
