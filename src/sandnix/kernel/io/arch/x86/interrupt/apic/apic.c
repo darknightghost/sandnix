@@ -37,26 +37,29 @@
 		                      "xorl		%%eax,%%eax\n" \
 		                      "outb		%%al,$0x70\n" \
 		                      "inb		$0x71,%%al\n" \
-		                      "movb		%%al,%%dl\n" \
-		                      "shrb		$4,%%al\n" \
-		                      "andb		$0xF0,%%dl\n" \
-		                      "movb		$10,%%bl\n" \
-		                      "mulb		%%bl\n" \
-		                      "addb		%%dl,%%al\n" \
 		                      :"=a"(__tmp_sec) \
 		                      ::"bx","cx","dx"); \
-		__tmp_sec; \
+		(u8)((__tmp_sec & 0x0F) + (__tmp_sec >> 4) * 10); \
+	})
+
+#define	SEC_MINUS(a,b) \
+	({ \
+		u8 __tmp_ret; \
+		if((a) < (b)) { \
+			__tmp_ret = (a) + 60 - (b); \
+		} else { \
+			__tmp_ret = (a) - (b); \
+		} \
+		__tmp_ret; \
 	})
 
 #define	READ_TSC() \
 	({ \
-		u64	__tmp_time; \
+		u32	__tmp_time; \
 		__asm__ __volatile__(\
 		                     "rdtsc\n" \
-		                     "movl	%%eax,(%0)\n" \
-		                     "movl	%%edx,0x04(%0)\n" \
-		                     ::"b"(&__tmp_time) \
-		                     :"ax", "dx", "memory"); \
+		                     :"=a"(__tmp_time) \
+		                     ::"dx"); \
 		__tmp_time; \
 	})
 
@@ -108,7 +111,8 @@ void apic_init()
 	dbg_kprint("I/O APIC EOI register address : %p.\n", p_io_apic_eoi);
 
 	//IRQ0 is not enabled.System clock will use it
-	for(index = 1; index < 23; index++) {
+	//for(index = 1; index < 23; index++) {
+	for(index = 1; index < 17; index++) {
 		*p_io_apic_index = IRQ0_INDEX + index * 2;
 		io_delay();
 		__asm__ __volatile__("":::"memory");
@@ -147,6 +151,12 @@ void clock_init()
 	p_current_count_reg = (u32*)(apic_base_addr + TIMER_CURRENT_COUNT_REG);
 	p_divide_conf_reg = (u32*)(apic_base_addr + TIMER_DIVIDE_CONF_REG);
 
+	u32 i;
+
+	for(i = 0; i < 100; i++) {
+		dbg_kprint("%P\n", get_init_count());
+	}
+
 	init_count = get_init_count();
 	*p_init_count_reg = init_count;
 	*p_current_count_reg = init_count;
@@ -159,7 +169,7 @@ void clock_init()
 
 u32 get_init_count()
 {
-	u64 tsc1, tsc2;
+	u32 tsc1, tsc2;
 	u8 second1;
 	u8 second2;
 
@@ -171,14 +181,11 @@ u32 get_init_count()
 	tsc1 = READ_TSC();
 	second2 = GET_RTC_SEC();
 
-	while(second2 - second1 < 2) {
+	while(SEC_MINUS(second2, second1) < 1) {
 		second2 = GET_RTC_SEC();
+		tsc2 = READ_TSC();
 	}
 
-	tsc2 = READ_TSC();
-	dbg_kprint("%d\n", second2 - second1);
-	dbg_kprint("%lld\n", tsc2 - tsc1);
-
 	//Return value = number-of-clock-cycles-per-second / number-of-ticks-per-second
-	return (u32)rtl_div64(tsc2 - tsc1, (second2 - second1) * 1000 / SYS_TICK);
+	return (tsc2 - tsc1) / (SEC_MINUS(second2, second1) * 1000 / SYS_TICK);
 }

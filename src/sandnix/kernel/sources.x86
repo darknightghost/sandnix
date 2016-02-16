@@ -7,7 +7,8 @@ init/boot_info/arch/x86/boot_info.c
 io/arch/x86/ports.c
 io/arch/x86/interrupt/interrupt.c
 io/arch/x86/interrupt/int_entry.S
-io/arch/x86/interrupt/apic/apic.c
+#io/arch/x86/interrupt/apic/apic.c
+io/arch/x86/interrupt/8259a/8259a.c
 #debug
 debug/arch/x86/early_print.c
 

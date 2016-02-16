@@ -65,16 +65,11 @@
 #define	IRQ13			0x2D
 #define	IRQ14			0x2E
 #define	IRQ15			0x2F
-#define	IRQ16			0x30
-#define	IRQ17			0x31
-#define	IRQ18			0x32
-#define	IRQ19			0x33
-#define	IRQ20			0x34
-#define	IRQ21			0x35
-#define	IRQ22			0x36
-#define	IRQ23			0x37
 
 #define	INT_CLOCK		IRQ0
+#define	IRQ_MAX			IRQ15
+
+#define	IS_IRQ(n)		((n) >= IRQ0 && (n) <= IRQ_MAX)
 
 #pragma	pack(push)
 #pragma	pack(1)
@@ -116,6 +111,8 @@ typedef	struct	_idt {
 
 #define		SET_NORMAL_IDT(base,num,address)	SET_IDT((base), (num), \
         (address),SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1)
+
+extern	u64		tick_count;
 
 void	int_dispatcher(u32 int_num, void* context,
                        u32 err_code);

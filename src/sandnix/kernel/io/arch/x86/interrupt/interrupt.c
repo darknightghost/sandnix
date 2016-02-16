@@ -23,7 +23,10 @@
 #include "../../../../init/init.h"
 #include "../../../interrupt.h"
 #include "apic/apic.h"
+#include "8259a/8259a.h"
 #include "int_entry.h"
+
+u64		tick_count;
 
 static	bool	is_apic_supported();
 static	void	idt_init();
@@ -60,10 +63,11 @@ void interrupt_init()
 
 	if(is_apic_supported()) {
 		dbg_kprint("APIC supported...\n");
-		apic_init();
+		//apic_init();
 
 	} else {
-		excpt_panic(ENOCSI, "The hardware is too old.Sandnix requited APIC support.\n");
+		dbg_kprint("APIC unsupported...\n");
+		_8259a_init();
 	}
 
 	return;
@@ -87,7 +91,7 @@ void io_disable_interrupt()
 
 bool is_apic_supported()
 {
-	bool ret;
+	/*bool ret;
 
 	__asm__ __volatile__(
 	    "movl	$1,%%eax\n"
@@ -97,7 +101,8 @@ bool is_apic_supported()
 	    :"=a"(ret)
 	    ::"bx", "cx", "dx");
 
-	return ret;
+	return ret;*/
+	return false;
 }
 
 void idt_init()
@@ -112,6 +117,7 @@ void idt_init()
 		SET_NORMAL_IDT(idt_table, i, address);
 
 		switch(i) {
+			//These exceptions require error codes
 			case 0x08:
 			case 0x0B:
 			case 0x0C:
@@ -156,7 +162,11 @@ void int_dispatcher(u32 int_num, void* context,
 
 	} else {
 		dbg_kprint("Interrupt 0x%.2X.\n", int_num);
-		dbg_kprint("I/O APIC EOI register address : %p.\n", p_io_apic_eoi);
+
+		if(IS_IRQ(int_num)) {
+			io_send_eoi(int_num);
+		}
+
 		int_ret(context);
 	}
 }
@@ -168,4 +178,11 @@ void int_ret(void* context)
 	    "popal\n"
 	    "iret\n"
 	    ::"a"(context));
+}
+
+void io_send_eoi(u32 int_num)
+{
+	_8259a_send_eoi();
+	UNREFERRED_PARAMETER(int_num);
+	return;
 }

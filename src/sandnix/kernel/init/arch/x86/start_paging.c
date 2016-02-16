@@ -27,7 +27,7 @@ static	void	get_needed_pages(u32 offset, void* p_boot_info,
                                  void** p_base,
                                  u32* p_num);
 
-static	bool	is_apic_supported();
+//static	bool	is_apic_supported();
 
 void start_paging(u32 offset, u32 magic, void* p_boot_info)
 {
@@ -64,7 +64,7 @@ void start_paging(u32 offset, u32 magic, void* p_boot_info)
 	}
 
 
-	if(is_apic_supported()) {
+	/*if(is_apic_supported()) {
 		i -= 2;
 		p_pte -= 2;
 		//APIC
@@ -100,7 +100,7 @@ void start_paging(u32 offset, u32 magic, void* p_boot_info)
 		*(u32*)(((u32)&io_apic_base_addr) + offset) = i * 4096 + KERNEL_MEM_BASE;
 		i++;
 		p_pte++;
-	}
+	}*/
 
 	if(i % 4096 > 0) {
 		pte_num = page_num + (4096 - i % 4096);
@@ -254,10 +254,10 @@ void get_needed_pages(u32 offset, void* p_boot_info,
 	//Pages required for 0 - last_addr
 	page_num = last_addr / 4096;
 
-	//APIC & I/O APIC
-	if(is_apic_supported()) {
-		page_num += 2;
-	}
+	/*	//APIC & I/O APIC
+		if(is_apic_supported()) {
+			page_num += 2;
+		}*/
 
 	//Pages required for itself
 	//PDT
@@ -274,7 +274,7 @@ void get_needed_pages(u32 offset, void* p_boot_info,
 	return;
 }
 
-bool is_apic_supported()
+/*bool is_apic_supported()
 {
 	bool ret;
 
@@ -287,4 +287,4 @@ bool is_apic_supported()
 	    ::"bx", "cx", "dx");
 
 	return ret;
-}
+}*/

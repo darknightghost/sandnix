@@ -105,7 +105,7 @@ _addr2:
 	pushl	%eax			//*esp = offset
 
 	//Enable I/O APIC
-	READ_PCI_DWORD	0, 31, 0, 0xF0
+/*	READ_PCI_DWORD	0, 31, 0, 0xF0
 	andl	$0xFFFFC000,%eax
 	movl	%eax,%ebx
 	movl	%eax,0x31FE(%ebx)
@@ -114,22 +114,8 @@ _addr2:
 	movl	%eax,0x31FE(%ebx)
 
 	movl	$IOAPIC_ID_INDEX,(IOAPIC_INDEX_REG)
-	movl	$0xF000000,(IOAPIC_DATA_REG)
+	movl	$0xF000000,(IOAPIC_DATA_REG)*/
 	
-/*	movw	$0xCF8,%dx
-	movl	$(0x80000001 | (31 << 11) | (0x0F0 & 0xFC)),%eax
-	outl	%eax,%dx
-	movw	$0xCFC,%dx
-	inl		%dx,%eax
-	andl	$0xFFFFC000,%eax
-	addl	$0x31FE,%eax
-	movl	%eax,%ebx
-	xorl	%eax,%eax
-	movw	(%ebx),%ax
-	btsw	$8,%ax
-	andw	$0xFF00,%ax
-	movw	%ax,(%ebx)*/
-
 	//Start paging
 	call	start_paging
 	movl	%esp,%eax

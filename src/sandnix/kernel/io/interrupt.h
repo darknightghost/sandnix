@@ -61,6 +61,8 @@ u32			io_get_interrupt_priority(u32 int_num);
 
 
 u32			io_get_sys_ticks();
+
+void		io_send_eoi(u32 int_num);
 //If you use this function to deal interrupts,the context of function is unsure
 //and the io module will not deal with this interrupt.
 //The task-switching function use it to hook system clock.

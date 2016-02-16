@@ -15,26 +15,8 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../../../common/common.h"
-#include "../../boot/multiboot2.h"
-#include "../io/io.h"
-#include "../debug/debug.h"
-#include "../exceptions/exceptions.h"
-#include "../rtl/rtl.h"
-#include "init.h"
+#pragma once
 
-u8		init_stack[KERNEL_STACK_SIZE];
+void	_8259a_init();
+void	_8259a_send_eoi();
 
-void kernel_main(u32 magic, pmultiboot_tag_t p_load_info)
-{
-	dbg_init();
-	dbg_kprint("%s loading...\n", VER_STR);
-
-	io_init();
-
-	while(1);
-
-	UNREFERRED_PARAMETER(magic);
-	UNREFERRED_PARAMETER(p_load_info);
-	return;
-}
