@@ -20,12 +20,15 @@
 #include "../../../../debug/debug.h"
 #include "../../../../exceptions/exceptions.h"
 #include "../../../../rtl/rtl.h"
+#include "../../../../mm/mm.h"
 #include "../../../init.h"
 #include "../../boot_info.h"
 
 static	boot_info_t	boot_info;
 
 static	void	analyse_cmdline(char* p_cmdline);
+static	char*	jmp_space(char* p);
+static	char*	get_word(char* p_start, char* buf);
 static	void	analyse_mmap(pmultiboot_tag_mmap_t p_tag);
 
 void analyse_boot_info(u32 magic, void* p_load_info)
@@ -75,12 +78,12 @@ void analyse_boot_info(u32 magic, void* p_load_info)
 			//Kerne; command line
 			case MULTIBOOT_TAG_TYPE_CMDLINE:
 				p_cmdline_info = (pmultiboot_tag_string_t)p_tag;
-				analyse_cmdline(p_cmdline);
+				analyse_cmdline(p_cmdline_info->string);
 				dbg_kprint("Kernel command line : \"%s\".\n",
 				           p_cmdline_info->string);
 				break;
 
-			//physical memory info
+			//Physical memory info
 			case MULTIBOOT_TAG_TYPE_MMAP:
 				p_mmap_info = (pmultiboot_tag_mmap_t)p_tag;
 				analyse_mmap(p_mmap_info);
@@ -100,9 +103,113 @@ void analyse_boot_info(u32 magic, void* p_load_info)
 
 void analyse_cmdline(char* p_cmdline)
 {
+	char* p_key;
+	char* p_value;
+	char* p_start;
+	char* p_end;
+	char* buf;
+	size_t len;
+	pkernel_param_t p_param;
+
+	buf = mm_hp_alloc(rtl_strlen(p_cmdline) + 1, NULL);
+
+	for(p_start = jmp_space(p_cmdline);
+	    *p_start != '\0';
+	    p_start = jmp_space(p_end)) {
+		//Get key
+		p_end = get_word(p_start, buf);
+		len = rtl_strlen(buf) + 1;
+		p_key = mm_hp_alloc(len, NULL);
+		rtl_strncpy(p_key, len, buf);
+
+		p_end = jmp_space(p_end);
+
+		if(*p_end == '=') {
+			//Get value
+			p_start = p_end + 1;
+			p_end = get_word(p_start, buf);
+			len = rtl_strlen(buf) + 1;
+			p_value = mm_hp_alloc(len, NULL);
+			rtl_strncpy(p_value, len, buf);
+
+		} else {
+			p_value = "";
+		}
+
+		p_param = mm_hp_alloc(sizeof(kernel_param_t), NULL);
+		p_param->key = p_key;
+		p_param->value = p_value;
+
+		rtl_list_insert_after(&(boot_info.kernel_params), NULL, p_param, NULL);
+	}
+
+	mm_hp_free(buf, NULL);
+	return;
+}
+
+char* jmp_space(char* p)
+{
+	while(*p == ' ' || *p == '\t') {
+		p++;
+	}
+
+	return p;
+}
+
+char* get_word(char* p_start, char* buf)
+{
+	char* p_str;
+	char* p_buf;
+	bool quote_flag;
+	bool escap_flag;
+
+	p_str = jmp_space(p_start);
+	p_buf = buf;
+
+	quote_flag = false;
+	escap_flag = false;
+
+	while(1) {
+		if(*p_str == '\0') {
+			break;
+		}
+
+		if(escap_flag) {
+			*p_buf = *p_str;
+			escap_flag = false;
+			p_buf++;
+			p_str++;
+
+		} else {
+			if(*p_str == '\"') {
+				quote_flag = !quote_flag;
+				p_str++;
+
+			} else if(*p_str == '\\') {
+				escap_flag = true;
+				p_str++;
+
+			} else if(!quote_flag
+			          && (*p_str == ' ' || *p_str == '\t')) {
+				break;
+
+			} else if(*p_str == '=') {
+				break;
+
+			} else {
+				*p_buf = *p_str;
+				p_buf++;
+				p_str++;
+			}
+		}
+	}
+
+	*p_buf = '\0';
+	return p_str;
 }
 
 void analyse_mmap(pmultiboot_tag_mmap_t p_tag)
 {
 	UNREFERRED_PARAMETER(p_tag);
 }
+

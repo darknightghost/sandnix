@@ -35,7 +35,7 @@ typedef	struct	_boot_info {
 } boot_info_t, *pboot_info_t;
 
 typedef	struct	_kernel_param {
-	char*		name;
+	char*		key;
 	char*		value;
 } kernel_param_t, *pkernel_param_t;
 
