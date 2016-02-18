@@ -98,6 +98,49 @@ void analyse_boot_info(u32 magic, void* p_load_info)
 		}
 	}
 
+	if(boot_info.initrd_begin == NULL) {
+		excpt_panic(EKERNELARG, "Init ramdisk not found!\n");
+
+	} else if(boot_info.phy_mem_info == NULL) {
+		excpt_panic(EKERNELARG, "Memory map not found!\n");
+	}
+
+	return;
+}
+
+char* init_get_kernel_param(char* name)
+{
+	plist_node_t p_node;
+	pkernel_param_t p_param;
+
+	if(boot_info.kernel_params == NULL) {
+		//Look the param
+		p_param = NULL;
+		p_node = boot_info.kernel_params;
+
+		do {
+			p_param = (pkernel_param_t)(p_node->p_item);
+
+			if(rtl_strcmp(p_param->key, name) == 0) {
+				return p_param->value;
+			}
+
+			p_node = p_node->p_next;
+		} while(p_node != boot_info.kernel_params);
+	}
+
+	return NULL;
+}
+
+list_t init_get_phy_mem_info()
+{
+	return boot_info.phy_mem_info;
+}
+
+void init_get_initrd_info(void** p_position, size_t* p_size)
+{
+	*p_position = boot_info.initrd_begin;
+	*p_size = boot_info.initrd_size;
 	return;
 }
 
@@ -210,6 +253,79 @@ char* get_word(char* p_start, char* buf)
 
 void analyse_mmap(pmultiboot_tag_mmap_t p_tag)
 {
-	UNREFERRED_PARAMETER(p_tag);
+	pmultiboot_mmap_entry_t p_mmap_entry;
+	pphy_mem_info_t p_mem_info;
+
+	dbg_kprint("Translating BIOS Memory Map...\n");
+	dbg_kprint("BIOS memory map:\n");
+	dbg_kprint("%-12s%-12s%-12s%-12s\n", "Begin", "End", "Size", "Type");
+
+	for(p_mmap_entry = p_tag->entries;
+	    (u32)p_mmap_entry < (u32)p_tag + (u32)(p_tag->size);
+	    p_mmap_entry = (pmultiboot_mmap_entry_t)((u32)p_mmap_entry
+	                   + (u32)(p_tag->entry_size))) {
+
+		p_mem_info = mm_hp_alloc(sizeof(phy_mem_info_t), NULL);
+
+		p_mem_info->start_addr = (u64)(p_mmap_entry->addr);
+		p_mem_info->size = (size_t)(p_mmap_entry->len);
+
+		//Memory type
+		switch(p_mmap_entry->type) {
+			case MULTIBOOT_MEMORY_AVAILABLE:
+				p_mem_info->type = BOOTINFO_MEMORY_AVAILABLE;
+				break;
+
+			case MULTIBOOT_MEMORY_RESERVED:
+				p_mem_info->type = BOOTINFO_MEMORY_RESERVED;
+				break;
+
+			case MULTIBOOT_MEMORY_ACPI_RECLAIMABLE:
+				p_mem_info->type = BOOTINFO_MEMORY_RESERVED;
+				break;
+
+			case MULTIBOOT_MEMORY_NVS:
+				p_mem_info->type = BOOTINFO_MEMORY_RESERVED;
+				break;
+
+			case MULTIBOOT_MEMORY_BADRAM:
+				p_mem_info->type = BOOTINFO_MEMORY_BADRAM;
+				break;
+
+			default:
+				p_mem_info->type = BOOTINFO_MEMORY_RESERVED;
+		}
+
+		switch(p_mem_info->type) {
+			case BOOTINFO_MEMORY_AVAILABLE:
+				dbg_kprint("%-12P%-12P%-12P%-12s\n",
+				           (u32)(p_mem_info->start_addr),
+				           (u32)(p_mem_info->start_addr) + p_mem_info->size - 1,
+				           (u32)(p_mem_info->size),
+				           "Available");
+				break;
+
+			case BOOTINFO_MEMORY_RESERVED:
+				dbg_kprint("%-12P%-12P%-12P%-12s\n",
+				           (u32)(p_mem_info->start_addr),
+				           (u32)(p_mem_info->start_addr) + p_mem_info->size - 1,
+				           (u32)(p_mem_info->size),
+				           "Reserved");
+				break;
+
+			case BOOTINFO_MEMORY_BADRAM:
+				dbg_kprint("%-12P%-12P%-12P%-12s\n",
+				           (u32)(p_mem_info->start_addr),
+				           (u32)(p_mem_info->start_addr) + p_mem_info->size - 1,
+				           (u32)(p_mem_info->size),
+				           "Bad");
+				break;
+		}
+
+		rtl_list_insert_after(&(boot_info.phy_mem_info), NULL,
+		                      p_mem_info, NULL);
+	}
+
+	return;
 }
 

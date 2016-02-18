@@ -300,21 +300,24 @@ u32 rtl_vnprintf(char* buf, size_t buf_size, char* fmt, va_list args)
 
 						if(data_str_len < width) {
 							if(flag & FLAG_LEFT_ALIGN) {
-								write_buf(buf, data_str_len, &p_output, data_str);
+								write_buf(buf, buf_size, &p_output, data_str);
 
 								for(i = 0; i < width - data_str_len; i++) {
-									write_buf(buf, 1, &p_output, " ");
+									write_buf(buf, buf_size, &p_output, " ");
 								}
 
 							} else {
 								for(i = 0; i < width - data_str_len; i++) {
-									write_buf(buf, 1, &p_output, " ");
+									write_buf(buf, buf_size, &p_output, " ");
 								}
 
+								write_buf(buf, buf_size, &p_output, data_str);
 							}
+
+						} else {
+							write_buf(buf, buf_size, &p_output, data_str);
 						}
 
-						write_buf(buf, buf_size, &p_output, data_str);
 
 						break;
 

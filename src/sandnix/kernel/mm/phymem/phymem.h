@@ -17,6 +17,25 @@
 
 #pragma once
 
-#include "../../../../../../common/common.h"
+#include "../../../../common/common.h"
 
-void	phymem_init_x86();
+#ifdef	X86
+	#include "../arch/x86/phymem/phymem.h"
+#endif	//!	X86
+
+#define	PHY_MEM_ALLOCATABLE		0
+#define	PHY_MEM_ALLOCATED		1
+#define	PHY_MEM_RESERVED		2
+#define	PHY_MEM_SYSTEM			3
+#define	PHY_MEM_BAD				4
+
+typedef	struct	_phymem_tbl_entry {
+	void*	base;
+	void*	size;
+	u32		status;
+} phymem_tbl_entry_t, *pphymem_tbl_entry_t;
+
+extern	list_t		phymem_list;
+extern	list_t		phymem_allocatable_list;
+
+void	phymem_init();

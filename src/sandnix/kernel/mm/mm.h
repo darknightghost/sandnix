@@ -22,6 +22,7 @@
 
 #ifdef	X86
 	#include "arch/x86/page_table.h"
+	#include "arch/x86/phymem/phymem.h"
 #endif
 
 #ifdef	AMD64

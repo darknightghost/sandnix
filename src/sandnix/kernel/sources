@@ -4,6 +4,7 @@ init/main.c
 #mm
 mm/mm.c
 mm/heap/heap.c
+mm/phymem/phymem.c
 
 #debug
 debug/debug.c

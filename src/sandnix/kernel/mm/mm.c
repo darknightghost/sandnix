@@ -24,4 +24,6 @@ u32		init_page_num;
 
 void mm_init()
 {
+	dbg_kprint("\nInitializing mm...\n");
+	phymem_init();
 }

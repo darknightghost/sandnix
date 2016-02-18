@@ -15,8 +15,28 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "../../../../common/common.h"
+#include "../../rtl/rtl.h"
+#include "../../debug/debug.h"
+#include "phymem.h"
 
-#include "../../../../../../common/common.h"
+list_t		phymem_list;
+list_t		phymem_allocatable_list;
 
-void	phymem_init_x86();
+static	void	print_phymem();
+
+void phymem_init()
+{
+	dbg_kprint("Testing physical memory...\n");
+
+	#ifdef	X86
+	phymem_init_x86();
+	#endif	//!	X86
+
+	print_phymem();
+	return;
+}
+
+void print_phymem()
+{
+}
