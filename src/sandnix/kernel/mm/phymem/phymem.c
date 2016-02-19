@@ -20,8 +20,8 @@
 #include "../../debug/debug.h"
 #include "phymem.h"
 
-list_t		phymem_list;
-list_t		phymem_allocatable_list;
+list_t		phymem_list = NULL;
+list_t		phymem_allocatable_list = NULL;
 
 static	void	print_phymem();
 
@@ -39,4 +39,47 @@ void phymem_init()
 
 void print_phymem()
 {
+	plist_node_t p_node;
+	pphymem_tbl_entry_t p_entry;
+	char* type_str;
+
+	p_node = phymem_list;
+
+	dbg_kprint("Physical memory info:\n");
+	dbg_kprint("%-12s%-12s%-12s%-12s\n", "Begin", "End", "Size", "Type");
+
+	do {
+		p_entry = (pphymem_tbl_entry_t)(p_node->p_item);
+
+		switch(p_entry->status) {
+			case PHY_MEM_ALLOCATABLE:
+				type_str = "Available";
+				break;
+
+			case PHY_MEM_ALLOCATED:
+				type_str = "Allocated";
+				break;
+
+			case PHY_MEM_RESERVED:
+				type_str = "Reserved";
+				break;
+
+			case PHY_MEM_SYSTEM:
+				type_str = "System";
+				break;
+
+			case PHY_MEM_BAD:
+				type_str = "Bad";
+				break;
+		}
+
+		dbg_kprint("%-12P%-12P%-12P%-12s\n",
+		           p_entry->base,
+		           (u8*)p_entry->base + p_entry->size - 1,
+		           p_entry->size,
+		           type_str);
+		p_node = p_node->p_next;
+	} while(p_node != phymem_list);
+
+	return;
 }

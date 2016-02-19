@@ -18,6 +18,7 @@
 #pragma once
 
 #include "../../../../common/common.h"
+#include "../../rtl/rtl.h"
 
 #ifdef	X86
 	#include "../arch/x86/phymem/phymem.h"
@@ -31,7 +32,7 @@
 
 typedef	struct	_phymem_tbl_entry {
 	void*	base;
-	void*	size;
+	size_t	size;
 	u32		status;
 } phymem_tbl_entry_t, *pphymem_tbl_entry_t;
 

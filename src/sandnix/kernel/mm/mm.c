@@ -15,7 +15,9 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "../debug/debug.h"
 #include "mm.h"
+#include "phymem/phymem.h"
 
 void*	mm_mgr_page_addr;
 void*	mm_init_pt_addr;

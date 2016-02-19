@@ -21,6 +21,7 @@
 #include "../debug/debug.h"
 #include "../exceptions/exceptions.h"
 #include "../rtl/rtl.h"
+#include "../mm/mm.h"
 #include "init.h"
 #include "boot_info/boot_info.h"
 
@@ -33,6 +34,8 @@ void kernel_main(u32 magic, void* p_load_info)
 
 	analyse_boot_info(magic, p_load_info);
 	io_init();
+
+	mm_init();
 
 	while(1);
 
