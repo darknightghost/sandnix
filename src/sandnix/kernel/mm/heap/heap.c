@@ -58,6 +58,13 @@ void* mm_hp_create(size_t max_block_size, u32 attr)
 	return addr;
 }
 
+void* mm_hp_create_on_buf(void* buf, size_t buf_size, u32 attr)
+{
+	init_heap_head((pheap_head_t)buf, buf_size - buf_size % 4096,
+	               attr, NULL);
+	return buf;
+}
+
 void mm_hp_destroy(void* heap_addr)
 {
 	pheap_head_t p_head, p_next_head;

@@ -18,22 +18,38 @@
 #include "../../../../common/common.h"
 #include "../../rtl/rtl.h"
 #include "../../debug/debug.h"
+#include "../../pm/pm.h"
+#include "../heap/heap.h"
 #include "phymem.h"
 
 list_t		phymem_list = NULL;
-list_t		phymem_allocatable_list = NULL;
+list_t		phymem_bitmap_list = NULL;
+void*		phymem_heap;
+
+static	u8			phymem_heap_buf[PHYMEM_HEAP_SIZE];
+static	spinlock_t	alloc_lock;
+
+static	bitmap_t	init_bitmap[PHY_INIT_BITMAP_SIZE];
 
 static	void	print_phymem();
+static	void	create_init_bitmap();
 
 void phymem_init()
 {
 	dbg_kprint("Testing physical memory...\n");
+	phymem_heap = mm_hp_create_on_buf(phymem_heap_buf, PHYMEM_HEAP_SIZE,
+	                                  HEAP_EXTENDABLE | HEAP_MULTITHREAD);
 
 	#ifdef	X86
 	phymem_init_x86();
 	#endif	//!	X86
 
 	print_phymem();
+
+	pm_init_spn_lock(&alloc_lock);
+
+	//Create initialize bitmap
+	create_init_bitmap();
 	return;
 }
 
@@ -82,4 +98,9 @@ void print_phymem()
 	} while(p_node != phymem_list);
 
 	return;
+}
+
+void create_init_bitmap()
+{
+	rtl_memset(&init_bitmap, 0, sizeof(init_bitmap));
 }

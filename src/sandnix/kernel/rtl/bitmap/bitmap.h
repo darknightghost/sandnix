@@ -17,32 +17,9 @@
 
 #pragma once
 
-#include "../../../common/common.h"
+#include ".././../../../common/common.h"
 
-#ifdef	X86
+typedef	u8		bitmap_t, *pbitmap_t;
 
-//Variable Arguments
-typedef	u8*				va_list;
-
-#define	va_start(ap,v)	((ap) = (va_list)&(v) \
-                                + (sizeof(v) > 4 ? sizeof(v) : 4))
-
-#define	VA_SIZE(t)		(sizeof(t) > 4 ? sizeof(t) : 4)
-
-#define	va_arg(ap,t)	((ap) += VA_SIZE(t), \
-                         *(t*)((ap) - VA_SIZE(t)))
-
-#define	va_end(ap)		((ap) = (va_list)0)
-#endif	//!	X86
-
-#include "list/list.h"
-#include "string/string.h"
-#include "math/math.h"
-#include "bitmap/bitmap.h"
-/*
-#include "queue/queue.h"
-#include "stack/stack.h"
-#include "array_list/array_list.h"
-#include "hash_table/hash_table.h"
-#include "path/path.h"*/
-
+bool	rtl_bitmap_read(pbitmap_t p_bitmap, size_t bit);
+void	rtl_bitmap_write(pbitmap_t p_bitmap, size_t bit, bool value);

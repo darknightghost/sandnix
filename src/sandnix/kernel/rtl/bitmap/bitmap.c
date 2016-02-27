@@ -15,34 +15,34 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "bitmap.h"
 
-#include "../../../common/common.h"
+bool rtl_bitmap_read(pbitmap_t p_bitmap, size_t bit)
+{
+	u8* p_bit;
 
-#ifdef	X86
+	p_bit = p_bitmap + bit / 8;
 
-//Variable Arguments
-typedef	u8*				va_list;
+	if((*p_bit) & (1 << (bit % 8))) {
+		return true;
 
-#define	va_start(ap,v)	((ap) = (va_list)&(v) \
-                                + (sizeof(v) > 4 ? sizeof(v) : 4))
+	} else {
+		return false;
+	}
+}
 
-#define	VA_SIZE(t)		(sizeof(t) > 4 ? sizeof(t) : 4)
+void rtl_bitmap_write(pbitmap_t p_bitmap, size_t bit, bool value)
+{
+	u8* p_bit;
 
-#define	va_arg(ap,t)	((ap) += VA_SIZE(t), \
-                         *(t*)((ap) - VA_SIZE(t)))
+	p_bit = p_bitmap + bit / 8;
 
-#define	va_end(ap)		((ap) = (va_list)0)
-#endif	//!	X86
+	if(value) {
+		*p_bit = (*p_bit) | (1 << (bit % 8));
 
-#include "list/list.h"
-#include "string/string.h"
-#include "math/math.h"
-#include "bitmap/bitmap.h"
-/*
-#include "queue/queue.h"
-#include "stack/stack.h"
-#include "array_list/array_list.h"
-#include "hash_table/hash_table.h"
-#include "path/path.h"*/
+	} else {
+		*p_bit = (*p_bit) & (~(1 << (bit % 8)));
+	}
 
+	return;
+}

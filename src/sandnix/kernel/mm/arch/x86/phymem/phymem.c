@@ -41,7 +41,7 @@ void phymem_init_x86()
 
 	do {
 		p_info = (pphy_mem_info_t)(p_node->p_item);
-		p_entry = mm_hp_alloc(sizeof(phymem_tbl_entry_t), NULL);
+		p_entry = mm_hp_alloc(sizeof(phymem_tbl_entry_t), phymem_heap);
 
 		//Get memory type
 		switch(p_info->type) {
@@ -100,17 +100,17 @@ void phymem_init_x86()
 				break;
 		}
 
-		rtl_list_insert_after(&phymem_list, NULL, p_entry, NULL);
+		rtl_list_insert_after(&phymem_list, NULL, p_entry, phymem_heap);
 
 		p_node = p_node->p_next;
 	} while(p_node != memmap_list);
 
 	//The memory kernel used
-	p_entry = mm_hp_alloc(sizeof(phymem_tbl_entry_t), NULL);
+	p_entry = mm_hp_alloc(sizeof(phymem_tbl_entry_t), phymem_heap);
 	p_entry->base = (void*)(1024 * 1024);
 	p_entry->size = init_page_num * 4096;
 	p_entry->status = PHY_MEM_SYSTEM;
-	rtl_list_insert_after(&phymem_list, NULL, p_entry, NULL);
+	rtl_list_insert_after(&phymem_list, NULL, p_entry, phymem_heap);
 
 	//Sort the table
 	sort_flag = true;
@@ -176,7 +176,7 @@ plist_node_t merge_memory(plist_node_t p_node1, plist_node_t p_node2)
 		if((u32)(p_entry1->base) + p_entry1->size
 		   > (u32)p_entry2->base + p_entry2->size) {
 			//Entry1 contains entry2
-			p_new_entry = mm_hp_alloc(sizeof(phymem_tbl_entry_t), NULL);
+			p_new_entry = mm_hp_alloc(sizeof(phymem_tbl_entry_t), phymem_heap);
 			p_new_entry->base = (void*)((u32)(p_entry2->base) + p_entry2->size);
 			p_new_entry->size = ((u32)(p_entry1->base) + p_entry1->size)
 			                    - ((u32)p_entry2->base + p_entry2->size);
@@ -184,19 +184,19 @@ plist_node_t merge_memory(plist_node_t p_node1, plist_node_t p_node2)
 			p_entry1->size = (u32)(p_entry2->base) - (u32)(p_entry1->base);
 
 			if(p_entry1->size == 0) {
-				rtl_list_remove(&phymem_list, p_node1, NULL);
-				mm_hp_free(p_entry1, NULL);
+				rtl_list_remove(&phymem_list, p_node1, phymem_heap);
+				mm_hp_free(p_entry1, phymem_heap);
 			}
 
 			return rtl_list_insert_after(&phymem_list, p_node2,
-			                             p_new_entry, NULL);
+			                             p_new_entry, phymem_heap);
 
 		} else {
 			p_entry1->size = (u32)(p_entry2->base) - (u32)(p_entry1->base);
 
 			if(p_entry1->size == 0) {
-				rtl_list_remove(&phymem_list, p_node1, NULL);
-				mm_hp_free(p_entry1, NULL);
+				rtl_list_remove(&phymem_list, p_node1, phymem_heap);
+				mm_hp_free(p_entry1, phymem_heap);
 			}
 
 			return p_node2;
@@ -208,8 +208,8 @@ plist_node_t merge_memory(plist_node_t p_node1, plist_node_t p_node2)
 		p_entry2->size = (u32)(p_entry2->base) + p_entry2->size
 		                 - (u32)(p_entry1->base);
 		p_entry2->base = p_entry1->base;
-		rtl_list_remove(&phymem_list, p_node1, NULL);
-		mm_hp_free(p_entry1, NULL);
+		rtl_list_remove(&phymem_list, p_node1, phymem_heap);
+		mm_hp_free(p_entry1, phymem_heap);
 		return p_node2;
 
 	} else {
@@ -217,8 +217,8 @@ plist_node_t merge_memory(plist_node_t p_node1, plist_node_t p_node2)
 		if((u32)(p_entry1->base) + p_entry1->size
 		   > (u32)p_entry2->base + p_entry2->size) {
 			//Entry1 contains entry2
-			rtl_list_remove(&phymem_list, p_node2, NULL);
-			mm_hp_free(p_entry2, NULL);
+			rtl_list_remove(&phymem_list, p_node2, phymem_heap);
+			mm_hp_free(p_entry2, phymem_heap);
 			return p_node1->p_next;
 
 		} else {
@@ -226,8 +226,8 @@ plist_node_t merge_memory(plist_node_t p_node1, plist_node_t p_node2)
 			                 - ((u32)(p_entry1->base) + p_entry1->size);
 
 			if(p_entry2->size == 0) {
-				rtl_list_remove(&phymem_list, p_node2, NULL);
-				mm_hp_free(p_entry2, NULL);
+				rtl_list_remove(&phymem_list, p_node2, phymem_heap);
+				mm_hp_free(p_entry2, phymem_heap);
 				return p_node1->p_next;
 			}
 

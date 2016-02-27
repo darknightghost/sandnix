@@ -51,6 +51,7 @@ typedef	struct _heap_head {
 } heap_head_t, *pheap_head_t;
 
 void*				mm_hp_create(size_t max_block_size, u32 attr);
+void*				mm_hp_create_on_buf(void* buf, size_t buf_size, u32 attr);
 void				mm_hp_destroy(void* heap_addr);
 void*				mm_hp_alloc(size_t size, void* heap_addr);
 void				mm_hp_chk(void* heap_addr);

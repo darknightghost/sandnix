@@ -30,13 +30,24 @@
 #define	PHY_MEM_SYSTEM			3
 #define	PHY_MEM_BAD				4
 
+#define	PHYMEM_HEAP_SIZE		4096
+#define	PHY_INIT_BITMAP_SIZE		4096
+
 typedef	struct	_phymem_tbl_entry {
 	void*	base;
 	size_t	size;
 	u32		status;
 } phymem_tbl_entry_t, *pphymem_tbl_entry_t;
 
+typedef	struct	_phymem_bitmap {
+	void*		base;
+	size_t		size;
+	pbitmap_t	p_bitmap;
+} phymem_bitmap_t, pphymem_bitmap_t;
+
 extern	list_t		phymem_list;
 extern	list_t		phymem_allocatable_list;
+extern	void*		phymem_heap;
 
 void	phymem_init();
+void	Phymem_manage_all();

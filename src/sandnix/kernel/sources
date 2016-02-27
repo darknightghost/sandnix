@@ -14,9 +14,13 @@ debug/kconsole.c
 rtl/string/string.c
 rtl/string/sprintf.c
 rtl/list/list.c
+rtl/bitmap/bitmap.c
 
 #exceptions
 exceptions/exceptions.c
 
 #io
 io/io.c
+
+#om
+om/om.c
