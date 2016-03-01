@@ -33,5 +33,6 @@ pkstring_t	rtl_kstring(char* string, void* heap);
 pkstring_t	rtl_kstrcat(pkstring_t str1, pkstring_t str2, void* heap);
 size_t		rtl_kstrlen(pkstring_t str);
 ssize_t		rtl_find_sub_kstr(pkstring_t str, pkstring_t substr);
-pkstring_t	rtl_is_sub_kstr(pkstring_t str, pkstring_t substr);
 
+pkstring_t	rtl_ksprintf(void* heap, char* fmt, ...);
+pkstring_t	rtl_kvprintf(void* heap, char* fmt, va_list args);

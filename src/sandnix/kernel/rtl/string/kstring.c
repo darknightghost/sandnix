@@ -117,6 +117,32 @@ ssize_t rtl_find_sub_kstr(pkstring_t str, pkstring_t substr)
 	return -1;
 }
 
+pkstring_t rtl_ksprintf(void* heap, char* fmt, ...)
+{
+	va_list args;
+	pkstring_t p_ret;
+
+	va_start(args, fmt);
+	p_ret = rtl_kvprintf(heap, fmt, args);
+	va_end(args);
+
+	return p_ret;
+}
+
+pkstring_t rtl_kvprintf(void* heap, char* fmt, va_list args)
+{
+	pkstring_t p_ret;
+	char* buf;
+
+	buf = mm_hp_alloc(2048, heap);
+	rtl_vnprintf(buf, 2048, fmt, args);
+	p_ret = rtl_kstring(buf, heap);
+
+	mm_hp_free(buf, heap);
+
+	return p_ret;
+}
+
 pkstring_t to_string(pkstring_t p_self)
 {
 	om_inc_kobject_ref((pkobject_t)p_self);
