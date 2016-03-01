@@ -26,9 +26,7 @@
 		                (kobj_to_str)(to_string)); \
 	}
 
-#define TO_STRING(p_obj) ((kstring_t)(((pkobject_t)(p_obj))->to_string == NULL \
-                                      ?(kstring_t)NULL \
-                                      :(kstring_t)(((pkobject_t)(p_obj))->to_string(p_pbj))))
+#define TO_STRING(p_obj) ((pkstring_t)(((pkobject_t)(p_obj))->to_string(p_obj)))
 
 struct	_kobject;
 typedef	void	(*kobj_destructor_t)(struct _kobject*);

@@ -16,6 +16,7 @@
 */
 
 #include "string.h"
+#include "../../om/om.h"
 
 #define	TYPE_MASK				0xF0
 
@@ -56,6 +57,8 @@
 #define	TYPE_POINTER_L			0x60
 #define	TYPE_POINTER_C			0x61
 
+#define	TYPE_KOBJECT			0x70
+
 //Not realized.
 #define	TYPE_UNKNOW				0xFF
 
@@ -91,6 +94,8 @@ u32 rtl_vnprintf(char* buf, size_t buf_size, char* fmt, va_list args)
 	size_t data_str_len;
 	s64 data_signed;
 	u64 data_unsigned;
+	pkobject_t p_data_obj;
+	pkstring_t p_kstr;
 	bool capital;
 
 	p_fmt = fmt;
@@ -352,6 +357,47 @@ u32 rtl_vnprintf(char* buf, size_t buf_size, char* fmt, va_list args)
 						}
 
 						break;
+
+					case TYPE_KOBJECT:
+						//Width
+						p_data_obj = va_arg(args, pkobject_t);
+
+						if(p_data_obj == NULL) {
+							data_str = "<NULL>";
+							data_str_len = rtl_strlen(data_str);
+
+						} else {
+							p_kstr = TO_STRING(p_data_obj);
+
+							data_str = p_kstr->buf;
+							data_str_len = p_kstr->len;
+						}
+
+						if(data_str_len < width) {
+							if(flag & FLAG_LEFT_ALIGN) {
+								write_buf(buf, buf_size, &p_output, data_str);
+
+								for(i = 0; i < width - data_str_len; i++) {
+									write_buf(buf, buf_size, &p_output, " ");
+								}
+
+							} else {
+								for(i = 0; i < width - data_str_len; i++) {
+									write_buf(buf, buf_size, &p_output, " ");
+								}
+
+								write_buf(buf, buf_size, &p_output, data_str);
+							}
+
+						} else {
+							write_buf(buf, buf_size, &p_output, data_str);
+						}
+
+						if(p_kstr != NULL) {
+							om_dec_kobject_ref((pkobject_t)p_kstr);
+						}
+
+						break;
 				}
 			}
 
@@ -541,6 +587,10 @@ u32 get_type(char** p_p_fmt)
 
 		case 'P':
 			ret = TYPE_POINTER_C;
+			break;
+
+		case 'K':
+			ret = TYPE_KOBJECT;
 			break;
 
 		default:
