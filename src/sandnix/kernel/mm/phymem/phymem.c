@@ -53,6 +53,10 @@ void phymem_init()
 	return;
 }
 
+void phymem_manage_all()
+{
+}
+
 void print_phymem()
 {
 	plist_node_t p_node;

@@ -20,23 +20,28 @@
 #include "../../../common/common.h"
 #include "../mm/mm.h"
 
-#define	INIT_KOBJECT(p_obj,class_id,destructor){ \
+#define	INIT_KOBJECT(p_obj,destructor,to_string){ \
 		om_init_kobject((pkobject_t)(p_obj), \
-		                (class_id), \
-		                (kobj_destructor_t)(destructor)); \
+		                (kobj_destructor_t)(destructor), \
+		                (kobj_to_str)(to_string)); \
 	}
+
+#define TO_STRING(p_obj) ((kstring_t)(((pkobject_t)(p_obj))->to_string == NULL \
+                                      ?(kstring_t)NULL \
+                                      :(kstring_t)(((pkobject_t)(p_obj))->to_string(p_pbj))))
 
 struct	_kobject;
 typedef	void	(*kobj_destructor_t)(struct _kobject*);
+typedef	void*	(*kobj_to_str)(struct _kobject*);
 
 typedef	struct _kobject {
-	u32					class_id;
 	u32					ref_count;
 	kobj_destructor_t	destructor;
+	kobj_to_str			to_string;
 } kobject_t, *pkobject_t;
 
-
-void	om_init_kobject(pkobject_t p_obj, u32 class_id,
-                        kobj_destructor_t destructor);
+void	om_init_kobject(pkobject_t p_obj,
+                        kobj_destructor_t destructor,
+                        kobj_to_str to_string);
 void	om_inc_kobject_ref(pkobject_t p_obj);
 void	om_dec_kobject_ref(pkobject_t p_obj);

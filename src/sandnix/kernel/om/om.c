@@ -16,13 +16,14 @@
 */
 
 #include "om.h"
+#include "../rtl/rtl.h"
 
-void om_init_kobject(pkobject_t p_obj, u32 class_id,
-                     kobj_destructor_t destructor)
+void om_init_kobject(pkobject_t p_obj, kobj_destructor_t destructor
+                     , kobj_to_str to_string)
 {
-	p_obj->class_id = class_id;
 	p_obj->ref_count = 1;
 	p_obj->destructor = destructor;
+	p_obj->to_string = to_string;
 	return;
 }
 

@@ -50,4 +50,4 @@ extern	list_t		phymem_allocatable_list;
 extern	void*		phymem_heap;
 
 void	phymem_init();
-void	Phymem_manage_all();
+void	phymem_manage_all();

@@ -17,33 +17,21 @@
 
 #pragma once
 
-#include "../../../common/common.h"
+#include "../../../../common/common.h"
+#include "../../om/om.h"
+#include "string.h"
+#include "../rtl.h"
 
-#ifdef	X86
+typedef struct _kstring {
+	kobject_t	obj;
+	char*		buf;
+	void*		heap;
+	size_t		len;
+} kstring_t, *pkstring_t;
 
-//Variable Arguments
-typedef	u8*				va_list;
-
-#define	va_start(ap,v)	((ap) = (va_list)&(v) \
-                                + (sizeof(v) > 4 ? sizeof(v) : 4))
-
-#define	VA_SIZE(t)		(sizeof(t) > 4 ? sizeof(t) : 4)
-
-#define	va_arg(ap,t)	((ap) += VA_SIZE(t), \
-                         *(t*)((ap) - VA_SIZE(t)))
-
-#define	va_end(ap)		((ap) = (va_list)0)
-#endif	//!	X86
-
-#include "list/list.h"
-#include "string/string.h"
-#include "string/kstring.h"
-#include "math/math.h"
-#include "bitmap/bitmap.h"
-/*
-#include "queue/queue.h"
-#include "stack/stack.h"
-#include "array_list/array_list.h"
-#include "hash_table/hash_table.h"
-#include "path/path.h"*/
+pkstring_t	rtl_kstring(char* string, void* heap);
+pkstring_t	rtl_kstrcat(pkstring_t str1, pkstring_t str2, void* heap);
+size_t		rtl_kstrlen(pkstring_t str);
+ssize_t		rtl_find_sub_kstr(pkstring_t str, pkstring_t substr);
+pkstring_t	rtl_is_sub_kstr(pkstring_t str, pkstring_t substr);
 

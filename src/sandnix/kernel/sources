@@ -12,6 +12,7 @@ debug/kconsole.c
 
 #rtl
 rtl/string/string.c
+rtl/string/kstring.c
 rtl/string/sprintf.c
 rtl/list/list.c
 rtl/bitmap/bitmap.c

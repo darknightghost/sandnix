@@ -36,5 +36,6 @@ typedef	u8					bool;
 #define	false	0
 
 typedef u64					size_t;
+typedef s64					ssize_t;
 
 #define	NULL	((void*)0)
