@@ -25,7 +25,7 @@ static	bool			should_merge(pphymem_tbl_entry_t p1,
 static	plist_node_t	merge_memory(plist_node_t p_node1,
                                      plist_node_t p_node2);
 
-void phymem_init_x86()
+void phymem_init_arch()
 {
 	pphy_mem_info_t p_info;
 	list_t memmap_list;

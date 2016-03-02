@@ -19,4 +19,4 @@
 
 #include "../../../../../../common/common.h"
 
-void	phymem_init_x86();
+void	phymem_init_arch();

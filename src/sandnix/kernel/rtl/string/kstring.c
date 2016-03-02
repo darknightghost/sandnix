@@ -28,6 +28,7 @@ pkstring_t rtl_kstring(char* string, void* heap)
 {
 	pkstring_t p_ret;
 
+	//Create object
 	p_ret = mm_hp_alloc(sizeof(kstring_t), heap);
 	INIT_KOBJECT(p_ret, destructor, to_string);
 
@@ -35,6 +36,7 @@ pkstring_t rtl_kstring(char* string, void* heap)
 	p_ret->buf = mm_hp_alloc(p_ret->len + 1, heap);
 	p_ret->heap = heap;
 
+	//Copy string
 	rtl_strncpy(p_ret->buf, p_ret->len + 1, string);
 
 	return p_ret;
@@ -44,6 +46,7 @@ pkstring_t rtl_kstrcat(pkstring_t str1, pkstring_t str2, void* heap)
 {
 	pkstring_t p_ret;
 
+	//Create object
 	p_ret = mm_hp_alloc(sizeof(kstring_t), heap);
 	INIT_KOBJECT(p_ret, destructor, to_string);
 
@@ -51,6 +54,7 @@ pkstring_t rtl_kstrcat(pkstring_t str1, pkstring_t str2, void* heap)
 	p_ret->buf = mm_hp_alloc(p_ret->len + 1, heap);
 	p_ret->heap = heap;
 
+	//Copy string
 	rtl_strncpy(p_ret->buf, p_ret->len + 1, str1->buf);
 	rtl_strncat(p_ret->buf, p_ret->len + 1, str2->buf);
 
@@ -74,6 +78,7 @@ pkstring_t rtl_substr(ssize_t begin, ssize_t end, pkstring_t str, void* heap)
 		end = str->len - 1;
 	}
 
+	//Create object
 	p_ret = mm_hp_alloc(sizeof(kstring_t), heap);
 	INIT_KOBJECT(p_ret, destructor, to_string);
 
@@ -81,6 +86,7 @@ pkstring_t rtl_substr(ssize_t begin, ssize_t end, pkstring_t str, void* heap)
 	p_ret->buf = mm_hp_alloc(p_ret->len + 1, heap);
 	p_ret->heap = heap;
 
+	//Copy string
 	rtl_memcpy(p_ret->buf, str->buf + begin, p_ret->len);
 
 	*(str->buf + end + 1) = '\0';
@@ -100,6 +106,7 @@ ssize_t rtl_find_sub_kstr(pkstring_t str, pkstring_t substr)
 		p_substr = substr->buf;
 		p_cmp = p_str;
 
+		//Compare string
 		while(*p_substr == *p_cmp) {
 			if(p_substr - substr->buf >= substr->len) {
 				return p_str - str->buf;

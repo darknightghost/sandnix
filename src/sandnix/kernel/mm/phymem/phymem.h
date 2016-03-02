@@ -43,7 +43,7 @@ typedef	struct	_phymem_bitmap {
 	void*		base;
 	size_t		size;
 	pbitmap_t	p_bitmap;
-} phymem_bitmap_t, pphymem_bitmap_t;
+} phymem_bitmap_t, *pphymem_bitmap_t;
 
 extern	list_t		phymem_list;
 extern	list_t		phymem_allocatable_list;
