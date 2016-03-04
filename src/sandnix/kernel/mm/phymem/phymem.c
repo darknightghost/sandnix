@@ -36,6 +36,11 @@ static	bitmap_t	init_bitmap[PHY_INIT_BITMAP_SIZE];
 static	void	print_phymem();
 static	void	create_init_bitmap();
 
+static	bool		alloc_phypages(u32 num);
+
+static	void		destructor(pphymem_obj_t p_this);
+static	pkstring_t	to_string(pphymem_obj_t p_this);
+
 void phymem_init()
 {
 	dbg_kprint("Testing physical memory...\n");
@@ -121,6 +126,16 @@ void phymem_manage_all()
 
 		p_mmap_node = p_mmap_node->p_next;
 	} while(p_mmap_node != phymem_list);
+
+	return;
+}
+
+pphymem_obj_t mm_phymem_alloc(size_t size)
+{
+}
+
+pphymem_obj_t mm_phymem_get_reserved(void* base, size_t size)
+{
 }
 
 void print_phymem()
@@ -168,6 +183,10 @@ void print_phymem()
 	} while(p_node != phymem_list);
 
 	return;
+}
+
+bool alloc_phypages(u32 num)
+{
 }
 
 void create_init_bitmap()
@@ -219,4 +238,37 @@ void create_init_bitmap()
 	} while(p_mmap_node != phymem_list);
 
 	return;
+}
+
+void destructor(pphymem_obj_t p_this)
+{
+	//TODO:Free pages
+
+	//Free memory
+	mm_hp_free(p_this, phymem_heap);
+	return;
+}
+
+pkstring_t to_string(pphymem_obj_t p_this)
+{
+	pkstring_t p_ret;
+	pkstring_t p_memstr;
+	pphymem_block_t p_block;
+	int i;
+
+	p_ret = rtl_ksprintf(NULL, "Physical memory object %P:\n%-10s%-10s\n",
+	                     p_this,
+	                     "Base",
+	                     "Size");
+
+	for(i = 0, p_block = p_this->blocks;
+	    i < p_this->block_num;
+	    i++, p_block++) {
+		p_memstr = rtl_ksprintf(NULL, "%-10P%-10P\n",
+		                        p_block->base, p_block->num);
+		p_ret = rtl_kstrcat(p_ret, p_memstr);
+		om_dec_kobject_ref(p_memstr);
+	}
+
+	return p_ret;
 }

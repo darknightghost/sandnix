@@ -18,6 +18,7 @@
 #pragma once
 
 #include "../../../../common/common.h"
+#include "../../om/om.h"
 #include "../../rtl/rtl.h"
 
 #ifdef	X86
@@ -30,7 +31,7 @@
 #define	PHY_MEM_SYSTEM			3
 #define	PHY_MEM_BAD				4
 
-#define	PHYMEM_HEAP_SIZE		4096
+#define	PHYMEM_HEAP_SIZE			4096
 #define	PHY_INIT_BITMAP_SIZE		4096
 
 typedef	struct	_phymem_tbl_entry {
@@ -41,9 +42,21 @@ typedef	struct	_phymem_tbl_entry {
 
 typedef	struct	_phymem_bitmap {
 	void*		base;
-	size_t		size;
+	size_t		num;
+	size_t		avail;
 	pbitmap_t	p_bitmap;
 } phymem_bitmap_t, *pphymem_bitmap_t;
+
+typedef	struct	_phymem_block {
+	void*		base;
+	size_t		num;
+} phymem_block_t, *pphymem_block_t;
+
+typedef	struct	_phymem_obj {
+	kobject_t		obj;
+	size_t			block_num;
+	phymem_block_t	blocks[0];
+} phymem_obj_t, *pphymem_obj_t;
 
 extern	list_t		phymem_list;
 extern	list_t		phymem_allocatable_list;
@@ -51,3 +64,6 @@ extern	void*		phymem_heap;
 
 void	phymem_init();
 void	phymem_manage_all();
+
+pphymem_obj_t	mm_phymem_alloc(size_t size);
+pphymem_obj_t	mm_phymem_get_reserved(void* base, size_t size);

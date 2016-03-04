@@ -19,7 +19,7 @@
 
 #include ".././../../../common/common.h"
 
-typedef	u8		bitmap_t, *pbitmap_t;
+typedef u8	 bitmap_t, *pbitmap_t;
 
 bool	rtl_bitmap_read(pbitmap_t p_bitmap, size_t bit);
 void	rtl_bitmap_write(pbitmap_t p_bitmap, size_t bit, bool value);

@@ -21,8 +21,8 @@
 #include "../../mm/mm.h"
 #include "../../om/om.h"
 
-static pkstring_t	to_string(pkstring_t p_self);
-static void			destructor(pkstring_t p_self);
+static pkstring_t	to_string(pkstring_t p_this);
+static void			destructor(pkstring_t p_this);
 
 pkstring_t rtl_kstring(char* string, void* heap)
 {
@@ -42,7 +42,7 @@ pkstring_t rtl_kstring(char* string, void* heap)
 	return p_ret;
 }
 
-pkstring_t rtl_kstrcat(pkstring_t str1, pkstring_t str2, void* heap)
+pkstring_t rtl_kstrcat(pkstring_t str1, pkstring_t str2)
 {
 	pkstring_t p_ret;
 
@@ -51,12 +51,14 @@ pkstring_t rtl_kstrcat(pkstring_t str1, pkstring_t str2, void* heap)
 	INIT_KOBJECT(p_ret, destructor, to_string);
 
 	p_ret->len = str1->len + str2->len;
-	p_ret->buf = mm_hp_alloc(p_ret->len + 1, heap);
-	p_ret->heap = heap;
+	p_ret->buf = mm_hp_alloc(p_ret->len + 1, str1->heap);
+	p_ret->heap = str1->heap;
 
 	//Copy string
 	rtl_strncpy(p_ret->buf, p_ret->len + 1, str1->buf);
 	rtl_strncat(p_ret->buf, p_ret->len + 1, str2->buf);
+
+	om_dec_kobject_ref((pkobject_t)str1);
 
 	return p_ret;
 }
@@ -150,16 +152,16 @@ pkstring_t rtl_kvprintf(void* heap, char* fmt, va_list args)
 	return p_ret;
 }
 
-pkstring_t to_string(pkstring_t p_self)
+pkstring_t to_string(pkstring_t p_this)
 {
-	om_inc_kobject_ref((pkobject_t)p_self);
-	return p_self;
+	om_inc_kobject_ref((pkobject_t)p_this);
+	return p_this;
 }
 
-void destructor(pkstring_t p_self)
+void destructor(pkstring_t p_this)
 {
-	mm_hp_free(p_self->buf, p_self->heap);
-	mm_hp_free(p_self, p_self->heap);
+	mm_hp_free(p_this->buf, p_this->heap);
+	mm_hp_free(p_this, p_this->heap);
 
 	return;
 }
