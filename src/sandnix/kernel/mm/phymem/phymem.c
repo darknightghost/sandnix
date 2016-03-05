@@ -74,8 +74,8 @@ void phymem_manage_all()
 	do {
 		p_phy_bitmap = (pphymem_bitmap_t)(p_bitmap_node->p_item);
 
-		if((size_t)begin_address < (size_t)(p_phy_bitmap->base) + p_phy_bitmap->size) {
-			begin_address = (void*)((size_t)(p_phy_bitmap->base) + p_phy_bitmap->size);
+		if((size_t)begin_address < (size_t)(p_phy_bitmap->base) + p_phy_bitmap->num * 4096) {
+			begin_address = (void*)((size_t)(p_phy_bitmap->base) + p_phy_bitmap->num * 4096);
 		}
 
 		p_bitmap_node = p_bitmap_node->p_next;
@@ -94,15 +94,17 @@ void phymem_manage_all()
 
 				if((size_t)(p_mem_tbl->base) < (size_t)begin_address) {
 					p_phy_bitmap->base = begin_address;
-					p_phy_bitmap->size = p_mem_tbl->size -
-					                     ((size_t)begin_address - (size_t)(p_phy_bitmap->base));
+					p_phy_bitmap->num = (p_mem_tbl->size -
+					                     ((size_t)begin_address - (size_t)(p_phy_bitmap->base))) % 4096;
 
 				} else {
 					p_phy_bitmap->base = p_mem_tbl->base;
-					p_phy_bitmap->size = p_mem_tbl->size;
+					p_phy_bitmap->num = p_mem_tbl->size / 4096;
 				}
 
-				bitmap_size = p_phy_bitmap->size / 4096;
+				p_phy_bitmap->avail = p_phy_bitmap->num;
+
+				bitmap_size = p_phy_bitmap->num;
 
 				if(bitmap_size % 8 == 0) {
 					bitmap_size /= 8;
@@ -130,11 +132,11 @@ void phymem_manage_all()
 	return;
 }
 
-pphymem_obj_t mm_phymem_alloc(size_t size)
+pphymem_obj_t mm_phymem_alloc(size_t size, u32 options)
 {
 }
 
-pphymem_obj_t mm_phymem_get_reserved(void* base, size_t size)
+pphymem_obj_t mm_phymem_get_reserved(void* base, u32 num)
 {
 }
 
@@ -185,10 +187,6 @@ void print_phymem()
 	return;
 }
 
-bool alloc_phypages(u32 num)
-{
-}
-
 void create_init_bitmap()
 {
 	u64 bits_init_num;
@@ -210,10 +208,11 @@ void create_init_bitmap()
 			if(p_mem_tbl->size / 4096 <= PHY_INIT_BITMAP_NUM - bits_init_num) {
 				p_phy_mem = mm_hp_alloc(sizeof(phymem_bitmap_t), phymem_heap);
 				p_phy_mem->base = p_mem_tbl->base;
-				p_phy_mem->size = p_mem_tbl->size;
+				p_phy_mem->num = p_mem_tbl->size / 4096;
+				p_phy_mem->avail = p_phy_mem->num;
 				p_phy_mem->p_bitmap = init_bitmap + bits_init_num;
 
-				bits_init_num += p_phy_mem->size / 4096;
+				bits_init_num += p_phy_mem->num;
 				bits_init_num += (bits_init_num % 8 ? 0 : 8 - bits_init_num % 8);
 				rtl_list_insert_after(&phymem_bitmap_list,
 				                      NULL,
@@ -223,7 +222,8 @@ void create_init_bitmap()
 			} else {
 				p_phy_mem = mm_hp_alloc(sizeof(phymem_bitmap_t), phymem_heap);
 				p_phy_mem->base = p_mem_tbl->base;
-				p_phy_mem->size = (PHY_INIT_BITMAP_NUM - bits_init_num) * 4096;
+				p_phy_mem->num = PHY_INIT_BITMAP_NUM - bits_init_num;
+				p_phy_mem->avail = p_phy_mem->num;
 				p_phy_mem->p_bitmap = init_bitmap + bits_init_num;
 
 				rtl_list_insert_after(&phymem_bitmap_list,
@@ -238,6 +238,10 @@ void create_init_bitmap()
 	} while(p_mmap_node != phymem_list);
 
 	return;
+}
+
+bool alloc_phypages(u32 num)
+{
 }
 
 void destructor(pphymem_obj_t p_this)
@@ -266,8 +270,8 @@ pkstring_t to_string(pphymem_obj_t p_this)
 	    i++, p_block++) {
 		p_memstr = rtl_ksprintf(NULL, "%-10P%-10P\n",
 		                        p_block->base, p_block->num);
-		p_ret = rtl_kstrcat(p_ret, p_memstr);
-		om_dec_kobject_ref(p_memstr);
+		p_ret = rtl_kstrcat(p_ret, p_memstr, NULL);
+		om_dec_kobject_ref((pkobject_t)p_memstr);
 	}
 
 	return p_ret;

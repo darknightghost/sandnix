@@ -34,6 +34,8 @@
 #define	PHYMEM_HEAP_SIZE			4096
 #define	PHY_INIT_BITMAP_SIZE		4096
 
+#define	PHYMEM_OPTION_CONTIGUOUS	0x00000001
+
 typedef	struct	_phymem_tbl_entry {
 	void*	base;
 	size_t	size;
@@ -65,5 +67,5 @@ extern	void*		phymem_heap;
 void	phymem_init();
 void	phymem_manage_all();
 
-pphymem_obj_t	mm_phymem_alloc(size_t size);
-pphymem_obj_t	mm_phymem_get_reserved(void* base, size_t size);
+pphymem_obj_t	mm_phymem_alloc(size_t size, u32 options);
+pphymem_obj_t	mm_phymem_get_reserved(void* base, u32 num);
