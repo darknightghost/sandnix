@@ -5,6 +5,7 @@ init/main.c
 mm/mm.c
 mm/heap/heap.c
 mm/phymem/phymem.c
+mm/paging/paging.c
 
 #debug
 debug/debug.c

@@ -16,6 +16,7 @@ debug/arch/x86/early_print.c
 
 #mm
 mm/arch/x86/phymem/phymem.c
+mm/arch/x86/paging/paging.c
 
 #pm
 pm/spinlock/arch/x86/spinlock.c

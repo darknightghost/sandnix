@@ -192,11 +192,6 @@ _end:
 	return p_ret;
 }
 
-/*
-pphymem_obj_t mm_phymem_get_reserved(void* base, size_t num)
-{
-}
-*/
 void print_phymem()
 {
 	plist_node_t p_node;
