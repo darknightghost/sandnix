@@ -18,7 +18,25 @@
 #pragma once
 
 #include "../../../common/common.h"
+#include "../exceptions/exceptions.h"
 #include "kconsole.h"
 
-void	dbg_init();
+#ifdef	DEBUG
+#define	ASSERT(x)	{\
+		do { \
+			if(!(x)) {\
+				excpt_panic(EASSERT,\
+				            "Assert failed.\nExpression:%s\nFile:%s\nLine:%u",\
+				            #x,\
+				            __FILE__,\
+				            __LINE__);\
+			}\
+		} while(0); \
+	}
+#endif	// DEBUG
 
+#ifndef	DEBUG
+	#define	ASSERT(x)
+#endif	//! DEBUG
+
+void	dbg_init();

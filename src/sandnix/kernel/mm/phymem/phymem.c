@@ -36,16 +36,18 @@ static	bitmap_t	init_bitmap[PHY_INIT_BITMAP_SIZE];
 static	void	print_phymem();
 static	void	create_init_bitmap();
 
-static	bool		alloc_phypages(u32 num);
-
 static	void		destructor(pphymem_obj_t p_this);
 static	pkstring_t	to_string(pphymem_obj_t p_this);
 
 void phymem_init()
 {
 	dbg_kprint("Testing physical memory...\n");
+	//phymem_heap = mm_hp_create_on_buf(phymem_heap_buf, PHYMEM_HEAP_SIZE,
+	//                                  HEAP_EXTENDABLE | HEAP_MULTITHREAD
+	//                                  | HEAP_PREALLOC);
 	phymem_heap = mm_hp_create_on_buf(phymem_heap_buf, PHYMEM_HEAP_SIZE,
-	                                  HEAP_EXTENDABLE | HEAP_MULTITHREAD);
+	                                  HEAP_MULTITHREAD
+	                                  | HEAP_PREALLOC);
 
 	phymem_init_arch();
 
@@ -91,6 +93,7 @@ void phymem_manage_all()
 			if((size_t)(p_mem_tbl->base) + p_mem_tbl->size > (size_t)begin_address) {
 				//Create new bitmaps
 				p_phy_bitmap = mm_hp_alloc(sizeof(phymem_bitmap_t), phymem_heap);
+				ASSERT(p_phy_bitmap != NULL);
 
 				if((size_t)(p_mem_tbl->base) < (size_t)begin_address) {
 					p_phy_bitmap->base = begin_address;
@@ -115,6 +118,7 @@ void phymem_manage_all()
 
 				p_phy_bitmap->p_bitmap = mm_hp_alloc(bitmap_size,
 				                                     phymem_heap);
+				ASSERT(p_phy_bitmap != NULL);
 				rtl_memset(p_phy_bitmap->p_bitmap, 0, bitmap_size);
 				pm_acqr_spn_lock(&alloc_lock);
 				rtl_list_insert_after(&phymem_bitmap_list,
@@ -132,14 +136,67 @@ void phymem_manage_all()
 	return;
 }
 
-pphymem_obj_t mm_phymem_alloc(size_t size, u32 options)
+pphymem_obj_t mm_phymem_alloc(size_t num)
 {
+	pphymem_obj_t p_ret;
+	plist_node_t p_bitmap_node;
+	pphymem_bitmap_t p_bitmap;
+	u32 i, j;
+
+	pm_acqr_spn_lock(&alloc_lock);
+
+	//Compute how many memory blocks needed and allocate memory
+	p_bitmap_node = phymem_bitmap_list;
+	p_ret = NULL;
+
+	do {
+		p_bitmap = (pphymem_bitmap_t)(p_bitmap_node->p_item);
+
+		if(p_bitmap->avail >= num) {
+			for(i = 0; i < p_bitmap->num; i++) {
+				if(rtl_bitmap_read(p_bitmap->p_bitmap, i) == 0) {
+					for(j = i;
+					    j < p_bitmap->num
+					    && rtl_bitmap_read(p_bitmap->p_bitmap, j) == 0;
+					    j++) {
+						if(j - i + 1 == num) {
+							//Create object
+							p_ret = mm_hp_alloc(sizeof(phymem_obj_t), phymem_heap);
+							ASSERT(p_ret != NULL);
+							INIT_KOBJECT(p_ret, destructor, to_string);
+							p_ret->mem_block.base = p_bitmap->base + i * 4096;
+							p_ret->mem_block.num = num;
+
+							//Allocate physical memory
+							for(j = i; j - i < num; j++) {
+								rtl_bitmap_write(p_bitmap->p_bitmap,
+								                 j, 1);
+							}
+
+							goto _end;
+						}
+					}
+				}
+
+				i = j - 1;
+			}
+
+
+		}
+
+		p_bitmap_node = p_bitmap_node->p_next;
+	} while(p_bitmap_node != phymem_bitmap_list);
+
+_end:
+	pm_rls_spn_lock(&alloc_lock);
+	return p_ret;
 }
 
-pphymem_obj_t mm_phymem_get_reserved(void* base, u32 num)
+/*
+pphymem_obj_t mm_phymem_get_reserved(void* base, size_t num)
 {
 }
-
+*/
 void print_phymem()
 {
 	plist_node_t p_node;
@@ -207,6 +264,7 @@ void create_init_bitmap()
 			//Allocate bitmap
 			if(p_mem_tbl->size / 4096 <= PHY_INIT_BITMAP_NUM - bits_init_num) {
 				p_phy_mem = mm_hp_alloc(sizeof(phymem_bitmap_t), phymem_heap);
+				ASSERT(p_phy_mem != NULL);
 				p_phy_mem->base = p_mem_tbl->base;
 				p_phy_mem->num = p_mem_tbl->size / 4096;
 				p_phy_mem->avail = p_phy_mem->num;
@@ -221,6 +279,7 @@ void create_init_bitmap()
 
 			} else {
 				p_phy_mem = mm_hp_alloc(sizeof(phymem_bitmap_t), phymem_heap);
+				ASSERT(p_phy_mem != NULL);
 				p_phy_mem->base = p_mem_tbl->base;
 				p_phy_mem->num = PHY_INIT_BITMAP_NUM - bits_init_num;
 				p_phy_mem->avail = p_phy_mem->num;
@@ -240,15 +299,36 @@ void create_init_bitmap()
 	return;
 }
 
-bool alloc_phypages(u32 num)
-{
-}
-
 void destructor(pphymem_obj_t p_this)
 {
-	//TODO:Free pages
+	plist_node_t p_bitmap_node;
+	pphymem_bitmap_t p_bitmap;
+	u32 bit, i;
 
-	//Free memory
+	p_bitmap_node = phymem_bitmap_list;
+
+	do {
+		p_bitmap = (pphymem_bitmap_t)(p_bitmap_node->p_item);
+
+		if((size_t)(p_bitmap->base) <= (size_t)(p_this->mem_block.base)
+		   && (size_t)(p_bitmap->base) + p_bitmap->num * 4096
+		   >= (size_t)(p_this->mem_block.base) + p_this->mem_block.num * 4096) {
+			//Free physical memory
+			for(bit = ((size_t)(p_this->mem_block.base) - (size_t)(p_bitmap->base)) / 4096, i = 0;
+			    i < p_this->mem_block.num;
+			    i++, bit++) {
+				rtl_bitmap_write(p_bitmap->p_bitmap,
+				                 bit,
+				                 0);
+			}
+
+			break;
+		}
+
+		p_bitmap_node = p_bitmap_node->p_next;
+	} while(p_bitmap_node != phymem_bitmap_list);
+
+	//Free object
 	mm_hp_free(p_this, phymem_heap);
 	return;
 }
@@ -256,23 +336,13 @@ void destructor(pphymem_obj_t p_this)
 pkstring_t to_string(pphymem_obj_t p_this)
 {
 	pkstring_t p_ret;
-	pkstring_t p_memstr;
-	pphymem_block_t p_block;
-	int i;
 
-	p_ret = rtl_ksprintf(NULL, "Physical memory object %P:\n%-10s%-10s\n",
+	p_ret = rtl_ksprintf(NULL, "Physical memory object %P:\n%-10s : %P%-10s : %P\n",
 	                     p_this,
 	                     "Base",
-	                     "Size");
-
-	for(i = 0, p_block = p_this->blocks;
-	    i < p_this->block_num;
-	    i++, p_block++) {
-		p_memstr = rtl_ksprintf(NULL, "%-10P%-10P\n",
-		                        p_block->base, p_block->num);
-		p_ret = rtl_kstrcat(p_ret, p_memstr, NULL);
-		om_dec_kobject_ref((pkobject_t)p_memstr);
-	}
+	                     p_this->mem_block.base,
+	                     "Size",
+	                     p_this->mem_block.num * 4096);
 
 	return p_ret;
 }

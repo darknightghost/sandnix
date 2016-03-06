@@ -30,7 +30,7 @@ typedef struct _kstring {
 } kstring_t, *pkstring_t;
 
 pkstring_t	rtl_kstring(char* string, void* heap);
-pkstring_t	rtl_kstrcat(pkstring_t str1, pkstring_t str2, void* heap);
+pkstring_t	rtl_kstrcat(pkstring_t str1, pkstring_t str2);
 size_t		rtl_kstrlen(pkstring_t str);
 ssize_t		rtl_find_sub_kstr(pkstring_t str, pkstring_t substr);
 

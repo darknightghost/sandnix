@@ -47,7 +47,7 @@ pkstring_t rtl_kstrcat(pkstring_t str1, pkstring_t str2)
 	pkstring_t p_ret;
 
 	//Create object
-	p_ret = mm_hp_alloc(sizeof(kstring_t), heap);
+	p_ret = mm_hp_alloc(sizeof(kstring_t), str1->heap);
 	INIT_KOBJECT(p_ret, destructor, to_string);
 
 	p_ret->len = str1->len + str2->len;

@@ -26,6 +26,7 @@
 #define		HEAP_EXTENDABLE				0x01
 #define		HEAP_MULTITHREAD			0x02
 #define		HEAP_DESTROY				0x04
+#define		HEAP_PREALLOC				0x08
 
 #pragma pack(push)
 #ifdef	X86
