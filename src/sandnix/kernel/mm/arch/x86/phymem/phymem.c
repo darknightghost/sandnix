@@ -194,12 +194,12 @@ void phymem_init_arch()
 		if(should_merge((pphymem_tbl_entry_t)(p_node->p_item),
 		                (pphymem_tbl_entry_t)(p_node->p_next->p_item))) {
 			p_node = merge_memory(p_node, p_node->p_next);
+
 			//If the base address of next node is smaller than current node
 			p_c_entry = (pphymem_tbl_entry_t)(p_node->p_item);
 			p_n_entry = (pphymem_tbl_entry_t)(p_node->p_next->p_item);
 
 			if((u32)(p_c_entry->base) > (u32)(p_n_entry->base)) {
-				sort_flag = true;
 				t = p_node->p_next->p_item;
 				p_node->p_next->p_item = p_node->p_item;
 				p_node->p_item = t;
