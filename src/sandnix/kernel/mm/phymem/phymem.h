@@ -26,12 +26,12 @@
 #endif	//!	X86
 
 #define	PHY_MEM_ALLOCATABLE		0
-#define	PHY_MEM_ALLOCATED		1
-#define	PHY_MEM_RESERVED		2
-#define	PHY_MEM_SYSTEM			3
-#define	PHY_MEM_BAD				4
-#define	PHY_MEM_DMA				5
-#define	PHY_MEM_DMA_ALLOCATED	6
+#define	PHY_MEM_DMA				1
+#define	PHY_MEM_ALLOCATED		2
+#define	PHY_MEM_DMA_ALLOCATED	3
+#define	PHY_MEM_RESERVED		4
+#define	PHY_MEM_SYSTEM			5
+#define	PHY_MEM_BAD				6
 
 #define	PHYMEM_HEAP_SIZE			4096
 #define	PHY_INIT_BITMAP_SIZE		4096

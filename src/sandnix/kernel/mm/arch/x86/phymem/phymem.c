@@ -105,11 +105,63 @@ void phymem_init_arch()
 		p_node = p_node->p_next;
 	} while(p_node != memmap_list);
 
+	//Sort the table
+	sort_flag = true;
+
+	while(sort_flag) {
+		p_node = phymem_list;
+		sort_flag = false;
+
+		do {
+			p_c_entry = (pphymem_tbl_entry_t)(p_node->p_item);
+			p_n_entry = (pphymem_tbl_entry_t)(p_node->p_next->p_item);
+
+			if((u32)(p_c_entry->base) > (u32)(p_n_entry->base)) {
+				sort_flag = true;
+				t = p_node->p_next->p_item;
+				p_node->p_next->p_item = p_node->p_item;
+				p_node->p_item = t;
+			}
+
+			p_node = p_node->p_next;
+		} while(p_node != phymem_list->p_prev);
+	}
+
+	//Set unreferenced memory to reserved
+	p_node = phymem_list;
+
+	do {
+		p_c_entry = (pphymem_tbl_entry_t)(p_node->p_item);
+		p_n_entry = (pphymem_tbl_entry_t)(p_node->p_next->p_item);
+
+		if((u32)(p_c_entry->base) + p_c_entry->size
+		   < (u32)(p_n_entry->base)) {
+			p_entry = mm_hp_alloc(sizeof(phymem_tbl_entry_t), phymem_heap);
+			p_entry->base = (void*)((u32)(p_c_entry->base) + p_c_entry->size);
+			p_entry->size = (u32)(p_n_entry->base) - (u32)(p_entry->base);
+			p_entry->status = PHY_MEM_RESERVED;
+			rtl_list_insert_after(&phymem_list, p_node,
+			                      p_entry, phymem_heap);
+			p_node = p_node->p_next->p_next;
+
+		} else {
+			p_node = p_node->p_next;
+		}
+	} while(p_node != phymem_list->p_prev);
+
+
 	//The memory kernel used
 	p_entry = mm_hp_alloc(sizeof(phymem_tbl_entry_t), phymem_heap);
 	p_entry->base = (void*)(1024 * 1024);
 	p_entry->size = init_page_num * 4096;
 	p_entry->status = PHY_MEM_SYSTEM;
+	rtl_list_insert_after(&phymem_list, NULL, p_entry, phymem_heap);
+
+	//DMA memory
+	p_entry = mm_hp_alloc(sizeof(phymem_tbl_entry_t), phymem_heap);
+	p_entry->base = DMA_MEM_BASE;
+	p_entry->size = DMA_MEM_SIZE;
+	p_entry->status = PHY_MEM_DMA;
 	rtl_list_insert_after(&phymem_list, NULL, p_entry, phymem_heap);
 
 	//Sort the table
@@ -138,9 +190,20 @@ void phymem_init_arch()
 	p_node = phymem_list;
 
 	do {
+		//Merge node
 		if(should_merge((pphymem_tbl_entry_t)(p_node->p_item),
 		                (pphymem_tbl_entry_t)(p_node->p_next->p_item))) {
 			p_node = merge_memory(p_node, p_node->p_next);
+			//If the base address of next node is smaller than current node
+			p_c_entry = (pphymem_tbl_entry_t)(p_node->p_item);
+			p_n_entry = (pphymem_tbl_entry_t)(p_node->p_next->p_item);
+
+			if((u32)(p_c_entry->base) > (u32)(p_n_entry->base)) {
+				sort_flag = true;
+				t = p_node->p_next->p_item;
+				p_node->p_next->p_item = p_node->p_item;
+				p_node->p_item = t;
+			}
 
 		} else {
 			p_node = p_node->p_next;
@@ -155,7 +218,8 @@ void phymem_init_arch()
 bool should_merge(pphymem_tbl_entry_t p1, pphymem_tbl_entry_t p2)
 {
 	if((u32)(p1->base) + p1->size > (u32)(p2->base)
-	   || p1->status == p2->status) {
+	   || (p1->status == p2->status
+	       && (u32)(p1->base) + p1->size == (u32)(p2->base))) {
 		return true;
 	}
 

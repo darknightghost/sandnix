@@ -35,7 +35,7 @@ typedef	struct	_page_block {
 	size_t		index;
 	size_t		num;
 	ppage_obj_t	p_page_obj;
-} page_block_t*ppage_block_t;
+} page_block_t, *ppage_block_t;
 
 typedef	struct	_page_block_list {
 	size_t	each_block_num;

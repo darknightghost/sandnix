@@ -56,7 +56,8 @@ void phymem_init()
 	pm_init_spn_lock(&alloc_lock);
 
 	//Create initialize bitmap
-	create_init_bitmap();
+	//create_init_bitmap();
+	UNREFERRED_PARAMETER(create_init_bitmap);
 	return;
 }
 
@@ -225,6 +226,14 @@ void print_phymem()
 
 			case PHY_MEM_BAD:
 				type_str = "Bad";
+				break;
+
+			case PHY_MEM_DMA:
+				type_str = "DMA";
+				break;
+
+			case PHY_MEM_DMA_ALLOCATED:
+				type_str = "DMA Allocated";
 				break;
 		}
 
