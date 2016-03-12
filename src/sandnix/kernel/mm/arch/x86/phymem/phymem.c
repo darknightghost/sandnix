@@ -33,6 +33,7 @@ void phymem_init_arch()
 	pphymem_tbl_entry_t p_entry;
 	pphymem_tbl_entry_t p_c_entry;
 	pphymem_tbl_entry_t p_n_entry;
+	pphymem_tbl_entry_t p_p_entry;
 	bool sort_flag;
 	void* t;
 
@@ -190,20 +191,40 @@ void phymem_init_arch()
 	p_node = phymem_list;
 
 	do {
+		//If the base address of next node is smaller than current node
+		p_c_entry = (pphymem_tbl_entry_t)(p_node->p_item);
+		p_n_entry = (pphymem_tbl_entry_t)(p_node->p_next->p_item);
+
+		if((u32)(p_c_entry->base) > (u32)(p_n_entry->base)) {
+			t = p_node->p_next->p_item;
+			p_node->p_next->p_item = p_node->p_item;
+			p_node->p_item = t;
+
+		}
+
+		if(p_node != phymem_list) {
+			p_c_entry = (pphymem_tbl_entry_t)(p_node->p_item);
+			p_p_entry = (pphymem_tbl_entry_t)(p_node->p_prev->p_item);
+			p_n_entry = (pphymem_tbl_entry_t)(p_node->p_next->p_item);
+
+			if((u32)(p_n_entry->base) == (u32)(p_p_entry->base) + p_p_entry->size
+			   && p_p_entry->status == p_n_entry->status) {
+				t = p_node->p_next->p_item;
+				p_node->p_next->p_item = p_node->p_item;
+				p_node->p_item = t;
+				p_node = p_node->p_prev;
+
+			}
+
+			if(p_c_entry->base == p_p_entry->base) {
+				p_node = p_node->p_prev;
+			}
+		}
+
 		//Merge node
 		if(should_merge((pphymem_tbl_entry_t)(p_node->p_item),
 		                (pphymem_tbl_entry_t)(p_node->p_next->p_item))) {
 			p_node = merge_memory(p_node, p_node->p_next);
-
-			//If the base address of next node is smaller than current node
-			p_c_entry = (pphymem_tbl_entry_t)(p_node->p_item);
-			p_n_entry = (pphymem_tbl_entry_t)(p_node->p_next->p_item);
-
-			if((u32)(p_c_entry->base) > (u32)(p_n_entry->base)) {
-				t = p_node->p_next->p_item;
-				p_node->p_next->p_item = p_node->p_item;
-				p_node->p_item = t;
-			}
 
 		} else {
 			p_node = p_node->p_next;
