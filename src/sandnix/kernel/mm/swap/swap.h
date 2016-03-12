@@ -17,7 +17,8 @@
 
 #pragma once
 
-#include "../../../../../../common/common.h"
-#include "../page_table.h"
-
-
+#include "../../../../common/common.h"
+#include "../../om/om.h"
+#include "../../rtl/rtl.h"
+#include "../phymem/phymem.h"
+#include "swap_obj.h"

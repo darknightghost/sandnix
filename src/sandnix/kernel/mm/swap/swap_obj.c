@@ -15,9 +15,10 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
-
-#include "../../../../../../common/common.h"
-#include "../page_table.h"
-
+#include "../../../../common/common.h"
+#include "../../rtl/rtl.h"
+#include "../../debug/debug.h"
+#include "../../pm/pm.h"
+#include "../heap/heap.h"
+#include "swap_obj.h"
 

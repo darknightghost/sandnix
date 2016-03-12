@@ -58,4 +58,6 @@ void*				mm_hp_alloc(size_t size, void* heap_addr);
 void				mm_hp_chk(void* heap_addr);
 void				mm_hp_free(void* addr, void* heap_addr);
 
+void*				hp_alloc_mm(size_t size, void* heap_addr);
+
 #pragma pack(pop)

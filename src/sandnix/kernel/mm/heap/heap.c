@@ -313,6 +313,160 @@ void mm_hp_free(void* addr, void* heap_addr)
 	return;
 }
 
+void* hp_alloc_mm(size_t size, void* heap_addr)
+{
+	pheap_head_t p_head, p_new_head;
+	pmem_block_head_t p_block, p_new_block;
+	pspinlock_t p_lock;
+
+	//Get heap address
+	if(heap_addr == NULL) {
+		p_head = (pheap_head_t)kernel_default_heap;
+
+		if(!default_heap_init_flag) {
+			default_heap_init_flag = true;
+
+			//Initialize default heap
+			init_heap_head(kernel_default_heap, KERNEL_DEFAULT_HEAP_SIZE,
+			               HEAP_EXTENDABLE | HEAP_MULTITHREAD, NULL);
+		}
+
+	} else {
+		p_head = (pheap_head_t)heap_addr;
+	}
+
+	//Check if it is the first head of heap
+	if(p_head->p_prev != NULL) {
+		//panic
+		excpt_panic(
+		    EINVAL,
+		    "The heap address which caused this problem is %p",
+		    p_head);
+	}
+
+	size = size % 4 ? (size / 4 + 1) * 4 : size;
+
+	if(size > p_head->scale - sizeof(mem_block_head_t) - sizeof(heap_head_t)) {
+		return NULL;
+	}
+
+	//Allocate memory
+	if(p_head->attr & HEAP_MULTITHREAD) {
+		p_lock = &(p_head->lock);
+		pm_acqr_spn_lock(p_lock);
+	}
+
+	while(1) {
+		for(p_block = p_head->p_first_empty_block;
+		    p_block != NULL;
+		    p_block = p_block->p_next_empty_block) {
+
+			//Check memory block
+			if(p_block->magic != HEAP_INTACT_MAGIC) {
+				//Panic
+				excpt_panic(
+				    EOVERFLOW,
+				    "Heap corruption occured,the block which is broken might be %p",
+				    p_block);
+			}
+
+			if(!p_block->allocated_flag
+			   && p_block->size > size) {
+				if(p_block->size > size + sizeof(mem_block_head_t)) {
+					//Spilt memory block and allocate memory
+					p_new_block = (pmem_block_head_t)((u8*)(p_block->start_addr) + size);
+					p_new_block->magic = HEAP_INTACT_MAGIC;
+					p_new_block->allocated_flag = false;
+					p_new_block->start_addr = (u8*)(p_new_block + 1);
+					p_new_block->size = p_block->size - size - sizeof(mem_block_head_t);
+					p_block->size = size;
+
+					p_block->allocated_flag = true;
+
+					if(p_block->p_next_empty_block != NULL) {
+						p_block->p_next_empty_block->p_prev_empty_block = p_new_block;
+					}
+
+					if(p_block->p_prev_empty_block != NULL) {
+						p_block->p_prev_empty_block->p_next_empty_block = p_new_block;
+
+					} else {
+						p_head->p_first_empty_block = p_new_block;
+					}
+
+					p_new_block->p_next_empty_block = p_block->p_next_empty_block;
+					p_new_block->p_prev_empty_block = p_block->p_prev_empty_block;
+
+					if(p_head->attr & HEAP_MULTITHREAD) {
+						pm_rls_spn_lock(p_lock);
+					}
+
+					return p_block->start_addr;
+
+				} else {
+					//Allocate memory
+					p_block->allocated_flag = true;
+
+					if(p_block->p_next_empty_block != NULL) {
+						p_block->p_next_empty_block->p_prev_empty_block
+						    = p_block->p_prev_empty_block;
+					}
+
+					if(p_block->p_prev_empty_block != NULL) {
+						p_block->p_prev_empty_block->p_next_empty_block
+						    = p_block->p_next_empty_block;
+
+					} else {
+						p_head->p_first_empty_block = p_block->p_next_empty_block;
+					}
+
+					if(p_head->attr & HEAP_MULTITHREAD) {
+						pm_rls_spn_lock(p_lock);
+					}
+
+					return p_block->start_addr;
+				}
+			}
+
+		}
+
+		if(p_head->p_next == NULL) {
+			if(p_head->attr & HEAP_EXTENDABLE) {
+				//Allocate more pages
+				excpt_panic(ENOMEM, "Un supported mm.\n");
+
+				/*p_new_head = mm_virt_alloc(NULL, p_head->scale,
+				MEM_RESERVE | MEM_COMMIT,
+				            PAGE_WRITEABLE);
+				*/
+				//TODO:delete
+				p_new_head = NULL;
+
+				//
+				if(p_new_head == NULL) {
+					if(p_head->attr & HEAP_MULTITHREAD) {
+						pm_rls_spn_lock(p_lock);
+					}
+
+					return NULL;
+				}
+
+				init_heap_head(p_new_head, p_head->scale, p_head->attr, p_head);
+				p_head->p_next = p_new_head;
+
+			} else {
+				if(p_head->attr & HEAP_MULTITHREAD) {
+					pm_rls_spn_lock(p_lock);
+				}
+
+				return NULL;
+			}
+		}
+
+		p_head = p_head->p_next;
+	}
+}
+
 void mm_hp_check(void* heap_addr)
 {
 	pheap_head_t p_head;

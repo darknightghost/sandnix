@@ -17,3 +17,14 @@
 
 #include "../../../../common/common.h"
 #include "../../rtl/rtl.h"
+#include "paging.h"
+
+list_t		kernel_free_blocks;
+list_t		kernel_using_blocks;
+
+void paging_init();
+
+void*		mm_page_alloc(void* base, size_t num, u32 options);
+void*		mm_page_obj_map(void* base, ppage_obj_t p_obj);
+void		mm_page_free(void* base);
+ppage_obj_t	mm_get_page_obj(void* base);

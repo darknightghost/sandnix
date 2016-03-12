@@ -21,19 +21,28 @@
 #include "../../om/om.h"
 #include "../../rtl/rtl.h"
 #include "../phymem/phymem.h"
+#include "../swap/swap.h"
 
-#define	PAGE_BLOCK_SWAPPED		0
-#define	PAGE_BLOCK_AVAILABLE	1
+#define	PAGE_UNSWAPPABLE	0
+#define	PAGE_AVAILABLE		1
+#define	PAGE_SWAPABLE		2
 
-typedef	struct	_page_block {
-	u32				status;
+#define	MEMBLOCK_EMPTY		0
+#define	MEMBLOCK_PHY		1
+#define	MEMBLOCK_SWAP		2
+
+typedef	struct	_memblock {
+	u32					type;
 	union {
-		pphymem_obj_t	p_phy_mem_obj;
-		void*			p_swaped_mem_obj;
-	}
-} page_block_t, *ppage_block_t;
+		pphymem_block_t	p_phy_mem;
+		pswap_obj_t		p_swap_mem;
+	};
+} memblock_t, *pmemblock_t;
 
 typedef	struct	_page_obj {
 	kobject_t		obj;
-	list_t			pageblock_list;
+	u32				status;
+	list_t			mem_list;
 } page_obj_t, *ppage_obj_t;
+
+

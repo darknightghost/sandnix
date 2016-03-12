@@ -92,7 +92,7 @@ void phymem_manage_all()
 		if(p_mem_tbl->status == PHY_MEM_ALLOCATABLE) {
 			if((size_t)(p_mem_tbl->base) + p_mem_tbl->size > (size_t)begin_address) {
 				//Create new bitmaps
-				p_phy_bitmap = mm_hp_alloc(sizeof(phymem_bitmap_t), phymem_heap);
+				p_phy_bitmap = hp_alloc_mm(sizeof(phymem_bitmap_t), phymem_heap);
 				ASSERT(p_phy_bitmap != NULL);
 
 				if((size_t)(p_mem_tbl->base) < (size_t)begin_address) {
@@ -116,7 +116,7 @@ void phymem_manage_all()
 					bitmap_size = bitmap_size / 8 + 1;
 				}
 
-				p_phy_bitmap->p_bitmap = mm_hp_alloc(bitmap_size,
+				p_phy_bitmap->p_bitmap = hp_alloc_mm(bitmap_size,
 				                                     phymem_heap);
 				ASSERT(p_phy_bitmap != NULL);
 				rtl_memset(p_phy_bitmap->p_bitmap, 0, bitmap_size);
@@ -161,7 +161,7 @@ pphymem_obj_t mm_phymem_alloc(size_t num)
 					    j++) {
 						if(j - i + 1 == num) {
 							//Create object
-							p_ret = mm_hp_alloc(sizeof(phymem_obj_t), phymem_heap);
+							p_ret = hp_alloc_mm(sizeof(phymem_obj_t), phymem_heap);
 							ASSERT(p_ret != NULL);
 							INIT_KOBJECT(p_ret, destructor, to_string);
 							p_ret->mem_block.base = p_bitmap->base + i * 4096;
@@ -258,7 +258,7 @@ void create_init_bitmap()
 		if(p_mem_tbl->status == PHY_MEM_ALLOCATABLE) {
 			//Allocate bitmap
 			if(p_mem_tbl->size / 4096 <= PHY_INIT_BITMAP_NUM - bits_init_num) {
-				p_phy_mem = mm_hp_alloc(sizeof(phymem_bitmap_t), phymem_heap);
+				p_phy_mem = hp_alloc_mm(sizeof(phymem_bitmap_t), phymem_heap);
 				ASSERT(p_phy_mem != NULL);
 				p_phy_mem->base = p_mem_tbl->base;
 				p_phy_mem->num = p_mem_tbl->size / 4096;
@@ -273,7 +273,7 @@ void create_init_bitmap()
 				                      phymem_heap);
 
 			} else {
-				p_phy_mem = mm_hp_alloc(sizeof(phymem_bitmap_t), phymem_heap);
+				p_phy_mem = hp_alloc_mm(sizeof(phymem_bitmap_t), phymem_heap);
 				ASSERT(p_phy_mem != NULL);
 				p_phy_mem->base = p_mem_tbl->base;
 				p_phy_mem->num = PHY_INIT_BITMAP_NUM - bits_init_num;

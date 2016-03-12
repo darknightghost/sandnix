@@ -18,4 +18,32 @@
 #pragma once
 
 #include "../../../../common/common.h"
-#include "../../om/om.h"
+#include "page_obj.h"
+
+#ifdef	x86
+	#include "../arch/x86/paging/paging.h"
+#endif	//	X86
+
+#define	MEM_USER
+#define	MEM_COMMIT
+#define	MEM_RESERVE
+#define	MEM_UNCOMMIT
+#define	MEM_RELEASE
+#define	MEM_DMA
+
+typedef	struct	_page_block {
+	size_t		index;
+	size_t		num;
+	ppage_obj_t	p_page_obj;
+} page_block_t*ppage_block_t;
+
+typedef	struct	_page_block_list {
+	size_t	each_block_num;
+	list_t	block_list;
+} page_block_list_t, *ppage_block_list_t;
+
+void		paging_init();
+void*		mm_page_alloc(void* base, size_t num, u32 options);
+void*		mm_page_obj_map(void* base, ppage_obj_t p_obj);
+void		mm_page_free(void* base);
+ppage_obj_t	mm_get_page_obj(void* base);

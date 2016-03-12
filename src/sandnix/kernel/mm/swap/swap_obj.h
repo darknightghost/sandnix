@@ -17,7 +17,17 @@
 
 #pragma once
 
-#include "../../../../../../common/common.h"
-#include "../page_table.h"
+#include "../../../../common/common.h"
+#include "../../om/om.h"
+#include "../../rtl/rtl.h"
+#include "../phymem/phymem.h"
 
+typedef	struct	_swap_obj {
+	kobject_t	obj;
+	pkstring_t	device;
+	u64			block;
+	u64			num;
+} swap_obj_t, *pswap_obj_t;
 
+pphymem_obj_t	swap_load(pswap_obj_t p_swap_obj);
+pswap_obj_t		swap_mem(pphymem_obj_t p_phy_mem);
