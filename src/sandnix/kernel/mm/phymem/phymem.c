@@ -56,7 +56,7 @@ void phymem_init()
 	pm_init_spn_lock(&alloc_lock);
 
 	//Create initialize bitmap
-	//create_init_bitmap();
+	create_init_bitmap();
 	UNREFERRED_PARAMETER(create_init_bitmap);
 	return;
 }
@@ -106,7 +106,7 @@ void phymem_manage_all()
 					p_phy_bitmap->num = p_mem_tbl->size / 4096;
 				}
 
-				p_phy_bitmap->avail = p_phy_bitmap->num;
+				p_phy_bitmap->avail_num = p_phy_bitmap->num;
 
 				bitmap_size = p_phy_bitmap->num;
 
@@ -115,6 +115,16 @@ void phymem_manage_all()
 
 				} else {
 					bitmap_size = bitmap_size / 8 + 1;
+				}
+
+				switch(p_mem_tbl->status) {
+					case PHY_MEM_ALLOCATABLE:
+						p_phy_bitmap->status = PHYMEM_BITMAP_NORMAL;
+						break;
+
+					case PHY_MEM_DMA:
+						p_phy_bitmap->status = PHYMEM_BITMAP_DMA;
+						break;
 				}
 
 				p_phy_bitmap->p_bitmap = hp_alloc_mm(bitmap_size,
@@ -153,7 +163,7 @@ pphymem_obj_t mm_phymem_alloc(size_t num)
 	do {
 		p_bitmap = (pphymem_bitmap_t)(p_bitmap_node->p_item);
 
-		if(p_bitmap->avail >= num) {
+		if(p_bitmap->avail_num >= num) {
 			for(i = 0; i < p_bitmap->num; i++) {
 				if(rtl_bitmap_read(p_bitmap->p_bitmap, i) == 0) {
 					for(j = i;
@@ -264,15 +274,26 @@ void create_init_bitmap()
 	do {
 		p_mem_tbl = (pphymem_tbl_entry_t)(p_mmap_node->p_item);
 
-		if(p_mem_tbl->status == PHY_MEM_ALLOCATABLE) {
+		if(p_mem_tbl->status == PHY_MEM_ALLOCATABLE
+		   && p_mem_tbl->status == PHY_MEM_DMA) {
 			//Allocate bitmap
 			if(p_mem_tbl->size / 4096 <= PHY_INIT_BITMAP_NUM - bits_init_num) {
 				p_phy_mem = hp_alloc_mm(sizeof(phymem_bitmap_t), phymem_heap);
 				ASSERT(p_phy_mem != NULL);
 				p_phy_mem->base = p_mem_tbl->base;
 				p_phy_mem->num = p_mem_tbl->size / 4096;
-				p_phy_mem->avail = p_phy_mem->num;
+				p_phy_mem->avail_num = p_phy_mem->num;
 				p_phy_mem->p_bitmap = init_bitmap + bits_init_num;
+
+				switch(p_mem_tbl->status) {
+					case PHY_MEM_ALLOCATABLE:
+						p_phy_mem->status = PHYMEM_BITMAP_NORMAL;
+						break;
+
+					case PHY_MEM_DMA:
+						p_phy_mem->status = PHYMEM_BITMAP_DMA;
+						break;
+				}
 
 				bits_init_num += p_phy_mem->num;
 				bits_init_num += (bits_init_num % 8 ? 0 : 8 - bits_init_num % 8);
@@ -286,8 +307,18 @@ void create_init_bitmap()
 				ASSERT(p_phy_mem != NULL);
 				p_phy_mem->base = p_mem_tbl->base;
 				p_phy_mem->num = PHY_INIT_BITMAP_NUM - bits_init_num;
-				p_phy_mem->avail = p_phy_mem->num;
+				p_phy_mem->avail_num = p_phy_mem->num;
 				p_phy_mem->p_bitmap = init_bitmap + bits_init_num;
+
+				switch(p_mem_tbl->status) {
+					case PHY_MEM_ALLOCATABLE:
+						p_phy_mem->status = PHYMEM_BITMAP_NORMAL;
+						break;
+
+					case PHY_MEM_DMA:
+						p_phy_mem->status = PHYMEM_BITMAP_DMA;
+						break;
+				}
 
 				rtl_list_insert_after(&phymem_bitmap_list,
 				                      NULL,

@@ -36,6 +36,9 @@
 #define	PHYMEM_HEAP_SIZE			4096
 #define	PHY_INIT_BITMAP_SIZE		4096
 
+#define	PHYMEM_BITMAP_NORMAL		0
+#define	PHYMEM_BITMAP_DMA			1
+
 typedef	struct	_phymem_tbl_entry {
 	void*	base;
 	size_t	size;
@@ -45,7 +48,8 @@ typedef	struct	_phymem_tbl_entry {
 typedef	struct	_phymem_bitmap {
 	void*		base;
 	size_t		num;
-	size_t		avail;
+	size_t		avail_num;
+	u32			status;
 	pbitmap_t	p_bitmap;
 } phymem_bitmap_t, *pphymem_bitmap_t;
 
