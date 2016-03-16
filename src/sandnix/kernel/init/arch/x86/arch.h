@@ -18,8 +18,6 @@
 #pragma once
 #include "../../../../../common/common.h"
 
-#define	KERNEL_MEM_BASE			0xC0000000
-
 #define	DA_32		0x4000		//32 bit segment
 #define	DA_DPL0		0x00		//DPL = 0
 #define	DA_DPL1		0x20		//DPL = 1

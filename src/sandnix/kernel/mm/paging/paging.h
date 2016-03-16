@@ -42,6 +42,16 @@ typedef	struct	_page_block_list {
 	list_t	block_list;
 } page_block_list_t, *ppage_block_list_t;
 
+typedef	struct	_page_globl_dir {
+	id_t				begin;
+	size_t				num;
+	ppage_proc_dir_t	p_proc_dirs;
+} page_globl_dir_t, *ppage_globl_dir_t;
+
+typedef	struct	_page_proc_dir {
+	void*		physical_address;
+} page_proc_dir_t, *ppage_proc_dir_t;
+
 void		paging_init();
 void*		mm_page_alloc(void* base, size_t num, u32 options);
 void*		mm_page_obj_map(void* base, ppage_obj_t p_obj);

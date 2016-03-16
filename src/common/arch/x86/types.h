@@ -27,16 +27,19 @@ typedef signed short			s16;
 typedef signed long				s32;
 typedef signed long long		s64;
 
-typedef	u8		le8;
-typedef	u16		le16;
-typedef	u32		le32;
-typedef	u64		le64;
+typedef	u8						le8;
+typedef	u16						le16;
+typedef	u32						le32;
+typedef	u64						le64;
 
-typedef	u8		bool;
-#define	true	1
-#define	false	0
+typedef	u8						bool;
+#define	true					1
+#define	false					0
 
-typedef u32		size_t;
-typedef s32		ssize_t;
+typedef u32						size_t;
+typedef s32						ssize_t;
 
-#define	NULL	((void*)0)
+typedef	u32						id_t;
+typedef	u32						LONG;
+
+#define	NULL					((void*)0)

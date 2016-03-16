@@ -18,7 +18,9 @@
 #pragma once
 
 #include "../../../common/common.h"
-
 #include "spinlock/spinlock.h"
 
+#define	MAX_PROC_NUM_INDEX	16
+#define	MAX_PROC_NUM		( 1 << MAX_PROC_NUM_INDEX)
+#define	MAX_PROC_ID			(MAX_PROC_NUM - 1)
 

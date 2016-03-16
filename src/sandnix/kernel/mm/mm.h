@@ -18,11 +18,14 @@
 #pragma once
 
 #include "../../../common/common.h"
+#include "phymem/phymem.h"
+#include "paging/paging.h"
 #include "heap/heap.h"
 
 #ifdef	X86
 	#include "arch/x86/page_table.h"
 	#include "arch/x86/phymem/phymem.h"
+	#include "arch/x86/paging/paging.h"
 #endif
 
 #ifdef	AMD64
