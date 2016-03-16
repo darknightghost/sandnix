@@ -70,4 +70,4 @@ extern	void*		phymem_heap;
 void	phymem_init();
 void	phymem_manage_all();
 
-pphymem_obj_t	mm_phymem_alloc(size_t num);
+pphymem_obj_t	mm_phymem_alloc(size_t num, bool is_dma);

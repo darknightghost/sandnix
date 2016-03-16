@@ -90,8 +90,10 @@ void phymem_manage_all()
 	do {
 		p_mem_tbl = (pphymem_tbl_entry_t)(p_mmap_node->p_item);
 
-		if(p_mem_tbl->status == PHY_MEM_ALLOCATABLE) {
-			if((size_t)(p_mem_tbl->base) + p_mem_tbl->size > (size_t)begin_address) {
+		if(p_mem_tbl->status == PHY_MEM_ALLOCATABLE
+		   || p_mem_tbl->status == PHY_MEM_DMA) {
+			if((size_t)(p_mem_tbl->base) + p_mem_tbl->size
+			   > (size_t)begin_address) {
 				//Create new bitmaps
 				p_phy_bitmap = hp_alloc_mm(sizeof(phymem_bitmap_t), phymem_heap);
 				ASSERT(p_phy_bitmap != NULL);
@@ -147,7 +149,7 @@ void phymem_manage_all()
 	return;
 }
 
-pphymem_obj_t mm_phymem_alloc(size_t num)
+pphymem_obj_t mm_phymem_alloc(size_t num, bool is_dma)
 {
 	pphymem_obj_t p_ret;
 	plist_node_t p_bitmap_node;
@@ -163,7 +165,10 @@ pphymem_obj_t mm_phymem_alloc(size_t num)
 	do {
 		p_bitmap = (pphymem_bitmap_t)(p_bitmap_node->p_item);
 
-		if(p_bitmap->avail_num >= num) {
+		if(p_bitmap->avail_num >= num
+		   && (is_dma
+		       ? p_bitmap->status == PHYMEM_BITMAP_DMA
+		       : p_bitmap->status == PHYMEM_BITMAP_NORMAL)) {
 			for(i = 0; i < p_bitmap->num; i++) {
 				if(rtl_bitmap_read(p_bitmap->p_bitmap, i) == 0) {
 					for(j = i;

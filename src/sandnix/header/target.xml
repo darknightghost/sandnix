@@ -11,7 +11,7 @@
 			<LDFLAGS type="textbox">--oformat binary -m elf_i386 -N -Ttext 0x0000</LDFLAGS>
 			<LDRULE type="textbox">$(LD) $(LDFLAGS) -o $@ -Map $(basename $@).map $^</LDRULE>		
 			<DEP type="textbox">gcc</DEP>
-			<DEPRULE type="textbox">$(DEP) -MM -o $@ $&lt;;echo $(OBJDIR)/$(ARCH)/`cat $@` &gt; $@</DEPRULE>
+			<DEPRULE type="textbox">$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then echo $(OBJDIR)/$(ARCH)/`cat $@` &gt; $@; fi</DEPRULE>
 			<AFTER type="textbox"></AFTER>			
 		</arch>
 		<arch name="amd64">
@@ -25,7 +25,7 @@
 			<LDFLAGS type="textbox">--oformat binary -m elf_i386 -N -Ttext 0x0000</LDFLAGS>
 			<LDRULE type="textbox">$(LD) $(LDFLAGS) -o $@ -Map $(basename $@).map $^</LDRULE>		
 			<DEP type="textbox">gcc</DEP>
-			<DEPRULE type="textbox">$(DEP) -MM -o $@ $&lt;;echo $(OBJDIR)/$(ARCH)/`cat $@` &gt; $@</DEPRULE>
+			<DEPRULE type="textbox">$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then echo $(OBJDIR)/$(ARCH)/`cat $@` &gt; $@; fi</DEPRULE>
 			<AFTER type="textbox"></AFTER>	
 		</arch>
 	</build>

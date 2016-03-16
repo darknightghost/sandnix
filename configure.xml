@@ -14,7 +14,7 @@
 			<LDFLAGS type="textbox"></LDFLAGS>
 			<LDRULE type="textbox">$(LD) $(LDFLAGS) -o $@ $^</LDRULE>
 			<DEP type="textbox">gcc</DEP>
-			<DEPRULE type="textbox">$(DEP) -MM -o $@ $&lt;;echo $(OBJDIR)/$(ARCH)/`cat $@` &gt; $@</DEPRULE>
+			<DEPRULE type="textbox">$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then echo $(OBJDIR)/$(ARCH)/`cat $@` &gt; $@; fi</DEPRULE>
 			<AFTER type="textbox"></AFTER>		
 		</arch>
 	</build>	
