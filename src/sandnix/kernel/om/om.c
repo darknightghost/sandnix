@@ -17,6 +17,7 @@
 
 #include "om.h"
 #include "../rtl/rtl.h"
+#include "../mm/mm.h"
 
 void om_init_kobject(pkobject_t p_obj, kobj_destructor_t destructor
                      , kobj_to_str to_string)

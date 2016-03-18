@@ -18,8 +18,8 @@
 #pragma once
 
 #include "../../../../common/common.h"
-#include "../../om/om.h"
 #include "../../rtl/rtl.h"
+#include "../../om/om.h"
 
 #ifdef	X86
 	#include "../arch/x86/phymem/phymem.h"
@@ -39,6 +39,7 @@
 #define	PHYMEM_BITMAP_NORMAL		0
 #define	PHYMEM_BITMAP_DMA			1
 
+#ifndef	_ASM
 typedef	struct	_phymem_tbl_entry {
 	void*	base;
 	size_t	size;
@@ -63,11 +64,9 @@ typedef	struct	_phymem_obj {
 	phymem_block_t	mem_block;
 } phymem_obj_t, *pphymem_obj_t;
 
-extern	list_t		phymem_list;
-extern	list_t		phymem_allocatable_list;
-extern	void*		phymem_heap;
-
 void	phymem_init();
 void	phymem_manage_all();
 
 pphymem_obj_t	mm_phymem_alloc(size_t num, bool is_dma);
+
+#endif	//!	_ASM

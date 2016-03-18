@@ -59,7 +59,7 @@ void start_paging(u32 offset, u32 magic, void* p_boot_info)
 		p_pte->dirty = 0;
 		p_pte->page_table_attr_index = 0;
 		p_pte->global_page = 1;
-		p_pte->avail = PG_NORMAL;
+		p_pte->avail = 0;
 		p_pte->page_base_addr = (i * 4096) >> 12;
 	}
 
@@ -116,7 +116,7 @@ void start_paging(u32 offset, u32 magic, void* p_boot_info)
 			p_pte->dirty = 0;
 			p_pte->page_table_attr_index = 0;
 			p_pte->global_page = 0;
-			p_pte->avail = PG_NORMAL;
+			p_pte->avail = 0;
 			p_pte->page_base_addr = 0;
 		}
 	}
@@ -139,7 +139,7 @@ void start_paging(u32 offset, u32 magic, void* p_boot_info)
 		p_pde->reserved = 0;
 		p_pde->page_size = PG_SIZE_4K;
 		p_pde->global_page = 0;
-		p_pde->avail = PG_NORMAL;
+		p_pde->avail = 0;
 
 		if(i < pde_num) {
 			p_pde->present = PG_P;

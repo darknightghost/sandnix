@@ -23,9 +23,11 @@
 static	bool			should_merge(pphymem_tbl_entry_t p1,
                                      pphymem_tbl_entry_t p2);
 static	plist_node_t	merge_memory(plist_node_t p_node1,
-                                     plist_node_t p_node2);
+                                     plist_node_t p_node2,
+                                     list_t phymem_list,
+                                     void* phymem_heap);
 
-void phymem_init_arch()
+void phymem_init_arch(list_t phymem_list, void* phymem_heap)
 {
 	pphy_mem_info_t p_info;
 	list_t memmap_list;
@@ -224,7 +226,8 @@ void phymem_init_arch()
 		//Merge node
 		if(should_merge((pphymem_tbl_entry_t)(p_node->p_item),
 		                (pphymem_tbl_entry_t)(p_node->p_next->p_item))) {
-			p_node = merge_memory(p_node, p_node->p_next);
+			p_node = merge_memory(p_node, p_node->p_next,
+			                      phymem_list, phymem_heap);
 
 		} else {
 			p_node = p_node->p_next;
@@ -247,7 +250,8 @@ bool should_merge(pphymem_tbl_entry_t p1, pphymem_tbl_entry_t p2)
 	return false;
 }
 
-plist_node_t merge_memory(plist_node_t p_node1, plist_node_t p_node2)
+plist_node_t merge_memory(plist_node_t p_node1, plist_node_t p_node2,
+                          list_t phymem_list, void* phymem_heap)
 {
 	pphymem_tbl_entry_t p_entry1;
 	pphymem_tbl_entry_t p_entry2;

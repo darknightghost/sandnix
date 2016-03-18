@@ -24,9 +24,9 @@
 
 #define	PHY_INIT_BITMAP_NUM		(PHY_INIT_BITMAP_SIZE * 8)
 
-list_t		phymem_list = NULL;
-list_t		phymem_bitmap_list = NULL;
-void*		phymem_heap;
+static	list_t		phymem_list = NULL;
+static	list_t		phymem_bitmap_list = NULL;
+static	void*		phymem_heap;
 
 static	u8			phymem_heap_buf[PHYMEM_HEAP_SIZE];
 static	spinlock_t	alloc_lock;
@@ -41,7 +41,7 @@ static	pkstring_t	to_string(pphymem_obj_t p_this);
 
 void phymem_init()
 {
-	dbg_kprint("Testing physical memory...\n");
+	dbg_kprint("Initialize physical memory...\n");
 	//phymem_heap = mm_hp_create_on_buf(phymem_heap_buf, PHYMEM_HEAP_SIZE,
 	//                                  HEAP_EXTENDABLE | HEAP_MULTITHREAD
 	//                                  | HEAP_PREALLOC);
@@ -49,7 +49,7 @@ void phymem_init()
 	                                  HEAP_MULTITHREAD
 	                                  | HEAP_PREALLOC);
 
-	phymem_init_arch();
+	phymem_init_arch(phymem_list, phymem_heap);
 
 	print_phymem();
 

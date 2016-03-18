@@ -17,6 +17,7 @@
 
 #include "arch.h"
 #include "../../init.h"
+#include "../../../mm/mm.h"
 
 #define	PCI_CONFIG_ADDRESS	0xCF8
 #define	PCI_CONFIG_DATA		0xCFC

@@ -19,7 +19,9 @@
 
 #include "../../../../../../common/common.h"
 
+#ifndef	_ASM
 #define	DMA_MEM_BASE	((void*)0)
 #define	DMA_MEM_SIZE	(size_t)(16 * 1024 * 1024)
 
-void	phymem_init_arch();
+void	phymem_init_arch(list_t phymem_list, void* phymem_heap);
+#endif	//!	_ASM

@@ -18,9 +18,15 @@
 #pragma once
 
 #include "../../../../../../common/common.h"
+#include "../../../../rtl/rtl.h"
 #include "../page_table.h"
 
 #define	KERNEL_MEM_BASE			0xC0000000
 #define	KERNEL_MEM_SIZE			(1024*1024*1024)
 
+#define	MAX_PAGEBLOCK_SIZE		4096
 
+#ifndef	_ASM
+
+void	paging_init_arch(list_t* kernel_free_page_list);
+#endif	//!	_ASM

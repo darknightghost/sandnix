@@ -18,8 +18,8 @@
 #pragma once
 
 #include "../../../common/common.h"
-#include "../mm/mm.h"
 
+#ifndef	_ASM
 #define	INIT_KOBJECT(p_obj,destructor,to_string){ \
 		om_init_kobject((pkobject_t)(p_obj), \
 		                (kobj_destructor_t)(destructor), \
@@ -43,3 +43,4 @@ void	om_init_kobject(pkobject_t p_obj,
                         kobj_to_str to_string);
 void	om_inc_kobject_ref(pkobject_t p_obj);
 void	om_dec_kobject_ref(pkobject_t p_obj);
+#endif	//!	_ASM

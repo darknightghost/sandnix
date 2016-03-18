@@ -19,6 +19,7 @@
 
 #include "../../../common/common.h"
 
+#ifndef	_ASM
 #ifdef	X86
 
 //Variable Arguments
@@ -36,7 +37,6 @@ typedef	u8*				va_list;
 #endif	//!	X86
 
 #include "list/list.h"
-#include "string/string.h"
 #include "string/kstring.h"
 #include "math/math.h"
 #include "bitmap/bitmap.h"
@@ -47,3 +47,4 @@ typedef	u8*				va_list;
 #include "hash_table/hash_table.h"
 #include "path/path.h"*/
 
+#endif	//!	_ASM

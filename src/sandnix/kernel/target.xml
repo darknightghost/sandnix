@@ -12,7 +12,7 @@
 			<LDFLAGS type="textbox">-m elf_i386 -Ttext 0xc0101000 -e _start --no-omagic</LDFLAGS>
 			<LDRULE type="textbox">$(LD) $(LDFLAGS) -o $@ -Map $(basename $@).map $^</LDRULE>		
 			<DEP type="textbox">gcc</DEP>
-			<DEPRULE type="textbox">$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then echo $(OBJDIR)/$(ARCH)/`cat $@` &gt; $@; fi</DEPRULE>
+			<DEPRULE type="textbox">$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then cat $@|awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(OBJDIR)/$(ARCH)/&quot;,$$0)} NR != 1 {print $$0}' &gt; $@; fi</DEPRULE>
 			<AFTER type="textbox"></AFTER>			
 		</arch>
 		<arch name="amd64">
@@ -27,7 +27,7 @@
 			<LDFLAGS type="textbox"></LDFLAGS>
 			<LDRULE type="textbox">$(LD) $(LDFLAGS) -o $@ -Map $() $^</LDRULE>		
 			<DEP type="textbox">gcc</DEP>
-			<DEPRULE type="textbox">$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then echo $(OBJDIR)/$(ARCH)/`cat $@` &gt; $@; fi</DEPRULE>
+			<DEPRULE type="textbox">$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then cat $@|awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(OBJDIR)/$(ARCH)/&quot;,$$0)} NR != 1 {print $$0}' &gt; $@; fi</DEPRULE>
 			<AFTER type="textbox"></AFTER>			
 		</arch>
 	</build>

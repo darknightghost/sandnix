@@ -17,8 +17,10 @@
 
 #pragma once
 
+#ifndef	_ASM
 #include "../../../../common/common.h"
 #include "../../om/om.h"
 #include "../../rtl/rtl.h"
 #include "../phymem/phymem.h"
 #include "swap_obj.h"
+#endif	//!	_ASM
