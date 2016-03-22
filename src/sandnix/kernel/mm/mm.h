@@ -37,9 +37,4 @@
 #ifndef	_ASM
 	void	mm_init();
 	void	mm_excpt_hndlr_init();
-
-	extern	void*	mm_mgr_page_addr;
-	extern	void*	mm_init_pt_addr;
-	extern	void*	kernel_address_offset;
-	extern	u32		init_page_num;
 #endif	//!	_ASM

@@ -18,7 +18,8 @@
 #include "list.h"
 #include "../../mm/mm.h"
 
-plist_node_t rtl_list_insert_before(list_t* p_list, plist_node_t position, void* p_item, void* heap)
+plist_node_t rtl_list_insert_before(plist_t p_list, plist_node_t position,
+                                    void* p_item, void* heap)
 {
 	plist_node_t p_node, p_new_node;
 
@@ -59,7 +60,8 @@ plist_node_t rtl_list_insert_before(list_t* p_list, plist_node_t position, void*
 	return p_new_node;
 }
 
-plist_node_t rtl_list_insert_after(list_t* p_list, plist_node_t position, void* p_item, void* heap)
+plist_node_t rtl_list_insert_after(plist_t p_list, plist_node_t position,
+                                   void* p_item, void* heap)
 {
 	plist_node_t p_node, p_new_node;
 
@@ -97,7 +99,7 @@ plist_node_t rtl_list_insert_after(list_t* p_list, plist_node_t position, void* 
 	return p_new_node;
 }
 
-void rtl_list_remove(list_t* p_list, plist_node_t p_node, void* heap)
+void rtl_list_remove(plist_t p_list, plist_node_t p_node, void* heap)
 {
 	if(*p_list == NULL) {
 		return;
@@ -141,7 +143,7 @@ plist_node_t rtl_list_get_node_by_item(list_t lst, void* p_item)
 	return NULL;
 }
 
-void rtl_list_destroy(list_t* p_list, void* heap, item_destroy_callback callback, void* p_arg)
+void rtl_list_destroy(plist_t p_list, void* heap, item_destroy_callback callback, void* p_arg)
 {
 	while(*p_list != NULL) {
 		if(callback != NULL) {

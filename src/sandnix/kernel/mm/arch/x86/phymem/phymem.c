@@ -24,10 +24,10 @@ static	bool			should_merge(pphymem_tbl_entry_t p1,
                                      pphymem_tbl_entry_t p2);
 static	plist_node_t	merge_memory(plist_node_t p_node1,
                                      plist_node_t p_node2,
-                                     list_t phymem_list,
+                                     plist_t p_phymem_list,
                                      void* phymem_heap);
 
-void phymem_init_arch(list_t phymem_list, void* phymem_heap)
+void phymem_init_arch(plist_t p_phymem_list, void* phymem_heap)
 {
 	pphy_mem_info_t p_info;
 	list_t memmap_list;
@@ -36,11 +36,13 @@ void phymem_init_arch(list_t phymem_list, void* phymem_heap)
 	pphymem_tbl_entry_t p_c_entry;
 	pphymem_tbl_entry_t p_n_entry;
 	pphymem_tbl_entry_t p_p_entry;
+	list_t phymem_list;
 	bool sort_flag;
 	void* t;
 
 	memmap_list = init_get_phy_mem_info();
 	p_node = memmap_list;
+	phymem_list = NULL;
 
 	do {
 		p_info = (pphy_mem_info_t)(p_node->p_item);
@@ -227,15 +229,15 @@ void phymem_init_arch(list_t phymem_list, void* phymem_heap)
 		if(should_merge((pphymem_tbl_entry_t)(p_node->p_item),
 		                (pphymem_tbl_entry_t)(p_node->p_next->p_item))) {
 			p_node = merge_memory(p_node, p_node->p_next,
-			                      phymem_list, phymem_heap);
+			                      &phymem_list, phymem_heap);
 
 		} else {
 			p_node = p_node->p_next;
 		}
-	} while(p_node != phymem_list->p_prev);
+	} while(((pphymem_tbl_entry_t)(p_node->p_next->p_item))->base != 0x0);
 
-	UNREFERRED_PARAMETER(should_merge);
-	UNREFERRED_PARAMETER(merge_memory);
+	*p_phymem_list = phymem_list;
+
 	return;
 }
 
@@ -251,7 +253,7 @@ bool should_merge(pphymem_tbl_entry_t p1, pphymem_tbl_entry_t p2)
 }
 
 plist_node_t merge_memory(plist_node_t p_node1, plist_node_t p_node2,
-                          list_t phymem_list, void* phymem_heap)
+                          plist_t p_phymem_list, void* phymem_heap)
 {
 	pphymem_tbl_entry_t p_entry1;
 	pphymem_tbl_entry_t p_entry2;
@@ -273,18 +275,18 @@ plist_node_t merge_memory(plist_node_t p_node1, plist_node_t p_node2,
 			p_entry1->size = (u32)(p_entry2->base) - (u32)(p_entry1->base);
 
 			if(p_entry1->size == 0) {
-				rtl_list_remove(&phymem_list, p_node1, phymem_heap);
+				rtl_list_remove(p_phymem_list, p_node1, phymem_heap);
 				mm_hp_free(p_entry1, phymem_heap);
 			}
 
-			return rtl_list_insert_after(&phymem_list, p_node2,
+			return rtl_list_insert_after(p_phymem_list, p_node2,
 			                             p_new_entry, phymem_heap);
 
 		} else {
 			p_entry1->size = (u32)(p_entry2->base) - (u32)(p_entry1->base);
 
 			if(p_entry1->size == 0) {
-				rtl_list_remove(&phymem_list, p_node1, phymem_heap);
+				rtl_list_remove(p_phymem_list, p_node1, phymem_heap);
 				mm_hp_free(p_entry1, phymem_heap);
 			}
 
@@ -297,7 +299,7 @@ plist_node_t merge_memory(plist_node_t p_node1, plist_node_t p_node2,
 		p_entry2->size = (u32)(p_entry2->base) + p_entry2->size
 		                 - (u32)(p_entry1->base);
 		p_entry2->base = p_entry1->base;
-		rtl_list_remove(&phymem_list, p_node1, phymem_heap);
+		rtl_list_remove(p_phymem_list, p_node1, phymem_heap);
 		mm_hp_free(p_entry1, phymem_heap);
 		return p_node2;
 
@@ -306,7 +308,7 @@ plist_node_t merge_memory(plist_node_t p_node1, plist_node_t p_node2,
 		if((u32)(p_entry1->base) + p_entry1->size
 		   > (u32)p_entry2->base + p_entry2->size) {
 			//Entry1 contains entry2
-			rtl_list_remove(&phymem_list, p_node2, phymem_heap);
+			rtl_list_remove(p_phymem_list, p_node2, phymem_heap);
 			mm_hp_free(p_entry2, phymem_heap);
 			return p_node1->p_next;
 
@@ -315,7 +317,7 @@ plist_node_t merge_memory(plist_node_t p_node1, plist_node_t p_node2,
 			                 - ((u32)(p_entry1->base) + p_entry1->size);
 
 			if(p_entry2->size == 0) {
-				rtl_list_remove(&phymem_list, p_node2, phymem_heap);
+				rtl_list_remove(p_phymem_list, p_node2, phymem_heap);
 				mm_hp_free(p_entry2, phymem_heap);
 				return p_node1->p_next;
 			}

@@ -25,19 +25,22 @@ typedef	struct _list_node {
 	struct _list_node*	p_prev;
 	struct _list_node*	p_next;
 	void*				p_item;
-} list_node_t, *plist_node_t, *list_t;
+} list_node_t, *plist_node_t, *list_t, **plist_t;
 
 plist_node_t		rtl_list_insert_before(
-    list_t* p_list,
+    plist_t p_list,
     plist_node_t position,		//Null if at the start of the list_t
     void* p_item,
     void* heap);
 plist_node_t		rtl_list_insert_after(
-    list_t* p_list,
+    plist_t p_list,
     plist_node_t position,		//Null if at the end of the list_t
     void* p_item,
     void* heap);
 
-void				rtl_list_remove(list_t* p_list, plist_node_t p_node, void* heap);
+void				rtl_list_remove(plist_t p_list, plist_node_t p_node,
+                                    void* heap);
 plist_node_t		rtl_list_get_node_by_item(list_t lst, void* p_item);
-void				rtl_list_destroy(list_t* p_list, void* heap, item_destroy_callback callback, void* p_arg);
+void				rtl_list_destroy(plist_t p_list, void* heap,
+                                     item_destroy_callback callback,
+                                     void* p_arg);

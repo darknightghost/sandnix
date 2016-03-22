@@ -22,7 +22,7 @@
 	#include "page_obj.h"
 #endif	//!	_ASM
 
-#ifdef	x86
+#ifdef	X86
 	#include "../arch/x86/paging/paging.h"
 #endif	//	X86
 

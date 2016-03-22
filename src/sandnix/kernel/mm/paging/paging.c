@@ -18,7 +18,10 @@
 #include "../../../../common/common.h"
 #include "../../rtl/rtl.h"
 #include "../../pm/pm.h"
+#include "../../debug/debug.h"
+#include "../../exceptions/exceptions.h"
 #include "paging.h"
+#include "../heap/heap.h"
 
 #define	PAGING_HEAP_SIZE	4096
 #define	PG_GLOBL_DIR_NUM	(1 << (MAX_PROC_NUM_INDEX / 2))
@@ -41,6 +44,9 @@ void paging_init()
 	paging_heap = mm_hp_create_on_buf(paging_heap_buf, PAGING_HEAP_SIZE,
 	                                  HEAP_MULTITHREAD
 	                                  | HEAP_PREALLOC);
+	rtl_memset(page_dir, 0, sizeof(page_dir));
+	paging_init_arch(&kernel_free_blocks, &kernel_using_blocks, paging_heap);
+	UNREFERRED_PARAMETER(current_id);
 }
 
 void*		mm_page_alloc(void* base, size_t num, u32 options);

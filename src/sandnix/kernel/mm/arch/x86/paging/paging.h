@@ -28,5 +28,12 @@
 
 #ifndef	_ASM
 
-void	paging_init_arch(list_t* kernel_free_page_list);
+extern	void*	mm_mgr_page_addr;
+extern	void*	mm_init_pt_addr;
+extern	void*	kernel_address_offset;
+extern	u32		init_page_num;
+
+void	paging_init_arch(plist_t p_kernel_free_page_list,
+                         plist_t p_kernel_using_page_list,
+                         void* heap);
 #endif	//!	_ASM

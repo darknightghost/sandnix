@@ -17,5 +17,27 @@
 
 #include "../../../../../../common/common.h"
 #include "../../../../init/init.h"
+#include "../../../../rtl/rtl.h"
+#include "../../../../debug/debug.h"
+#include "../../../../exceptions/exceptions.h"
 #include "../../../mm.h"
 #include "../../../phymem/phymem.h"
+
+void*	mm_mgr_page_addr;
+void*	mm_init_pt_addr;
+void*	kernel_address_offset;
+u32		init_page_num;
+
+void paging_init_arch(plist_t p_kernel_free_page_list,
+                      plist_t p_kernel_using_page_list,
+                      void* heap)
+{
+	*p_kernel_free_page_list = NULL;
+	*p_kernel_using_page_list = NULL;
+
+	dbg_kprint("%P\n%P\n%P\n%P\n", mm_mgr_page_addr, mm_init_pt_addr, kernel_address_offset, init_page_num);
+
+	while(1);
+
+	UNREFERRED_PARAMETER(heap);
+}

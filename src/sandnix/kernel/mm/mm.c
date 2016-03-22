@@ -19,13 +19,10 @@
 #include "mm.h"
 #include "phymem/phymem.h"
 
-void*	mm_mgr_page_addr;
-void*	mm_init_pt_addr;
-void*	kernel_address_offset;
-u32		init_page_num;
 
 void mm_init()
 {
 	dbg_kprint("\nInitializing mm...\n");
 	phymem_init();
+	paging_init();
 }

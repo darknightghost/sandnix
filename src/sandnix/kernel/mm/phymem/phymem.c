@@ -49,7 +49,7 @@ void phymem_init()
 	                                  HEAP_MULTITHREAD
 	                                  | HEAP_PREALLOC);
 
-	phymem_init_arch(phymem_list, phymem_heap);
+	phymem_init_arch(&phymem_list, phymem_heap);
 
 	print_phymem();
 
