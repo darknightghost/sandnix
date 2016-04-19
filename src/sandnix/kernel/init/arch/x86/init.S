@@ -42,6 +42,7 @@
 .global		kernel_header
 
 .code32
+	jmp		_start
 .align	8
 kernel_header:
 //magic

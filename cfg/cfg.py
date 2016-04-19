@@ -163,22 +163,23 @@ class target:
 		self.dom.writexml(self.file,addindent='', newl='',encoding='utf-8')
 		
 	def get_build_options(self,target_list,arch):
-		children = []
-		options = "ARCH = %s\nTARGET = %s\n"%(arch.name,self.name)
+		if self.enable_build == True:
+			children = []
+			options = "ARCH = %s\nTARGET = %s\n"%(arch.name,self.name)
 		
-		macros = ""
-		for t in self.menu_objs:
-			option = t.get_build_options(children,arch)
-			if t != "":
-				if macros != "":
-					macros = macro + " "
-				macros = macros + option
-		try:
-			options = options + self.archs[arch.name].get_build_options(macros)
-		except KeyError:
-			options = options + arch.get_build_options(macros)
-		options = "%sOBJDIR = %s\nOUTPUT = %s\n"%(options,self.objdir,self.output)
-		target_list.append([self.path,options,self.output,children])
+			macros = ""
+			for t in self.menu_objs:
+				option = t.get_build_options(children,arch)
+				if t != "":
+					if macros != "":
+						macros = macro + " "
+					macros = macros + option
+			try:
+				options = options + self.archs[arch.name].get_build_options(macros)
+			except KeyError:
+				options = options + arch.get_build_options(macros)
+			options = "%sOBJDIR = %s\nOUTPUT = %s\n"%(options,self.objdir,self.output)
+			target_list.append([self.path,options,self.output,children])
 		return ""
 
 

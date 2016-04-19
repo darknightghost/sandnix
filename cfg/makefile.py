@@ -134,10 +134,11 @@ def create_target_makefile(target,arch):
 	return
 	
 def get_sources(arch):
-	f = open("sources","r")
+	f = open("sources.%s"%(arch),"r")
 	lst = f.readlines()
 	f.close()
-	f = open("sources.%s"%(arch),"r")
+	
+	f = open("sources","r")
 	lst = lst + f.readlines()
 	f.close()
 	ret = []
