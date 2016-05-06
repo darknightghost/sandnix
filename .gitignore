@@ -10,3 +10,4 @@ cscope*
 *.pyc
 Makefile
 *.dep
+*#
