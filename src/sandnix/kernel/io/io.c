@@ -15,19 +15,14 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "../../../common/common.h"
+#include "../debug/debug.h"
 
-#ifndef _ASM
-	#ifdef X86
-		#include "arch/x86/types.h"
-	#endif
+#include "interrupt.h"
 
-	#ifdef AMD64
-		#include "arch/amd64/types.h"
-	#endif
-
-	#define	UNREFERRED_PARAMETER(x)		((void)(x))
-
-#endif
-
-#include "version.h"
+//Init
+void io_init()
+{
+	dbg_kprint("\nInitializing io module...\n");
+	interrupt_init();
+}

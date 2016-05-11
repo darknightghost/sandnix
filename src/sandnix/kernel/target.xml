@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?><target>
+	<build objdir="../../../obj/sandnix/kernel" output="../../../bin/sandnix/$(ARCH)/kernel">
+		<arch name="x86">
+			<!--Build options,projects's private options can override them-->			
+			<AS type="textbox">gcc</AS>			
+			<ASFLAGS type="textbox">-x assembler-with-cpp -fno-zero-initialized-in-bss -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -fno-builtin -c -D_ASM -Werror</ASFLAGS>
+			<ASRULE type="textbox">$(AS) $(ASFLAGS) -o $@ $&lt;</ASRULE>
+			<CC type="textbox">gcc</CC>	
+			<CFLAGS type="textbox">-fno-zero-initialized-in-bss -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -fno-builtin -c -O0 -Werror -mno-sse2 -mno-sse</CFLAGS>
+			<CCRULE type="textbox">$(CC) $(CFLAGS) -o $@ $&lt;</CCRULE>
+			<LD type="textbox">ld</LD>
+			<LDFLAGS type="textbox">-m elf_i386 -Ttext 0xc0101000 -e _start --no-omagic</LDFLAGS>
+			<LDRULE type="textbox">$(LD) $(LDFLAGS) -o $@ -Map $(basename $@).map $^</LDRULE>		
+			<DEP type="textbox">gcc</DEP>
+			<DEPRULE type="textbox">$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then cat $@|awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(OBJDIR)/$(ARCH)/&quot;,$$0)} NR != 1 {print $$0}' &gt; $@; fi</DEPRULE>
+			<AFTER type="textbox"></AFTER>			
+		</arch>
+		<arch name="amd64">
+			<!--Build options,projects's private options can override them-->			
+			<AS type="textbox">gcc</AS>			
+			<ASFLAGS type="textbox">-m32 -c</ASFLAGS>
+			<ASRULE type="textbox"></ASRULE>
+			<CC type="textbox">gcc</CC>	
+			<CFLAGS type="textbox">-m32 -c</CFLAGS>
+			<CCRULE type="textbox"></CCRULE>
+			<LD type="textbox">ld</LD>
+			<LDFLAGS type="textbox"></LDFLAGS>
+			<LDRULE type="textbox">$(LD) $(LDFLAGS) -o $@ -Map $() $^</LDRULE>		
+			<DEP type="textbox">gcc</DEP>
+			<DEPRULE type="textbox">$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then cat $@|awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(OBJDIR)/$(ARCH)/&quot;,$$0)} NR != 1 {print $$0}' &gt; $@; fi</DEPRULE>
+			<AFTER type="textbox"></AFTER>			
+		</arch>
+	</build>
+	<menu>
+		<options text="Kernel hacking...">
+			<option macro="-g" text="Link with symbols" type="checkbox" value="true"/>
+			<option macro="-DDEBUG" text="Enable debugging" type="checkbox" value="true"/>
+		</options>
+	</menu>
+</target>

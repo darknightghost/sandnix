@@ -17,17 +17,23 @@
 
 #pragma once
 
-#ifndef _ASM
-	#ifdef X86
-		#include "arch/x86/types.h"
-	#endif
+#include "../../../../../../common/common.h"
+#include "../../../../rtl/rtl.h"
+#include "../page_table.h"
 
-	#ifdef AMD64
-		#include "arch/amd64/types.h"
-	#endif
+#define	KERNEL_MEM_BASE			0xC0000000
+#define	KERNEL_MEM_SIZE			(1024*1024*1024)
 
-	#define	UNREFERRED_PARAMETER(x)		((void)(x))
+#define	MAX_PAGEBLOCK_SIZE		4096
 
-#endif
+#ifndef	_ASM
 
-#include "version.h"
+extern	void*	mm_mgr_page_addr;
+extern	void*	mm_init_pt_addr;
+extern	void*	kernel_address_offset;
+extern	u32		init_page_num;
+
+void	paging_init_arch(plist_t p_kernel_free_page_list,
+                         plist_t p_kernel_using_page_list,
+                         void* heap);
+#endif	//!	_ASM

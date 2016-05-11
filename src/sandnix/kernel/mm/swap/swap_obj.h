@@ -17,17 +17,17 @@
 
 #pragma once
 
-#ifndef _ASM
-	#ifdef X86
-		#include "arch/x86/types.h"
-	#endif
+#include "../../../../common/common.h"
+#include "../../rtl/rtl.h"
+#include "../../om/om.h"
+//#include "../phymem/phymem.h"
 
-	#ifdef AMD64
-		#include "arch/amd64/types.h"
-	#endif
+typedef	struct	_swap_obj {
+	kobject_t	obj;
+	pkstring_t	device;
+	u64			block;
+	u64			num;
+} swap_obj_t, *pswap_obj_t;
 
-	#define	UNREFERRED_PARAMETER(x)		((void)(x))
-
-#endif
-
-#include "version.h"
+//pphymem_obj_t	swap_load(pswap_obj_t p_swap_obj);
+//pswap_obj_t		swap_mem(pphymem_obj_t p_phy_mem);

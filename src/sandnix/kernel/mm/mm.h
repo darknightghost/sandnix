@@ -17,17 +17,24 @@
 
 #pragma once
 
-#ifndef _ASM
-	#ifdef X86
-		#include "arch/x86/types.h"
-	#endif
+#include "../../../common/common.h"
+#include "phymem/phymem.h"
+#include "paging/paging.h"
+#ifndef	_ASM
+	#include "heap/heap.h"
+#endif	//!	_ASM
 
-	#ifdef AMD64
-		#include "arch/amd64/types.h"
-	#endif
-
-	#define	UNREFERRED_PARAMETER(x)		((void)(x))
-
+#ifdef	X86
+	#include "arch/x86/page_table.h"
+	#include "arch/x86/phymem/phymem.h"
+	#include "arch/x86/paging/paging.h"
 #endif
 
-#include "version.h"
+#ifdef	AMD64
+	#include "arch/amd64/page_table.h"
+#endif
+
+#ifndef	_ASM
+	void	mm_init();
+	void	mm_excpt_hndlr_init();
+#endif	//!	_ASM

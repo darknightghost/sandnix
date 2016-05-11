@@ -15,19 +15,32 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "om.h"
+#include "../rtl/rtl.h"
+#include "../mm/mm.h"
 
-#ifndef _ASM
-	#ifdef X86
-		#include "arch/x86/types.h"
-	#endif
+void om_init_kobject(pkobject_t p_obj, kobj_destructor_t destructor
+                     , kobj_to_str to_string)
+{
+	p_obj->ref_count = 1;
+	p_obj->destructor = destructor;
+	p_obj->to_string = to_string;
+	return;
+}
 
-	#ifdef AMD64
-		#include "arch/amd64/types.h"
-	#endif
+void om_inc_kobject_ref(pkobject_t p_obj)
+{
+	(p_obj->ref_count)++;
+	return;
+}
 
-	#define	UNREFERRED_PARAMETER(x)		((void)(x))
+void om_dec_kobject_ref(pkobject_t p_obj)
+{
+	(p_obj->ref_count)--;
 
-#endif
+	if(p_obj->ref_count == 0) {
+		p_obj->destructor(p_obj);
+	}
 
-#include "version.h"
+	return;
+}

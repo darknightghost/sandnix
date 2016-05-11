@@ -17,17 +17,26 @@
 
 #pragma once
 
-#ifndef _ASM
-	#ifdef X86
-		#include "arch/x86/types.h"
-	#endif
+#include "../../../common/common.h"
+#include "../exceptions/exceptions.h"
+#include "kconsole.h"
 
-	#ifdef AMD64
-		#include "arch/amd64/types.h"
-	#endif
+#ifdef	DEBUG
+#define	ASSERT(x)	{\
+		do { \
+			if(!(x)) {\
+				excpt_panic(EASSERT,\
+				            "Assert failed.\nExpression:%s\nFile:%s\nLine:%u",\
+				            #x,\
+				            __FILE__,\
+				            __LINE__);\
+			}\
+		} while(0); \
+	}
+#endif	// DEBUG
 
-	#define	UNREFERRED_PARAMETER(x)		((void)(x))
+#ifndef	DEBUG
+	#define	ASSERT(x)
+#endif	//! DEBUG
 
-#endif
-
-#include "version.h"
+void	dbg_init();

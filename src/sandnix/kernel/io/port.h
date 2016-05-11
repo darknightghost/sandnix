@@ -17,17 +17,24 @@
 
 #pragma once
 
-#ifndef _ASM
-	#ifdef X86
-		#include "arch/x86/types.h"
-	#endif
+#include "../../../common/common.h"
 
-	#ifdef AMD64
-		#include "arch/amd64/types.h"
-	#endif
+void		io_read_port_bytes(u32 port, u8* buf, u32 num);
+void		io_write_port_bytes(u32 port, u8* buf, u32 num);
 
-	#define	UNREFERRED_PARAMETER(x)		((void)(x))
+void		io_read_port_words(u32 port, u16* buf, u32 num);
+void		io_write_port_words(u32 port, u16* buf, u32 num);
 
-#endif
+void		io_read_port_dwords(u32 port, u32* buf, u32 num);
+void		io_write_port_dwords(u32 port, u32* buf, u32 num);
 
-#include "version.h"
+u8			io_read_port_byte(u32 port);
+void		io_write_port_byte(u8 data, u32 port);
+
+u16			io_read_port_word(u32 port);
+void		io_write_port_word(u16 data, u32 port);
+
+u32			io_read_port_dword(u32 port);
+void		io_write_port_dword(u32 data, u32 port);
+
+void		io_delay();

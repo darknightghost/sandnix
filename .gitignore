@@ -1,7 +1,14 @@
 /obj/*
+/bin/*
+/tools/*
+/libs/*
 #*#
 *~
 tags
 cscope*
-/bin/*
 *.swp
+*.pyc
+Makefile
+*.dep
+*#
+.directory

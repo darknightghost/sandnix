@@ -16,18 +16,29 @@
 */
 
 #pragma once
+typedef	unsigned char		u8;
+typedef unsigned short		u16;
+typedef unsigned int		u32;
+typedef unsigned long		u64;
 
-#ifndef _ASM
-	#ifdef X86
-		#include "arch/x86/types.h"
-	#endif
+typedef signed char			s8;
+typedef signed short		s16;
+typedef signed int			s32;
+typedef signed long			s64;
 
-	#ifdef AMD64
-		#include "arch/amd64/types.h"
-	#endif
+typedef	u8					le8;
+typedef	u16					le16;
+typedef	u32					le32;
+typedef	u64					le64;
 
-	#define	UNREFERRED_PARAMETER(x)		((void)(x))
+typedef	u8					bool;
+#define	true				1
+#define	false				0
 
-#endif
+typedef u64					size_t;
+typedef s64					ssize_t;
 
-#include "version.h"
+typedef	u64					id_t;
+typedef	u64					LONG;
+
+#define	NULL	((void*)0)

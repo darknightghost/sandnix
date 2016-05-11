@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?><target>
+	<build objdir="../../obj/sandnix" output="../../bin/sandnix/$(ARCH)/sandnix">
+		<arch name="x86">			
+			<!--Build options,projects's private options can override them-->			
+			<AS type="textbox">gcc</AS>			
+			<ASFLAGS type="textbox">-m32 -c</ASFLAGS>
+			<ASRULE type="textbox">$(AS) $(ASFLAGS) -o $@ $&lt;</ASRULE>
+			<CC type="textbox">gcc</CC>	
+			<CFLAGS type="textbox">-c</CFLAGS>
+			<CCRULE type="textbox">$(CC) $(CFLAGS) -o $@ $&lt;</CCRULE>
+			<LD type="textbox">gcc</LD>
+			<LDFLAGS type="textbox"></LDFLAGS>
+			<LDRULE type="textbox"></LDRULE>
+			<DEP type="textbox">gcc</DEP>
+			<DEPRULE type="textbox">$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then cat $@|awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(OBJDIR)/$(ARCH)/&quot;,$$0)} NR != 1 {print $$0}' &gt; $@; fi</DEPRULE>
+			<AFTER type="textbox">skbuilder/skbuilder -l 0x00100000 -v 0xc0100000 -a $(ARCH) -h ../../bin/sandnix/$(ARCH)/header -k ../../bin/sandnix/$(ARCH)/kernel -o $(OUTPUT)</AFTER>
+		</arch>
+		<arch name="amd64">			
+			<!--Build options,projects's private options can override them-->			
+			<AS type="textbox">gcc</AS>			
+			<ASFLAGS type="textbox">-c</ASFLAGS>
+			<ASRULE type="textbox">$(AS) $(ASFLAGS) -o $@ $&lt;</ASRULE>
+			<CC type="textbox">gcc</CC>	
+			<CFLAGS type="textbox">-c</CFLAGS>
+			<CCRULE type="textbox">$(CC) $(CFLAGS) -o $@ $&lt;</CCRULE>
+			<LD type="textbox">gcc</LD>
+			<LDFLAGS type="textbox"></LDFLAGS>
+			<LDRULE type="textbox"></LDRULE>
+			<DEP type="textbox">gcc</DEP>
+			<DEPRULE type="textbox">$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then cat $@|awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(OBJDIR)/$(ARCH)/&quot;,$$0)} NR != 1 {print $$0}' &gt; $@; fi</DEPRULE>
+			<AFTER type="textbox">skbuilder/skbuilder -l 0x00100000 -v 0xc0100000 -a $(ARCH) -h ../../bin/sandnix/$(ARCH)/header -k ../../bin/sandnix/$(ARCH)/kernel -o $(OUTPUT)</AFTER>
+		</arch>	
+	</build>
+	<menu>
+		<options text="Required targets">
+			<target build="true" name="header" src="header"/>
+			<target build="true" name="kernel" src="kernel"/>
+		</options>
+	</menu>
+</target>

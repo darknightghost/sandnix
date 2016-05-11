@@ -17,17 +17,11 @@
 
 #pragma once
 
-#ifndef _ASM
-	#ifdef X86
-		#include "arch/x86/types.h"
-	#endif
+#include "../../../../../../common/common.h"
 
-	#ifdef AMD64
-		#include "arch/amd64/types.h"
-	#endif
+#ifndef	_ASM
+#define	DMA_MEM_BASE	((void*)0)
+#define	DMA_MEM_SIZE	(size_t)(16 * 1024 * 1024)
 
-	#define	UNREFERRED_PARAMETER(x)		((void)(x))
-
-#endif
-
-#include "version.h"
+void	phymem_init_arch(plist_t p_phymem_list, void* phymem_heap);
+#endif	//!	_ASM

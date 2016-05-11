@@ -15,19 +15,35 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "../../../common/common.h"
+#include "../pm/pm.h"
+#include "../rtl/rtl.h"
+#include "kconsole.h"
+#include "early_print.h"
 
-#ifndef _ASM
-	#ifdef X86
-		#include "arch/x86/types.h"
-	#endif
+static	spinlock_t	print_lock;
+static	char		kprint_buf[1024];
 
-	#ifdef AMD64
-		#include "arch/amd64/types.h"
-	#endif
+void kconsole_init()
+{
+	pm_init_spn_lock(&print_lock);
+	early_cls();
+	return;
+}
 
-	#define	UNREFERRED_PARAMETER(x)		((void)(x))
+u32 dbg_kprint(char* fmt, ...)
+{
+	va_list args;
+	u32 ret;
 
-#endif
+	pm_acqr_spn_lock(&print_lock);
 
-#include "version.h"
+	va_start(args, fmt);
+	ret = rtl_vnprintf(kprint_buf, 1024, fmt, args);
+	va_end(args);
+
+	early_print(kprint_buf);
+
+	pm_rls_spn_lock(&print_lock);
+	return ret;
+}

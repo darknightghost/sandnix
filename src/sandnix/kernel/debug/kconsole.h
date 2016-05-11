@@ -17,17 +17,8 @@
 
 #pragma once
 
-#ifndef _ASM
-	#ifdef X86
-		#include "arch/x86/types.h"
-	#endif
+#include "../../../common/common.h"
 
-	#ifdef AMD64
-		#include "arch/amd64/types.h"
-	#endif
+void		kconsole_init();
+u32			dbg_kprint(char* fmt, ...);
 
-	#define	UNREFERRED_PARAMETER(x)		((void)(x))
-
-#endif
-
-#include "version.h"

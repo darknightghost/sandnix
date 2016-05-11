@@ -17,17 +17,10 @@
 
 #pragma once
 
-#ifndef _ASM
-	#ifdef X86
-		#include "arch/x86/types.h"
-	#endif
+#include "../../../common/common.h"
+#include "spinlock/spinlock.h"
 
-	#ifdef AMD64
-		#include "arch/amd64/types.h"
-	#endif
+#define	MAX_PROC_NUM_INDEX	16
+#define	MAX_PROC_NUM		( 1 << MAX_PROC_NUM_INDEX)
+#define	MAX_PROC_ID			(MAX_PROC_NUM - 1)
 
-	#define	UNREFERRED_PARAMETER(x)		((void)(x))
-
-#endif
-
-#include "version.h"

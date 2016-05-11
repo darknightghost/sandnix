@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<sandnix>
+	<module>
+		<name>header</name>
+		<src>src/header/</src>
+	</module>
+	<module>
+		<name>kernel</name>
+		<src>src/kernel/</src>
+		<modules>
+			<module>
+				<name>om</name>
+				<src>src/kernel/om/</src>
+				<interfaces>
+					<class>
+						<name>kobject_t</name>
+						<base></base>
+						<variables>
+						</variables>
+						<functions>
+						</functions>
+					</class>
+				</interfaces>
+			</module>
+		</modules>
+	</module>
+</sandnix>

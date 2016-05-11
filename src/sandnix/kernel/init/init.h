@@ -17,17 +17,36 @@
 
 #pragma once
 
-#ifndef _ASM
-	#ifdef X86
-		#include "arch/x86/types.h"
-	#endif
+#include "../../../common/common.h"
+#include "../../boot/multiboot2.h"
 
-	#ifdef AMD64
-		#include "arch/amd64/types.h"
-	#endif
+#ifdef	X86
+	#include "arch/x86/arch.h"
+#endif	//	X86
 
-	#define	UNREFERRED_PARAMETER(x)		((void)(x))
+#define	KERNEL_HEADER_MAGIC		0x444E4153
+#define	KERNEL_STACK_SIZE		(4096 * 2)
 
+#ifndef	_ASM
+
+#ifdef X86
+	#include "boot_info/boot_info.h"
+#endif	//	X86
+
+#include "boot_info/boot_info.h"
+
+#pragma pack(push)
+#pragma pack(1)
+typedef	struct	_kernel_header_t {
+	le32	magic;
+	u32		text_begin;
+	u32		text_end;
+	u32		data_begin;
+	u32		data_end;
+	u32		checksum;
+} kernel_header_t, *pkernel_header_t;
+#pragma pack(pop)
+
+extern	u8				init_stack[KERNEL_STACK_SIZE];
+extern	kernel_header_t	kernel_header;
 #endif
-
-#include "version.h"

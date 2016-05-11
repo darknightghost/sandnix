@@ -15,19 +15,10 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "../../../../common/common.h"
+#include "../../rtl/rtl.h"
+#include "../../debug/debug.h"
+#include "../../pm/pm.h"
+#include "../heap/heap.h"
+#include "swap_obj.h"
 
-#ifndef _ASM
-	#ifdef X86
-		#include "arch/x86/types.h"
-	#endif
-
-	#ifdef AMD64
-		#include "arch/amd64/types.h"
-	#endif
-
-	#define	UNREFERRED_PARAMETER(x)		((void)(x))
-
-#endif
-
-#include "version.h"

@@ -17,17 +17,32 @@
 
 #pragma once
 
-#ifndef _ASM
-	#ifdef X86
-		#include "arch/x86/types.h"
-	#endif
+#include "../../../../common/common.h"
+#include "../../om/om.h"
+#include "../../rtl/rtl.h"
+#include "../phymem/phymem.h"
+#include "../swap/swap.h"
 
-	#ifdef AMD64
-		#include "arch/amd64/types.h"
-	#endif
+#define	PAGE_UNSWAPPABLE	0
+#define	PAGE_AVAILABLE		1
+#define	PAGE_SWAPABLE		2
 
-	#define	UNREFERRED_PARAMETER(x)		((void)(x))
+#define	MEMBLOCK_EMPTY		0
+#define	MEMBLOCK_PHY		1
+#define	MEMBLOCK_SWAP		2
 
-#endif
+typedef	struct	_memblock {
+	u32					type;
+	union {
+		pphymem_block_t	p_phy_mem;
+		pswap_obj_t		p_swap_mem;
+	};
+} memblock_t, *pmemblock_t;
 
-#include "version.h"
+typedef	struct	_page_obj {
+	kobject_t		obj;
+	u32				status;
+	list_t			mem_list;
+} page_obj_t, *ppage_obj_t;
+
+

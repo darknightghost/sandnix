@@ -17,17 +17,12 @@
 
 #pragma once
 
-#ifndef _ASM
-	#ifdef X86
-		#include "arch/x86/types.h"
-	#endif
+#include "../../../common/common.h"
+#include "interrupt.h"
+#include "port.h"
 
-	#ifdef AMD64
-		#include "arch/amd64/types.h"
-	#endif
+//System time
+#define		SYS_TICK				10
 
-	#define	UNREFERRED_PARAMETER(x)		((void)(x))
-
-#endif
-
-#include "version.h"
+//Init
+void		io_init();

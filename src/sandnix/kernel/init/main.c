@@ -15,19 +15,31 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "../../../common/common.h"
+#include "../../boot/multiboot2.h"
+#include "../io/io.h"
+#include "../debug/debug.h"
+#include "../exceptions/exceptions.h"
+#include "../rtl/rtl.h"
+#include "../mm/mm.h"
+#include "init.h"
+#include "boot_info/boot_info.h"
 
-#ifndef _ASM
-	#ifdef X86
-		#include "arch/x86/types.h"
-	#endif
+u8				init_stack[KERNEL_STACK_SIZE];
 
-	#ifdef AMD64
-		#include "arch/amd64/types.h"
-	#endif
+void kernel_main(u32 magic, void* p_load_info)
+{
+	dbg_init();
+	dbg_kprint("%s loading...\n", VER_STR);
 
-	#define	UNREFERRED_PARAMETER(x)		((void)(x))
+	analyse_boot_info(magic, p_load_info);
+	io_init();
 
-#endif
+	mm_init();
 
-#include "version.h"
+	while(1);
+
+	UNREFERRED_PARAMETER(magic);
+	UNREFERRED_PARAMETER(p_load_info);
+	return;
+}

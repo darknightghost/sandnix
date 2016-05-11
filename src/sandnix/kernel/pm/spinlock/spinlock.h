@@ -17,17 +17,15 @@
 
 #pragma once
 
-#ifndef _ASM
-	#ifdef X86
-		#include "arch/x86/types.h"
-	#endif
+#include "../../../../common/common.h"
 
-	#ifdef AMD64
-		#include "arch/amd64/types.h"
-	#endif
+typedef	struct _spinlock_t {
+	u32		owner;
+	u32		next;
+	u32		int_level;
+} spinlock_t, *pspinlock_t;
 
-	#define	UNREFERRED_PARAMETER(x)		((void)(x))
-
-#endif
-
-#include "version.h"
+void		pm_init_spn_lock(pspinlock_t p_lock);
+void		pm_acqr_spn_lock(pspinlock_t p_lock);
+bool		pm_try_acqr_spn_lock(pspinlock_t p_lock);
+void		pm_rls_spn_lock(pspinlock_t p_lock);
