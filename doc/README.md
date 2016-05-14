@@ -1,5 +1,30 @@
 # Sandnix 0.0.2 架构,模块及接口
 
+目录
+=================
+
+* [Sandnix 0.0.2 架构,模块及接口](#sandnix-002-架构模块及接口)
+  * [A. 文档说明](#a-文档说明)
+  * [B. 整体架构及代码风格](#b-整体架构及代码风格)
+    * [整体架构](#整体架构)
+      * [设计原则](#设计原则)
+      * [项目架构](#项目架构)
+        * [HAL层](#hal层)
+        * [core层](#core层)
+        * [subsystem层](#subsystem层)
+      * [代码风格要求(参照Linux kernel风格改编)](#代码风格要求参照linux-kernel风格改编)
+        * [缩进](#缩进)
+        * [空白](#空白)
+        * [括号的位置](#括号的位置)
+        * [命名规则](#命名规则)
+        * [面向对象](#面向对象)
+        * [注释](#注释)
+        * [Astyle参数](#astyle参数)
+  * [模块及其接口](#模块及其接口)
+    * [HAL层](#hal层)
+    * [Core层](#core层)
+    * [Subsystem层](#subsystem层)
+
 ## A. 文档说明
 该文档在GPL v3协议下发布.
 
@@ -64,11 +89,11 @@
 较长的字符串可以断成多个字符串然后分行书写,例如:
 
 ```c
-printf("Thisis such a long sentence that " 
-"itcannot be held within a line\n");
+printf("This is such a long sentence that " 
+"it cannot be held within a line\n");
 ```
 
-C编译器会自动把相邻的多个字符串接在一起,以上两个字符串相当于一个字符串"Thisissuch a long sentence that it cannot be held within a line\n".
+C编译器会自动把相邻的多个字符串接在一起,以上两个字符串相当于一个字符串"This is such a long sentence that it cannot be held within a line\n".
 汇编代码里边函数名要顶格写,循环,分支等结构应当增加缩进以便阅读.
 
 ##### 空白
@@ -81,17 +106,24 @@ C编译器会自动把相邻的多个字符串接在一起,以上两个字符串
 ##### 括号的位置
 
 C语言风格中另外一个常见问题是大括号的放置。和缩进大小不同，选择或弃用某种放置策略并没有多少技术上的原因，不过首选的方式，就像Kernighan和Ritchie展示给我们的，是把起始大括号放在行尾，而把结束大括号放在行首.像这样:
+
+```c
 if (xxx) {
 	xxxxxx;
 } else {
 	xxx;
 }
+```
+
 如果小括号,中括号要分行写,也遵从上述规则.
 不过,有一种特殊情况,命名函数.它们的起始大括号放置于下一行的开头,像这样：
+
+```c
 int func(int x)
 {
 	xxxx
 }
+```
 
 ##### 命名规则
 
