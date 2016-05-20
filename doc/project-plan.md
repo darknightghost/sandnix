@@ -1,8 +1,6 @@
 # Sandnix 0.0.2 架构,模块及接口
 ***
-&lt;script&gt;
-alert("aaa");
-&lt;/script&gt;
+[TOC]
 ***
 ## A. 文档说明
 该文档在GPL v3协议下发布.
