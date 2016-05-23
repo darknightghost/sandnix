@@ -253,6 +253,9 @@ void start_paging(u32 cpuid);
 //初始化mmu模块
 void mmu_init();
 
+//初始化处理器核心
+void mmu_core_init(int cpuid);
+
 //物理内存管理
 //申请物理内存
 bool mmu_phymem_alloc(void** p_addr,size_t page_num);
@@ -300,13 +303,45 @@ src/sandnix/kernel/hal/mmu/phymem/arch/$(arch)/phymem.c
 负责在tty设备无法使用的情况下内核信息的输出.
 ######模块路径
 ```
-
+src/sandnix/kernel/hal/early_print
 ```
 ######接口数据结构
 ```c
+
 ```
 ######接口函数及宏
 ```c
+//初始化临时终端
+void early_print_init();
+
+//设置临时终端颜色
+void early_print_color(u32 fg,u32 bg);
+
+//打印字符串
+void early_print(char* str);
+```
+######文件列表
+```c
+//接口头文件
+src/sandnix/kernel/hal/early_print/early_print.h
+
+//临时终端实现代码
+src/sandnix/kernel/hal/early_print/arch/$(arch)/early_print.c
+```
+#####io
+负责中断的管理,虚拟IRQ的映射,系统时钟的管理.
+######模块路径
+```
+src/sandnix/kernel/hal/io
+```
+######接口数据结构
+```c
+
+```
+######接口函数及宏
+```c
+io_init()
+io_core_init(u32 cpuid);
 
 ```
 ######文件列表
@@ -317,32 +352,26 @@ src/sandnix/kernel/hal/mmu/phymem/arch/$(arch)/phymem.c
 负责管理cpu的状态,以及保护线程上下文.
 ######模块路径
 ```
-
+src/sandnix/kernel/hal/cpu
 ```
 ######接口数据结构
 ```c
+//线程上下文
+context_t
 
 ```
 ######接口函数及宏
 ```c
+//初始化cpu模块
+void cpu_init();
 
-```
-######文件列表
-```c
+//线程上下文管理
+cpu_context_push
+cpu_context_pop
+cpu_context_save
+cpu_context_load
 
-```
-#####io
-负责中断的管理,虚拟IRQ的映射,系统时钟的管理.
-######模块路径
-```
-
-```
-######接口数据结构
-```c
-
-```
-######接口函数及宏
-```c
+//多核心管理
 
 ```
 ######文件列表
