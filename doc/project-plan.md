@@ -188,7 +188,7 @@ list_t init_get_boot_memory_map():
 void init_get_initrd_addr(void** p_addr, size_t* p_size):
 
 //获得内核的命令行参数.
-void init_get_kernel_cmdline():
+char* init_get_kernel_cmdline():
 ```
 ######文件列表
 ```c
@@ -196,6 +196,7 @@ void init_get_kernel_cmdline():
 src/sandnix/kernel/hal/init/arch/$(arch)/init.s
 
 //kernel_header初始化代码
+src/sandnix/kernel/hal/init/arch/$(arch)/header.h
 src/sandnix/kernel/hal/init/arch/$(arch)/header.c
 
 //HAL层初始化代码
@@ -203,6 +204,32 @@ src/sandnix/kernel/hal/init/init.c
 
 //接口头文件
 src/sandnix/kernel/hal/init/init.h
+```
+#####kparam
+负责解析内核参数.
+######模块路径
+```
+src/sandnix/kernel/hal/kparam
+```
+######接口数据结构
+```c
+
+```
+######接口函数及宏
+```c
+//初始化模块,解析内核参数
+void kparam_init();
+
+//获得内核参数
+bool kparam_get_value(char* keymchar* buf,size_t size);
+```
+######文件列表
+```c
+//接口头文件
+src/sandnix/kernel/hal/kparam/kparam.h
+
+//参数解析代码
+src/sandnix/kernel/hal/kparam/kparam.c
 ```
 #####mmu
 负责初始化分页机制,管理mmu以及提供分页管理的接口.
@@ -212,21 +239,36 @@ src/sandnix/kernel/hal/mmu
 ```
 ######接口数据结构
 ```c
-
+//物理内存信息
+physical_memory_info_t
 ```
 ######接口函数及宏
 ```c
+//页面大小
+#define	SANDNIX_KERNEL_PAGE_SIZE	4096
+
 //启动分页
 void start_paging(u32 cpuid);
 
 //初始化mmu模块
 void mmu_init();
 
+//物理内存管理
+//申请物理内存
+bool mmu_phymem_alloc(void** p_addr,size_t page_num);
+
+//释放物理内存
+void mmu_phymem_free(void* addr,size_t page_num);
+
+//获得物理内存信息,返回所需内存大小
+size_t mmu_get_phymem_info(pphysical_memory_info_t p_buf,size_t size);
+
+//分页管理
 //获得内核地址范围
-void mmu_get_krnl_addr_rgn(void** base,size_t size);
+void mmu_get_krnl_addr_rgn(void** p_base,size_t* p_size);
 
 //获得用户地址范围
-void mmu_get_usr_addr_rgn(void** base,size_t size);
+void mmu_get_usr_addr_rgn(void** p_base,size_t* p_size);
 
 //创建页表
 bool mmu_pg_tbl_create(u32* page_id);
@@ -237,10 +279,22 @@ void mmu_pg_tbl_destroy(u32* page_id);
 //设置页表条目,krnl_pg_tbl_t定义在mm模块中
 void mmu_pg_tbl_set(void* virt_addr,u32 num,pkrnl_pg_tbl_t page_tables);
 
+//切换到指定页表
+void mmu_pg_tbl_switch(u32 id);
 ```
 ######文件列表
 ```c
+//接口头文件
+src/sandnix/kernel/hal/mmu/mmu.h
 
+//具体架构页表操作
+src/sandnix/kernel/hal/mmu/paging/paging.h
+src/sandnix/kernel/hal/mmu/paging/arch/$(arch)/page_table.h
+src/sandnix/kernel/hal/mmu/paging/arch/$(arch)/paging.c
+
+//具体架构物理内存操作
+src/sandnix/kernel/hal/mmu/phymem/phymem.h
+src/sandnix/kernel/hal/mmu/phymem/arch/$(arch)/phymem.c
 ```
 #####early\_print
 负责在tty设备无法使用的情况下内核信息的输出.
@@ -259,9 +313,6 @@ void mmu_pg_tbl_set(void* virt_addr,u32 num,pkrnl_pg_tbl_t page_tables);
 ```c
 
 ```
-#####kparam
-负责解析内核参数.
-
 #####cpu
 负责管理cpu的状态,以及保护线程上下文.
 ######模块路径
