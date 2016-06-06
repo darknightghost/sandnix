@@ -39,8 +39,8 @@
 * exception
 ##### subsystem层
 负责提供系统调用,并将系统调用翻译成对内核函数的调用.模块列表如下:
-* subsys\_driver
-* subsys\_linux
+* driver
+* linux
 #### 代码风格要求(参照Linux kernel风格改编)
 ##### 缩进
 缩进为4个空格,8个空格会使代码很靠右,尽量用空格而不是tab(这一点利用astyle可以很轻松的搞定)..因为gihub上面tab看起来相当的糟糕.switch语句里面的case应当缩进来使得代码层次清晰.
@@ -80,7 +80,7 @@ int func(int x)
 原则上宏应尽量使用大写字母命名,但是函数式宏定义除外,他们和函数遵守一样的命名规则.
 函数,参数,变量的名字要能体现出它的作用.在不破坏可读性的前提条件下尽量使用缩写.
 模块导出函数的命名应遵从以下格式:
-	`模块名_函数名`
+	`层名_模块名_函数名`
 函数名应尽量对每个单词使用缩写,要能描述出这个函数的作用是什么.构造函数是个例外.
 结构体的定义遵守以下规范:
 ```c
@@ -183,13 +183,13 @@ kernel_header_t:
 void _start():
 
 //返回bootloader传来的memory map,格式为physical_memory_info_t,类型定义在mmu模块中.
-list_t init_get_boot_memory_map():
+list_t hal_init_get_boot_memory_map():
 
 //返回初始化内存盘的位置和大小.
-void init_get_initrd_addr(void** p_addr, size_t* p_size):
+void hal_init_get_initrd_addr(void** p_addr, size_t* p_size):
 
 //获得内核的命令行参数.
-char* init_get_kernel_cmdline():
+char* hal_init_get_kernel_cmdline():
 ```
 ######文件列表
 ```c
@@ -220,10 +220,10 @@ src/sandnix/kernel/hal/kparam
 ```c
 //初始化
 //初始化模块,解析内核参数
-void kparam_init();
+void hal_kparam_init();
 
 //获得内核参数
-bool kparam_get_value(char* key, char* buf, size_t size);
+bool hal_kparam_get_value(char* key, char* buf, size_t size);
 ```
 ######文件列表
 ```c
@@ -254,39 +254,39 @@ physical_memory_info_t
 void start_paging(u32 cpuid);
 
 //初始化mmu模块
-void mmu_init();
+void hal_mmu_init();
 
 //初始化处理器核心
-void mmu_core_init(int cpuid);
+void hal_mmu_core_init(int cpuid);
 
 //物理内存管理
 //申请物理内存
-bool mmu_phymem_alloc(void** p_addr, size_t page_num);
+bool hal_mmu_phymem_alloc(void** p_addr, size_t page_num);
 
 //释放物理内存
-void mmu_phymem_free(void* addr, size_t page_num);
+void hal_mmu_phymem_free(void* addr, size_t page_num);
 
 //获得物理内存信息,返回所需内存大小
-size_t mmu_get_phymem_info(pphysical_memory_info_t p_buf, size_t size);
+size_t hal_mmu_get_phymem_info(pphysical_memory_info_t p_buf, size_t size);
 
 //分页管理
 //获得内核地址范围
-void mmu_get_krnl_addr_rgn(void** p_base, size_t* p_size);
+void hal_mmu_get_krnl_addr_rgn(void** p_base, size_t* p_size);
 
 //获得用户地址范围
-void mmu_get_usr_addr_rgn(void** p_base, size_t* p_size);
+void hal_mmu_get_usr_addr_rgn(void** p_base, size_t* p_size);
 
 //创建页表
-bool mmu_pg_tbl_create(u32* page_id);
+bool hal_mmu_pg_tbl_create(u32* page_id);
 
 //销毁页表
-void mmu_pg_tbl_destroy(u32* page_id);
+void hal_mmu_pg_tbl_destroy(u32* page_id);
 
 //设置页表条目,krnl_pg_tbl_t定义在mm模块中
-void mmu_pg_tbl_set(void* virt_addr, u32 num, pkrnl_pg_tbl_t page_tables);
+void hal_mmu_pg_tbl_set(void* virt_addr, u32 num, pkrnl_pg_tbl_t page_tables);
 
 //切换到指定页表
-void mmu_pg_tbl_switch(u32 id);
+void hal_mmu_pg_tbl_switch(u32 id);
 ```
 ######文件列表
 ```c
@@ -316,13 +316,13 @@ src/sandnix/kernel/hal/early_print
 ```c
 //初始化
 //初始化临时终端
-void early_print_init();
+void hal_early_print_init();
 
 //设置临时终端颜色
-void early_print_color(u32 fg, u32 bg);
+void hal_early_print_color(u32 fg, u32 bg);
 
 //打印字符串
-void early_print(char* str);
+void hal_early_print(char* str);
 ```
 ######文件列表
 ```c
@@ -347,61 +347,70 @@ int_callback_t
 ```c
 //初始化
 //初始化模块
-void io_init()
+void hal_io_init()
 
 //初始化处理器核心
-void io_core_init(u32 cpuid);
+void hal_io_core_init(u32 cpuid);
 
 //中断管理
+//禁止当前核心中断
+void hal_io_int_disable();
+
+//允许当前核心中断
+void hal_io_int_enable();
+
 //允许所有IRQ
-void io_irq_enable_all();
+void hal_io_irq_enable_all();
 
 //禁止所有IRQ
-void io_irq_disable_all();
+void hal_io_irq_disable_all();
 
 //允许IRQ
-void io_irq_enable(u32 num);
+void hal_io_irq_enable(u32 num);
 
 //禁止IRQ
-void io_irq_disable(u32 num);
+void hal_io_irq_disable(u32 num);
 
 //注册/取消中断回调
-void* io_int_callback_reg(u32 num, int_callback_t callback);
+void* hal_io_int_callback_reg(u32 num, int_callback_t callback);
 
 //注册时钟回调
-void* io_clock_callback_reg(u32 num, int_callback_t callback);
+void* hal_io_clock_callback_reg(u32 num, int_callback_t callback);
 
 //IO管理
 //IN
-u8	io_in_8(address_t port);
-u16	io_in_16(address_t port);
-u32	io_in_32(address_t port);
-u64	io_in_64(address_t port);
+u8 hal_io_in_8(address_t port);
+u16 hal_io_in_16(address_t port);
+u32 hal_io_in_32(address_t port);
+u64 hal_io_in_64(address_t port);
 
 //INS
-void	io_ins_8(void* dest, size_t count, address_t port);
-void	io_ins_16(void* dest, size_t count, address_t port);
-void	io_ins_32(void* dest, size_t count, address_t port);
-void	io_ins_64(void* dest, size_t count, address_t port);
+void hal_io_ins_8(void* dest, size_t count, address_t port);
+void hal_io_ins_16(void* dest, size_t count, address_t port);
+void hal_io_ins_32(void* dest, size_t count, address_t port);
+void hal_io_ins_64(void* dest, size_t count, address_t port);
 
 //OUT
-void	io_out_8(address_t port, u8 data);
-void	io_out_16(address_t port, u8 data);
-void	io_out_32(address_t port, u8 data);
-void	io_out_64(address_t port, u8 data);
+void hal_io_out_8(address_t port, u8 data);
+void hal_io_out_16(address_t port, u8 data);
+void hal_io_out_32(address_t port, u8 data);
+void hal_io_out_64(address_t port, u8 data);
 
 //OUTS
-void	io_outs_8(address_t port, size_t count, void* src);
-void	io_outs_16(address_t port, size_t count, void* src);
-void	io_outs_32(address_t port, size_t count, void* src);
-void	io_outs_64(address_t port, size_t count, void* src);
+void hal_io_outs_8(address_t port, size_t count, void* src);
+void hal_io_outs_16(address_t port, size_t count, void* src);
+void hal_io_outs_32(address_t port, size_t count, void* src);
+void hal_io_outs_64(address_t port, size_t count, void* src);
 ```
 ######文件列表
 ```c
 //接口头文件
 src/sandnix/kernel/hal/io/io.h
 
-src/sandnix/kernel/hal/io/interrupt/$(arch)
+//中断
+src/sandnix/kernel/hal/io/interrupt/$(arch)/
+
+//IRQ
 src/sandnix/kernel/hal/io/irq/$(arch)/
 ```
 #####cpu
@@ -415,30 +424,52 @@ src/sandnix/kernel/hal/cpu
 //线程上下文
 context_t
 
+//cpu信息
+cpuinfo_t
 ```
 ######接口函数及宏
 ```c
+//初始化
 //初始化cpu模块
-void cpu_init();
+void hal_cpu_init();
 
 //线程上下文管理
-cpu_context_push
-cpu_context_pop
-cpu_context_save
-cpu_context_load
+//保存线程上下文
+#define hal_cpu_context_save(p_context)
+
+//加载线程上下文
+#define hal_cpu_context_load(p_context)
 
 //多核心管理
+//停止当前核心
+void hal_cpu_core_halt();
 
+//cpu信息
+void hal_cpu_get_info(pcpuinfo_t p_ret);
+
+//性能管理
+//读取cpu频率
+u32 hal_cpu_get_frequency();
+
+//设置cpu频率
+u32 hal_cpu_set_frequency();
 ```
 ######文件列表
 ```c
+//接口头文件
+src/sandnix/kernel/hal/cpu/cpu.h
 
+//上下文
+src/sandnix/kernel/hal/cpu/context/$(arch)
+
+//cpu信息
+src/sandnix/kernel/hal/cpu/cpu-info/$(arch)
 ```
-#####exception接口函数及宏
+#####exception
 负责处理kernel panic以及调用错误处理程序.
 ######模块路径
 ```
-
+src/sandnix/kernel/hal/exception
 ```
 ######接口数据结构
 ```c
@@ -446,6 +477,9 @@ cpu_context_load
 ```
 ######接口函数及宏
 ```c
+hal_exception_init()
+hal_exception_core_init()
+hal_exception_panic()
 
 ```
 ######文件列表
