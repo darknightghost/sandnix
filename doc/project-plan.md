@@ -178,6 +178,7 @@ kernel_header_t:
 ```
 ######接口函数及宏:
 ```c
+//初始化
 //整个内核的入口函数.
 void _start():
 
@@ -217,11 +218,12 @@ src/sandnix/kernel/hal/kparam
 ```
 ######接口函数及宏
 ```c
+//初始化
 //初始化模块,解析内核参数
 void kparam_init();
 
 //获得内核参数
-bool kparam_get_value(char* keymchar* buf,size_t size);
+bool kparam_get_value(char* key, char* buf, size_t size);
 ```
 ######文件列表
 ```c
@@ -247,6 +249,7 @@ physical_memory_info_t
 //页面大小
 #define	SANDNIX_KERNEL_PAGE_SIZE	4096
 
+//初始化
 //启动分页
 void start_paging(u32 cpuid);
 
@@ -258,20 +261,20 @@ void mmu_core_init(int cpuid);
 
 //物理内存管理
 //申请物理内存
-bool mmu_phymem_alloc(void** p_addr,size_t page_num);
+bool mmu_phymem_alloc(void** p_addr, size_t page_num);
 
 //释放物理内存
-void mmu_phymem_free(void* addr,size_t page_num);
+void mmu_phymem_free(void* addr, size_t page_num);
 
 //获得物理内存信息,返回所需内存大小
-size_t mmu_get_phymem_info(pphysical_memory_info_t p_buf,size_t size);
+size_t mmu_get_phymem_info(pphysical_memory_info_t p_buf, size_t size);
 
 //分页管理
 //获得内核地址范围
-void mmu_get_krnl_addr_rgn(void** p_base,size_t* p_size);
+void mmu_get_krnl_addr_rgn(void** p_base, size_t* p_size);
 
 //获得用户地址范围
-void mmu_get_usr_addr_rgn(void** p_base,size_t* p_size);
+void mmu_get_usr_addr_rgn(void** p_base, size_t* p_size);
 
 //创建页表
 bool mmu_pg_tbl_create(u32* page_id);
@@ -280,7 +283,7 @@ bool mmu_pg_tbl_create(u32* page_id);
 void mmu_pg_tbl_destroy(u32* page_id);
 
 //设置页表条目,krnl_pg_tbl_t定义在mm模块中
-void mmu_pg_tbl_set(void* virt_addr,u32 num,pkrnl_pg_tbl_t page_tables);
+void mmu_pg_tbl_set(void* virt_addr, u32 num, pkrnl_pg_tbl_t page_tables);
 
 //切换到指定页表
 void mmu_pg_tbl_switch(u32 id);
@@ -311,11 +314,12 @@ src/sandnix/kernel/hal/early_print
 ```
 ######接口函数及宏
 ```c
+//初始化
 //初始化临时终端
 void early_print_init();
 
 //设置临时终端颜色
-void early_print_color(u32 fg,u32 bg);
+void early_print_color(u32 fg, u32 bg);
 
 //打印字符串
 void early_print(char* str);
@@ -336,17 +340,69 @@ src/sandnix/kernel/hal/io
 ```
 ######接口数据结构
 ```c
-
+//中断处理回调
+int_callback_t
 ```
 ######接口函数及宏
 ```c
-io_init()
-io_core_init(u32 cpuid);
+//初始化
+//初始化模块
+void io_init()
 
+//初始化处理器核心
+void io_core_init(u32 cpuid);
+
+//中断管理
+//允许所有IRQ
+void io_irq_enable_all();
+
+//禁止所有IRQ
+void io_irq_disable_all();
+
+//允许IRQ
+void io_irq_enable(u32 num);
+
+//禁止IRQ
+void io_irq_disable(u32 num);
+
+//注册/取消中断回调
+void* io_int_callback_reg(u32 num, int_callback_t callback);
+
+//注册时钟回调
+void* io_clock_callback_reg(u32 num, int_callback_t callback);
+
+//IO管理
+//IN
+u8	io_in_8(address_t port);
+u16	io_in_16(address_t port);
+u32	io_in_32(address_t port);
+u64	io_in_64(address_t port);
+
+//INS
+void	io_ins_8(void* dest, size_t count, address_t port);
+void	io_ins_16(void* dest, size_t count, address_t port);
+void	io_ins_32(void* dest, size_t count, address_t port);
+void	io_ins_64(void* dest, size_t count, address_t port);
+
+//OUT
+void	io_out_8(address_t port, u8 data);
+void	io_out_16(address_t port, u8 data);
+void	io_out_32(address_t port, u8 data);
+void	io_out_64(address_t port, u8 data);
+
+//OUTS
+void	io_outs_8(address_t port, size_t count, void* src);
+void	io_outs_16(address_t port, size_t count, void* src);
+void	io_outs_32(address_t port, size_t count, void* src);
+void	io_outs_64(address_t port, size_t count, void* src);
 ```
 ######文件列表
 ```c
+//接口头文件
+src/sandnix/kernel/hal/io/io.h
 
+src/sandnix/kernel/hal/io/interrupt/$(arch)
+src/sandnix/kernel/hal/io/irq/$(arch)/
 ```
 #####cpu
 负责管理cpu的状态,以及保护线程上下文.
