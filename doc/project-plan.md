@@ -115,6 +115,88 @@ astyle --suffix=none --style=linux --indent=spaces=4 --attach-namespaces --attac
 ```
 
 * * *
+###配置工具Skconfig
+该工具由python编写,作用是为内核的配置和编译提供一个直观有效的配置工具,类似于linux的kconfig.
+内核项目比较特殊,很多配置工具都是量身定做的,想通用很难.如果采用autotools,编译的时候那选项够你爽的.如果采用kconfig,linux关于模块的处理方式和本项目差异又很大,根本没法通用,至于自己写makefile,那工作量和维护难度我只能说是呵呵呵呵了,所以说还是要自己动手丰衣足食.
+####如何管理项目的编译
+由于该项目在编译的时候有多种架构,我把一个项目分成一下两个元素:
+* 目标(target)
+* 架构(arch)
+
+两者都是可以嵌套的,架构嵌套架构,目标嵌套目标.每个target都会包含一个或者多个arch.工具在扫描配置文件的时候会根据arch里的信息生成编译用的命令模板,然后通过读target里的选项生成编译选项,最后生成编译用的命令.父target必须包含子target的所有arch.子target里有arch的话子target的arch会覆盖父target的arch,否则继承父target的arch.
+一个target的构建分为一下几个步骤:
+* 构建依赖target
+* 构建子target
+* 执行编译前命令(pre-compile)
+* 生成依赖(dep)
+* 编译(compile)
+* 链接(link)
+* 执行编译后命令(after-compile)
+
+每个target由一个target.xml描述,该文件放在每个target的根目录下.同时位于该目录下的还有sources,sources.$(arch)文件,用于记录需要编译的源文件路径,其中sources.$(arch)文件会优先被扫描.
+在项目的根目录下执行./skconfig打开配置界面,./configuren生成makefile.每一个target在扫描和编译的时候当前目录都是target所在的目录.
+target.xml文件结构如下:
+```xml
+<!--target标签的name属性是目标的名字-->
+<?xml version="1.0" encoding="utf-8"?><target name="">
+	<!--输出文件名-->
+	<output name="" />
+    <!--输出目录-->
+	<outdir path="" />
+    <!--中间文件目录-->
+    <middir path="" />
+    <!--架构列表-->
+    <archs>
+    	<arch name="x86">
+        	<!--所有的命令都会被原样写到gnu makefile中,都对应着同名变量-->
+            <!--留空的会继承父项目/父架构的-->
+        	<PREV>这里是编译前的命令</PREV>
+            <DEP>生成依赖的工具</DEP>
+            <DEP_COMMAND>生成依赖的命令</DEP_COMMAND>
+            <CC>c编译器</CC>
+            <CFLAGS>c编译选项</CFLAGS>
+            <C_COMMAND>c编译命令</C_COMMAND>
+            <AS>汇编编译器</AS>
+            <ASFLAGS>汇编编译选项</ASFLAGS>
+            <AS_COMMAND>汇编编译命令</AS_COMMAND>
+            <LD>链接器</LD>
+            <LDFLAGS>链接选项</LDFLAGS>
+            <LD_COMMAND>链接命令</LD_COMMAND>
+            <PREV>编译后执行的命令</PREV>
+            <sub-archs>
+            	<!--子架构列表,没有留空-->
+            </sub-archs>
+        </arch>
+        <!--其他的架构在这里-->
+    </archs>
+    <dependencies>
+    	<!--依赖的target的列表-->
+    	<dep path="" />
+        <dep path="" />
+        <dep path="" />
+    </dependencies>
+    <sub-targets>
+    	<!--子target列表-->
+    	<target enable="true" path="" />
+    </sub-targets>
+    <options>
+    	<!--单选框-->
+    	<option type="checkbox" name="Enable Debigging" value="-g" enable="true" target="CFLAGS|ASFLAGS|LDFLAGS" />
+        <!--多选一-->
+        <option type="list" name="Bootloader" index="0" target="CFLAGS|ASFLAGS|LDFLAGS">
+        	<item name="grub2" value="-DGRUB" />
+            <item name="uboot" value="-DUBOOT" />
+        </option>
+        <!--单行文本框-->
+        <option type="input" name="Comment" marco="-DCOMMENT" value="" />
+        <!--菜单-->
+        <option type="menu" name="Early print options">
+        	<!--这里是在该子菜单中的选项-->
+        </option>
+    </options>
+</target>
+```
+
 ###公共基本类型
 代码位于src/common下,提供一些基本的宏及类型定义.
 ####基本数据类型
