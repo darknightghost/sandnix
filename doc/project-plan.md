@@ -164,7 +164,7 @@ target.xml文件结构如下:
             <LD>链接器</LD>
             <LDFLAGS>链接选项</LDFLAGS>
             <LD_COMMAND>链接命令</LD_COMMAND>
-            <PREV>编译后执行的命令</PREV>
+            <AFTER>编译后执行的命令</AFTER>
             <sub-archs>
             	<!--子架构列表,没有留空-->
             </sub-archs>
