@@ -112,7 +112,7 @@ typedef struct _类名_t {
 ##### 注释
 注释的职责是让人知道代码是干啥的,而不是告诉别人代码是怎么干的.除非你写了一大堆烂代码.
 如果一个函数/宏的调用有什么注意事项,或者是需要解释点烂七八糟协议之类的什么东西,一定要用注释写出来.
-用`//TODO:`的形式标出未做的工作是个不错的注意,正常点的编辑器都会把它高亮的.
+用`//TODO:`的形式标出未做的工作是个不错的主意,正常点的编辑器都会把它高亮的.
 ##### Astyle参数
 ```bash
 astyle --suffix=none --style=linux --indent=spaces=4 --attach-namespaces --attach-classes --attach-inlines --attach-extern-c --indent-classes --indent-cases --indent-preproc-cond –indent-switches --indent-preproc-define --indent-preproc-block --indent-col1-comments --break-blocks=all --pad-oper --unpad-paren --mode=c $filename
