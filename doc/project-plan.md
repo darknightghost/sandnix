@@ -123,7 +123,7 @@ astyle --suffix=none --style=linux --indent=spaces=4 --attach-namespaces --attac
 * 目标(target)
 * 架构(arch)
 
-两者都是可以嵌套的,架构嵌套架构,目标嵌套目标.每个target都会包含一个或者多个arch.工具在扫描配置文件的时候会根据arch里的信息生成编译用的命令模板,然后通过读target里的选项生成编译选项,最后生成编译用的命令.父target必须包含子target的所有arch.子target里有arch的话子target的arch会覆盖父target的arch,否则继承父target的arch.
+两者都是可以嵌套的,架构嵌套架构,目标嵌套目标.每个target都会包含一个或者多个arch.工具在扫描配置文件的时候会根据arch里的信息生成编译用的命令模板,然后通过读target里的选项生成编译选项,最后生成编译用的命令.父target必须包含子target的所有arch.子target里有arch的话子target的arch会覆盖父target的arch,否则继承父target的arch.特别的,父target依赖于子target.
 一个target的构建分为一下几个步骤:
 * 构建依赖target
 * 构建子target
@@ -139,14 +139,16 @@ target.xml文件结构如下:
 ```xml
 <!--target标签的name属性是目标的名字-->
 <?xml version="1.0" encoding="utf-8"?><target name="">
+	<!--id-->
+    <id value="" />
 	<!--输出文件名-->
 	<output name="" />
     <!--输出目录-->
 	<outdir path="" />
     <!--中间文件目录-->
     <middir path="" />
-    <!--架构列表-->
-    <archs>
+    <!--架构列表,active属性只有最顶层target有-->
+    <archs actived="x86">
     	<arch name="x86">
         	<!--所有的命令都会被原样写到gnu makefile中,都对应着同名变量-->
             <!--留空的会继承父项目/父架构的-->
