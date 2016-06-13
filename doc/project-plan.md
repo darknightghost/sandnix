@@ -143,20 +143,20 @@ target.xml文件结构如下:
 ```xml
 <!--target标签的name属性是目标的名字-->
 <?xml version="1.0" encoding="utf-8"?><target name="">
-	<!--id-->
-    <id value="" />
-	<!--输出文件名-->
-	<output name="" />
+    <!--输出文件名-->
+    <output name="输出文件名" />
     <!--输出目录-->
-	<outdir path="" />
+    <outdir path="输出目录" />
     <!--中间文件目录-->
-    <middir path="" />
-    <!--架构列表,active属性只有最顶层target有-->
+    <middir path="中间文件目录" />
+    <!--说明-->
+    <introduction>sandnix</introduction>
+    <!--架构列表-->
     <archs actived="x86">
-    	<arch name="x86">
-        	<!--所有的命令都会被原样写到gnu makefile中,都对应着同名变量-->
-            <!--留空的会继承父项目/父架构的-->
-        	<PREV>这里是编译前的命令</PREV>
+        <arch name="x86">
+            <!--所有的命令都会被原样写到gnu makefile中,都对应着同名变量-->
+            <!--没写的架构会继承父项目的-->
+            <PREV>这里是编译前的命令</PREV>
             <DEP>生成依赖的工具</DEP>
             <DEP_COMMAND>生成依赖的命令</DEP_COMMAND>
             <CC>c编译器</CC>
@@ -169,35 +169,48 @@ target.xml文件结构如下:
             <LDFLAGS>链接选项</LDFLAGS>
             <LD_COMMAND>链接命令</LD_COMMAND>
             <AFTER>编译后执行的命令</AFTER>
-            <sub-archs>
-            	<!--子架构列表,没有留空-->
-            </sub-archs>
+        </arch>
+        <!--用"."表示层次关系-->
+        <arch name="arm.raseberry">
+            <PREV>这里是编译前的命令</PREV>
+            <DEP>生成依赖的工具</DEP>
+            <DEP_COMMAND>生成依赖的命令</DEP_COMMAND>
+            <CC>c编译器</CC>
+            <CFLAGS>c编译选项</CFLAGS>
+            <C_COMMAND>c编译命令</C_COMMAND>
+            <AS>汇编编译器</AS>
+            <ASFLAGS>汇编编译选项</ASFLAGS>
+            <AS_COMMAND>汇编编译命令</AS_COMMAND>
+            <LD>链接器</LD>
+            <LDFLAGS>链接选项</LDFLAGS>
+            <LD_COMMAND>链接命令</LD_COMMAND>
+            <AFTER>编译后执行的命令</AFTER>
         </arch>
         <!--其他的架构在这里-->
     </archs>
     <dependencies>
-    	<!--依赖的target的列表-->
-    	<dep path="" />
-        <dep path="" />
-        <dep path="" />
+        <!--依赖的target的列表,填当前target目录的-->
+        <dep path="1" />
+        <dep path="2" />
+        <dep path="3" />
     </dependencies>
     <sub-targets>
-    	<!--子target列表-->
-    	<target enable="true" path="" />
+        <!--子target列表-->
+        <target enable="true" path="" />
     </sub-targets>
     <options>
-    	<!--单选框-->
-    	<option type="checkbox" name="Enable Debigging" value="-g" enable="true" target="CFLAGS|ASFLAGS|LDFLAGS" />
+        <!--单选框-->
+        <option type="checkbox" name="Enable Debigging" value="-g" enable="true" target="CFLAGS|ASFLAGS|LDFLAGS" />
         <!--多选一-->
         <option type="list" name="Bootloader" index="0" target="CFLAGS|ASFLAGS|LDFLAGS">
-        	<item name="grub2" value="-DGRUB" />
+            <item name="grub2" value="-DGRUB" />
             <item name="uboot" value="-DUBOOT" />
         </option>
         <!--单行文本框-->
         <option type="input" name="Comment" marco="-DCOMMENT" value="" />
         <!--菜单-->
         <option type="menu" name="Early print options">
-        	<!--这里是在该子菜单中的选项-->
+            <!--这里是在该子菜单中的选项-->
         </option>
     </options>
 </target>
