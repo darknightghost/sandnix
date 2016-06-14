@@ -202,12 +202,12 @@ target.xml文件结构如下:
         <!--单选框-->
         <option type="checkbox" name="Enable Debigging" value="-g" enable="true" target="CFLAGS|ASFLAGS|LDFLAGS" />
         <!--多选一-->
-        <option type="list" name="Bootloader" index="0" target="CFLAGS|ASFLAGS|LDFLAGS">
+        <option type="list" name="Bootloader" selected="0" target="CFLAGS|ASFLAGS|LDFLAGS">
             <item name="grub2" value="-DGRUB" />
             <item name="uboot" value="-DUBOOT" />
         </option>
         <!--单行文本框-->
-        <option type="input" name="Comment" marco="-DCOMMENT" value="" />
+        <option type="input" name="Comment" marco="-DCOMMENT" value="" target="CFLAGS|ASFLAGS|LDFLAGS" />
         <!--菜单-->
         <option type="menu" name="Early print options">
             <!--这里是在该子菜单中的选项-->
