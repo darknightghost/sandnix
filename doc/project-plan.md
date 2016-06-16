@@ -141,8 +141,8 @@ astyle --suffix=none --style=linux --indent=spaces=4 --attach-namespaces --attac
 在项目的根目录下执行./skconfig打开配置界面,./configuren生成makefile.每一个target在扫描和编译的时候当前目录都是target所在的目录.
 target.xml文件结构如下:
 ```xml
-<!--target标签的name属性是目标的名字-->
-<?xml version="1.0" encoding="utf-8"?><target name="">
+<!--target标签的name属性是目标的名字,type为build或virtual-->
+<?xml version="1.0" encoding="utf-8"?><target name="" type="">
     <!--输出文件名-->
     <output name="输出文件名" />
     <!--输出目录-->
@@ -158,32 +158,32 @@ target.xml文件结构如下:
             <!--没写的架构会继承父项目的-->
             <PREV>这里是编译前的命令</PREV>
             <DEP>生成依赖的工具</DEP>
-            <DEP_COMMAND>生成依赖的命令</DEP_COMMAND>
+            <DEPRULE>生成依赖的命令</DEPRULE>
             <CC>c编译器</CC>
             <CFLAGS>c编译选项</CFLAGS>
-            <C_COMMAND>c编译命令</C_COMMAND>
+            <CCRULE>c编译命令</CCRULE>
             <AS>汇编编译器</AS>
             <ASFLAGS>汇编编译选项</ASFLAGS>
-            <AS_COMMAND>汇编编译命令</AS_COMMAND>
+            <ASRULE>汇编编译命令</ASRULE>
             <LD>链接器</LD>
             <LDFLAGS>链接选项</LDFLAGS>
-            <LD_COMMAND>链接命令</LD_COMMAND>
+            <LDRULE>链接命令</LDRULE>
             <AFTER>编译后执行的命令</AFTER>
         </arch>
         <!--用"."表示层次关系-->
         <arch name="arm.raseberry">
             <PREV>这里是编译前的命令</PREV>
             <DEP>生成依赖的工具</DEP>
-            <DEP_COMMAND>生成依赖的命令</DEP_COMMAND>
+            <DEPRULE>生成依赖的命令</DEPRULE>
             <CC>c编译器</CC>
             <CFLAGS>c编译选项</CFLAGS>
-            <C_COMMAND>c编译命令</C_COMMAND>
+            <CCRULE>c编译命令</CCRULE>
             <AS>汇编编译器</AS>
             <ASFLAGS>汇编编译选项</ASFLAGS>
-            <AS_COMMAND>汇编编译命令</AS_COMMAND>
+            <ASRULE>汇编编译命令</ASRULE>
             <LD>链接器</LD>
             <LDFLAGS>链接选项</LDFLAGS>
-            <LD_COMMAND>链接命令</LD_COMMAND>
+            <LDRULE>链接命令</LDRULE>
             <AFTER>编译后执行的命令</AFTER>
         </arch>
         <!--其他的架构在这里-->
