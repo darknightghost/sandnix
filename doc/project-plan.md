@@ -870,7 +870,7 @@ linear_list_t
 //哈希表
 hash_table_t
 
-//映射
+//映射(红黑树)
 map_t
 
 //向量
@@ -963,7 +963,40 @@ core_rtl_hash_table_get()
 
 //设成NULL即remove
 core_rtl_hash_table_set()
+core_rtl_hash_table_next()
 core_rtl_hash_table_destroy()
+
+//映射
+core_rtl_map_init
+core_rtl_map_set
+core_rtl_map_get
+core_rtl_map_next
+core_rtl_map_destroy
+
+//向量
+core_rtl_vector_init
+core_rtl_vector_push
+core_rtl_vector_pop
+core_rtl_vector_top
+core_rtl_vector_get
+core_rtl_vector_next
+core_rtl_vector_destroy
+
+//队列
+core_rtl_queue_init
+core_rtl_queue_push
+core_rtl_queue_pop
+core_rtl_queue_front
+core_rtl_queue_end
+core_rtl_queue_get
+core_rtl_queue_next
+core_rtl_queue_remove
+
+//缓冲区
+core_rtl_buffer_init
+core_rtl_buffer_read
+core_rtl_buffer_write
+core_rtl_buffer_destroy
 
 //面向对象
 //obj_t
