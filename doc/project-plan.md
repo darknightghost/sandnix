@@ -42,6 +42,7 @@
 
 ##### subsystem层
 负责提供系统调用,并将系统调用翻译成对内核函数的调用.模块列表如下:
+* lib
 * driver
 * linux
 
@@ -139,6 +140,7 @@ astyle --suffix=none --style=linux --indent=spaces=4 --attach-namespaces --attac
 
 每个target由一个target.xml描述,该文件放在每个target的根目录下.同时位于该目录下的还有sources,sources.$(arch)文件,用于记录需要编译的源文件路径,其中sources.$(arch)文件会优先被扫描.
 在项目的根目录下执行./skconfig打开配置界面,./configuren生成makefile.每一个target在扫描和编译的时候当前目录都是target所在的目录.
+sources文件内部可以用"#"来注释,"#"后面的内容将会被忽略.
 target.xml文件结构如下:
 ```xml
 <!--target标签的name属性是目标的名字,type为build或virtual-->
@@ -190,9 +192,7 @@ target.xml文件结构如下:
     </archs>
     <dependencies>
         <!--依赖的target的列表,填当前target目录的-->
-        <dep path="1" />
-        <dep path="2" />
-        <dep path="3" />
+        <dep path="sub target path" />
     </dependencies>
     <sub-targets>
         <!--子target列表-->
@@ -574,24 +574,61 @@ src/sandnix/kernel/hal/exception
 ```
 ######接口数据结构
 ```c
+//void mem_fault_hndlr(u32 thread_id, address_t address, u32 operation)
+typedef void	(*mem_fault_hndlr)(u32, address_t, u32);
 
+//void privilege_fault_hndlr(u32 thread_id, address_t address)
+typedef void	(*privilege_fault_hndlr)(u32, address_t);
+
+//void undef_op_fault_hndlr(u32 thread_id, address_t address
+typedef void	(*undef_op_fault_hndlr)(u32, address_t;
+
+//错误处理程序链表
+hndlr_info;
 ```
 ######接口函数及宏
 ```c
-hal_exception_init()
-hal_exception_core_init()
-hal_exception_panic()
+//初始化模块
+void hal_exception_init();
 
+//初始化处理器核心
+void hal_exception_core_init();
+
+//报错并终止整个系统
+void hal_exception_panic(u32 error_code, char* fmt ,...);
+
+//添加错误处理程序
+//内存错误
+void hal_exception_mem_fault_hndlr_set(
+	phndlr_info p_hndlr_info);
+
+//越权操作
+void hal_exception_privilege_fault_hndlr_set(
+	phndlr_info p_hndlr_info);
+
+//未定义指令
+void hal_exception_undef_op_fault_hndlr_set(
+	phndlr_info p_hndlr_info);
+
+//Assert
+#define ASSERT(x)
 ```
 ######文件列表
 ```c
+//接口头文件
+src/sandnix/kernel/hal/exception/exception.h
 
+//错误处理
+src/sandnix/kernel/hal/exception/%(arch)/exception.c
+
+//Panic
+src/sandnix/kernel/hal/exception/%(arch)/panic.c
 ```
 #####power
 负责处理基本的电源操作,比如断电,复位,睡眠等.
 ######模块路径
 ```
-
+src/sandnix/kernel/hal/power/
 ```
 ######接口数据结构
 ```c
@@ -599,14 +636,67 @@ hal_exception_panic()
 ```
 ######接口函数及宏
 ```c
+//h初始化模块
+void hal_power_init();
 
+//初始化处理器核心
+void hal_power_core_init();
+
+//断电
+void hal_power_off();
+
+//睡眠
+void hal_power_sleep();
+
+//复位
+void hal_power_reset();
 ```
 ######文件列表
 ```c
+//接口头文件
+src/sandnix/kernel/hal/power/power.h
 
+//实现代码
+src/sandnix/kernel/hal/power/$(arch)/power.c
 ```
 #####sys\_gate
 负责提供用户态和内核态之间的切换.
+######模块路径
+```
+src/sandnix/kernel/hal/sys_gate/
+```
+######接口数据结构
+```c
+
+```
+######接口函数及宏
+```c
+//初始化模块
+void hal_sys_gate_init();
+
+//初始化cpu核心
+void hal_sys_gate_core_init();
+
+//设置入口地址
+void hal_sys_gate_set_entry(void* entry);
+
+//返回到用户空间
+void hal_sys_gate_ret(pcontext_t p_context)
+
+//转移到用户空间
+void hal_sys_gate_go_to_usr(void* entry, int argc, char* argv[]);
+```
+######文件列表
+```c
+//接口头文件
+src/sandnix/kernel/hal/sys_gate/sys_gate.h
+
+//实现文件
+src/sandnix/kernel/hal/sys_gate/$(arch)/sys_gate.c
+```
+####Core层
+#####main
+Core层的入口
 ######模块路径
 ```
 
@@ -623,7 +713,222 @@ hal_exception_panic()
 ```c
 
 ```
-####Core层
+#####interrupt
+中断管理
+######模块路径
+```
+
+```
+######接口数据结构
+```c
+
+```
+######接口函数及宏
+```c
+
+```
+######文件列表
+```c
+
+```
+#####mm
+内存管理
+######模块路径
+```
+
+```
+######接口数据结构
+```c
+
+```
+######接口函数及宏
+```c
+
+```
+######文件列表
+```c
+
+```
+#####kconsole
+内核控制台
+######模块路径
+```
+
+```
+######接口数据结构
+```c
+
+```
+######接口函数及宏
+```c
+
+```
+######文件列表
+```c
+
+```
+#####pm
+进程管理
+######模块路径
+```
+
+```
+######接口数据结构
+```c
+
+```
+######接口函数及宏
+```c
+
+```
+######文件列表
+```c
+
+```
+#####ipc
+POSIX进程通信
+######模块路径
+```
+
+```
+######接口数据结构
+```c
+
+```
+######接口函数及宏
+```c
+
+```
+######文件列表
+```c
+
+```
+#####msg
+内核消息机制
+######模块路径
+```
+
+```
+######接口数据结构
+```c
+
+```
+######接口函数及宏
+```c
+
+```
+######文件列表
+```c
+
+```
+#####vfs
+虚拟文件系统以及初始化内存盘的驱动
+######模块路径
+```
+
+```
+######接口数据结构
+```c
+
+```
+######接口函数及宏
+```c
+
+```
+######文件列表
+```c
+
+```
+#####rtl
+c运行库,面向对象以及各种数据结构
+######模块路径
+```
+
+```
+######接口数据结构
+```c
+
+```
+######接口函数及宏
+```c
+
+```
+######文件列表
+```c
+
+```
+#####exception
+异常处理
+######模块路径
+```
+
+```
+######接口数据结构
+```c
+
+```
+######接口函数及宏
+```c
+
+```
+######文件列表
+```c
+
+```
 ####Subsystem层
+#####lib
+subsystem层的运行库,包括跨权限缓冲区处理等调用
+######模块路径
+```
+
+```
+######接口数据结构
+```c
+
+```
+######接口函数及宏
+```c
+
+```
+######文件列表
+```c
+
+```
+#####driver
+为驱动程序提供系统调用的子系统
+######模块路径
+```
+
+```
+######接口数据结构
+```c
+
+```
+######接口函数及宏
+```c
+
+```
+######文件列表
+```c
+
+```
+#####linux
+为linux应用提供系统调用的子系统
+######模块路径
+```
+
+```
+######接口数据结构
+```c
+
+```
+######接口函数及宏
+```c
+
+```
+######文件列表
+```c
+
+```
 #####驱动程序
 位于src/drivers下.
