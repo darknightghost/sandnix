@@ -386,6 +386,9 @@ void hal_mmu_pg_tbl_destroy(u32* page_id);
 //设置页表条目,krnl_pg_tbl_t定义在mm模块中
 void hal_mmu_pg_tbl_set(void* virt_addr, u32 num, pkrnl_pg_tbl_t page_tables);
 
+//刷新页表cache
+void hal_mmu_pg_tbl_refresh();
+
 //切换到指定页表
 void hal_mmu_pg_tbl_switch(u32 id);
 ```
@@ -699,7 +702,7 @@ src/sandnix/kernel/hal/sys_gate/$(arch)/sys_gate.c
 Core层的入口
 ######模块路径
 ```
-
+src/sandnix/kernel/core/main
 ```
 ######接口数据结构
 ```c
@@ -717,7 +720,7 @@ Core层的入口
 中断管理
 ######模块路径
 ```
-
+src/sandnix/kernel/core/interrupt
 ```
 ######接口数据结构
 ```c
@@ -732,10 +735,10 @@ Core层的入口
 
 ```
 #####mm
-内存管理
+内存管理,包括页面的分配,映射,释放,物理内存的分配,释放,堆管理等
 ######模块路径
 ```
-
+src/sandnix/kernel/core/mm
 ```
 ######接口数据结构
 ```c
@@ -753,7 +756,7 @@ Core层的入口
 内核控制台
 ######模块路径
 ```
-
+src/sandnix/kernel/core/kconsole
 ```
 ######接口数据结构
 ```c
@@ -771,7 +774,7 @@ Core层的入口
 进程管理
 ######模块路径
 ```
-
+src/sandnix/kernel/core/pm
 ```
 ######接口数据结构
 ```c
@@ -789,7 +792,7 @@ Core层的入口
 POSIX进程通信
 ######模块路径
 ```
-
+src/sandnix/kernel/core/ipc
 ```
 ######接口数据结构
 ```c
@@ -807,7 +810,7 @@ POSIX进程通信
 内核消息机制
 ######模块路径
 ```
-
+src/sandnix/kernel/core/msg
 ```
 ######接口数据结构
 ```c
@@ -825,7 +828,7 @@ POSIX进程通信
 虚拟文件系统以及初始化内存盘的驱动
 ######模块路径
 ```
-
+src/sandnix/kernel/core/vfs
 ```
 ######接口数据结构
 ```c
@@ -843,14 +846,129 @@ POSIX进程通信
 c运行库,面向对象以及各种数据结构
 ######模块路径
 ```
-
+src/sandnix/kernel/core/rtl
 ```
 ######接口数据结构
 ```c
+//可变参
+va_list
 
+//面向对象
+//所有对象的祖宗
+obj_t
+
+//字符串对象
+kstring_obj_t
+
+//数据结构
+//链表
+list_t
+
+//线性表
+linear_list_t
+
+//哈希表
+hash_table_t
+
+//映射
+map_t
+
+//向量
+vector_t
+
+//队列
+queue_t
+
+//缓冲区
+buffer_t
+
+//回调函数类型
+//销毁对象
+//void item_destroyer(void* p_item, void* p_arg)
+typedef void (*item_destroyer_t)(void*, void*);
+
+//比较大小.item1 > item2返回值 > 0
+//等于返回0
+//小于返回值 < 0
+//int item_compare(void* p_item1, void* p_item2);
+typedef int (*item_compare_t)(void*, void*);
+
+//哈希函数
+//u32 hash_func(void* p_item)
+typedef u32 (*hash_func_t)(void*)
 ```
 ######接口函数及宏
 ```c
+//可变参
+#define va_start
+#define va_arg
+#define va_end
+
+//c运行库
+//字符串处理函数,作用参照标准库
+void* core_rtl_memccpy(void* dest, const void* src, u8 ch, size_t size);
+void* core_rtl_memchr(const void* buf, u8 ch, size_t size);
+int core_rtl_memcmp(const void* buf1, const void* buf2, size_t size);
+void* core_rtl_memcpy(void* dest, const void* src, size_t size);
+void* core_rtl_memmove(void* dest, const void* src, size_t size);
+void* core_rtl_memset(void* dest, u8 value, size_t size);
+char* core_rtl_strchr(const char* str, char c);
+size_t core_rtl_strcspn(const char* str, const char* reject);
+size_t core_rtl_strlen(const char* str);
+char* core_rtl_strncat(char *dest, const char *src, size_t len);
+int core_rtl_strncmp(const char* dest, const char* src, size_t len);
+char* core_rtl_strncpy(char* dest, const char* src, size_t len);
+char* core_rtl_strpbrk(const char* str1, const char* str2);
+char* core_rtl_strrchr(const char* str, char ch);
+size_t core_rtl_strspn(const char* str, const char* accept);
+char* core_rtl_strstr(const char* str1, const char* str2);
+
+//分割字符串
+char* core_rtl_strsplit(const char *str, const char *delim, char* buf, size_t size);
+
+//格式化字符串函数
+char* core_rtl_snprintf(char* buf, size_t size, const char* fmt, ...);
+char* core_rtl_vsnprintf(char* buf, size_t size, const char* fmt, va_list ap);
+
+//格式化输出函数
+char* core_rtl_kprintf(const char* fmt, ...);
+
+//数据结构
+//链表
+#define core_rtl_list_init(list)
+#define core_rtl_list_empty(list)
+core_rtl_list_insert_before
+core_rtl_list_insert_after
+core_rtl_list_remove
+core_rtl_list_destroy
+core_rtl_list_join
+core_rtl_list_next
+core_rtl_list_qsort
+
+//线性表
+core_rtl_linear_list_init
+core_rtl_linear_list_get
+//设成NULL即remove
+core_rtl_linear_list_set
+core_rtl_linear_list_used
+core_rtl_linear_list_size
+core_rtl_linear_list_get_current_max_index
+core_rtl_linear_list_get_free_index
+core_rtl_linear_list_get_free_index_num
+core_rtl_linear_list_destroy
+
+//哈希表
+core_rtl_hash_table_init
+core_rtl_hash_table_get()
+
+//设成NULL即remove
+core_rtl_hash_table_set()
+core_rtl_hash_table_destroy()
+
+//面向对象
+//obj_t
+
+//kstring_obj_t
 
 ```
 ######文件列表
@@ -861,7 +979,7 @@ c运行库,面向对象以及各种数据结构
 异常处理
 ######模块路径
 ```
-
+src/sandnix/kernel/core/exception
 ```
 ######接口数据结构
 ```c
@@ -880,7 +998,7 @@ c运行库,面向对象以及各种数据结构
 subsystem层的运行库,包括跨权限缓冲区处理等调用
 ######模块路径
 ```
-
+src/sandnix/kernel/subsystem/lib
 ```
 ######接口数据结构
 ```c
@@ -898,7 +1016,7 @@ subsystem层的运行库,包括跨权限缓冲区处理等调用
 为驱动程序提供系统调用的子系统
 ######模块路径
 ```
-
+src/sandnix/kernel/subsystem/driver
 ```
 ######接口数据结构
 ```c
@@ -916,7 +1034,7 @@ subsystem层的运行库,包括跨权限缓冲区处理等调用
 为linux应用提供系统调用的子系统
 ######模块路径
 ```
-
+src/sandnix/kernel/subsystem/linux
 ```
 ######接口数据结构
 ```c
