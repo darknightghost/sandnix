@@ -864,8 +864,8 @@ kstring_obj_t
 //链表
 list_t
 
-//线性表
-linear_list_t
+//动态数组
+array_t
 
 //哈希表
 hash_table_t
@@ -935,74 +935,191 @@ char* core_rtl_kprintf(const char* fmt, ...);
 
 //数据结构
 //链表
+//初始化
 #define core_rtl_list_init(list)
-#define core_rtl_list_empty(list)
-core_rtl_list_insert_before
-core_rtl_list_insert_after
-core_rtl_list_remove
-core_rtl_list_destroy
-core_rtl_list_join
-core_rtl_list_next
-core_rtl_list_qsort
 
-//线性表
-core_rtl_linear_list_init
-core_rtl_linear_list_get
-//设成NULL即remove
-core_rtl_linear_list_set
-core_rtl_linear_list_used
-core_rtl_linear_list_size
-core_rtl_linear_list_get_current_max_index
-core_rtl_linear_list_get_free_index
-core_rtl_linear_list_get_free_index_num
-core_rtl_linear_list_destroy
+//检测是否为空
+#define core_rtl_list_empty(list)
+
+//在后面插入
+plist_node_t core_rtl_list_insert_before(
+	plist_node_t pos,
+    plist_t p_list,
+    void* p_item,
+	pheap_t heap);
+
+//在前面插入
+plist_node_t core_rtl_list_insert_after(
+	plist_node_t pos,
+    plist_t p_list,
+    void* p_item,
+	pheap_t heap);
+
+//删除
+void core_rtl_list_remove(
+	plist_node_t pos,
+    plist_t p_list,
+	pheap_t heap);
+
+//销毁
+void core_rtl_list_destroy(
+	plist_t p_list,
+    pheap_t heap,
+    item_destroyer_t destroier,
+    void* arg);
+
+//合并
+void core_rtl_list_join(
+	plist_t p_src,
+    plist_t p_dest,
+	pheap_t src_heap,
+    pheap_t dest_heap);
+
+//获得上一项的位置
+#define core_rtl_list_prev(pos)
+
+//获得下一项的位置
+#define core_rtl_list_next(pos)
+
+//得到链表项
+#define core_rtl_list_get(pos)
+
+//快速排序
+void core_rtl_list_qsort(
+	plist_t p_list,
+    item_compare_t compare,
+    bool b2s);
+
+//动态数组
+//初始化
+core_rtl_array_init
+
+//获得元素
+core_rtl_array_get
+
+//设置n元素值,设成NULL即remove
+core_rtl_array_set
+
+//检测该元素是否被赋值
+core_rtl_array_used
+
+//获得当前元素个数
+core_rtl_array_size
+
+//获得最大索引值
+core_rtl_array_get_current_max_index
+
+//获得一个空闲的索引
+core_rtl_array_get_free_index
+
+//获得空闲索引个数
+core_rtl_array_get_free_index_num
+
+//销毁
+core_rtl_array_destroy
 
 //哈希表
+//初始化
 core_rtl_hash_table_init
+
+//获得键值
 core_rtl_hash_table_get()
 
-//设成NULL即remove
+//设置键值,设成NULL即remove
 core_rtl_hash_table_set()
+
+//获得下一个键值
 core_rtl_hash_table_next()
+
+//销毁
 core_rtl_hash_table_destroy()
 
 //映射
+//初始化
 core_rtl_map_init
+
+//设置键值,设成NULL即remove
 core_rtl_map_set
+
+//获得键值
 core_rtl_map_get
+
+//获得下一个键值
 core_rtl_map_next
+
+//o销毁
 core_rtl_map_destroy
 
 //向量
+//初始化
 core_rtl_vector_init
+
+//压入元素
 core_rtl_vector_push
+
+//弹出元素
 core_rtl_vector_pop
+
+//获得顶部元素
 core_rtl_vector_top
+
+//获得元素
 core_rtl_vector_get
+
+//获得下一个元素
 core_rtl_vector_next
+
+//销毁
 core_rtl_vector_destroy
 
 //队列
+//初始化
 core_rtl_queue_init
+
+//压入元素
 core_rtl_queue_push
+
+//弹出元素
 core_rtl_queue_pop
+
+//获得顶部元素
 core_rtl_queue_front
+
+//获得底部元素
 core_rtl_queue_end
+
+//获得元素
 core_rtl_queue_get
+
+//获得下一个元素
 core_rtl_queue_next
+
+//删除元素
 core_rtl_queue_remove
 
 //缓冲区
+//初始化
 core_rtl_buffer_init
+
+//读
 core_rtl_buffer_read
+
+//写
 core_rtl_buffer_write
+
+//销毁
 core_rtl_buffer_destroy
 
 //面向对象
 //obj_t
+#define INC_REF(obj)
+#define DEC_REF(obj)
+#define TO_STRING(obj)
+core_rtl_obj_inc_ref
+core_rtl_obj_dec_ref
 
 //kstring_obj_t
-
+kstring_obj()
 ```
 ######文件列表
 ```c
