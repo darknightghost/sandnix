@@ -933,6 +933,8 @@ char* core_rtl_vsnprintf(char* buf, size_t size, const char* fmt, va_list ap);
 //格式化输出函数
 char* core_rtl_kprintf(const char* fmt, ...);
 
+//数学函数
+
 //数据结构
 //链表
 //初始化
@@ -992,133 +994,208 @@ void core_rtl_list_qsort(
 
 //动态数组
 //初始化
-core_rtl_array_init
+void core_rtl_array_init(
+	parray_t p_array,
+    u32 num,
+	pheap_t heap);
 
 //获得元素
-core_rtl_array_get
+void* core_rtl_array_get(
+	parray_t p_array,
+    u32 index);
 
 //设置n元素值,设成NULL即remove
-core_rtl_array_set
+void* core_rtl_array_set(
+	parray_t p_array,
+    u32 index,
+    void* value);
 
 //检测该元素是否被赋值
-core_rtl_array_used
+bool core_rtl_array_used(
+	parray_t p_array,
+    u32 index);
 
 //获得当前元素个数
-core_rtl_array_size
+u32 core_rtl_array_size{
+	parray_t p_array};
 
 //获得最大索引值
-core_rtl_array_get_current_max_index
+u32 core_rtl_array_get_current_max_index(
+	parray_t p_array);
 
 //获得一个空闲的索引
-core_rtl_array_get_free_index
+u32 core_rtl_array_get_free_index(
+	parray_t p_array);
 
 //获得空闲索引个数
-core_rtl_array_get_free_index_num
+u32 core_rtl_array_get_free_index_num(
+	parray_t p_array);
 
 //销毁
-core_rtl_array_destroy
+void core_rtl_array_destroy(
+	parray_t p_array,
+    item_destroyer_t destroier,
+    void* arg);
 
 //哈希表
 //初始化
-core_rtl_hash_table_init
+void core_rtl_hash_table_init(
+	phash_table_t p_hash_table,
+    u32 min_hash,
+    u32 max_hash,
+    hash_func_t hash_func,
+    pheap_t heap);
 
 //获得键值
-core_rtl_hash_table_get()
+void* core_rtl_hash_table_get(
+	phash_table_t p_hash_table,
+    void* p_key)
 
 //设置键值,设成NULL即remove
-core_rtl_hash_table_set()
+void* core_rtl_hash_table_set(
+	phash_table_t p_hash_table,
+    void* p_key,
+    void* p_value);
 
 //获得下一个键值
-core_rtl_hash_table_next()
+void* core_rtl_hash_table_next(
+	phash_table_t p_hash_table,
+    void* p_key);
 
 //销毁
-core_rtl_hash_table_destroy()
+void core_rtl_hash_table_destroy(
+	phash_table_t p_hash_table,
+    item_destroyer_t destroier,
+    void* arg);
 
 //映射
 //初始化
-core_rtl_map_init
+void core_rtl_map_init(
+	pmap_t p_map,
+    item_compare_t compare_func,
+    pheap_t heap);
 
 //设置键值,设成NULL即remove
-core_rtl_map_set
+void* core_rtl_map_set(
+	pmap_t p_map,
+	void* p_key,
+    void* p_value);
 
 //获得键值
-core_rtl_map_get
+void* core_rtl_map_get(
+	pmap_t p_map,
+	void* p_key);
 
 //获得下一个键值
-core_rtl_map_next
+void* core_rtl_map_next(
+	pmap_t p_map,
+    void* p_key);
 
-//o销毁
-core_rtl_map_destroy
+//销毁
+void core_rtl_map_destroy
+	pmap_t p_map,
+    item_destroyer_t destroier,
+    void* arg);
 
 //向量
 //初始化
-core_rtl_vector_init
+void core_rtl_vector_init(
+	pvector_t p_vector,
+    size_t scale,
+	pheap_t p_heap);
 
 //压入元素
-core_rtl_vector_push
+void core_rtl_vector_push(
+	pvector_t p_vector,
+    void* p_item);
 
 //弹出元素
-core_rtl_vector_pop
+void* core_rtl_vector_pop(
+	pvector_t p_vector);
 
 //获得顶部元素
-core_rtl_vector_top
+void* core_rtl_vector_top(
+	pvector_t p_vector);
 
 //获得元素
-core_rtl_vector_get
-
-//获得下一个元素
-core_rtl_vector_next
+void* core_rtl_vector_get(
+	pvector_t p_vector,
+    u32 index);
 
 //销毁
-core_rtl_vector_destroy
+void* core_rtl_vector_destroy(
+	pvector_t p_vector,
+    item_destroyer_t destroier,
+    void* arg);
 
 //队列
 //初始化
-core_rtl_queue_init
+void core_rtl_queue_init(
+	pqueue_t p_queue,
+    pheap_t heap);
 
 //压入元素
-core_rtl_queue_push
+void core_rtl_queue_push(
+	pqueue_t p_queue,
+    void* p_item);
 
 //弹出元素
-core_rtl_queue_pop
+void* core_rtl_queue_pop(
+	pqueue_t p_queue);
 
 //获得顶部元素
-core_rtl_queue_front
+void* core_rtl_queue_front(
+	pqueue_t p_queue);
 
 //获得底部元素
-core_rtl_queue_end
+void* core_rtl_queue_end(
+	pqueue_t p_queue);
 
 //获得元素
-core_rtl_queue_get
-
-//获得下一个元素
-core_rtl_queue_next
-
+void* core_rtl_queue_get(
+		pqueue_t p_queue,
+        u32 index);
+        
 //删除元素
-core_rtl_queue_remove
+void core_rtl_queue_remove(
+	pqueue_t p_queue,
+    u32 index);
 
 //缓冲区
 //初始化
-core_rtl_buffer_init
+void core_rtl_buffer_init(
+	pbuffer_t p_buffer,
+    size_t size,
+	void* buf);
 
 //读
-core_rtl_buffer_read
+size_t core_rtl_buffer_read(
+	pbuffer_t p_buffer,
+    void* p_buf,
+    size_t len_to_read,
+    bool block);
 
 //写
-core_rtl_buffer_write
-
-//销毁
-core_rtl_buffer_destroy
+size_t core_rtl_buffer_write(
+	pbuffer_t p_buffer,
+    void* p_data,
+    size_t len_to_write,
+    bool block);
 
 //面向对象
-//obj_t
 #define INC_REF(obj)
 #define DEC_REF(obj)
 #define TO_STRING(obj)
-core_rtl_obj_inc_ref
-core_rtl_obj_dec_ref
+void core_rtl_obj_inc_ref(pobj_t p_obj);
+void core_rtl_obj_dec_ref(pobj_t p_obj);
+
+//obj_t
+//methods
+void obj_t.destructor(pobj_t p_this);
+kstring_t obj_t.to_string(pobj_t p_this);
 
 //kstring_obj_t
+//methods
 kstring_obj()
 ```
 ######文件列表
