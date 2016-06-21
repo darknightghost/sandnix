@@ -287,7 +287,9 @@ void _start():
 list_t hal_init_get_boot_memory_map():
 
 //返回初始化内存盘的位置和大小.
-void hal_init_get_initrd_addr(void** p_addr, size_t* p_size):
+void hal_init_get_initrd_addr(
+	void** p_addr,		//返回的起始地址
+    size_t* p_size):	//返回的大小
 
 //获得内核的命令行参数.
 char* hal_init_get_kernel_cmdline():
@@ -358,39 +360,56 @@ void start_paging(u32 cpuid);
 void hal_mmu_init();
 
 //初始化处理器核心
-void hal_mmu_core_init(int cpuid);
+void hal_mmu_core_init(
+	int cpuid);		//当前cpu的id
 
 //物理内存管理
 //申请物理内存
-bool hal_mmu_phymem_alloc(void** p_addr, size_t page_num);
+bool hal_mmu_phymem_alloc(
+	void** p_addr,		//起始地址
+	size_t page_num);	//页面数
 
 //释放物理内存
-void hal_mmu_phymem_free(void* addr, size_t page_num);
+void hal_mmu_phymem_free(
+	void* addr,			//起始地址
+    size_t page_num);	//页面数
 
 //获得物理内存信息,返回所需内存大小
-size_t hal_mmu_get_phymem_info(pphysical_memory_info_t p_buf, size_t size);
+size_t hal_mmu_get_phymem_info(
+	pphysical_memory_info_t p_buf,	//返回的内存信息缓冲区首地址
+    size_t size);					//缓冲区大小
 
 //分页管理
 //获得内核地址范围
-void hal_mmu_get_krnl_addr_rgn(void** p_base, size_t* p_size);
+void hal_mmu_get_krnl_addr_rgn(
+	void** p_base,		//指向首地址
+    size_t* p_size);	//指向大小
 
 //获得用户地址范围
-void hal_mmu_get_usr_addr_rgn(void** p_base, size_t* p_size);
+void hal_mmu_get_usr_addr_rgn(
+	void** p_base,		//首地址
+    size_t* p_size);	//大小
 
 //创建页表
-bool hal_mmu_pg_tbl_create(u32* page_id);
+bool hal_mmu_pg_tbl_create(
+	u32* page_id);		//指向新页表id
 
 //销毁页表
-void hal_mmu_pg_tbl_destroy(u32* page_id);
+void hal_mmu_pg_tbl_destroy(
+	u32 page_id);		//页表id
 
 //设置页表条目,krnl_pg_tbl_t定义在mm模块中
-void hal_mmu_pg_tbl_set(void* virt_addr, u32 num, pkrnl_pg_tbl_t page_tables);
+void hal_mmu_pg_tbl_set(
+	void* virt_addr,				//起始地址
+    u32 num,						//页面数
+    pkrnl_pg_tbl_t page_tables);	//页表
 
 //刷新页表cache
 void hal_mmu_pg_tbl_refresh();
 
 //切换到指定页表
-void hal_mmu_pg_tbl_switch(u32 id);
+void hal_mmu_pg_tbl_switch(
+	u32 id);			//切换到的页表id
 ```
 ######文件列表
 ```c
@@ -423,10 +442,13 @@ src/sandnix/kernel/hal/early_print
 void hal_early_print_init();
 
 //设置临时终端颜色
-void hal_early_print_color(u32 fg, u32 bg);
+void hal_early_print_color(
+	u32 fg,		//前景色
+    u32 bg);	//背景色
 
 //打印字符串
-void hal_early_print(char* str);
+void hal_early_print(
+	char* str);	//被打印的字符串
 ```
 ######文件列表
 ```c
@@ -454,7 +476,8 @@ int_callback_t
 void hal_io_init()
 
 //初始化处理器核心
-void hal_io_core_init(u32 cpuid);
+void hal_io_core_init(
+	u32 cpuid);		//当前cpu的id
 
 //中断管理
 //禁止当前核心中断
@@ -470,16 +493,21 @@ void hal_io_irq_enable_all();
 void hal_io_irq_disable_all();
 
 //允许IRQ
-void hal_io_irq_enable(u32 num);
+void hal_io_irq_enable(
+	u32 num);		//中断号
 
 //禁止IRQ
-void hal_io_irq_disable(u32 num);
+void hal_io_irq_disable(
+	u32 num);		//中断号
 
 //注册/取消中断回调
-void* hal_io_int_callback_reg(u32 num, int_callback_t callback);
+void* hal_io_int_callback_reg(
+	u32 num,					//中断号
+    int_callback_t callback);	//回调函数
 
 //注册时钟回调
-void* hal_io_clock_callback_reg(u32 num, int_callback_t callback);
+void* hal_io_clock_callback_reg(
+	int_callback_t callback);	//回调函数
 
 //IO管理
 //IN
@@ -598,7 +626,10 @@ void hal_exception_init();
 void hal_exception_core_init();
 
 //报错并终止整个系统
-void hal_exception_panic(u32 error_code, char* fmt ,...);
+void hal_exception_panic(
+	u32 error_code,		//错误码
+    char* fmt,			//格式化字符串
+    ...);
 
 //添加错误处理程序
 //内存错误
@@ -684,10 +715,14 @@ void hal_sys_gate_core_init();
 void hal_sys_gate_set_entry(void* entry);
 
 //返回到用户空间
-void hal_sys_gate_ret(pcontext_t p_context)
+void hal_sys_gate_ret(
+	pcontext_t p_context);	//用户空间上下文
 
 //转移到用户空间
-void hal_sys_gate_go_to_usr(void* entry, int argc, char* argv[]);
+void hal_sys_gate_go_to_usr(
+	void* entry,		//地址
+    int argc,			//参数个数
+    char* argv[]);		//参数表
 ```
 ######文件列表
 ```c
@@ -945,12 +980,12 @@ char* core_rtl_kprintf(const char* fmt, ...);
 
 //在后面插入
 plist_node_t core_rtl_list_insert_before(
-	plist_node_t pos,
-    plist_t p_list,
-    void* p_item,
-	pheap_t heap);
+	plist_node_t pos,	//位置
+    plist_t p_list,		//链表地址
+    void* p_item,		//元素
+	pheap_t heap);		//堆
 
-//在前面插入
+//在前面插入,参数同上
 plist_node_t core_rtl_list_insert_after(
 	plist_node_t pos,
     plist_t p_list,
@@ -959,23 +994,23 @@ plist_node_t core_rtl_list_insert_after(
 
 //删除
 void core_rtl_list_remove(
-	plist_node_t pos,
-    plist_t p_list,
-	pheap_t heap);
+	plist_node_t pos,	//位置
+    plist_t p_list,		//链表地址
+	pheap_t heap);		//堆
 
 //销毁
 void core_rtl_list_destroy(
-	plist_t p_list,
-    pheap_t heap,
-    item_destroyer_t destroier,
-    void* arg);
+	plist_t p_list,				//链表
+    pheap_t heap,				//堆
+    item_destroyer_t destroier,	//销毁元素用的回调函数
+    void* arg);					//回调函数额外参数
 
 //合并
 void core_rtl_list_join(
-	plist_t p_src,
-    plist_t p_dest,
-	pheap_t src_heap,
-    pheap_t dest_heap);
+	plist_t p_src,		//原链表
+    plist_t p_dest,		//目的链表
+	pheap_t src_heap,	//原链表所在堆
+    pheap_t dest_heap);	//目的链表所在堆
 
 //获得上一项的位置
 #define core_rtl_list_prev(pos)
@@ -988,9 +1023,9 @@ void core_rtl_list_join(
 
 //快速排序
 void core_rtl_list_qsort(
-	plist_t p_list,
-    item_compare_t compare,
-    bool b2s);
+	plist_t p_list,			//链表
+    item_compare_t compare,	//比较大小用的回调函数
+    bool b2s);				//true从大到小,false则反之
 
 //动态数组
 //初始化
