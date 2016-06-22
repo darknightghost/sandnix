@@ -256,6 +256,9 @@ bool
 //地址,该类型通常在对地址进行数学运算时使用
 address_t
 
+//状态
+kstatus_t
+
 ```
 ###可引导映像头
 代码位于src/sandnix/header下,包括定义映像头的数据结构的.S文件以及相应的生成脚本.
@@ -326,7 +329,7 @@ src/sandnix/kernel/hal/kparam
 void hal_kparam_init();
 
 //获得内核参数
-bool hal_kparam_get_value(char* key, char* buf, size_t size);
+kstatus_t hal_kparam_get_value(char* key, char* buf, size_t size);
 ```
 ######文件列表
 ```c
@@ -365,7 +368,7 @@ void hal_mmu_core_init(
 
 //物理内存管理
 //申请物理内存
-bool hal_mmu_phymem_alloc(
+kstatus_t hal_mmu_phymem_alloc(
 	void** p_addr,		//起始地址
 	size_t page_num);	//页面数
 
@@ -391,7 +394,7 @@ void hal_mmu_get_usr_addr_rgn(
     size_t* p_size);	//大小
 
 //创建页表
-bool hal_mmu_pg_tbl_create(
+kstatus_t hal_mmu_pg_tbl_create(
 	u32* page_id);		//指向新页表id
 
 //销毁页表
@@ -745,10 +748,16 @@ src/sandnix/kernel/core/main
 ```
 ######接口函数及宏
 ```c
+//BSP核心主函数
+void core_main_main();
 
+//其他核心主函数
+void core_main_core_main();
 ```
 ######文件列表
 ```c
+src/sandnix/kernel/core/main.h
+src/sandnix/kernel/core/main.c
 
 ```
 #####interrupt
@@ -763,7 +772,10 @@ src/sandnix/kernel/core/interrupt
 ```
 ######接口函数及宏
 ```c
-
+core_interrupt_init
+core_interrupt_core_init
+core_interrupt_reg_hndlr
+core_interrupt_unreg_hndlr
 ```
 ######文件列表
 ```c
@@ -781,6 +793,8 @@ src/sandnix/kernel/core/mm
 ```
 ######接口函数及宏
 ```c
+core_mm_init
+core_mm_core_init
 
 ```
 ######文件列表
@@ -895,6 +909,9 @@ obj_t
 //字符串对象
 kstring_obj_t
 
+//伪随机数发生器
+random_obj_t
+
 //数据结构
 //链表
 list_t
@@ -969,6 +986,70 @@ char* core_rtl_vsnprintf(char* buf, size_t size, const char* fmt, va_list ap);
 char* core_rtl_kprintf(const char* fmt, ...);
 
 //数学函数
+long core_rtl_abs(long num);
+double core_rtl_fabs(double);
+double core_rtl_pow(double);
+double core_rtl_sqrt(souble num);
+s64 core_rtl_cell(double num);
+s64 core_rtl_floor(double num);
+s64 div(s64 divdend, s64 divisor);
+s64 mod(s64 divdend, s64 divisor);
+
+//随机数
+//真随机数,熵池空则阻塞
+void core_rtl_rand(u8* buf, size_t len);
+
+//伪随机数
+//random_obj_t
+//构造函数
+prandom_obj_t random_obj(u32 seed, pheap_t heap);
+
+//获得伪随机数
+void random_obj.rand(u8* buf, size_t len);
+
+//安全校验
+//md5
+size_t core_rtl_md5sum(
+	void* p_output,		//输出缓冲区
+    size_t size,		//输出缓冲区大小
+    void* p_data,		//数据
+    size_t data_size);	//数据大小
+
+//sha1
+size_t core_rtl_sha1sum(
+	void* p_output,		//输出缓冲区
+    size_t size,		//输出缓冲区大小
+    void* p_data,		//数据
+    size_t data_size);	//数据大小
+
+//sha224
+size_t core_rtl_sha224sum(
+	void* p_output,		//输出缓冲区
+    size_t size,		//输出缓冲区大小
+    void* p_data,		//数据
+    size_t data_size);	//数据大小
+
+//sha256
+size_t core_rtl_sha256sum(
+	void* p_output,		//输出缓冲区
+    size_t size,		//输出缓冲区大小
+    void* p_data,		//数据
+    size_t data_size);	//数据大小
+
+//sha384
+size_t core_rtl_sha384sum(
+	void* p_output,		//输出缓冲区
+    size_t size,		//输出缓冲区大小
+    void* p_data,		//数据
+    size_t data_size);	//数据大小
+
+//sha512
+size_t core_rtl_sha512sum(
+	void* p_output,		//输出缓冲区
+    size_t size,		//输出缓冲区大小
+    void* p_data,		//数据
+    size_t data_size);	//数据大小
+
 
 //数据结构
 //链表
@@ -1030,56 +1111,56 @@ void core_rtl_list_qsort(
 //动态数组
 //初始化
 void core_rtl_array_init(
-	parray_t p_array,
-    u32 num,
-	pheap_t heap);
+	parray_t p_array,		//数组地址
+    u32 num,				//大小上限
+	pheap_t heap);			//堆
 
 //获得元素
 void* core_rtl_array_get(
-	parray_t p_array,
-    u32 index);
+	parray_t p_array,		//数组地址
+    u32 index);				//下标
 
 //设置n元素值,设成NULL即remove
 void* core_rtl_array_set(
-	parray_t p_array,
-    u32 index,
-    void* value);
+	parray_t p_array,		//数组地址
+    u32 index,				//下标
+    void* value);			//值
 
 //检测该元素是否被赋值
 bool core_rtl_array_used(
-	parray_t p_array,
-    u32 index);
+	parray_t p_array,		//数组地址
+    u32 index);				//下标
 
 //获得当前元素个数
 u32 core_rtl_array_size{
-	parray_t p_array};
+	parray_t p_array};		//数组地址
 
 //获得最大索引值
 u32 core_rtl_array_get_current_max_index(
-	parray_t p_array);
+	parray_t p_array);		//数组地址
 
 //获得一个空闲的索引
 u32 core_rtl_array_get_free_index(
-	parray_t p_array);
+	parray_t p_array);		//数组地址
 
 //获得空闲索引个数
 u32 core_rtl_array_get_free_index_num(
-	parray_t p_array);
+	parray_t p_array);		//数组地址
 
 //销毁
 void core_rtl_array_destroy(
-	parray_t p_array,
-    item_destroyer_t destroier,
-    void* arg);
+	parray_t p_array,			//数组地址
+    item_destroyer_t destroier,	//销毁元素回调
+    void* arg);					//回调函数参数
 
 //哈希表
 //初始化
 void core_rtl_hash_table_init(
-	phash_table_t p_hash_table,
-    u32 min_hash,
-    u32 max_hash,
-    hash_func_t hash_func,
-    pheap_t heap);
+	phash_table_t p_hash_table,	//哈希表地址
+    u32 min_hash,				//最小哈希值
+    u32 max_hash,				//最大哈希值
+    hash_func_t hash_func,		//哈希函数
+    pheap_t heap);				//堆
 
 //获得键值
 void* core_rtl_hash_table_get(
@@ -1215,27 +1296,100 @@ size_t core_rtl_buffer_write(
 	pbuffer_t p_buffer,
     void* p_data,
     size_t len_to_write,
-    bool block);
+    bool block,
+    bool overwrite);
 
 //面向对象
+//增加引用计数
 #define INC_REF(obj)
+
+//减少引用计数
 #define DEC_REF(obj)
+
+//格式化
 #define TO_STRING(obj)
+
+//增加引用计数
 void core_rtl_obj_inc_ref(pobj_t p_obj);
+
+//减少引用计数
 void core_rtl_obj_dec_ref(pobj_t p_obj);
 
 //obj_t
 //methods
+//析构
 void obj_t.destructor(pobj_t p_this);
+
+//比较
+int obj_t.compare(pobj_t p_this, pobj_t p_obj2);
+
+//格式化
 kstring_t obj_t.to_string(pobj_t p_this);
 
 //kstring_obj_t
 //methods
-kstring_obj()
+//构造函数
+pkstring_obj_t kstring_obj(char* str, pheap_t buf);
+
+//复制
+pkstring_obj_t kstring_obj.copy(pkstring_obj_t p_this);
+
+//获得子串
+pkstring_obj_t kstring_obj.substr(
+	pkstring_obj_t p_this,
+    u32 begin,			//起始
+    u32 end);			//结束
+
+//合并
+kstatus_t kstring_obj.append(pkstring_obj_t p_this, pktring_obj_t p_str);
+
+//所有字符大写
+void kstring_obj.upper(pkstring_obj_t p_this);
+
+//所有字符小写
+void kstring_obj.lower(pkstring_obj_t p_this);
+
+//搜索子串起始位置
+s32 kstring_obj.search(pkstring_obj_t p_this);
 ```
 ######文件列表
 ```c
+src/sandnix/kernel/core/rtl/rtl.h
+src/sandnix/kernel/core/rtl/rtl.c
 
+src/sandnix/kernel/core/rtl/string/string.h
+src/sandnix/kernel/core/rtl/string/string.c
+
+src/sandnix/kernel/core/rtl/math/math.h
+src/sandnix/kernel/core/rtl/math/math.c
+
+src/sandnix/kernel/core/rtl/random/random.h
+src/sandnix/kernel/core/rtl/random/random.c
+
+src/sandnix/kernel/core/rtl/random/random_obj/random_obj.h
+src/sandnix/kernel/core/rtl/random/random_obj/random_obj.c
+
+src/sandnix/kernel/core/rtl/security/security.h
+src/sandnix/kernel/core/rtl/security/security.c
+
+src/sandnix/kernel/core/rtl/crypto/hash/md5sum.h
+src/sandnix/kernel/core/rtl/crypto/hash/md5sum.c
+src/sandnix/kernel/core/rtl/crypto/hash/sha1sum.h
+src/sandnix/kernel/core/rtl/crypto/hash/sha1sum.c
+src/sandnix/kernel/core/rtl/crypto/hash/sha224sum.h
+src/sandnix/kernel/core/rtl/crypto/hash/sha224sum.c
+src/sandnix/kernel/core/rtl/crypto/hash/sha256sum.h
+src/sandnix/kernel/core/rtl/crypto/hash/sha256sum.c
+src/sandnix/kernel/core/rtl/crypto/hash/sha384sum.h
+src/sandnix/kernel/core/rtl/crypto/hash/sha384sum.c
+src/sandnix/kernel/core/rtl/crypto/hash/sha512sum.h
+src/sandnix/kernel/core/rtl/crypto/hash/sha512sum.c
+
+src/sandnix/kernel/core/rtl/kstring/kstring.h
+src/sandnix/kernel/core/rtl/kstring/kstring.c
+
+src/sandnix/kernel/core/rtl/obj/obj.h
+src/sandnix/kernel/core/rtl/obj/obj.c
 ```
 #####exception
 异常处理
