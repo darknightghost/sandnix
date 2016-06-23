@@ -365,6 +365,10 @@ void hal_mmu_init();
 //初始化处理器核心
 void hal_mmu_core_init(
 	int cpuid);		//当前cpu的id
+    
+//释放处理器核心
+void hal_mmu_core_release(
+	int cpuid);		//当前cpu的id
 
 //物理内存管理
 //申请物理内存
@@ -481,6 +485,10 @@ void hal_io_init()
 //初始化处理器核心
 void hal_io_core_init(
 	u32 cpuid);		//当前cpu的id
+    
+//释放处理器核心
+void hal_io_core_release(
+	u32 cpuid);		//当前cpu的id
 
 //中断管理
 //禁止当前核心中断
@@ -502,6 +510,11 @@ void hal_io_irq_enable(
 //禁止IRQ
 void hal_io_irq_disable(
 	u32 num);		//中断号
+    
+//获得IRQ范围
+void hal_io_get_irq_range(
+	u32* p_begin,	//起始IRQ
+    u32 num);		//IRQ个数
 
 //注册/取消中断回调
 void* hal_io_int_callback_reg(
@@ -511,6 +524,9 @@ void* hal_io_int_callback_reg(
 //注册时钟回调
 void* hal_io_clock_callback_reg(
 	int_callback_t callback);	//回调函数
+    
+//获得系统tick数
+u64 hal_io_get_ticks();
 
 //IO管理
 //IN
@@ -576,8 +592,8 @@ void hal_cpu_init();
 #define hal_cpu_context_load(p_context)
 
 //多核心管理
-//停止当前核心
-void hal_cpu_core_halt();
+//释放当前核心
+void hal_cpu_core_release();
 
 //cpu信息
 void hal_cpu_get_info(pcpuinfo_t p_ret);
@@ -626,7 +642,12 @@ hndlr_info;
 void hal_exception_init();
 
 //初始化处理器核心
-void hal_exception_core_init();
+void hal_exception_core_init(
+	u32 cpuid);
+    
+//释放处理器核心
+void hal_exception_core_release(
+	u32 cpuid);
 
 //报错并终止整个系统
 void hal_exception_panic(
@@ -677,7 +698,10 @@ src/sandnix/kernel/hal/power/
 void hal_power_init();
 
 //初始化处理器核心
-void hal_power_core_init();
+void hal_power_core_init(u32 cpuid);
+
+//释放处理器核心
+void hal_power_core_release(u32 cpuid);
 
 //断电
 void hal_power_off();
@@ -752,12 +776,12 @@ src/sandnix/kernel/core/main
 void core_main_main();
 
 //其他核心主函数
-void core_main_core_main();
+void core_main_core_main(u32 cpuid);
 ```
 ######文件列表
 ```c
-src/sandnix/kernel/core/main.h
-src/sandnix/kernel/core/main.c
+src/sandnix/kernel/core/main/main.h
+src/sandnix/kernel/core/main/main.c
 
 ```
 #####interrupt
@@ -768,18 +792,36 @@ src/sandnix/kernel/core/interrupt
 ```
 ######接口数据结构
 ```c
+//irq处理函数
+irq_hndlr_t
 
 ```
 ######接口函数及宏
 ```c
-core_interrupt_init
-core_interrupt_core_init
-core_interrupt_reg_hndlr
-core_interrupt_unreg_hndlr
+//初始化
+void core_interrupt_init();
+
+//初始化cpu核心
+void core_interrupt_core_init(u32 cpuid);
+
+//释放cpu核心
+void core_interrupt_core_release(u32 cpuid);
+
+//注册回调函数
+//0代表所有的
+void core_interrupt_reg_hndlr(
+	u32 irq,				//中断号
+    irq_hndlr_t hndlr);		//回调函数
+
+//释放回调函数
+void core_interrupt_unreg_hndlr(
+	u32 irq,				//中断号
+    irq_hndlr_t hndlr);		//回调函数
 ```
 ######文件列表
 ```c
-
+src/sandnix/kernel/core/interrupt/interrupt.h
+src/sandnix/kernel/core/interrupt/interrupt.c
 ```
 #####mm
 内存管理,包括页面的分配,映射,释放,物理内存的分配,释放,堆管理等
@@ -789,13 +831,51 @@ src/sandnix/kernel/core/mm
 ```
 ######接口数据结构
 ```c
+//通用页表
+krnl_pg_tbl_t
 
+//堆
+heap_t
+
+//页面对象
+page_obj_t
 ```
 ######接口函数及宏
 ```c
+//页面属性
+#define	PAGE_FREE				0x00000001
+
+#define PAGE_READABLE			0x00000002
+#define PAGE_WRITABLE			0x00000004
+#define PAGE_EXECUTABLE			0x00000008
+
+#define PAGE_COPY_ON_WRITE		0x00000010
+
+#define PAGE_SWAPPABLE			0x00000020
+#define PAGE_SWAPPED			0x00000040
+
+#define	PAGE_DMA				0x00000080
+
+#define	PAGE_KERNEL				0x80000000
+
 core_mm_init
 core_mm_core_init
+core_mm_core_release
+core_mm_switch_to
+core_mm_get_current_pg_tbl_index
+core_mm_pg_tbl_fork
+core_mm_pg_tbl_release
 
+//page_obj_t
+page_obj()
+page_obj.map
+page_obj.unmap
+
+//heap
+core_mm_heap_create
+core_mm_heap_alloc
+core_mm_heap_free
+core_mm_heap_destroy
 ```
 ######文件列表
 ```c
