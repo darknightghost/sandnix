@@ -922,7 +922,14 @@ void core_mm_heap_chk(pheap_t heap);
 ```
 ######文件列表
 ```c
-
+src/sandnix/kernel/core/mm/mm.h
+src/sandnix/kernel/core/mm/mm.c
+src/sandnix/kernel/core/mm/heap/heap.h
+src/sandnix/kernel/core/mm/heap/heap.c
+src/sandnix/kernel/core/mm/paging/paging.h
+src/sandnix/kernel/core/mm/paging/paging.c
+src/sandnix/kernel/core/mm/paging/page_table.h
+src/sandnix/kernel/core/mm/paging/page_table.c
 ```
 #####kconsole
 内核控制台
@@ -936,11 +943,43 @@ src/sandnix/kernel/core/kconsole
 ```
 ######接口函数及宏
 ```c
+//输出信息级别
+//该级别的消息会导致内核崩溃
+#define PRINT_LEVEL_PANIC	0x00000001
 
+//发生错误
+#define PRINT_LEVEL_ERR		0x00000002
+
+//警告
+#define PRINT_LEVEL_WARNING	0x00000003
+
+//提示信息
+#define PRINT_LEVEL_INFO	0x00000004
+
+//调试信息
+#define PRINT_LEVEL_DEBUG	0x00000005
+
+#define core_kconsole_print_panic(fmt, ...);
+#define core_kconsole_print_err(fmt, ...);
+#define core_kconsole_print_warning(fmt, ...);
+#define core_kconsole_print_info(fmt, ...);
+#define core_kconsole_print_debug(fmt, ...);
+
+//初始化
+void core_kconsole_init();
+
+//打印内核信息
+void core_kconsole_kprint(u32 level,char* fmt, ...);
+
+//设置输出终端,NULL输出到early_print
+kstatus_t core_kconsole_set_output(char* output_device);
 ```
 ######文件列表
 ```c
-
+src/sandnix/kernel/core/kconsole/kconsole.h
+src/sandnix/kernel/core/kconsole/kconsole.c
+src/sandnix/kernel/core/kconsole/kmsgd/kmsgd.h
+src/sandnix/kernel/core/kconsole/kmsgd/kmsgd.c
 ```
 #####pm
 进程管理
@@ -950,11 +989,80 @@ src/sandnix/kernel/core/pm
 ```
 ######接口数据结构
 ```c
+//进程对象
+process_obj_t
 
+//线程对象
+thread_obj_t
 ```
 ######接口函数及宏
 ```c
+core_pm_init
+core_pm_core_init
+core_pm_core_release
 
+//Process
+core_pm_fork
+core_pm_execve
+core_pm_wait
+
+//Thread
+core_pm_thread_create
+core_pm_exit
+core_pm_join
+core_pm_suspend
+core_pm_resume
+
+//spinlock
+//normal
+core_pm_spnlck_init
+core_pm_spnlck_lock
+core_pm_spnlck_unlock
+
+//r/w lock
+core_pm_spnlck_rw_init
+core_pm_spnlck_rw_r_lock
+core_pm_spnlck_rw_r_unlock
+core_pm_spnlck_rw_w_lock
+core_pm_spnlck_rw_w_unlock
+
+//rcu
+core_pm_spnlck_rcu_init
+core_pm_spnlck_rcu_r_lock
+core_pm_spnlck_rcu_r_unlock
+core_pm_spnlck_rcu_w_lock
+core_pm_spnlck_rcu_w_sync
+core_pm_spnlck_rcu_w_unlock
+
+//mutex
+//normal
+core_pm_mutex_init
+core_pm_mutex_lock
+core_pm_mutex_unlock
+core_pm_mutex_destroy
+
+//r/w lock
+core_pm_mutex_rw_init
+core_pm_mutex_rw_r_lock
+core_pm_mutex_rw_r_unlock
+core_pm_mutex_rw_w_lock
+core_pm_mutex_rw_w_unlock
+core_pm_mutex_rw_release
+
+//rcu
+core_pm_mutex_rcu_init
+core_pm_mutex_rcu_r_lock
+core_pm_mutex_rcu_r_unlock
+core_pm_mutex_rcu_w_lock
+core_pm_mutex_rcu_w_sync
+core_pm_mutex_rcu_w_unlock
+core_pm_mutex_rcu_release
+
+//semaphore
+core_pm_semphore_init
+core_pm_semphore_acquire
+core_pm_semphore_release
+core_pm_semphore_release
 ```
 ######文件列表
 ```c
