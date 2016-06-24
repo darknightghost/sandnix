@@ -843,7 +843,7 @@ page_obj_t
 ######接口函数及宏
 ```c
 //页面属性
-#define	PAGE_FREE				0x00000001
+#define	PAGE_AVAIL				0x00000001
 
 #define PAGE_READABLE			0x00000002
 #define PAGE_WRITABLE			0x00000004
@@ -858,24 +858,67 @@ page_obj_t
 
 #define	PAGE_KERNEL				0x80000000
 
-core_mm_init
-core_mm_core_init
-core_mm_core_release
-core_mm_switch_to
-core_mm_get_current_pg_tbl_index
-core_mm_pg_tbl_fork
-core_mm_pg_tbl_release
+//堆属性
+#define HEAP_DEFAULT			0x00000001
+#define HEAP_MULITHREAD			0x00000002
+#define HEAP_PREALLOC			0x00000004
+
+//初始化
+void core_mm_init();
+
+//初始化处理器核心
+void core_mm_core_init(u32 cpuid);
+
+//释放处理器核心
+void core_mm_core_release(u32 cpuid);
+
+//切换页表
+void core_mm_switch_to(u32 index);
+
+//获得当前页表
+u32 core_mm_get_current_pg_tbl_index();
+
+//fork
+u32 core_mm_pg_tbl_fork();
+
+//释放当前页表
+void core_mm_pg_tbl_release(u32 index);
 
 //page_obj_t
-page_obj()
-page_obj.map
-page_obj.unmap
+//创建页对象
+ppage_obj_t page_obj(u32 attribute, size_t size);
+
+//映射页对象
+void* page_obj.map(void* base_addr, bool kernel_mem);
+
+//取消页对象映射
+kstatus_t page_obj.unmap(void* addr);
 
 //heap
-core_mm_heap_create
-core_mm_heap_alloc
-core_mm_heap_free
-core_mm_heap_destroy
+//创建堆
+pheap_t core_mm_heap_create(
+	u32 attribute,
+    size_t scale);
+
+//从堆里分配内存
+void* core_mm_heap_alloc(
+	size_t size,
+    pheap_t heap);
+
+//释放内存
+void core_mm_heap_free(
+	size_t size,
+    pheap_t heap);
+
+//销毁堆
+void core_mm_heap_destroy(
+	size_t size,
+    pheap_t heap;
+    
+//检查堆溢出
+void core_mm_heap_chk(pheap_t heap);
+
+#define HEAP_CHECK(heap)
 ```
 ######文件列表
 ```c
