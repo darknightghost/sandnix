@@ -817,6 +817,12 @@ void core_interrupt_reg_hndlr(
 void core_interrupt_unreg_hndlr(
 	u32 irq,				//中断号
     irq_hndlr_t hndlr);		//回调函数
+
+//获得irq的优先级
+u32 core_interrupt_get_irq_priority(u32 irq);
+
+//设置irq的优先级
+void core_interrupt_set_irq_priority(u32 irq, u32 priority);
 ```
 ######文件列表
 ```c
@@ -994,79 +1000,175 @@ process_obj_t
 
 //线程对象
 thread_obj_t
+
+//线程函数
+//void thread_func(u32 thread_id, void* p_arg);
+void (*thread_func_t)(u32, void*);
+
+//锁
+//spinlock
+spnlck_t
+spnlck_rw_t
+spnlck_rcu_t
+
+//mutex
+mutex_t
+mutex_rw_t
+mutex_rcu_t
+
+//semaphore
+semaphore_t
 ```
 ######接口函数及宏
 ```c
-core_pm_init
-core_pm_core_init
-core_pm_core_release
+#define PRIORITY_HIGHEST		0x000000FF
+#define PRIORITY_LOWEST			0x00000000
+
+#define PRIORITY_IDLE			0x00000000
+#define PRIORITY_USER_NORMAL	0x00000014
+#define PRIORITY_USER_HIGHEST	0x00000028
+
+#define	PRIORITY_KRNL_NORMAL	0x00000030
+#define PRIORITY_DISPATCH		0x00000040
+#define PRIORITY_IRQ			0x00000050
+#define	PRIORITY_EXCEPTION		0x000000FF
+
+//初始化
+void core_pm_init();
+
+//初始化处理器核心
+void core_pm_core_init(int cpuid);
+
+//释放处理器核心
+void core_pm_core_release(int cpuid);
 
 //Process
-core_pm_fork
-core_pm_execve
-core_pm_wait
+//fork
+u32 core_pm_fork();
+
+//替换当前进程
+void core_pm_execve();
+
+//获得当前进程id
+u32 core_pm_get_crrnt_proc_id();
+
+//wait
+u32 core_pm_wait(bool wait_pid, u32 process_id);
 
 //Thread
-core_pm_thread_create
-core_pm_exit
-core_pm_join
-core_pm_suspend
-core_pm_resume
+//创建线程
+u32 core_pm_thread_create(thread_func_t thread_func, void* p_arg);
+
+//结束线程
+void core_pm_exit(u32 exit_code);
+
+//join
+u32 core_pm_join(bool wait_threadid, u32 thread_id;
+
+//暂停线程
+void core_pm_suspend(u32 thread_id);
+
+//睡眠线程
+void core_pm_resume(u32 thread_id);
+
+//获得当前线程id
+u32 core_pm_get_crrnt_thread_id();
+
+//获得线程优先级
+u32 core_pm_get_thrd_priority(u32 thrd_id);
+
+//设置线程优先级
+void core_pm_set_thrd_priority(u32 thrd_id, u32 priority);
 
 //spinlock
 //normal
-core_pm_spnlck_init
-core_pm_spnlck_lock
-core_pm_spnlck_unlock
+void core_pm_spnlck_init(pspnlck_t p_lock);
+void core_pm_spnlck_lock(pspnlck_t p_lock);
+void core_pm_spnlck_trylock(pspnlck_t p_lock);
+void core_pm_spnlck_unlock(pspnlck_t p_lock);
 
 //r/w lock
-core_pm_spnlck_rw_init
-core_pm_spnlck_rw_r_lock
-core_pm_spnlck_rw_r_unlock
-core_pm_spnlck_rw_w_lock
-core_pm_spnlck_rw_w_unlock
+void core_pm_spnlck_rw_init(pspnlck_rw_t p_lock);
+void pm_spnlck_rw_r_lock(pspnlck_rw_t p_lock);
+void pm_spnlck_rw_r_trylock(pspnlck_rw_t p_lock);
+void pm_spnlck_rw_r_unlock(pspnlck_rw_t p_lock);
+void pm_spnlck_rw_w_lock(pspnlck_rw_t p_lock);
+void pm_spnlck_rw_w_trylock(pspnlck_rw_t p_lock);
+void pm_spnlck_rw_w_unlock(pspnlck_rw_t p_lock);
 
 //rcu
-core_pm_spnlck_rcu_init
-core_pm_spnlck_rcu_r_lock
-core_pm_spnlck_rcu_r_unlock
-core_pm_spnlck_rcu_w_lock
-core_pm_spnlck_rcu_w_sync
-core_pm_spnlck_rcu_w_unlock
+void core_pm_spnlck_rcu_init(pspnlck_rcu_t p_lock);
+void core_pm_spnlck_rcu_r_lock(pspnlck_rcu_t p_lock);
+void core_pm_spnlck_rcu_r_trylock(pspnlck_rcu_t p_lock);
+void core_pm_spnlck_rcu_r_unlock(pspnlck_rcu_t p_lock);
+void core_pm_spnlck_rcu_w_lock(pspnlck_rcu_t p_lock);
+void core_pm_spnlck_rcu_w_trylock(pspnlck_rcu_t p_lock);
+void core_pm_spnlck_rcu_w_sync(pspnlck_rcu_t p_lock);
+void core_pm_spnlck_rcu_w_unlock(pspnlck_rcu_t p_lock);
 
 //mutex
 //normal
-core_pm_mutex_init
-core_pm_mutex_lock
-core_pm_mutex_unlock
-core_pm_mutex_destroy
+void core_pm_mutex_init(pmutex_t p_mutex);
+void core_pm_mutex_lock(pmutex_t p_mutex);
+void core_pm_mutex_trylock(pmutex_t p_mutex);
+void core_pm_mutex_unlock(pmutex_t p_mutex);
+void core_pm_mutex_destroy(pmutex_t p_mutex);
 
 //r/w lock
-core_pm_mutex_rw_init
-core_pm_mutex_rw_r_lock
-core_pm_mutex_rw_r_unlock
-core_pm_mutex_rw_w_lock
-core_pm_mutex_rw_w_unlock
-core_pm_mutex_rw_release
+void core_pm_mutex_rw_init(pmutex_rw_t p_mutex);
+void core_pm_mutex_rw_r_lock(pmutex_rw_t p_mutex);
+void core_pm_mutex_rw_r_trylock(pmutex_rw_t p_mutex);
+void core_pm_mutex_rw_r_unlock(pmutex_rw_t p_mutex);
+void core_pm_mutex_rw_w_lock(pmutex_rw_t p_mutex);
+void core_pm_mutex_rw_w_trylock(pmutex_rw_t p_mutex);
+void core_pm_mutex_rw_w_unlock(pmutex_rw_t p_mutex);
+void core_pm_mutex_rw_release(pmutex_rw_t p_mutex);
 
 //rcu
-core_pm_mutex_rcu_init
-core_pm_mutex_rcu_r_lock
-core_pm_mutex_rcu_r_unlock
-core_pm_mutex_rcu_w_lock
-core_pm_mutex_rcu_w_sync
-core_pm_mutex_rcu_w_unlock
-core_pm_mutex_rcu_release
+void core_pm_mutex_rcu_init(pmutex_rcu_t p_mutex);
+void core_pm_mutex_rcu_r_lock(pmutex_rcu_t p_mutex);
+void core_pm_mutex_rcu_r_trylock(pmutex_rcu_t p_mutex);
+void core_pm_mutex_rcu_r_unlock(pmutex_rcu_t p_mutex);
+void core_pm_mutex_rcu_w_lock(pmutex_rcu_t p_mutex);
+void core_pm_mutex_rcu_w_trylock(pmutex_rcu_t p_mutex);
+void core_pm_mutex_rcu_w_sync(pmutex_rcu_t p_mutex);
+void core_pm_mutex_rcu_w_unlock(pmutex_rcu_t p_mutex);
+void core_pm_mutex_rcu_release(pmutex_rcu_t p_mutex);
 
 //semaphore
-core_pm_semphore_init
-core_pm_semphore_acquire
-core_pm_semphore_release
-core_pm_semphore_release
+void core_pm_semphore_init(psemphore_t p_sem);
+void core_pm_semphore_acquire(psemphore_t p_sem);
+void core_pm_semphore_tryacquire(psemphore_t p_sem);
+void core_pm_semphore_release(psemphore_t p_sem);
 ```
 ######文件列表
 ```c
+src/sandnix/kernel/core/pm/pm.h
+src/sandnix/kernel/core/pm/pm.c
 
+src/sandnix/kernel/core/pm/process/process.h
+src/sandnix/kernel/core/pm/process/process.c
+
+src/sandnix/kernel/core/pm/thread/thread.h
+src/sandnix/kernel/core/pm/thread/thread.c
+src/sandnix/kernel/core/pm/thread/schedule.c
+
+src/sandnix/kernel/core/pm/lock/spinlock/spnlck.h
+src/sandnix/kernel/core/pm/lock/spinlock/spnlck.c
+src/sandnix/kernel/core/pm/lock/spinlock/spnlck_rw.h
+src/sandnix/kernel/core/pm/lock/spinlock/spnlck_rw.c
+src/sandnix/kernel/core/pm/lock/spinlock/spnlck_rcu.h
+src/sandnix/kernel/core/pm/lock/spinlock/spnlck_rcu.c
+
+src/sandnix/kernel/core/pm/lock/mutex/mutex.h
+src/sandnix/kernel/core/pm/lock/mutex/mutex.c
+src/sandnix/kernel/core/pm/lock/mutex/mutex_rw.h
+src/sandnix/kernel/core/pm/lock/mutex/mutex_rw.c
+src/sandnix/kernel/core/pm/lock/mutex/mutex_rcu.h
+src/sandnix/kernel/core/pm/lock/mutex/mutex_rcu.c
+
+src/sandnix/kernel/core/pm/lock/semaphore/semaphore.h
+src/sandnix/kernel/core/pm/lock/semaphore/semaphore.c
 ```
 #####ipc
 POSIX进程通信
@@ -1080,7 +1182,13 @@ src/sandnix/kernel/core/ipc
 ```
 ######接口函数及宏
 ```c
+core_ipc_init
+core_ipc_core_init
+core_ipc_core_release
 
+core_ipc_kill
+core_ipc_reg_signal_hndlr
+core_ipc_unreg_signal_hndlr
 ```
 ######文件列表
 ```c
