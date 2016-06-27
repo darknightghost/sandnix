@@ -173,7 +173,7 @@ target.xml文件结构如下:
             <AFTER>编译后执行的命令</AFTER>
         </arch>
         <!--用"."表示层次关系-->
-        <arch name="arm.raseberry">
+        <arch name="arm.raspberry">
             <PREV>这里是编译前的命令</PREV>
             <DEP>生成依赖的工具</DEP>
             <DEPRULE>生成依赖的命令</DEPRULE>
@@ -1178,21 +1178,25 @@ src/sandnix/kernel/core/ipc
 ```
 ######接口数据结构
 ```c
-
+//signal处理函数
+//void signal_hndlr_func(u32 signal);
+void (*signal_hndlr_func_t)(u32);
 ```
 ######接口函数及宏
 ```c
-core_ipc_init
-core_ipc_core_init
-core_ipc_core_release
+void core_ipc_init();
 
-core_ipc_kill
-core_ipc_reg_signal_hndlr
-core_ipc_unreg_signal_hndlr
+void core_ipc_kill(u32 thread_id, u32 signal);
+
+//hndlr为NULL则取消注册
+signal_hndlr_func_t core_ipc_reg_signal_hndlr(
+	u32 signal,
+    signal_hndlr_func_t hndlr);
 ```
 ######文件列表
 ```c
-
+src/sandnix/kernel/core/ipc/ipc.h
+src/sandnix/kernel/core/ipc/ipc.c
 ```
 #####msg
 内核消息机制
@@ -1202,10 +1206,53 @@ src/sandnix/kernel/core/msg
 ```
 ######接口数据结构
 ```c
+//消息队列
+//msg_queue_t
 
+//消息
+//msg_t
+
+//消息状态
+mstatus_t
 ```
 ######接口函数及宏
 ```c
+//消息状态
+#define MSG_STATUS_COMPLETE		0x00000000
+#define MSG_STATUS_PENDING		0x00000001
+#define MSG_STATUS_CANCEL		0x00000002
+
+//消息类型
+//异步操作
+#define	MSG_FINISH
+
+//文件操作
+#define MSG_OPEN
+#define MSG_READ
+#define MSG_WRITE
+#define MSG_CLOSE
+#define MSG_STAT
+#define MSG_FCNTL
+#deinfe MSG_LINK
+#define MSG_CHMOD
+#define MSG_CHOWN
+@define MSG_MOUNT
+#define MSG_UMOUNT
+
+//设备操作
+#define MSG_MATCH
+
+core_msg_init
+
+core_msg_queue_create
+core_msg_queue_destroy
+
+core_msg_create
+core_msg_send
+core_msg_recv
+core_msg_complete
+core_msg_cancel
+core_msg_pending
 
 ```
 ######文件列表
