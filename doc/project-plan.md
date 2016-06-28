@@ -1047,7 +1047,10 @@ void core_pm_core_release(int cpuid);
 u32 core_pm_fork();
 
 //替换当前进程
-void core_pm_execve();
+void core_pm_execve(
+	pkstring_obj_t* path,
+    char* args[],
+    char* env[]);
 
 //获得当前进程id
 u32 core_pm_get_crrnt_proc_id();
@@ -1249,22 +1252,25 @@ mstatus_t
 #define	MSG_FINISH		0x00000000
 
 //文件操作
-#define MSG_OPEN		0x00010000
-#define MSG_READ		0x00010001
-#define MSG_WRITE		0x00010002
-#define MSG_CLOSE		0x00010003
-#define MSG_STAT		0x00010004
-#define MSG_FCNTL		0x00010005
-#deinfe MSG_LINK		0x00010006
-#define MSG_UNLINK		0x00010007
-#define MSG_CHMOD		0x00010008
-#define MSG_CHOWN		0x00010009
-#define MSG_MKDIR		0x0001000A
-#define MSG_ACCESS		0x0001000B
-#define MSG_MKNOD		0x0001000C
-#define MSG_IOCTL		0x0001000D
-@define MSG_MOUNT		0x0001000E
-#define MSG_UMOUNT		0x0001000F
+#define MSG_OPEN			0x00010000
+#define MSG_READ			0x00010001
+#define MSG_WRITE			0x00010002
+#define MSG_CLOSE			0x00010003
+#define MSG_STAT			0x00010004
+#define MSG_FCNTL			0x00010005
+#deinfe MSG_LINK			0x00010006
+#define MSG_UNLINK			0x00010007
+#define MSG_CHMOD			0x00010008
+#define MSG_CHOWN			0x00010009
+#define MSG_MKDIR			0x0001000A
+#define MSG_ACCESS			0x0001000B
+#define MSG_MKNOD			0x0001000C
+#define MSG_IOCTL			0x0001000D
+#define MSG_NOTIFY_ADD		0x0001000E
+#define MSG_NOTIFY_REMOVE	0x0001000F
+#define MSG_NOTIFY			0x00010010
+@define MSG_MOUNT			0x00010011
+#define MSG_UMOUNT			0x00010012
 
 //设备操作
 #define MSG_MATCH			0x00020000
@@ -1309,10 +1315,35 @@ src/sandnix/kernel/core/vfs
 ```
 ######接口数据结构
 ```c
-
+file_obj_t
+file_desc_obj_t
 ```
 ######接口函数及宏
 ```c
+//文件系统
+void vfs_init();
+pfile_desc_obj_t core_vfs_open(pkstring obj_t path, u32 flags, u32 mode);
+core_vfs_read
+core_vfs_write
+core_vfs_lseek
+core_vfs_chmod
+core_vfs_chown
+core_vfs_fcntl
+core_vfs_link
+core_vfs_unlink
+core_vfs_mknod
+core_vfs_stat
+core_vfs_ioctl
+core_vfs_mmap
+core_vfs_munmap
+core_vfs_mount
+core_vfs_umount
+
+//对象管理器
+//可执行模块装载
+load_module
+release_module
+
 
 ```
 ######文件列表
@@ -1320,11 +1351,20 @@ src/sandnix/kernel/core/vfs
 src/sandnix/kernel/core/vfs/vfs.h
 src/sandnix/kernel/core/vfs/vfs.c
 
-src/sandnix/kernel/core/vfs/devmgr/devmgr.h
-src/sandnix/kernel/core/vfs/devmgr/devmgr.c
+src/sandnix/kernel/core/vfs/objmgr/objmgr.h
+src/sandnix/kernel/core/vfs/objmgr/objmgr.c
 
-src/sandnix/kernel/core/vfs/devmgr/sysfs/sysfs.h
-src/sandnix/kernel/core/vfs/devmgr/sysfs/sysfs.c
+src/sandnix/kernel/core/vfs/objmgr/devmgr/devmgr.h
+src/sandnix/kernel/core/vfs/objmgr/devmgr/devmgr.c
+
+src/sandnix/kernel/core/vfs/objmgr/devmgr/sysfs/sysfs.h
+src/sandnix/kernel/core/vfs/objmgr/devmgr/sysfs/sysfs.c
+
+src/sandnix/kernel/core/vfs/initramfs/initramfs.h
+src/sandnix/kernel/core/vfs/initramfs/initramfs.c
+
+src/sandnix/kernel/core/vfs/objmgr/procfs/procfs.h
+src/sandnix/kernel/core/vfs/objmgr/procfs/procfs.c
 ```
 #####rtl
 c运行库,面向对象以及各种数据结构
