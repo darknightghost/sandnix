@@ -1207,10 +1207,31 @@ src/sandnix/kernel/core/msg
 ######接口数据结构
 ```c
 //消息队列
-//msg_queue_t
+msg_queue_t
 
 //消息
-//msg_t
+msg_t
+
+msg_finish_t
+msg_open_t
+msg_read_t
+msg_write_t
+msg_close_t
+msg_stat_t
+msg_fcntl_t
+msg_link_t
+msg_unlink_t
+msg_chmod_t
+msg_chown_t
+msg_mkdir_t
+msg_access_t
+msg_mknod_t
+msg_ioctl_t
+msg_mount_t
+msg_umount_t
+
+msg_match_t
+msg_hot_plug_t
 
 //消息状态
 mstatus_t
@@ -1218,46 +1239,67 @@ mstatus_t
 ######接口函数及宏
 ```c
 //消息状态
-#define MSG_STATUS_COMPLETE		0x00000000
-#define MSG_STATUS_PENDING		0x00000001
-#define MSG_STATUS_CANCEL		0x00000002
+#define MSG_STATUS_SUCCESS		0x00000000
+#define MSG_STATUS_FAILED		0x00000001
+#define MSG_STATUS_PENDING		0x00000002
+#define MSG_STATUS_CANCEL		0x00000003
 
 //消息类型
 //异步操作
-#define	MSG_FINISH
+#define	MSG_FINISH		0x00000000
 
 //文件操作
-#define MSG_OPEN
-#define MSG_READ
-#define MSG_WRITE
-#define MSG_CLOSE
-#define MSG_STAT
-#define MSG_FCNTL
-#deinfe MSG_LINK
-#define MSG_CHMOD
-#define MSG_CHOWN
-@define MSG_MOUNT
-#define MSG_UMOUNT
+#define MSG_OPEN		0x00010000
+#define MSG_READ		0x00010001
+#define MSG_WRITE		0x00010002
+#define MSG_CLOSE		0x00010003
+#define MSG_STAT		0x00010004
+#define MSG_FCNTL		0x00010005
+#deinfe MSG_LINK		0x00010006
+#define MSG_UNLINK		0x00010007
+#define MSG_CHMOD		0x00010008
+#define MSG_CHOWN		0x00010009
+#define MSG_MKDIR		0x0001000A
+#define MSG_ACCESS		0x0001000B
+#define MSG_MKNOD		0x0001000C
+#define MSG_IOCTL		0x0001000D
+@define MSG_MOUNT		0x0001000E
+#define MSG_UMOUNT		0x0001000F
 
 //设备操作
-#define MSG_MATCH
+#define MSG_MATCH			0x00020000
+#define MSG_HOT_PLUG		0x00020001
 
-core_msg_init
+//初始化
+u32 core_msg_init();
 
-core_msg_queue_create
-core_msg_queue_destroy
+//消息队列
+//创建消息队列
+u32 core_msg_queue_create();
 
-core_msg_create
-core_msg_send
-core_msg_recv
-core_msg_complete
-core_msg_cancel
-core_msg_pending
+//销毁消息队列
+void core_msg_queue_destroy(u32 queue_id);
 
+//消息
+//创建
+pmsg_t core_msg_create(size_t size);
+
+//发送
+mstatus_t core_msg_send(u32 queue, pmsg_t p_msg);
+
+//接收
+pmsg_t core_msg_recv(u32 queue, bool block);
+
+//完成
+void core_msg_complete(pmsg_t p_msg, bool succees);
+
+//取消
+void core_msg_cancel(pmsg_t p_msg);
 ```
 ######文件列表
 ```c
-
+src/sandnix/kernel/core/msg/msg.h
+src/sandnix/kernel/core/msg/msg.c
 ```
 #####vfs
 虚拟文件系统以及初始化内存盘的驱动
@@ -1275,7 +1317,14 @@ src/sandnix/kernel/core/vfs
 ```
 ######文件列表
 ```c
+src/sandnix/kernel/core/vfs/vfs.h
+src/sandnix/kernel/core/vfs/vfs.c
 
+src/sandnix/kernel/core/vfs/devmgr/devmgr.h
+src/sandnix/kernel/core/vfs/devmgr/devmgr.c
+
+src/sandnix/kernel/core/vfs/devmgr/sysfs/sysfs.h
+src/sandnix/kernel/core/vfs/devmgr/sysfs/sysfs.c
 ```
 #####rtl
 c运行库,面向对象以及各种数据结构
