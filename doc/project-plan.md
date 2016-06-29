@@ -856,9 +856,10 @@ page_obj_t
 #define PAGE_EXECUTABLE			0x00000008
 
 #define PAGE_COPY_ON_WRITE		0x00000010
+#define PAGE_ALLOC_ON_ACCESS	0x00000020
 
-#define PAGE_SWAPPABLE			0x00000020
-#define PAGE_SWAPPED			0x00000040
+#define PAGE_SWAPPABLE			0x00000040
+#define PAGE_SWAPPED			0x00000080
 
 #define	PAGE_DMA				0x00000080
 
@@ -989,6 +990,7 @@ src/sandnix/kernel/core/kconsole/kmsgd/kmsgd.c
 ```
 #####pm
 进程管理
+execve是由subsystem层负责实现的,毕竟不同的子系统可执行文件格式不同.
 ######模块路径
 ```
 src/sandnix/kernel/core/pm
@@ -1045,12 +1047,6 @@ void core_pm_core_release(int cpuid);
 //Process
 //fork
 u32 core_pm_fork();
-
-//替换当前进程
-void core_pm_execve(
-	pkstring_obj_t* path,
-    char* args[],
-    char* env[]);
 
 //获得当前进程id
 u32 core_pm_get_crrnt_proc_id();
@@ -1309,6 +1305,13 @@ src/sandnix/kernel/core/msg/msg.c
 ```
 #####vfs
 虚拟文件系统以及初始化内存盘的驱动
+对象的管理,设备的管理
+设备驱动在加载的时候创建一个probe设备用来处理MSG_MATCH,match成功后接管具体的设备
+每个设备对象会被sysfs以设备文件的形式呈现,sysfs是设备管理器对外的接口,类似于块设备一类的东西
+像总线一类的有多个字节点的设备会以一个文件夹的形式呈现,文件夹里面会创建各个节点的设备文件和总线的控制设备文件.
+设备分两大类,总线设备和普通设备,普通设备包括字符设备,块设备等
+总线设备可以分两类,一类是芯片组驱动,负责和具体的端口,IRQ,DMA什么的打交道.另一类是像usb, i2c, ATA这类的驱动,负责以文件操作的方式通过芯片组驱动和具体的总线控制器打交道.
+硬件中断的时候,IRQ会通知内核,内核给总线驱动发送signal,总线负责一层一层的将signal传递下去,直到通知到具体的设备.如果是设备插入的信号,发生插入事件的总线会为该设备创建节点,并且向所有的probe设备发送MSG_MATCH广播,如果有probe设备处理了该消息,则让创建probe设备的驱动接管该节点.
 ######模块路径
 ```
 src/sandnix/kernel/core/vfs
@@ -1316,6 +1319,7 @@ src/sandnix/kernel/core/vfs
 ######接口数据结构
 ```c
 file_obj_t
+proc_ref_obj_t
 file_desc_obj_t
 ```
 ######接口函数及宏
@@ -1340,10 +1344,17 @@ core_vfs_mount
 core_vfs_umount
 
 //对象管理器
-//可执行模块装载
-load_module
-release_module
+//进程引用对象管理
+core_vfs_proc_fork
+core_vfs_proc_add
+core_vfs_proc_release
+core_vfs_proc_clear
 
+//设备对象管理
+core_vfs_dev_add
+core_vfs_dev_remove
+core_vfs_dev_msg_send
+core_vfs_dev_msg_recv
 
 ```
 ######文件列表
@@ -1354,6 +1365,15 @@ src/sandnix/kernel/core/vfs/vfs.c
 src/sandnix/kernel/core/vfs/objmgr/objmgr.h
 src/sandnix/kernel/core/vfs/objmgr/objmgr.c
 
+src/sandnix/kernel/core/vfs/objmgr/proc/proc.h
+src/sandnix/kernel/core/vfs/objmgr/proc/proc.c
+
+src/sandnix/kernel/core/vfs/objmgr/proc/procfs/procfs.h
+src/sandnix/kernel/core/vfs/objmgr/proc/procfs/procfs.c
+
+src/sandnix/kernel/core/vfs/objmgr/drvmgr/drvmgr.h
+src/sandnix/kernel/core/vfs/objmgr/drvmgr/drvmgr.c
+
 src/sandnix/kernel/core/vfs/objmgr/devmgr/devmgr.h
 src/sandnix/kernel/core/vfs/objmgr/devmgr/devmgr.c
 
@@ -1362,9 +1382,6 @@ src/sandnix/kernel/core/vfs/objmgr/devmgr/sysfs/sysfs.c
 
 src/sandnix/kernel/core/vfs/initramfs/initramfs.h
 src/sandnix/kernel/core/vfs/initramfs/initramfs.c
-
-src/sandnix/kernel/core/vfs/objmgr/procfs/procfs.h
-src/sandnix/kernel/core/vfs/objmgr/procfs/procfs.c
 ```
 #####rtl
 c运行库,面向对象以及各种数据结构
