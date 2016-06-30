@@ -1244,33 +1244,95 @@ mstatus_t
 #define MSG_STATUS_CANCEL		0x00000003
 
 //消息类型
+//主类型
 //异步操作
-#define	MSG_FINISH		0x00000000
+#define	MSG_MJ_FINISH		0x00000000
 
 //文件操作
-#define MSG_OPEN			0x00010000
-#define MSG_READ			0x00010001
-#define MSG_WRITE			0x00010002
-#define MSG_CLOSE			0x00010003
-#define MSG_STAT			0x00010004
-#define MSG_FCNTL			0x00010005
-#deinfe MSG_LINK			0x00010006
-#define MSG_UNLINK			0x00010007
-#define MSG_CHMOD			0x00010008
-#define MSG_CHOWN			0x00010009
-#define MSG_MKDIR			0x0001000A
-#define MSG_ACCESS			0x0001000B
-#define MSG_MKNOD			0x0001000C
-#define MSG_IOCTL			0x0001000D
-#define MSG_NOTIFY_ADD		0x0001000E
-#define MSG_NOTIFY_REMOVE	0x0001000F
-#define MSG_NOTIFY			0x00010010
-@define MSG_MOUNT			0x00010011
-#define MSG_UMOUNT			0x00010012
+#define MSG_MJ_OPEN			0x00010000
+#define MSG_MJ_READ			0x00010001
+#define MSG_MJ_WRITE		0x00010002
+#define MSG_MJ_CLOSE		0x00010003
+#define MSG_MJ_STAT			0x00010004
+#define MSG_MJ_FCNTL		0x00010005
+#deinfe MSG_MJ_LINK			0x00010006
+#define MSG_MJ_CHMOD		0x00010007
+#define MSG_MJ_CHOWN		0x00010008
+#define MSG_MJ_MKDIR		0x00010009
+#define MSG_MJ_ACCESS		0x0001000A
+#define MSG_MJ_MKNOD		0x0001000B
+#define MSG_MJ_IOCTL		0x0001000C
+#define MSG_MJ_NOTIFY		0x0001000D
+@define MSG_MJ_MOUNT		0x0001000E
 
 //设备操作
-#define MSG_MATCH			0x00020000
-#define MSG_HOT_PLUG		0x00020001
+#define MSG_MJ_MATCH			0x00020000
+#define MSG_MJ_HOT_PLUG			0x00020001
+
+//次类型
+//MSG_MJ_FINISH
+#define MSG_MN_COMPLETE			0x00000000
+#define MSG_MN_CANCEL			0x00000001
+
+//MSG_MJ_OPEN
+#define MSG_MN_OPEN				0x00000000
+
+//MSG_MJ_READ
+#define MSG_MN_READ				0x00000000
+
+//MSG_MJ_WRITE
+#define MSG_MN_WRITE			0x00000000
+
+//MSG_MJ_CLOSE
+#define MSG_MN_CLOSE			0x00000000
+#define MSG_MN_CLEANUP			0x00000001
+
+//MSG_MJ_STAT
+#define MSG_MN_STAT				0x00000000
+
+//MSG_MJ_FCNTL
+#define MSG_MN_FCNTL			0x00000000
+
+//MSG_MJ_LINK
+#define MSG_MN_SYMBOL_LINK		0x00000000
+#define MSG_MN_HARD_LINK		0x00000001
+#define MSG_MN_SYMBOL_UNLINK	0x00000002
+#define MSG_MN_HARD_UNLINK		0x00000003
+
+//MSG_MJ_CHMOD
+#define MSG_MN_CHMOD			0x00000000
+
+//MSG_MJ_CHOWN
+#define MSG_MN_CHOWN			0x00000000
+
+//MSG_MJ_MKDIR
+#define MSG_MN_MKDIR			0x00000000
+
+//MSG_MJ_ACCESS
+#define MSG_MN_ACCESS			0x00000000
+
+//MSG_MJ_MKNOD
+#define MSG_MN_MKNOD			0x00000000
+
+//MSG_MJ_IOCTL
+#define MSG_MN_IOCTL			0x00000000
+
+//MSG_MJ_NOTIFY
+#define MSG_MN_NOTIFY			0x00000000
+#define MSG_MN_NOTIFY_ADD		0x00000001
+#define MSG_MN_NOTIFY_REMOVE	0x00000002
+
+//MSG_MJ_MOUNT
+#define MSG_MN_MOUNT			0x00000000
+#define MSG_MN_UMOUNT			0x00000001
+
+//MSG_MJ_MATCH
+#define MSG_MN_MATCH			0x00000000
+#define MSG_MN_UNMATCH			0x00000001
+
+//MSG_MJ_HOT_PLUG
+#define MSG_MN_PLUGIN			0x00000000
+#define MSG_MN_PLUGOFF			0x00000001
 
 //初始化
 u32 core_msg_init();
@@ -1484,8 +1546,8 @@ double core_rtl_pow(double);
 double core_rtl_sqrt(souble num);
 s64 core_rtl_cell(double num);
 s64 core_rtl_floor(double num);
-s64 div(s64 divdend, s64 divisor);
-s64 mod(s64 divdend, s64 divisor);
+s64 core_rtl_div(s64 divdend, s64 divisor);
+s64 core_rtl_mod(s64 divdend, s64 divisor);
 
 //随机数
 //真随机数,熵池空则阻塞
@@ -1541,7 +1603,6 @@ size_t core_rtl_sha512sum(
     size_t size,		//输出缓冲区大小
     void* p_data,		//数据
     size_t data_size);	//数据大小
-
 
 //数据结构
 //链表
