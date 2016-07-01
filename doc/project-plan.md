@@ -250,6 +250,9 @@ size_t
 //无符号大小
 ssize_t
 
+//偏移量
+off_t
+
 //布尔类型
 bool
 
@@ -1302,8 +1305,7 @@ mstatus_t
 //MSG_MJ_LINK
 #define MSG_MN_SYMBOL_LINK		0x00000000
 #define MSG_MN_HARD_LINK		0x00000001
-#define MSG_MN_SYMBOL_UNLINK	0x00000002
-#define MSG_MN_HARD_UNLINK		0x00000003
+#define MSG_MN_UNLINK			0x00000002
 
 //MSG_MJ_CHMOD
 #define MSG_MN_CHMOD			0x00000000
@@ -1389,27 +1391,74 @@ src/sandnix/kernel/core/vfs
 file_obj_t
 proc_ref_obj_t
 file_desc_obj_t
+
+stat_t
 ```
 ######接口函数及宏
 ```c
 //文件系统
+//初始化
 void vfs_init();
+
+//打开/创建文件
 u32 core_vfs_open(pkstring_obj_t obj_t path, u32 flags, u32 mode);
+
+//读文件
 size_t core_vfs_read(u32 fd,u8* buf, size_t size);
+
+//写文件
 size_t core_vfs_write(u32 fd, u8* buf, size_t size);
-u64 core_vfs_lseek(u32 fd, ssize_t offset, u32 whence);
+
+//移动文件指针
+off_t core_vfs_lseek(u32 fd, ssize_t offset, u32 whence);
+
+//fnctl
+kstatus_t core_vfs_fcntl(u32 fd, int cmd, void* p_arg, size_t arg_size);
+
+//ioctl
+kstatus_t core_vfs_ioctl(u32 fd,u32 request, void* p_arg, size_t arg_size);
+
+//设置文件权限
 kstatus_t core_vfs_chmod(pkstring_obj_t path, u32 mode);
+
+//设置文件所有者
 kstatus_t core_vfs_chown((pkstring_obj_t path, u32 owner, u32 group);
-kstatus_t core_vfs_fcntl(pkstring_obj_t path, int cmd, var
-core_vfs_link
-core_vfs_unlink
-core_vfs_mknod
-core_vfs_stat
-core_vfs_ioctl
-core_vfs_mmap
-core_vfs_munmap
-core_vfs_mount
-core_vfs_umount
+
+//建立硬链接
+kstatus_t core_vfs_link(pkstring_obj_t p_old_path, pkstring_obj_t p_new_path);
+
+//建立符号链接
+kstatus_t core_vfs_symlink(pkstring_obj_t p_target, pkstring_obj_t p_link;
+
+//删除
+kstatus_t core_vfs_unlink(pkstring_t path);
+
+//建立设备节点
+kstatus_t core_vfs_mknod(pkstring_obj_t path, u32 mod, u32 dev);
+
+//获得文件属性
+kstatus_t core_vfs_stat(pkstring_obj_t path, pstat_t p_stat);
+
+//检查访问权限
+kstatus_t core_vfs_access(pkstring_obj_t path, u32 mode);
+
+//内存映射文件
+kstatus_t core_vfs_mmap(u32 fd, off_t offset, ppage_obj_t p_page_obj);
+
+//释放文件映射
+kstatus_t core_vfs_munmap(ppage_obj_t p_page_obj);
+
+//挂载块设备
+kstatus_t core_vfs_mount(
+	pkstring_obj_t src,
+    pkstring_obj_t target,
+    pkstring_obj_t fstype,
+    u32 flags,
+    pkstring_obj_t data);
+
+//取消挂载
+kstatus_t core_vfs_umount(
+	pkstring_obj_t target);
 
 //对象管理器
 //进程引用对象管理
