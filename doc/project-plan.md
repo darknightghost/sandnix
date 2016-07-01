@@ -1079,6 +1079,12 @@ u32 core_pm_get_thrd_priority(u32 thrd_id);
 //设置线程优先级
 void core_pm_set_thrd_priority(u32 thrd_id, u32 priority);
 
+//设置errno
+void core_pm_set_errno(kstatus_t errno);
+
+//获得errno
+kstatus_t core_pm_get_errno();
+
 //spinlock
 //normal
 void core_pm_spnlck_init(pspnlck_t p_lock);
@@ -1388,13 +1394,13 @@ file_desc_obj_t
 ```c
 //文件系统
 void vfs_init();
-pfile_desc_obj_t core_vfs_open(pkstring obj_t path, u32 flags, u32 mode);
-core_vfs_read
-core_vfs_write
-core_vfs_lseek
-core_vfs_chmod
-core_vfs_chown
-core_vfs_fcntl
+u32 core_vfs_open(pkstring_obj_t obj_t path, u32 flags, u32 mode);
+size_t core_vfs_read(u32 fd,u8* buf, size_t size);
+size_t core_vfs_write(u32 fd, u8* buf, size_t size);
+u64 core_vfs_lseek(u32 fd, ssize_t offset, u32 whence);
+kstatus_t core_vfs_chmod(pkstring_obj_t path, u32 mode);
+kstatus_t core_vfs_chown((pkstring_obj_t path, u32 owner, u32 group);
+kstatus_t core_vfs_fcntl(pkstring_obj_t path, int cmd, var
 core_vfs_link
 core_vfs_unlink
 core_vfs_mknod
