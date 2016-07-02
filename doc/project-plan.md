@@ -1381,7 +1381,9 @@ src/sandnix/kernel/core/msg/msg.c
 像总线一类的有多个字节点的设备会以一个文件夹的形式呈现,文件夹里面会创建各个节点的设备文件和总线的控制设备文件.
 设备分两大类,总线设备和普通设备,普通设备包括字符设备,块设备等
 总线设备可以分两类,一类是芯片组驱动,负责和具体的端口,IRQ,DMA什么的打交道.另一类是像usb, i2c, ATA这类的驱动,负责以文件操作的方式通过芯片组驱动和具体的总线控制器打交道.
-硬件中断的时候,IRQ会通知内核,内核给总线驱动发送signal,总线负责一层一层的将signal传递下去,直到通知到具体的设备.如果是设备插入的信号,发生插入事件的总线会为该设备创建节点,并且向所有的probe设备发送MSG_MATCH广播,如果有probe设备处理了该消息,则让创建probe设备的驱动接管该节点.
+硬件中断的时候,IRQ会通知内核,内核给总线驱动发送signal,总线负责一层一层的将signal传递下去,直到通知到具体的设备.如果是设备插入的信号,发生插入事件的总线会为该设备创建节点,并且向所有的probe设备发送MSG_MATCH广播,如果有probe设备处理了该消息,则让创建probe设备的驱动锁定该节点.
+n当有新的probe设备被注册的时候,设备管理器会向该设备发送MSG_MATCH来尝试匹配所有未匹配的设备.
+从设备号0xFFFF为广播地址,主设备号0xFFFF为广播地址
 ######模块路径
 ```
 src/sandnix/kernel/core/vfs
@@ -1390,7 +1392,7 @@ src/sandnix/kernel/core/vfs
 ```c
 file_obj_t
 proc_ref_obj_t
-file_desc_obj_t
+file_state_obj_t
 
 stat_t
 ```
@@ -1462,16 +1464,37 @@ kstatus_t core_vfs_umount(
 
 //对象管理器
 //进程引用对象管理
-core_vfs_proc_fork
-core_vfs_proc_add
-core_vfs_proc_release
-core_vfs_proc_clear
+//复制当前进程对象管理器
+u32 core_vfs_objmgr_fork();
+
+//添加对象引用
+u32 core_vfs_objmgr_add(u32 proc_id, proc_ref_obj_t p_object);
+
+//获得对象
+proc_ref_obj_t core_vfs_objmgr_add(u32 fd);
+
+//释放对象引用
+u32 core_vfs_objmgr_remove(u32 proc_id, proc_ref_obj_t p_object);
+
+//清空进程对象管理器,为execve准备
+kstatus_t core_vfs_objmgr_clear(u32 om_id);
+
+//释放进程对象管理器
+kstatus_t core_vfs_objmgr_release(u32 om_id);
 
 //设备对象管理
-core_vfs_dev_add
-core_vfs_dev_remove
-core_vfs_dev_msg_send
-core_vfs_dev_msg_recv
+//获得主设备号
+//添加设备
+u32 core_vfs_dev_add(pkstring_t class_name,u32 parent_dev);
+
+//删除设备
+kstatuc_t core_vfs_dev_remove(u32 dev_num);
+
+//给设备发消息
+mstatus_t core_vfs_dev_msg_send(u32 dest, pmsg_t p_msg);
+
+//接收消息
+pmsg_t core_vfs_dev_msg_recv(u32 dev_num);
 
 ```
 ######文件列表
@@ -2007,15 +2030,42 @@ src/sandnix/kernel/core/exception
 ```
 ######接口数据结构
 ```c
+//异常处理结果
+except_stat_t
 
+//异常处理回调
+//except_stat_t except_hndlr_t(kstatus_t reason, pcontext_t context, void* p_arg);
+except_stat_t (*except_hndlr_t)(kstatus_t, pcontext_t, void*);
 ```
 ######接口函数及宏
 ```c
+#define EXCEPT_STATUS_FAILED		0x00000000
+#define EXCEPT_STATUS_CONTINUE		0x00000001
+#define EXCEPT_STATUS_PANIC			0x00000002
 
+//初始化模块
+void core_exception_init();
+
+//抛出异常
+void core_exception_raise(
+	kstatus_t reason,
+    char* description,
+    void* p_arg,
+    char* src_file,
+    char* line);
+
+#define RAISE
+
+//压入错误处理函数
+void core_exception_push_hndlr(except_hndlr_t hndlr);
+
+//弹出最顶层错误处理函数
+except_hndlr_t core_exception_pop_hndlr();
 ```
 ######文件列表
 ```c
-
+src/sandnix/kernel/core/exception/exception.h
+src/sandnix/kernel/core/exception/exception.c
 ```
 ####Subsystem层
 #####lib
