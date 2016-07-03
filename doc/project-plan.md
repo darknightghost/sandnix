@@ -261,7 +261,6 @@ address_t
 
 //状态
 kstatus_t
-
 ```
 ###可引导映像头
 代码位于src/sandnix/header下,包括定义映像头的数据结构的.S文件以及相应的生成脚本.
@@ -1038,6 +1037,15 @@ semaphore_t
 #define PRIORITY_IRQ			0x00000050
 #define	PRIORITY_EXCEPTION		0x000000FF
 
+#define PROCESS_ALIVE			0x00000000
+#define PROCESS_ZOMBIE			0x00000001
+
+#define TASK_RUNNING			0x00000000
+#define TASK_READY				0x00000001
+#define TASK_SUSPEND			0x00000002
+#define TASK_SLEEP				0x00000003
+#define TASK_ZOMBIE				0x00000004
+
 //初始化
 void core_pm_init();
 
@@ -1049,13 +1057,37 @@ void core_pm_core_release(int cpuid);
 
 //Process
 //fork
-u32 core_pm_fork();
+u32 core_pm_fork(void* child_start_address);
 
 //获得当前进程id
 u32 core_pm_get_crrnt_proc_id();
 
 //wait
 u32 core_pm_wait(bool wait_pid, u32 process_id);
+
+//获得进程子系统
+u32 core_pm_get_subsys(u32 pid);
+
+//设置进程子系统
+kstatus_t core_pm_set_subsys(u32 pid, u32 subsys_id);
+
+//获得进程uid
+u32 core_pm_get_uid(u32 pid);
+
+//获得进程gid
+u32 core_pm_get_gid(u32 pid);
+
+//获得进程euid
+u32 core_pm_get_euid(u32 pid);
+
+//设置进程euid
+kstatus_t core_pm_set_euid(u32 pid, u32 euid);
+
+//获得进程egid
+u32 core_pm_get_egid(u32 pid);
+
+//设置进程egid
+kstatus_t core_pm_set_egid(u32 pid, u32 egid);
 
 //Thread
 //创建线程
@@ -2043,6 +2075,8 @@ except_stat_t (*except_hndlr_t)(kstatus_t, pcontext_t, void*);
 #define EXCEPT_STATUS_CONTINUE		0x00000001
 #define EXCEPT_STATUS_PANIC			0x00000002
 
+#define OPERATE_SUCCESS
+
 //初始化模块
 void core_exception_init();
 
@@ -2054,7 +2088,7 @@ void core_exception_raise(
     char* src_file,
     char* line);
 
-#define RAISE
+#define RAISE(reason, description, p_arg)
 
 //压入错误处理函数
 void core_exception_push_hndlr(except_hndlr_t hndlr);
@@ -2068,23 +2102,45 @@ src/sandnix/kernel/core/exception/exception.h
 src/sandnix/kernel/core/exception/exception.c
 ```
 ####Subsystem层
-#####lib
-subsystem层的运行库,包括跨权限缓冲区处理等调用
+#####common
+subsystem层的一些公用的方法,包括跨权限缓冲区处理等调用
 ######模块路径
 ```
-src/sandnix/kernel/subsystem/lib
+src/sandnix/kernel/subsystem/common
 ```
 ######接口数据结构
 ```c
+//系统调用函数
+//void* syscall(u32 arg_num, va_list arg_list);
+void* (*syscall_t)(u32, va_list);
 
+//子系统对象
+subsys_obj_t
 ```
 ######接口函数及宏
 ```c
+//初始化
+void subsys_common_init();
 
+//读用户空间内存
+kstatus_t subsys_common_read_usr_mem(u8* dest, u8* src, size_t len);
+
+//写用户空间内存
+kstatus_t subsys_common_write_usr_mem(u8* dest, u8* src, size_t len);
+
+//注册子系统
+kstatus subsys_common_reg_subsys(psubsys_obj_t subsys);
+
+//获得子系统id
+u32 subsys_common_get_subsys_id(pkstring_obj_t name);
+
+//获得系统调用地址
+syscall_t subsys_common_get_syscall_addr(u32 subsys_id, u32 call_num);
 ```
 ######文件列表
 ```c
-
+src/sandnix/kernel/subsystem/common/common.h
+src/sandnix/kernel/subsystem/common/common.c
 ```
 #####driver
 为驱动程序提供系统调用的子系统
@@ -2098,7 +2154,15 @@ src/sandnix/kernel/subsystem/driver
 ```
 ######接口函数及宏
 ```c
-
+//初始化
+void subsys_driver_init();
+```
+######系统调用
+```c
+fork
+create_thread
+suspend_thread
+resume_thread
 ```
 ######文件列表
 ```c
@@ -2115,6 +2179,11 @@ src/sandnix/kernel/subsystem/linux
 
 ```
 ######接口函数及宏
+```c
+//初始化
+void subsys_linux_init();
+```
+######系统调用
 ```c
 
 ```
