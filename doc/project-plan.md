@@ -554,6 +554,9 @@ void hal_io_outs_8(address_t port, size_t count, void* src);
 void hal_io_outs_16(address_t port, size_t count, void* src);
 void hal_io_outs_32(address_t port, size_t count, void* src);
 void hal_io_outs_64(address_t port, size_t count, void* src);
+
+//获得端口列表
+size_t hal_io_get_port_list(address_t* ret, size_t size);
 ```
 ######文件列表
 ```c
@@ -1114,6 +1117,9 @@ u32 core_pm_get_thrd_priority(u32 thrd_id);
 //设置线程优先级
 void core_pm_set_thrd_priority(u32 thrd_id, u32 priority);
 
+//调度
+void core_pm_schedule();
+
 //设置errno
 void core_pm_set_errno(kstatus_t errno);
 
@@ -1296,7 +1302,7 @@ mstatus_t
 #define MSG_MJ_CLOSE		0x00010003
 #define MSG_MJ_STAT			0x00010004
 #define MSG_MJ_FCNTL		0x00010005
-#deinfe MSG_MJ_LINK			0x00010006
+#define MSG_MJ_LINK			0x00010006
 #define MSG_MJ_CHMOD		0x00010007
 #define MSG_MJ_CHOWN		0x00010008
 #define MSG_MJ_MKDIR		0x00010009
@@ -1304,11 +1310,12 @@ mstatus_t
 #define MSG_MJ_MKNOD		0x0001000B
 #define MSG_MJ_IOCTL		0x0001000C
 #define MSG_MJ_NOTIFY		0x0001000D
-@define MSG_MJ_MOUNT		0x0001000E
+#define MSG_MJ_MOUNT		0x0001000E
 
 //设备操作
 #define MSG_MJ_MATCH			0x00020000
 #define MSG_MJ_HOT_PLUG			0x00020001
+#define MSG_MJ_POWER			0x00020002
 
 //次类型
 //MSG_MJ_FINISH
@@ -1373,6 +1380,12 @@ mstatus_t
 //MSG_MJ_HOT_PLUG
 #define MSG_MN_PLUGIN			0x00000000
 #define MSG_MN_PLUGOFF			0x00000001
+
+//MSG_MJ_POWER
+#define MSG_MN_POWEROFF			0x00000000
+#define MSG_MN_SUSPEND			0x00000001
+#define MSG_MN_RESUME			0x00000002
+#define MSG_MN_HIBERNATE		0x00000003
 
 //初始化
 u32 core_msg_init();
@@ -2159,6 +2172,14 @@ void subsys_driver_init();
 ```
 ######系统调用
 ```c
+power_off
+reboot
+
+valloc
+vfree
+get_pg_obj
+vmap
+
 fork
 create_thread
 suspend_thread
