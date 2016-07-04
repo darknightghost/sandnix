@@ -2192,21 +2192,21 @@ void subsys_driver_init();
 ```
 ######系统调用
 ```c
-//Power
+//power
 power_off
 reboot
 
-//Memory
+//memory
 valloc
 vfree
 create_pg_obj
 vmap
 vunmap
 
-//Console
+//console
 kprint
 
-//Process
+//process
 fork
 execve
 wait
@@ -2218,7 +2218,7 @@ set_euid
 get_egid
 set_egid
 
-//Thread
+//thread
 create_thread
 suspend_thread
 resume_thread
@@ -2232,14 +2232,14 @@ set_priority
 get_errno
 set_errno
 
-//Mutex
-//Normal
+//mutex
+//normal
 create_mutex
 mutex_lock
 mutex_trylock
 mutex_unlock
 
-//R/W lock
+//r/w lock
 create_mutex_rw
 mutex_rw_r_lock
 mutex_rw_r_trylock
@@ -2248,7 +2248,7 @@ mutex_rw_w_lock
 mutex_rw_w_trylock
 mutex_rw_w_unlock
 
-//RCU
+//rcu
 create_mutex_rcu
 mutex_rcu_r_lock
 mutex_rcu_r_trylock
@@ -2258,7 +2258,7 @@ mutex_rcu_w_trylock
 mutex_rcu_w_sync
 mutex_rcu_w_unlock
 
-//Semaphore
+//semaphore
 create_semaphore
 semaphore_acquire
 semaphore_tryacquire
@@ -2267,6 +2267,43 @@ semaphore_release
 //ipc
 sigaction
 kill
+
+//msg
+msg_complete
+msg_cancel
+
+//fs
+open
+read
+write
+lseek
+poll
+fcntl
+ioctl
+chmod
+chown
+link
+symlink
+unlink
+mknod
+stat
+access
+mmap
+munmap
+mount
+umount
+
+//device
+create_device
+remove_device
+msg_send
+msg_recv
+
+//exception
+push_hndlr
+pop_hndlr
+raise
+
 ```
 ######文件列表
 ```c
