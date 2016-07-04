@@ -1023,6 +1023,9 @@ mutex_t
 mutex_rw_t
 mutex_rcu_t
 
+//cond
+cond_t
+
 //semaphore
 semaphore_t
 ```
@@ -1152,34 +1155,43 @@ void core_pm_spnlck_rcu_w_trylock(pspnlck_rcu_t p_lock);
 void core_pm_spnlck_rcu_w_sync(pspnlck_rcu_t p_lock);
 void core_pm_spnlck_rcu_w_unlock(pspnlck_rcu_t p_lock);
 
+//timeout为0则不会超时
 //mutex
 //normal
 void core_pm_mutex_init(pmutex_t p_mutex);
-void core_pm_mutex_lock(pmutex_t p_mutex);
+void core_pm_mutex_lock(pmutex_t p_mutex, u32 timeout);
 void core_pm_mutex_trylock(pmutex_t p_mutex);
 void core_pm_mutex_unlock(pmutex_t p_mutex);
 void core_pm_mutex_destroy(pmutex_t p_mutex);
 
 //r/w lock
 void core_pm_mutex_rw_init(pmutex_rw_t p_mutex);
-void core_pm_mutex_rw_r_lock(pmutex_rw_t p_mutex);
+void core_pm_mutex_rw_r_lock(pmutex_rw_t p_mutex, u32 timeout);
 void core_pm_mutex_rw_r_trylock(pmutex_rw_t p_mutex);
 void core_pm_mutex_rw_r_unlock(pmutex_rw_t p_mutex);
-void core_pm_mutex_rw_w_lock(pmutex_rw_t p_mutex);
+void core_pm_mutex_rw_w_lock(pmutex_rw_t p_mutex, u32 timeout);
 void core_pm_mutex_rw_w_trylock(pmutex_rw_t p_mutex);
 void core_pm_mutex_rw_w_unlock(pmutex_rw_t p_mutex);
 void core_pm_mutex_rw_release(pmutex_rw_t p_mutex);
 
 //rcu
 void core_pm_mutex_rcu_init(pmutex_rcu_t p_mutex);
-void core_pm_mutex_rcu_r_lock(pmutex_rcu_t p_mutex);
+void core_pm_mutex_rcu_r_lock(pmutex_rcu_t p_mutex, u32 timeout);
 void core_pm_mutex_rcu_r_trylock(pmutex_rcu_t p_mutex);
 void core_pm_mutex_rcu_r_unlock(pmutex_rcu_t p_mutex);
-void core_pm_mutex_rcu_w_lock(pmutex_rcu_t p_mutex);
+void core_pm_mutex_rcu_w_lock(pmutex_rcu_t p_mutex, u32 timeout);
 void core_pm_mutex_rcu_w_trylock(pmutex_rcu_t p_mutex);
 void core_pm_mutex_rcu_w_sync(pmutex_rcu_t p_mutex);
 void core_pm_mutex_rcu_w_unlock(pmutex_rcu_t p_mutex);
 void core_pm_mutex_rcu_release(pmutex_rcu_t p_mutex);
+
+//cond
+void core_pm_cond_init(pcond_t p_cond);
+kstatus_t core_pm_cond_wait(pcond_t p_cond, u32 timeout);
+kstatus_t core_pm_cond_trywait(pcond_t p_cond);
+kstatus_t core_pm_cond_signal(pcond_t p_cond);
+kstatus_t core_pm_cond_broadcast(pcond_t p_cond);
+kstatus_t core_pm_cond_release(pcond_t p_cond);
 
 //semaphore
 void core_pm_semphore_init(psemphore_t p_sem);
@@ -1212,6 +1224,9 @@ src/sandnix/kernel/core/pm/lock/mutex/mutex_rw.h
 src/sandnix/kernel/core/pm/lock/mutex/mutex_rw.c
 src/sandnix/kernel/core/pm/lock/mutex/mutex_rcu.h
 src/sandnix/kernel/core/pm/lock/mutex/mutex_rcu.c
+
+src/sandnix/kernel/core/pm/lock/cond/cond.h
+src/sandnix/kernel/core/pm/lock/cond/cond.c
 
 src/sandnix/kernel/core/pm/lock/semaphore/semaphore.h
 src/sandnix/kernel/core/pm/lock/semaphore/semaphore.c
@@ -2172,18 +2187,49 @@ void subsys_driver_init();
 ```
 ######系统调用
 ```c
+//Power
 power_off
 reboot
 
+//Memory
 valloc
 vfree
-get_pg_obj
+create_pg_obj
 vmap
+vunmap
 
+//Console
+kprint
+
+//Process
 fork
+execve
+wait
+get_current_proc_id
+
+//Thread
 create_thread
 suspend_thread
 resume_thread
+exit_thread
+join_thread
+suspend_thread
+resume_thread
+get_current_thread_id
+get_priority
+set_priority
+get_errno
+set_errno
+
+//Mutex
+//Normal
+//create_mutex
+
+//R/W lock
+
+//RCU
+
+//Semaphore
 ```
 ######文件列表
 ```c
