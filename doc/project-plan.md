@@ -1198,6 +1198,7 @@ void core_pm_semphore_init(psemphore_t p_sem);
 void core_pm_semphore_acquire(psemphore_t p_sem);
 void core_pm_semphore_tryacquire(psemphore_t p_sem);
 void core_pm_semphore_release(psemphore_t p_sem);
+void core_pm_semphore_destroy(psemphore_t p_sem);
 ```
 ######文件列表
 ```c
@@ -1455,6 +1456,7 @@ proc_ref_obj_t
 file_state_obj_t
 
 stat_t
+pollfd_t
 ```
 ######接口函数及宏
 ```c
@@ -1473,6 +1475,9 @@ size_t core_vfs_write(u32 fd, u8* buf, size_t size);
 
 //移动文件指针
 off_t core_vfs_lseek(u32 fd, ssize_t offset, u32 whence);
+
+//等待文件状态
+u32 core_vfs_poll(pollfd_t p_polls, size_t num, u32 timeout);
 
 //fnctl
 kstatus_t core_vfs_fcntl(u32 fd, int cmd, void* p_arg, size_t arg_size);
@@ -2206,6 +2211,12 @@ fork
 execve
 wait
 get_current_proc_id
+get_uid
+get_gid
+get_euid
+set_euid
+get_egid
+set_egid
 
 //Thread
 create_thread
@@ -2223,17 +2234,46 @@ set_errno
 
 //Mutex
 //Normal
-//create_mutex
+create_mutex
+mutex_lock
+mutex_trylock
+mutex_unlock
 
 //R/W lock
+create_mutex_rw
+mutex_rw_r_lock
+mutex_rw_r_trylock
+mutex_rw_r_unlock
+mutex_rw_w_lock
+mutex_rw_w_trylock
+mutex_rw_w_unlock
 
 //RCU
+create_mutex_rcu
+mutex_rcu_r_lock
+mutex_rcu_r_trylock
+mutex_rcu_r_unlock
+mutex_rcu_w_lock
+mutex_rcu_w_trylock
+mutex_rcu_w_sync
+mutex_rcu_w_unlock
 
 //Semaphore
+create_semaphore
+semaphore_acquire
+semaphore_tryacquire
+semaphore_release
+
+//ipc
+sigaction
+kill
 ```
 ######文件列表
 ```c
+src/sandnix/kernel/subsystem/driver/driver.h
+src/sandnix/kernel/subsystem/driver/driver.c
 
+src/sandnix/kernel/subsystem/driver/syscalls/power
 ```
 #####linux
 为linux应用提供系统调用的子系统
