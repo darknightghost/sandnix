@@ -42,7 +42,7 @@
 
 ##### subsystem层
 负责提供系统调用,并将系统调用翻译成对内核函数的调用.模块列表如下:
-* lib
+* common
 * driver
 * linux
 
@@ -201,7 +201,7 @@ target.xml文件结构如下:
     <options>
         <!--单选框-->
         <option type="checkbox" name="Enable Debigging" value="-g" enable="true" target="CFLAGS|ASFLAGS|LDFLAGS" />
-        <!--多选一-->
+        <!--单选一-->
         <option type="list" name="Bootloader" selected="0" target="CFLAGS|ASFLAGS|LDFLAGS">
             <item name="grub2" value="-DGRUB" />
             <item name="uboot" value="-DUBOOT" />
@@ -243,6 +243,18 @@ s32
 
 //有符号64位数
 s64
+
+//小端模式无符号8位数
+le8
+
+//小端模式无符号16位数
+le16
+
+//小端模式无符号32位数
+le32
+
+//小端模式无符号64位数
+le64
 
 //无符号大小
 size_t
@@ -338,8 +350,11 @@ kstatus_t hal_kparam_get_value(char* key, char* buf, size_t size);
 //接口头文件
 src/sandnix/kernel/hal/kparam/kparam.h
 
-//参数解析代码
+//参数管理代码
 src/sandnix/kernel/hal/kparam/kparam.c
+
+//参数解析代码
+src/sandnix/kernel/hal/kparam/kparam_loader.c
 ```
 #####mmu
 负责初始化分页机制,管理mmu以及提供分页管理的接口.
@@ -609,6 +624,10 @@ u32 hal_cpu_get_frequency();
 
 //设置cpu频率
 u32 hal_cpu_set_frequency();
+
+//Atomic
+#define ATOMIC_XADDL(dest, src)
+#define ATOMIC_CMPMOVL(dest, src, cmp)
 ```
 ######文件列表
 ```c
@@ -620,6 +639,9 @@ src/sandnix/kernel/hal/cpu/context/$(arch)
 
 //cpu信息
 src/sandnix/kernel/hal/cpu/cpu-info/$(arch)
+
+//Atomic
+src/sandnix/kernel/hal/cpu/atomic/$(arch)
 ```
 #####exception
 负责处理kernel panic以及调用错误处理程序.
@@ -1133,8 +1155,11 @@ kstatus_t core_pm_get_errno();
 //normal
 void core_pm_spnlck_init(pspnlck_t p_lock);
 void core_pm_spnlck_lock(pspnlck_t p_lock);
+void core_pm_spnlck_raw_lock(pspnlck_t p_lock);
 void core_pm_spnlck_trylock(pspnlck_t p_lock);
+void core_pm_spnlck_raw_trylock(pspnlck_t p_lock);
 void core_pm_spnlck_unlock(pspnlck_t p_lock);
+void core_pm_spnlck_raw_unlock(pspnlck_t p_lock);
 
 //r/w lock
 void core_pm_spnlck_rw_init(pspnlck_rw_t p_lock);
@@ -2150,6 +2175,27 @@ src/sandnix/kernel/core/rtl/kstring/kstring.c
 
 src/sandnix/kernel/core/rtl/obj/obj.h
 src/sandnix/kernel/core/rtl/obj/obj.c
+
+src/sandnix/kernel/core/rtl/frame/list/list.h
+src/sandnix/kernel/core/rtl/frame/list/list.c
+
+src/sandnix/kernel/core/rtl/frame/array/array.h
+src/sandnix/kernel/core/rtl/frame/array/array.c
+
+src/sandnix/kernel/core/rtl/frame/hash_table/hash_table.h
+src/sandnix/kernel/core/rtl/frame/hash_table/hash_table.c
+
+src/sandnix/kernel/core/rtl/frame/map/map.h
+src/sandnix/kernel/core/rtl/frame/map/map.c
+
+src/sandnix/kernel/core/rtl/frame/vector/vector.h
+src/sandnix/kernel/core/rtl/frame/vector/vector.c
+
+src/sandnix/kernel/core/rtl/frame/queue/queue.h
+src/sandnix/kernel/core/rtl/frame/queue/queue.c
+
+src/sandnix/kernel/core/rtl/frame/buffer/buffer.h
+src/sandnix/kernel/core/rtl/frame/buffer/buffer.c
 ```
 #####exception
 异常处理

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?><target name="Sandnix 0.0.2 configuration" type="virtual">
+    <output name=""/>
+    <outdir path=""/>
+    <middir path=""/>
+    <introduction>
+      Sandnix 0.0.2 configuration tool.
+    </introduction>
+    <archs actived="x86">
+        <arch name="x86">
+            <PREV>echo prev</PREV>
+            <DEP>gcc</DEP>
+            <DEPRULE>$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then cat $@|awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(OBJDIR)/$(ARCH)/&quot;,$$0)} NR != 1 {print $$0}' &gt; $@; fi</DEPRULE>
+            <CC>gcc</CC>
+            <CFLAGS>-c</CFLAGS>
+            <CCRULE>$(CC) $(CFLAGS) -o $@ $&lt;</CCRULE>
+            <AS>gcc</AS>
+            <ASFLAGS>-c</ASFLAGS>
+            <ASRULE>$(AS) $(ASFLAGS) -o $@ $&lt;</ASRULE>
+            <LD>gcc</LD>
+            <LDFLAGS>$(LD) $(LDFLAGS) -o $@ $^</LDFLAGS>
+            <LDRULE>$(LD) $(LDFLAGS) -o $@ $^</LDRULE>
+            <AFTER>echo after</AFTER>
+        </arch>
+        <arch name="arm.raseberry">
+            <PREV>echo prev</PREV>
+            <DEP>arm-none-eabi-gcc</DEP>
+            <DEPRULE>$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then cat $@|awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(OBJDIR)/$(ARCH)/&quot;,$$0)} NR != 1 {print $$0}' &gt; $@; fi</DEPRULE>
+            <CC>arm-none-eabi-gcc</CC>
+            <CFLAGS>-c</CFLAGS>
+            <CCRULE>$(CC) $(CFLAGS) -o $@ $&lt;</CCRULE>
+            <AS>arm-none-eabi-gcc</AS>
+            <ASFLAGS>-c</ASFLAGS>
+            <ASRULE>$(AS) $(ASFLAGS) -o $@ $&lt;</ASRULE>
+            <LD>arm-none-eabi-gcc</LD>
+            <LDFLAGS>$(LD) $(LDFLAGS) -o $@ $^</LDFLAGS>
+            <LDRULE>$(LD) $(LDFLAGS) -o $@ $^</LDRULE>
+            <AFTER>echo after</AFTER>
+        </arch>
+    </archs>
+    <dependencies>
+    </dependencies>
+    <sub-targets>
+        <target enable="true" path="src/sandnix/target.xml"/>
+    </sub-targets>
+    <options>
+    </options>
+</target>

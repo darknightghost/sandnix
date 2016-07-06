@@ -1,17 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?><target name="Sandnix" type="virtual">
+<?xml version="1.0" encoding="utf-8"?><target name="drivers" type="virtual">
     <output name=""/>
     <outdir path=""/>
     <middir path=""/>
     <introduction>
-      Sandnix 0.0.2
+      Drivers.
     </introduction>
     <archs>
     </archs>
     <dependencies>
     </dependencies>
     <sub-targets>
-        <target enable="true" path="./kernel/target.xml"/>
-        <target enable="true" path="./headers/target.xml"/>
     </sub-targets>
     <options>
     </options>
