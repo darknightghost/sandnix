@@ -296,6 +296,12 @@ kernel_header_t:
 ```
 ######接口函数及宏:
 ```c
+//初始化堆栈
+void* init_stack;
+
+//初始化堆栈大小
+#define INIT_STACK_SIZE
+
 //初始化
 //整个内核的入口函数.
 void _start():
@@ -626,8 +632,8 @@ u32 hal_cpu_get_frequency();
 u32 hal_cpu_set_frequency();
 
 //Atomic
-#define ATOMIC_XADDL(dest, src)
-#define ATOMIC_CMPMOVL(dest, src, cmp)
+#define hal_cpu_atomic_xaddl(dest, src)
+#define hal_cpu_atomic_cmpmovl(dest, src, cmp)
 ```
 ######文件列表
 ```c
@@ -1156,27 +1162,27 @@ kstatus_t core_pm_get_errno();
 void core_pm_spnlck_init(pspnlck_t p_lock);
 void core_pm_spnlck_lock(pspnlck_t p_lock);
 void core_pm_spnlck_raw_lock(pspnlck_t p_lock);
-void core_pm_spnlck_trylock(pspnlck_t p_lock);
-void core_pm_spnlck_raw_trylock(pspnlck_t p_lock);
+kstataus_t core_pm_spnlck_trylock(pspnlck_t p_lock);
+kstataus_t core_pm_spnlck_raw_trylock(pspnlck_t p_lock);
 void core_pm_spnlck_unlock(pspnlck_t p_lock);
 void core_pm_spnlck_raw_unlock(pspnlck_t p_lock);
 
 //r/w lock
 void core_pm_spnlck_rw_init(pspnlck_rw_t p_lock);
 void pm_spnlck_rw_r_lock(pspnlck_rw_t p_lock);
-void pm_spnlck_rw_r_trylock(pspnlck_rw_t p_lock);
+kstataus_t pm_spnlck_rw_r_trylock(pspnlck_rw_t p_lock);
 void pm_spnlck_rw_r_unlock(pspnlck_rw_t p_lock);
 void pm_spnlck_rw_w_lock(pspnlck_rw_t p_lock);
-void pm_spnlck_rw_w_trylock(pspnlck_rw_t p_lock);
+kstataus_t pm_spnlck_rw_w_trylock(pspnlck_rw_t p_lock);
 void pm_spnlck_rw_w_unlock(pspnlck_rw_t p_lock);
 
 //rcu
 void core_pm_spnlck_rcu_init(pspnlck_rcu_t p_lock);
 void core_pm_spnlck_rcu_r_lock(pspnlck_rcu_t p_lock);
-void core_pm_spnlck_rcu_r_trylock(pspnlck_rcu_t p_lock);
+kstataus_t core_pm_spnlck_rcu_r_trylock(pspnlck_rcu_t p_lock);
 void core_pm_spnlck_rcu_r_unlock(pspnlck_rcu_t p_lock);
 void core_pm_spnlck_rcu_w_lock(pspnlck_rcu_t p_lock);
-void core_pm_spnlck_rcu_w_trylock(pspnlck_rcu_t p_lock);
+kstataus_t core_pm_spnlck_rcu_w_trylock(pspnlck_rcu_t p_lock);
 void core_pm_spnlck_rcu_w_sync(pspnlck_rcu_t p_lock);
 void core_pm_spnlck_rcu_w_unlock(pspnlck_rcu_t p_lock);
 
@@ -1185,27 +1191,27 @@ void core_pm_spnlck_rcu_w_unlock(pspnlck_rcu_t p_lock);
 //normal
 void core_pm_mutex_init(pmutex_t p_mutex);
 void core_pm_mutex_lock(pmutex_t p_mutex, u32 timeout);
-void core_pm_mutex_trylock(pmutex_t p_mutex);
+kstataus_t core_pm_mutex_trylock(pmutex_t p_mutex);
 void core_pm_mutex_unlock(pmutex_t p_mutex);
 void core_pm_mutex_destroy(pmutex_t p_mutex);
 
 //r/w lock
 void core_pm_mutex_rw_init(pmutex_rw_t p_mutex);
 void core_pm_mutex_rw_r_lock(pmutex_rw_t p_mutex, u32 timeout);
-void core_pm_mutex_rw_r_trylock(pmutex_rw_t p_mutex);
+kstataus_t core_pm_mutex_rw_r_trylock(pmutex_rw_t p_mutex);
 void core_pm_mutex_rw_r_unlock(pmutex_rw_t p_mutex);
 void core_pm_mutex_rw_w_lock(pmutex_rw_t p_mutex, u32 timeout);
-void core_pm_mutex_rw_w_trylock(pmutex_rw_t p_mutex);
+kstataus_t core_pm_mutex_rw_w_trylock(pmutex_rw_t p_mutex);
 void core_pm_mutex_rw_w_unlock(pmutex_rw_t p_mutex);
 void core_pm_mutex_rw_release(pmutex_rw_t p_mutex);
 
 //rcu
 void core_pm_mutex_rcu_init(pmutex_rcu_t p_mutex);
 void core_pm_mutex_rcu_r_lock(pmutex_rcu_t p_mutex, u32 timeout);
-void core_pm_mutex_rcu_r_trylock(pmutex_rcu_t p_mutex);
+kstataus_t core_pm_mutex_rcu_r_trylock(pmutex_rcu_t p_mutex);
 void core_pm_mutex_rcu_r_unlock(pmutex_rcu_t p_mutex);
 void core_pm_mutex_rcu_w_lock(pmutex_rcu_t p_mutex, u32 timeout);
-void core_pm_mutex_rcu_w_trylock(pmutex_rcu_t p_mutex);
+kstataus_t core_pm_mutex_rcu_w_trylock(pmutex_rcu_t p_mutex);
 void core_pm_mutex_rcu_w_sync(pmutex_rcu_t p_mutex);
 void core_pm_mutex_rcu_w_unlock(pmutex_rcu_t p_mutex);
 void core_pm_mutex_rcu_release(pmutex_rcu_t p_mutex);

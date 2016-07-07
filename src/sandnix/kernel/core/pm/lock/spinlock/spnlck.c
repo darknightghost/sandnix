@@ -15,18 +15,39 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "spnlck.h"
+#include "../../../../hal/cpu/cpu.h"
 
-#ifndef _ASM
-    #if defined X86
-        #include "arch/x86/types.h"
-    #elif defined ARM
-        #include "arch/arm/types.h"
-    #endif
+void core_pm_spnlck_init(pspnlck_t p_lock)
+{
+    p_lock->owner = 0;
+    p_lock->ticket = 0;
+    p_lock->priority = 0;
+    return;
+}
 
-    #define	UNREFERRED_PARAMETER(x)		((void)(x))
-    #define MEM_BLOCK					__asm__ __volatile__ ("":::"memory");
+void core_pm_spnlck_lock(pspnlck_t p_lock);
 
-#endif
+void core_pm_spnlck_raw_lock(pspnlck_t p_lock)
+{
+    u32 ticket;
 
-#include "version.h"
+    //Get ticket
+    ticket = 1;
+    hal_cpu_atomic_xaddl(p_lock->ticket, ticket);
+
+    //Get lock
+    while(p_lock->owner != ticket);
+
+
+    return;
+}
+
+kstatus_t core_pm_spnlck_trylock(pspnlck_t p_lock);
+kstatus_t core_pm_spnlck_raw_trylock(pspnlck_t p_lock);
+void core_pm_spnlck_unlock(pspnlck_t p_lock);
+void core_pm_spnlck_raw_unlock(pspnlck_t p_lock)
+{
+    (p_lock->owner)++;
+    return;
+}

@@ -15,18 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+.global		_start
 
-#ifndef _ASM
-    #if defined X86
-        #include "arch/x86/types.h"
-    #elif defined ARM
-        #include "arch/arm/types.h"
-    #endif
-
-    #define	UNREFERRED_PARAMETER(x)		((void)(x))
-    #define MEM_BLOCK					__asm__ __volatile__ ("":::"memory");
-
-#endif
-
-#include "version.h"
+.section	.text
+_start:

@@ -17,19 +17,20 @@
 
 #pragma once
 
-#define ATOMIC_XADDL(dest, src) { \
+#define hal_cpu_atomic_xaddl(dest, src) { \
         do { \
             __asm__ __volatile__( \
-                                  "lock		xaddl %0, (%1)\n" \
-                                  :"+eax"((volatile u32)src), "=m"(dest) \
-                                  :: "memory");\
-        } while(0) \
-        }
+                                  "lock		xaddl %0, %1\n" \
+                                  :"+eax"((src)) \
+                                  :"m"((dest)) \
+                                  : "memory");\
+        } while(0); \
+    }
 
-#define ATOMIC_CMPMOVL(dest, src, cmp, result) { \
+#define hal_cpu_atomic_cmpmovl(dest, src, cmp, result) { \
         do { \
             __asm__ __volatile__ ( \
-                                   "lock	cmpxchgl %1, (%2)\n" \
+                                   "lock	cmpxchgl %1, %2\n" \
                                    "jz		_EQUAL\n" \
                                    "xorl	%3, %3\n" \
                                    "jmp		_END\n" \

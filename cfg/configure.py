@@ -66,9 +66,9 @@ def create_makefile(build_tree):
         linkfile = "$(MIDDIR)/$(NAME).$(ARCH).linked"
         for s in sources:
             basename = os.path.splitext(s)[0]
-            filelist.append([s,
-                "$(MIDDIR)/" + basename + ".obj",
-                "$(MIDDIR)/" + basename + ".dep",])
+            filelist.append([os.path.abspath(s),
+                os.path.abspath("$(MIDDIR)/" + basename + ".obj"),
+                os.path.abspath("$(MIDDIR)/" + basename + ".dep")])
 
         #Create Makefile
         print("Create Makefile...")
@@ -132,6 +132,7 @@ def create_makefile(build_tree):
             makefile.write("target : subtarget\n")
         else:
             makefile.write("target :\n")
+        makefile.write("\tmkdir -p $(OUTDIR)\n")
         makefile.write("\t$(PREV)\n")
         makefile.write("\tmake $(LINKED)\n")
         makefile.write("\t$(AFTER)\n")
@@ -162,10 +163,11 @@ def create_makefile(build_tree):
             makefile.write("\t$(DEPRULE)\n")
             makefile.write("%s : %s\n"%(f[1], f[0]))
             makefile.write("\tmkdir -p $(dir $@)\n")
-            if os.path.splitext(f[0]) in (".s", ".S"):
-                makefile.wrilte("\t$(ASRULE)")
-            elif os.path.splitext(f[0]) in (".c", ".cc", ".C", ".cpp"):
-                makefile.wrilte("\t$(CCRULE)")
+            if os.path.splitext(f[0])[1] in (".s", ".S"):
+                makefile.write("\t$(ASRULE)")
+            elif os.path.splitext(f[0])[1] in (".c", ".cc", ".C", ".cpp"):
+                makefile.write("\t$(CCRULE)")
+            makefile.write("\n\trm %s"%(f[2]))
             makefile.write("\n")
         
     else:

@@ -17,16 +17,31 @@
 
 #pragma once
 
-#ifndef _ASM
-    #if defined X86
-        #include "arch/x86/types.h"
-    #elif defined ARM
-        #include "arch/arm/types.h"
-    #endif
+#include "../../../../../../common/common.h"
 
-    #define	UNREFERRED_PARAMETER(x)		((void)(x))
-    #define MEM_BLOCK					__asm__ __volatile__ ("":::"memory");
+typedef struct _spnlck_t {
+    volatile u32		owner;
+    volatile u32		ticket;
+    u32					priority;
+} spnlck_t, *pspnlck_t;
 
-#endif
+//Initialize the lock.
+void	core_pm_spnlck_init(pspnlck_t p_lock);
 
-#include "version.h"
+//Lock(increase the priority of current thread).
+void	core_pm_spnlck_lock(pspnlck_t p_lock);
+
+//Lock
+void	core_pm_spnlck_raw_lock(pspnlck_t p_lock);
+
+//Try lock(increase the priority of current thread).
+kstatus_t	core_pm_spnlck_trylock(pspnlck_t p_lock);
+
+//Try lock
+kstatus_t	core_pm_spnlck_raw_trylock(pspnlck_t p_lock);
+
+//Unclock(decrease the priority of current thread)
+void	core_pm_spnlck_unlock(pspnlck_t p_lock);
+
+//Unlock
+void	core_pm_spnlck_raw_unlock(pspnlck_t p_lock);

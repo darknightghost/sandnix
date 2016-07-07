@@ -15,18 +15,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+void kinit(void* p_kparams)
+{
 
-#ifndef _ASM
-    #if defined X86
-        #include "arch/x86/types.h"
-    #elif defined ARM
-        #include "arch/arm/types.h"
-    #endif
-
-    #define	UNREFERRED_PARAMETER(x)		((void)(x))
-    #define MEM_BLOCK					__asm__ __volatile__ ("":::"memory");
-
-#endif
-
-#include "version.h"
+    UNREFERRED_PARAMETER(p_kparams);
+    return;
+}

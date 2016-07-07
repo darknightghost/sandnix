@@ -7,7 +7,7 @@
     </introduction>
     <archs actived="x86">
         <arch name="x86">
-            <PREV>echo prev</PREV>
+            <PREV></PREV>
             <DEP>gcc</DEP>
             <DEPRULE>$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then cat $@|awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(OBJDIR)/$(ARCH)/&quot;,$$0)} NR != 1 {print $$0}' &gt; $@; fi</DEPRULE>
             <CC>gcc</CC>
@@ -19,10 +19,10 @@
             <LD>gcc</LD>
             <LDFLAGS>$(LD) $(LDFLAGS) -o $@ $^</LDFLAGS>
             <LDRULE>$(LD) $(LDFLAGS) -o $@ $^</LDRULE>
-            <AFTER>echo after</AFTER>
+            <AFTER></AFTER>
         </arch>
         <arch name="arm.raseberry">
-            <PREV>echo prev</PREV>
+            <PREV></PREV>
             <DEP>arm-none-eabi-gcc</DEP>
             <DEPRULE>$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then cat $@|awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(OBJDIR)/$(ARCH)/&quot;,$$0)} NR != 1 {print $$0}' &gt; $@; fi</DEPRULE>
             <CC>arm-none-eabi-gcc</CC>
@@ -34,7 +34,7 @@
             <LD>arm-none-eabi-gcc</LD>
             <LDFLAGS>$(LD) $(LDFLAGS) -o $@ $^</LDFLAGS>
             <LDRULE>$(LD) $(LDFLAGS) -o $@ $^</LDRULE>
-            <AFTER>echo after</AFTER>
+            <AFTER></AFTER>
         </arch>
     </archs>
     <dependencies>

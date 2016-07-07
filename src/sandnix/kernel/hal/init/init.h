@@ -17,16 +17,15 @@
 
 #pragma once
 
-#ifndef _ASM
-    #if defined X86
-        #include "arch/x86/types.h"
-    #elif defined ARM
-        #include "arch/arm/types.h"
-    #endif
+#include "../../../../common/common.h"
 
-    #define	UNREFERRED_PARAMETER(x)		((void)(x))
-    #define MEM_BLOCK					__asm__ __volatile__ ("":::"memory");
-
+#if defined X86
+    #define	INIT_STACK_SIZE		4096
+    #include "./arch/x86/init.h"
+#elif defined ARM
+    #define	INIT_STACK_SIZE		4096
 #endif
 
-#include "version.h"
+#ifndef _ASM
+    extern	void*	init_stack;
+#endif	//!	_ASM

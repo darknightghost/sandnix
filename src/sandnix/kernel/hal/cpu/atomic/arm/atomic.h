@@ -18,25 +18,25 @@
 #pragma once
 
 
-#define ATOMIC_XADDL(dest, src) { \
+#define hal_cpu_atomic_xaddl(dest, src) { \
         do { \
             __asm__ __volatile ( \
                                  "_XADD:\n" \
-                                 "ldrex	r1, [%1]\n" \
-                                 "movl	r2, r1\n" \
-                                 "addl	r1, %0, r1\n" \
-                                 "strex	r3, r1, [%1]\n" \
-                                 "teq	r3, #0\n" \
+                                 "ldrex	r0, [%1]\n" \
+                                 "mov	r1, r0\n" \
+                                 "add	r1, %0, r0\n" \
+                                 "strex	r2, r0, [%1]\n" \
+                                 "teq	r2, #0\n" \
                                  "bne	_XADD\n" \
-                                 "movl	%0, r2\n" \
-                                 :"+r0"((volatile u32)(src)), \
-                                 "m"((volatile u32)(dest)) \
-                                 ::"memory", "r1", "r2", "r3"); \
+                                 "mov	%0, r1\n" \
+                                 :"+r"((src)) \
+                                 :"r"(&(dest)) \
+                                 :"memory", "r0", "r1", "r2"); \
         } while(0); \
     }
 
 
-#define ATOMIC_CMPXMOVL(dest, src, cmp, result) { \
+#define hal_cpu_atomic_cmpmovl(dest, src, cmp, result) { \
         do { \
             __asm__ __volatile ( \
                                  "movl		%3, #0\n" \
