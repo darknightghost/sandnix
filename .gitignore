@@ -5,3 +5,6 @@ tags
 *.swp
 .directory
 Makefile
+obj/*
+bin/*
+__pycache__/*
