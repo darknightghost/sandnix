@@ -15,11 +15,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "init.h"
+#pragma once
 
-void kinit(void* p_kparams)
-{
+#if defined X86
+    #define	KERNEL_MEM_BASE		0xC0000000
+    #define	KERNEL_MEM_SIZE		(1024 * 1024 * 1024)
+    #include "./arch/x86/page_table.h"
+#endif
 
-    UNREFERRED_PARAMETER(p_kparams);
-    return;
-}
+
+//Start paging
+void	start_paging();

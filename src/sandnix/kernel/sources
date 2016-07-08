@@ -1,2 +1,5 @@
+#hal
+hal/init/init.c
+
 #pm
 core/pm/lock/spinlock/spnlck.c

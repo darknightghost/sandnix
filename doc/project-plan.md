@@ -380,7 +380,7 @@ physical_memory_info_t
 
 //初始化
 //启动分页
-void start_paging(u32 cpuid);
+void start_paging();
 
 //初始化mmu模块
 void hal_mmu_init();

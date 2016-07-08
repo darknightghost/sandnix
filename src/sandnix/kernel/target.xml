@@ -17,7 +17,7 @@
             <ASFLAGS>-c -DX86 -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -Werror</ASFLAGS>
             <ASRULE>$(AS) $(ASFLAGS) -o $@ $&lt;</ASRULE>
             <LD>ld</LD>
-            <LDFLAGS>-m elf_i386 -Ttext 0xc0100000 -e _start --no-omagic</LDFLAGS>
+            <LDFLAGS>-m elf_i386 -Ttext 0xc0100000 -e _start --no-omagic -Map $(OUTDIR)/kernel.map</LDFLAGS>
             <LDRULE>$(LD) $(LDFLAGS) -o $@ $^</LDRULE>
             <AFTER>cp $(LINKED) $(OUTDIR)/$(OUTPUT)</AFTER>
         </arch>

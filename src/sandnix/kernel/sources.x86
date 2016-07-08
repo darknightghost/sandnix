@@ -1,2 +1,6 @@
+#hal
 #init
 hal/init/arch/x86/init.S
+
+#mmu
+hal/mmu/paging/arch/x86/paging.c

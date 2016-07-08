@@ -15,11 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "init.h"
+#pragma once
 
-void kinit(void* p_kparams)
-{
+#include "../../../../common/common.h"
+#include "./paging/paging.h"
 
-    UNREFERRED_PARAMETER(p_kparams);
-    return;
-}
+#define	SANDNIX_KERNEL_PAGE_SIZE	4096
+#define	KERNEL_MAX_SIZE				(16 * 1024 * 1024)
