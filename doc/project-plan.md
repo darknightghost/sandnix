@@ -471,6 +471,9 @@ src/sandnix/kernel/hal/early_print
 //初始化临时终端
 void hal_early_print_init();
 
+//清屏
+void hal_early_print_cls();
+
 //设置临时终端颜色
 void hal_early_print_color(
 	u32 fg,		//前景色

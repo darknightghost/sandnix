@@ -35,7 +35,7 @@
         } while(0); \
     }
 
-
+/*
 #define hal_cpu_atomic_cmpmovl(dest, src, cmp, result) { \
         do { \
             __asm__ __volatile ( \
@@ -53,3 +53,4 @@
                                  :"r3", "r4"); \
         } while(0); \
     }
+	*/

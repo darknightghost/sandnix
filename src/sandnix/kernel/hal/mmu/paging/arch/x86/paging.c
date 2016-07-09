@@ -153,8 +153,8 @@ void start_paging()
         "andl	$0xFFFFF000,%0\n"
         "orl	$0x008,%0\n"
         "movl	%0, %%cr3\n"
-        :"=eax"(p_init_pde_tbl)
-        ::"memory");
+        ::"eax"(p_init_pde_tbl)
+        :"memory");
 
     //Start paging
     __asm__ __volatile__(

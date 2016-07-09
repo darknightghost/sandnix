@@ -16,9 +16,11 @@
 */
 
 #include "init.h"
+#include "../early_print/early_print.h"
 
 void kinit(void* p_kparams)
 {
+    hal_early_print_init();
 
     UNREFERRED_PARAMETER(p_kparams);
     return;

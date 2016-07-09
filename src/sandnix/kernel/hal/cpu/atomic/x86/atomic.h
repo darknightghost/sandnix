@@ -21,12 +21,11 @@
         do { \
             __asm__ __volatile__( \
                                   "lock		xaddl %0, %1\n" \
-                                  :"+eax"((src)) \
-                                  :"m"((dest)) \
-                                  : "memory");\
+                                  :"+eax"((src)), "+m"((dest)) \
+                                  :: "memory");\
         } while(0); \
     }
-
+/*
 #define hal_cpu_atomic_cmpmovl(dest, src, cmp, result) { \
         do { \
             __asm__ __volatile__ ( \
@@ -42,3 +41,4 @@
                                    :"memory"); \
         } while(0); \
     }
+	*/

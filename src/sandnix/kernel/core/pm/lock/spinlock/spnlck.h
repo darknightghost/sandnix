@@ -22,7 +22,7 @@
 typedef struct _spnlck_t {
     volatile u32		owner;
     volatile u32		ticket;
-    u32					priority;
+    volatile u32		priority;
 } spnlck_t, *pspnlck_t;
 
 //Initialize the lock.
