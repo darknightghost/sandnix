@@ -22,6 +22,8 @@ import os
 import sys
 from elf import elf
 from kernel_header import kernel_header
+import multiboot2
+import math
 
 def main(argv):
     #Analyse args
@@ -84,7 +86,55 @@ def main(argv):
 
     kheader.update()
     print(str(kheader))
+
+    #Make multiboot header
+    img_header = multiboot2.multiboot2(arg_dict["header"]);
+
+    if min(kheader.code_start, kheader.data_start) - arg_dict["kernel_base"] \
+            - 0x100000 < len(img_header.data):
+        print("Not enough space for kernel header!")
+        return -1;
+
+    img_header.header_addr = 0x100000
+    img_header.load_addr = kernel.program_headers[0].vaddr \
+            - arg_dict["kernel_base"]
+    img_header.load_end_addr = kernel.program_headers[0].vaddr \
+            + kernel.program_headers[0].filesz - arg_dict["kernel_base"]
+    img_header.bss_end_addr = kernel.program_headers[0].vaddr \
+            + kernel.program_headers[0].memsz - arg_dict["kernel_base"]
+    img_header.entry_addr = kernel.entry - arg_dict["kernel_base"]
+
+    for ph in kernel.program_headers:
+        new_load_addr = ph.vaddr - arg_dict["kernel_base"]
+        if new_load_addr < img_header.load_addr:
+            img_header.load_addr = new_load_addr
+
+        new_load_end_addr = ph.vaddr + ph.filesz - arg_dict["kernel_base"]
+        if new_load_end_addr > img_header.load_end_addr:
+            img_header.load_end_addr = new_load_end_addr
+
+        new_bss_end_addr = ph.vaddr + ph.memsz - arg_dict["kernel_base"]
+        if new_bss_end_addr > img_header.bss_end_addr:
+            img_header.bss_end_addr = new_bss_end_addr
+
+    img_header_len = math.ceil(len(img_header.data) / 8) * 8
+    img_header.header_addr = min(kheader.code_start, kheader.data_start) \
+            - arg_dict["kernel_base"] - img_header_len
+    img_header.update()
+    print(str(img_header))
+
     #Write kernel image
+    #Write header
+    fout = open(arg_dict["output"], "wb")
+    fout.write(img_header.data)
+
+    #Write elf image
+    for ph in kernel.program_headers:
+        fout.seek(ph.vaddr - arg_dict["kernel_base"] - img_header.header_addr)
+        fout.write(ph.data)
+
+    fout.close()
+
     return 0;
 
 def usage():
