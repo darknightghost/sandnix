@@ -19,13 +19,13 @@
 
 #include "../../../../common/common.h"
 
-#define KERNEL_HEADER_MAGIC		0x444E4153
-
 #if defined X86
     #define	INIT_STACK_SIZE		4096
+    #define KERNEL_HEADER_MAGIC		0x444E4153
     #include "./arch/x86/init.h"
 #elif defined ARM
     #define	INIT_STACK_SIZE		4096
+    #define KERNEL_HEADER_MAGIC		0x444E4153
 #endif
 
 #ifndef _ASM
@@ -34,8 +34,10 @@
 #pragma pack(1)
 typedef struct _krnl_hdr_t {
     address_t	magic;
-    void*		kernel_start;
-    size_t		kernel_size;
+    void*		code_start;
+    size_t		code_size;
+    void*		data_start;
+    size_t		data_size;
     size_t		header_size;
     address_t	checksum;
 } krnl_hdr_t, *pkrnl_hdr_t;

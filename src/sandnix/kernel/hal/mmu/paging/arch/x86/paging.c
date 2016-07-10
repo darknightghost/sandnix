@@ -66,8 +66,17 @@ void start_paging()
      * module
      */
     //Compute how many pages to map
-    total_map_size = (address_t)(p_krnl_header->kernel_start)
-                     + p_krnl_header->kernel_size;
+    total_map_size = (address_t)(p_krnl_header->code_start)
+                     + p_krnl_header->code_size;
+
+    if(total_map_size < (address_t)(p_krnl_header->data_start)
+       + p_krnl_header->data_size) {
+        total_map_size = (address_t)(p_krnl_header->data_start)
+                         + p_krnl_header->data_size;
+    }
+
+    total_map_size -= KERNEL_MEM_BASE;
+
     total_pg_num = total_map_size / 4096;
 
     if(total_map_size % 4096 != 0) {

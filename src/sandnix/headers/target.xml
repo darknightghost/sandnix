@@ -11,7 +11,7 @@
         <dep path="../kernel/target.xml"/>
     </dependencies>
     <sub-targets>
-        <target enable="false" path="./multiboot2/target.xml"/>
+        <target enable="true" path="./multiboot2/target.xml"/>
     </sub-targets>
     <options>
     </options>

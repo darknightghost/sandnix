@@ -28,7 +28,7 @@
 	This file is copied from grub2
 */
 #pragma once
-#include "../../common/common.h"
+#include "../../../common/common.h"
 
 //How many bytes from the start of the file we search for the header.
 #define MULTIBOOT_SEARCH				32768

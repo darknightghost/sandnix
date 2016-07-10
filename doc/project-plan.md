@@ -480,7 +480,7 @@ void hal_early_print_color(
     u32 bg);	//背景色
 
 //打印字符串
-void hal_early_print(
+void hal_early_print_puts(
 	char* str);	//被打印的字符串
 ```
 ######文件列表

@@ -127,7 +127,7 @@ void hal_early_print_color(u32 new_fg, u32 new_bg)
     return;
 }
 
-void hal_early_print(char* str)
+void hal_early_print_puts(char* str)
 {
     char* p;
     u16 ch;

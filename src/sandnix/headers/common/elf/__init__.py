@@ -1,5 +1,8 @@
-/*
-    Copyright 2016,王思远 <darknightghost.cn@gmail.com>
+#! /usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+'''
+    Copyright 2016,暗夜幽灵 <darknightghost.cn@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -13,19 +16,4 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-#include "init.h"
-#include "../early_print/early_print.h"
-
-void kinit(void* p_kparams)
-{
-    hal_early_print_init();
-    hal_early_print_puts(VER_STR);
-    hal_early_print_puts(" loading...\n");
-
-    while(1);
-
-    UNREFERRED_PARAMETER(p_kparams);
-    return;
-}
+'''

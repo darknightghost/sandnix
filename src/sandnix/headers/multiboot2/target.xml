@@ -19,7 +19,7 @@
             <LD>ld</LD>
             <LDFLAGS>--oformat binary -m elf_i386 -N -Ttext 0x0000</LDFLAGS>
             <LDRULE>$(LD) $(LDFLAGS) -o $@ $^</LDRULE>
-            <AFTER>./image-builder.py -h $(LINKED) -i $(OUTDIR)/kernel -o $(OUTDIR)/$(OUTPUT)</AFTER>
+            <AFTER>./image-builder.py -h $(LINKED) -k $(OUTDIR)/kernel -o $(OUTDIR)/$(OUTPUT) -v 0xC0000000</AFTER>
         </arch>
     </archs>
     <dependencies>

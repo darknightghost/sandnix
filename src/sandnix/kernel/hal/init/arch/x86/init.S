@@ -54,14 +54,18 @@ gdt_addr:
 kernel_header:
 	//magic
 	.long	KERNEL_HEADER_MAGIC
-	//kernel_start
+	//code_start
 	.long	0
-	//kernel_size
+	//code_size
+	.long	0
+	//data_start
+	.long	0
+	//data_size
 	.long	0
 	//header_size
 	.long	_kernel_header_end - kernel_header
 	//checksum
-	.long	0x100000000 - KERNEL_HEADER_MAGIC - (_kernel_header_end - kernel_header)
+	.long	0x100000000 - ((KERNEL_HEADER_MAGIC + (_kernel_header_end - kernel_header)) & 0xFFFFFFFF)
 _kernel_header_end:
 	.long	0
 
