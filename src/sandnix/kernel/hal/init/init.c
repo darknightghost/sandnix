@@ -17,12 +17,17 @@
 
 #include "init.h"
 #include "../early_print/early_print.h"
+#include "../mmu/mmu.h"
 
 void kinit(void* p_kparams)
 {
     hal_early_print_init();
     hal_early_print_puts(VER_STR);
     hal_early_print_puts(" loading...\n");
+
+    //Analyse parameters
+    hal_mmu_add_early_paging_addr(p_kparams);
+    hal_early_print_puts("aaaaa\n");
 
     while(1);
 

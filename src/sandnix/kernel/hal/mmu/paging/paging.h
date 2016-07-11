@@ -26,3 +26,6 @@
 
 //Start paging
 void	start_paging();
+
+//Add more pages to initialize page table
+void*	hal_mmu_add_early_paging_addr(void* phy_addr);

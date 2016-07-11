@@ -20,10 +20,18 @@
 #include "../../../../init/init.h"
 
 
-#define	MAX_INIT_PAGE_NUM	(1024 * 1024 + KERNEL_MAX_SIZE)
+#define	REQUIRED_INIT_PAGE_NUM	((1024 * 1024 + KERNEL_MAX_SIZE) / 4096)
+#define	MAX_INIT_PAGE_NUM		(REQUIRED_INIT_PAGE_NUM % 1024 > 0 \
+                                 ? (REQUIRED_INIT_PAGE_NUM / 1024 + 1) * 1024 \
+                                 : REQUIRED_INIT_PAGE_NUM)
+
 
 static pde_t __attribute__((aligned(4096)))	init_pde_tbl[1024];
-static pte_t __attribute__((aligned(4096)))	init_pte_tbl[MAX_INIT_PAGE_NUM / 4096];
+static pte_t __attribute__((aligned(4096)))	init_pte_tbl[MAX_INIT_PAGE_NUM];
+static u32		used_pte_table;
+
+
+static bool		initialized = false;
 
 
 void start_paging()
@@ -38,6 +46,10 @@ void start_paging()
     size_t total_map_size;
     u32 pde_num;
     u32 empty_pte_num;
+
+    if(initialized) {
+        //TODO:panic
+    }
 
     /*
      * When this function is called, the paging has not been started.We need to
@@ -172,5 +184,96 @@ void start_paging()
         "movl	%%eax, %%cr0\n"
         :::"eax", "memory");
 
+    used_pte_table = ((total_pg_num + empty_pte_num) >> 10);	//2^10 == 1024
+
     return;
+}
+
+void* hal_mmu_add_early_paging_addr(void* phy_addr)
+{
+    ppde_t p_pde;
+    ppte_t p_pte;
+    u32 i;
+    u32 index;
+
+    if(initialized) {
+        //TODO: panic
+    }
+
+    //Test if the PDE item presents
+    p_pde = init_pde_tbl + (((address_t)phy_addr + KERNEL_MEM_BASE)
+                            >> 22);	//4096 * 1024 == 2^22
+
+    if(p_pde->present == PG_P) {
+        //The PDE item exists.
+        p_pte = (ppte_t)(((p_pde->page_table_base_addr) << 12) + KERNEL_MEM_BASE);
+        index = ((address_t)phy_addr) % (4096 * 1024) / 4096;
+        p_pte += index;
+
+        if(p_pte->present == PG_P) {
+            return (void*)((address_t)phy_addr + KERNEL_MEM_BASE);
+        }
+
+        p_pte->present = PG_P;
+        p_pte->read_write = PG_RW;
+        p_pte->user_supervisor = PG_SUPERVISOR;
+        p_pte->write_through = PG_WRITE_THROUGH;
+        p_pte->cache_disabled = PG_ENCACHE;
+        p_pte->accessed = 0;
+        p_pte->dirty = 0;
+        p_pte->page_table_attr_index = 0;
+        p_pte->global_page = 0;
+        p_pte->avail = 0;
+        p_pte->page_base_addr = ((address_t)phy_addr) >> 12;
+
+    } else {
+        //The PDE item does not exists.
+        //Get a new PTE table
+        if(used_pte_table >= MAX_INIT_PAGE_NUM) {
+            //TODO:panic
+        }
+
+        used_pte_table++;
+        p_pte = init_pte_tbl + 1024 * used_pte_table;
+
+        //Initialize pde node
+        p_pde->present = PG_P;
+        p_pde->read_write = PG_RW;
+        p_pde->user_supervisor = PG_SUPERVISOR;
+        p_pde->write_through = PG_WRITE_THROUGH;
+        p_pde->cache_disabled = PG_ENCACHE;
+        p_pde->accessed = 0;
+        p_pde->reserved = 0;
+        p_pde->page_size = PG_SIZE_4K;
+        p_pde->global_page = 0;
+        p_pde->avail = 0;
+        p_pde->page_table_base_addr = ((address_t)p_pte) >> 12;
+
+        //Initialize pte table
+        index = ((address_t)phy_addr) % (4096 * 1024) / 4096;
+
+        for(i = 0; i < 1024; i++) {
+            if(i == index) {
+                p_pte->present = PG_P;
+                p_pte->read_write = PG_RW;
+                p_pte->user_supervisor = PG_SUPERVISOR;
+                p_pte->write_through = PG_WRITE_THROUGH;
+                p_pte->cache_disabled = PG_ENCACHE;
+                p_pte->accessed = 0;
+                p_pte->dirty = 0;
+                p_pte->page_table_attr_index = 0;
+                p_pte->global_page = 0;
+                p_pte->avail = 0;
+                p_pte->page_base_addr = ((address_t)phy_addr) >> 12;
+
+            } else {
+                p_pte->present = PG_NP;
+            }
+
+            p_pte++;
+        }
+
+    }
+
+    return (void*)((address_t)phy_addr + KERNEL_MEM_BASE);
 }
