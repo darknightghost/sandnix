@@ -92,3 +92,5 @@ _ADDR_5:
 	//size
 	.long	8
 _end:
+	.long	0
+	.long	0

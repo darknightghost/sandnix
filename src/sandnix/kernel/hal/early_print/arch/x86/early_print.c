@@ -104,10 +104,12 @@ void hal_early_print_cls()
     //Fill screen
     __asm__ __volatile__(
         "cld\n"
+        "movl	%1, %%ecx\n"
+        "movl	%2, %%edi\n"
         "rep	stosw\n"
         ::"ax"(filled_char),
-        "ecx"(DEFAULT_STDOUT_WIDTH * DEFAULT_STDOUT_HEIGHT),
-        "edi"(BASIC_VIDEO_ADDR)
+        "i"(DEFAULT_STDOUT_WIDTH * DEFAULT_STDOUT_HEIGHT),
+        "i"(BASIC_VIDEO_ADDR)
         :"memory");
 
     core_pm_spnlck_raw_unlock(&lock);
@@ -178,6 +180,8 @@ void hal_early_print_puts(char* str)
                         scoll_down();
                     }
 
+                    update_cursor();
+
                     break;
 
                 case	0x0B:
@@ -189,8 +193,9 @@ void hal_early_print_puts(char* str)
                         old_row = current_cursor_row;
                         scoll_down();
                         current_cursor_row = old_row;
-                        update_cursor();
                     }
+
+                    update_cursor();
 
                     break;
 
@@ -243,25 +248,26 @@ void update_cursor()
 {
     u16 pos;
 
+    MEM_BLOCK;
     pos = current_cursor_line * DEFAULT_STDOUT_WIDTH + current_cursor_row;
 
     __asm__ __volatile__(
-        "outb	%%al, %1\n"
+        "outb	%0, %1\n"
         ::"al"((u8)CURSOR_POS_H_REG), "dx"((u16)(CRTC_ADDR_REG))
         :"memory");
 
     __asm__ __volatile__(
-        "outb	%%al, %1\n"
+        "outb	%0, %1\n"
         ::"al"((u8)((pos >> 8) & 0xFF)), "dx"((u16)(CRTC_DATA_REG))
         :"memory");
 
     __asm__ __volatile__(
-        "outb	%%al, %1\n"
+        "outb	%0, %1\n"
         ::"al"((u8)(CURSOR_POS_L_REG)), "dx"((u16)(CRTC_ADDR_REG))
         :"memory");
 
     __asm__ __volatile__(
-        "outb	%%al, %1\n"
+        "outb	%0, %1\n"
         ::"al"((u8)(pos & 0xFF)), "dx"((u16)(CRTC_DATA_REG))
         :"memory");
     return;
@@ -292,13 +298,15 @@ void scoll_down()
         :"memory");
 
     current_cursor_line--;
+    MEM_BLOCK;
     update_cursor();
     return;
 }
 
 void out_ch(u16 ch)
 {
-    *((u16*)BASIC_VIDEO_ADDR + current_cursor_line * current_cursor_row) = ch;
+    *((u16*)BASIC_VIDEO_ADDR + current_cursor_line * DEFAULT_STDOUT_WIDTH
+      + current_cursor_row) = ch;
     current_cursor_row++;
 
     if(current_cursor_row >= DEFAULT_STDOUT_WIDTH) {
@@ -309,6 +317,8 @@ void out_ch(u16 ch)
     if(current_cursor_line >= DEFAULT_STDOUT_HEIGHT) {
         scoll_down();
     }
+
+    update_cursor();
 
     return;
 }

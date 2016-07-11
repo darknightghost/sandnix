@@ -113,15 +113,12 @@ _ADDR_1:
 	movw	%ax, %es
 	movw	%ax, %fs
 	movw	%ax, %gs
-	ljmpl	$SELECTOR_K_CODE, $_START_PAGING
 
 	//Start paging
-_START_PAGING:
 	call	start_paging
 
 	//Jump to kernel mem
-	movl	$_KERNEL_MEM, %eax
-	jmp		*%eax
+	ljmpl	$SELECTOR_K_CODE, $_KERNEL_MEM
 
 _KERNEL_MEM:
 	//Reload stack
