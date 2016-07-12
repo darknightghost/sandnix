@@ -93,7 +93,7 @@ void hal_early_print_cls()
 {
     u16 filled_char;
 
-    core_pm_spnlck_raw_lock(&lock);
+    core_pm_spnlck_lock(&lock);
 
     current_cursor_line = 0;
     current_cursor_row = 0;
@@ -112,7 +112,7 @@ void hal_early_print_cls()
         "i"(BASIC_VIDEO_ADDR)
         :"memory");
 
-    core_pm_spnlck_raw_unlock(&lock);
+    core_pm_spnlck_unlock(&lock);
 
     return;
 }

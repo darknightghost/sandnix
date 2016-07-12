@@ -35,6 +35,7 @@ static	heap_t	default_heap;
         do { \
             ((pheap_pg_blck_t)(p_block))->p_prev = NULL; \
             ((pheap_pg_blck_t)(p_block))->p_next = NULL; \
+            ((pheap_pg_blck_t)(p_block))->index = 0; \
             ((pheap_pg_blck_t)(p_block))->attr = (blk_attr); \
             ((pheap_pg_blck_t)(p_block))->size = (blk_size); \
             ((pheap_pg_blck_t)(p_block))->ref = 0; \
@@ -55,7 +56,8 @@ static	heap_t	default_heap;
         } while(0); \
     }
 
-static	void	init_default_heap();
+static	void				init_default_heap();
+static	pheap_mem_blck_t	get_free_mem_block(pheap_t p_heap, size_t size);
 
 pheap_t core_mm_heap_create(
     u32 attribute,
@@ -70,6 +72,7 @@ pheap_t core_mm_heap_create_on_buf(
 void* core_mm_heap_alloc(size_t size, pheap_t heap)
 {
     pheap_t p_heap;
+    pheap_mem_blck_t p_mem_block;
 
     //Get heap
     if(heap == NULL) {
@@ -83,10 +86,30 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
         p_heap = heap;
     }
 
-    UNREFERRED_PARAMETER(size);
-    UNREFERRED_PARAMETER(p_heap);
+    if(p_heap->type & HEAP_MULITHREAD) {
+        core_pm_spnlck_lock(p_heap->lock);
+    }
 
-    return NULL;
+    //Get mem block
+    p_mem_block = get_free_mem_block(p_heap, size);
+
+    if(p_mem_block == NULL) {
+        //TODO:Allocate more pages
+    }
+
+    if(p_mem_block->size > size + sizeof(heap_mem_blck_t) * 2) {
+        //Split the block
+    }
+
+    if(p_heap->type & HEAP_PREALLOC) {
+        //Pre-allocate page
+    }
+
+    if(p_heap->type & HEAP_MULITHREAD) {
+        core_pm_spnlck_unlock(p_heap->lock);
+    }
+
+    return (address_t)p_mem_block + sizeof(heap_mem_blck_t);
 }
 
 void core_mm_heap_free(

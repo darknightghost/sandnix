@@ -40,6 +40,7 @@ struct	_heap_t;
 typedef	struct _heap_pg_blck_t {
     struct _heap_pg_blck_t* p_prev;
     struct _heap_pg_blck_t* p_next;
+    u32						index;
     u32						attr;
     size_t					size;
     u64						ref;
