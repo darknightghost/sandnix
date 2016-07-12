@@ -1,5 +1,13 @@
 #hal
+##init
 hal/init/init.c
 
+#debug
+hal/debug/debug.c
+
+#core
 #pm
 core/pm/lock/spinlock/spnlck.c
+
+##mm
+core/mm/heap/heap.c

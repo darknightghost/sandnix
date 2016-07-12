@@ -26,6 +26,7 @@
 * sys\_gate
 * power
 * exception
+* debug
 
 ##### core层
 该层是内核的核心部分,大部分模块都位于此处.主要以面向对象的方式编写.模块列表如下:
@@ -715,11 +716,14 @@ void hal_exception_undef_op_fault_hndlr_set(
 //接口头文件
 src/sandnix/kernel/hal/exception/exception.h
 
+//errno
+src/sandnix/kernel/hal/exception/errno.h
+
 //错误处理
 src/sandnix/kernel/hal/exception/%(arch)/exception.c
 
 //Panic
-src/sandnix/kernel/hal/exception/%(arch)/panic.c
+src/sandnix/kernel/hal/exception/panic.c
 ```
 #####power
 负责处理基本的电源操作,比如断电,复位,睡眠等.
@@ -797,6 +801,32 @@ src/sandnix/kernel/hal/sys_gate/sys_gate.h
 
 //实现文件
 src/sandnix/kernel/hal/sys_gate/$(arch)/sys_gate.c
+```
+#####debug
+调试
+######模块路径
+```
+src/sandnix/kernel/hal/debug/
+```
+######接口数据结构
+```c
+
+```
+######接口函数及宏
+```c
+//初始化模块
+void hal_debug_init();
+
+//是否开启调试
+bool hal_is_on_debug();
+```
+######文件列表
+```c
+//接口头文件
+src/sandnix/kernel/hal/debug/debug.h
+
+//实现文件
+src/sandnix/kernel/hal/debug/debug.c
 ```
 ####Core层
 #####main
@@ -905,9 +935,8 @@ page_obj_t
 #define	PAGE_KERNEL				0x80000000
 
 //堆属性
-#define HEAP_DEFAULT			0x00000001
-#define HEAP_MULITHREAD			0x00000002
-#define HEAP_PREALLOC			0x00000004
+#define HEAP_MULITHREAD			0x00000001
+#define HEAP_PREALLOC			0x00000002
 
 //初始化
 void core_mm_init();
@@ -945,6 +974,12 @@ kstatus_t page_obj.unmap(void* addr);
 pheap_t core_mm_heap_create(
 	u32 attribute,
     size_t scale);
+    
+pheap_t core_mm_heap_create_on_buf(
+	u32 attribute,
+    size_t scale,
+    void* init_buf,
+    size_t init_buf_size);
 
 //从堆里分配内存
 void* core_mm_heap_alloc(
