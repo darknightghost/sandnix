@@ -988,7 +988,7 @@ void* core_mm_heap_alloc(
 
 //释放内存
 void core_mm_heap_free(
-	size_t size,
+	void* p_mem,
     pheap_t heap);
 
 //销毁堆

@@ -47,23 +47,37 @@ typedef	struct _heap_pg_blck_t {
     struct _heap_t*			p_heap;
 } heap_pg_blck_t, *pheap_pg_blck_t;
 
+#define	HEAP_PG_BLCK_SZ		(sizeof(heap_pg_blck_t) % 8 \
+                             ? (sizeof(heap_pg_blck_t) / 8 + 1) * 8 \
+                             : sizeof(heap_pg_blck_t))
+
 typedef struct _heap_mem_blck_t {
     u32							magic;
-    pheap_pg_blck_t				p_pg_block;
+    bool						allocated;
+    struct	_heap_mem_blck_t	p_prev;
+    struct	_heap_mem_blck_t	p_next;
     struct	_heap_mem_blck_t*	p_parent;
     struct	_heap_mem_blck_t*	p_lchild;
     struct	_heap_mem_blck_t*	p_rchild;
+    pheap_pg_blck_t				p_pg_block;
     u32							color;
     u32							size;
     struct _heap_t*				p_heap;
-} heap_mem_blck_t, *pheap_mem_blck_t;
+} heap_mem_blck_t, *pheap_mem_blck_t, *hp_mem_blck_tree, **php_mem_blck_tree;
+
+#define	HEAP_MEM_BLCK_SZ	(sizeof(heap_mem_blck_t) % 8 \
+                             ? (sizeof(heap_mem_blck_t) / 8 + 1) * 8 \
+                             : sizeof(heap_mem_blck_t))
+
 
 typedef struct _heap_t {
     u32					type;
     pheap_pg_blck_t		p_pg_block_list;
-    pheap_mem_blck_t	p_used_block_tree;
-    pheap_mem_blck_t	p_empty_block_tree;
+    hp_mem_blck_tree	p_used_block_tree;
+    hp_mem_blck_tree	p_empty_block_tree;
+    size_t				scale;
     spnlck_t			lock;
+    spnlck_t			prealloc_lock;
 } heap_t, *pheap_t;
 
 //heap
@@ -86,7 +100,7 @@ void* core_mm_heap_alloc(
 
 //Release memory from heap
 void core_mm_heap_free(
-    size_t size,
+    void* p_mem,
     pheap_t heap);
 
 //Destroy the heap

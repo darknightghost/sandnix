@@ -17,17 +17,21 @@
 
 #include "heap.h"
 
-static	bool	is_default_heap_ready = false;
-static	u8		default_heap_pg_block[4096 * 2];
-static	heap_t	default_heap;
+static	bool							is_default_heap_ready = false;
+static __attribute__((aligned(8)))	u8	default_heap_pg_block[4096 * 2];
+static	heap_t							default_heap;
 
-#define INIT_HEAPA(p_heap, heap_type) { \
+#define	DEFAULT_HEAP_SCALE		(sizeof(default_heap_pg_block) / 4096 * 4096)
+
+#define INIT_HEAP(p_heap, hp_scale, heap_type) { \
         do { \
             (p_heap)->type = (heap_type); \
+            (p_heap)->scale = (hp_scale); \
             (p_heap)->p_pg_block_list = NULL; \
             (p_heap)->p_used_block_tree = NULL; \
             (p_heap)->p_empty_block_tree = NULL; \
             core_pm_spnlck_init(&((p_heap)->lock)); \
+            core_pm_spnlck_init(&((p_heap)->prealloc_lock)); \
         }while(0); \
     }
 
@@ -46,6 +50,9 @@ static	heap_t	default_heap;
 #define	INIT_MEM_BLOCK(p_block, blk_size, p_pg_block1, p_heap1) { \
         do { \
             ((pheap_mem_blck_t)(p_block))->magic = HEAP_MEMBLOCK_MAGIC; \
+            ((pheap_mem_blck_t)(p_block))->allocated = false; \
+            ((pheap_mem_blck_t)(p_block))->p_prev = NULL; \
+            ((pheap_mem_blck_t)(p_block))->p_next = NULL; \
             ((pheap_mem_blck_t)(p_block))->p_pg_block = (p_pg_block1); \
             ((pheap_mem_blck_t)(p_block))->p_parent = NULL; \
             ((pheap_mem_blck_t)(p_block))->p_lchild = NULL; \
@@ -58,6 +65,14 @@ static	heap_t	default_heap;
 
 static	void				init_default_heap();
 static	pheap_mem_blck_t	get_free_mem_block(pheap_t p_heap, size_t size);
+static	void				insert_node(php_mem_blck_tree p_tree,
+                                        pheap_mem_blck_t p_node);
+static	void				remove_node(php_mem_blck_tree p_tree,
+                                        pheap_mem_blck_t p_node);
+static	pheap_mem_blck_t	l_rotate(php_mem_blck_tree p_tree,
+                                     pheap_mem_blck_t p_node);
+static	pheap_mem_blck_t	r_rotate(php_mem_blck_tree p_tree,
+                                     pheap_mem_blck_t p_node);
 
 pheap_t core_mm_heap_create(
     u32 attribute,
@@ -73,6 +88,7 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
 {
     pheap_t p_heap;
     pheap_mem_blck_t p_mem_block;
+    pheap_mem_blck_t p_new_mem_block;
 
     //Get heap
     if(heap == NULL) {
@@ -90,6 +106,8 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
         core_pm_spnlck_lock(p_heap->lock);
     }
 
+    size = (size % 8 ? (size / 8 + 1) * 8 : size);
+
     //Get mem block
     p_mem_block = get_free_mem_block(p_heap, size);
 
@@ -97,24 +115,119 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
         //TODO:Allocate more pages
     }
 
-    if(p_mem_block->size > size + sizeof(heap_mem_blck_t) * 2) {
+    remove_node(&(p_heap->p_empty_block_tree),
+                p_mem_block);
+
+    if(p_mem_block->size > size + HEAP_MEM_BLCK_SZ * 2 + 8) {
         //Split the block
+        p_new_mem_block = (pheap_mem_blck_t)((address_t)p_mem_block + size
+                                             + HEAP_MEM_BLCK_SZ);
+        INIT_MEM_BLOCK(p_new_mem_block,
+                       p_mem_block->size - size - HEAP_MEM_BLCK_SZ,
+                       p_mem_block->p_pg_block,
+                       p_mem_block->p_heap);
+        p_mem_block->size = size + HEAP_MEM_BLCK_SZ;
+        insert_node(&(p_heap->p_empty_block_tree),
+                    p_new_mem_block);
+        p_new_mem_block->p_next = p_mem_block->p_next;
+        p_new_mem_block->p_prev = p_mem_block;
+        p_mem_block->p_next = p_new_mem_block;
+
+        if(p_new_mem_block->p_next != NULL) {
+            p_new_mem_block->p_next->p_prev = p_new_mem_block;
+        }
+
     }
 
-    if(p_heap->type & HEAP_PREALLOC) {
-        //Pre-allocate page
-    }
+    insert_node(&(p_heap->p_used_block_tree),
+                p_mem_block);
+    p_mem_block->allocated = true;
+    (p_mem_block->p_pg_block->ref)++;
 
     if(p_heap->type & HEAP_MULITHREAD) {
         core_pm_spnlck_unlock(p_heap->lock);
     }
 
-    return (address_t)p_mem_block + sizeof(heap_mem_blck_t);
+    if(p_heap->type & HEAP_PREALLOC) {
+        //TODO:Pre-allocate page
+    }
+
+    return (void*)((address_t)p_mem_block + HEAP_MEM_BLCK_SZ);
 }
 
 void core_mm_heap_free(
-    size_t size,
-    pheap_t heap);
+    void* p_mem,
+    pheap_t heap)
+{
+    pheap_t p_heap;
+    pheap_mem_blck_t p_mem_block;
+    pheap_mem_blck_t p_prev_mem_block;
+    pheap_mem_blck_t p_next_mem_block;
+
+    //Get heap
+    if(heap == NULL) {
+        p_heap = default_heap;
+
+    } else {
+        p_heap = heap;
+    }
+
+    if(p_heap->type & HEAP_MULITHREAD) {
+        core_pm_spnlck_lock(p_heap->lock);
+    }
+
+    //Release memory block
+    p_mem_block = (pheap_mem_blck_t)((address_t)p_mem - HEAP_MEM_BLCK_SZ);
+    remove_node(&(p_heap->p_used_block_tree),
+                p_mem_block);
+    p_mem_block->allocated = false;
+    (p_mem_block->p_pg_block->ref)--;
+
+    //Release page
+    if(p_mem_block->p_pg_block->ref == 0
+       && (p_mem_block->p_pg_block->attr & HEAP_PAGE_BLOCK_FIX)) {
+        //TODO:Release page
+    }
+
+    //Join memory blocks
+    //Prev block
+    p_prev_mem_block = p_mem_block->p_prev;
+
+    if(p_prev_mem_block != NULL
+       && !p_prev_mem_block->allocated) {
+        remove_node(&(p_heap->p_empty_block_tree), p_prev_mem_block);
+        p_prev_mem_block->size += p_mem_block->size;
+        p_prev_mem_block->p_next = p_mem_block->p_next;
+
+        if(p_mem_block->p_next != NULL) {
+            p_mem_block->p_next->p_prev = p_prev_mem_block;
+        }
+
+        p_mem_block = p_prev_mem_block;
+    }
+
+    //Next block
+    p_next_mem_block = p_mem_block->p_next;
+
+    if(p_next_mem_block != NULL
+       && !p_next_mem_block->allocated) {
+        remove_node(&(p_heap->p_empty_block_tree), p_next_mem_block);
+        p_mem_block->size += p_next_mem_block->size;
+        p_mem_block->p_next = p_next_mem_block->p_next;
+
+        if(p_mem_block->p_next != NULL) {
+            p_mem_block->p_next->p_prev = p_mem_block;
+        }
+    }
+
+    insert_node(&(p_heap->p_empty_block_tree), p_mem_block);
+
+    if(p_heap->type & HEAP_MULITHREAD) {
+        core_pm_spnlck_unlock(p_heap->lock);
+    }
+
+    return;
+}
 
 void core_mm_heap_destroy(
     size_t size,
@@ -128,26 +241,74 @@ void init_default_heap()
     pheap_mem_blck_t p_mem_block;
 
     //Initialize heap
-    INIT_HEAPA(&default_heap, HEAP_MULITHREAD);
+    INIT_HEAP(&default_heap, DEFAULT_HEAP_SCALE, HEAP_MULITHREAD);
 
     //Initialize page block
     INIT_PG_BLOCK(default_heap_pg_block, HEAP_PAGE_BLOCK_FIX,
-                  sizeof(default_heap_pg_block), &default_heap);
+                  DEFAULT_HEAP_SCALE, &default_heap);
     default_heap.p_pg_block_list = (pheap_pg_blck_t)default_heap_pg_block;
 
     //Initialize first mem block
     p_mem_block = (pheap_mem_blck_t)((address_t)default_heap_pg_block
-                                     + sizeof(heap_mem_blck_t));
+                                     + HEAP_PG_BLCK_SZ);
 
-    if(((address_t)p_mem_block) % 8 > 0) {
-        p_mem_block = (pheap_mem_blck_t)(8 - (address_t)p_mem_block % 8
-                                         + (address_t)p_mem_block);
-    }
-
-    INIT_MEM_BLOCK(p_mem_block, sizeof(default_heap_pg_block)
-                   - ((address_t)p_mem_block - (address_t)default_heap_pg_block),
+    INIT_MEM_BLOCK(p_mem_block, DEFAULT_HEAP_SCALE
+                   - HEAP_PG_BLCK_SZ,
                    (pheap_pg_blck_t)default_heap_pg_block , &default_heap);
 
     default_heap.p_empty_block_tree = p_mem_block;
     return;
 }
+
+pheap_mem_blck_t get_free_mem_block(pheap_t p_heap, size_t size)
+{
+    pheap_mem_blck_t p_block;
+
+    //No free block remains
+    if(p_heap->p_empty_block_tree == NULL) {
+        return NULL;
+    }
+
+    //Search for node
+    size += HEAP_MEM_BLCK_SZ;
+    p_block = p_heap->p_empty_block_tree;
+
+    while(true) {
+        if(p_block->size == size) {
+            return p_block;
+        }
+
+        if(p_block->size > size) {
+            if(p_block->p_lchild == NULL) {
+                while(p_block->size < size
+                      && p_block != NULL) {
+                    p_block = p_block->p_parent;
+                }
+
+                return p_block;
+
+            } else {
+                p_block = p_block->p_lchild;
+            }
+
+        } else {
+            if(p_block->p_rchild == NULL) {
+                while(p_block->size < size
+                      && p_block != NULL) {
+                    p_block = p_block->p_parent;
+                }
+
+                return p_block;
+
+            } else {
+                p_block = p_block->p_rchild;
+            }
+        }
+    }
+}
+
+pheap_mem_blck_t	l_rotate(php_mem_blck_tree p_tree,
+                             pheap_mem_blck_t p_node);
+pheap_mem_blck_t	r_rotate(php_mem_blck_tree p_tree,
+                             pheap_mem_blck_t p_node);
+
