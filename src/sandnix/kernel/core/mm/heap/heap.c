@@ -47,7 +47,7 @@ static	heap_t							default_heap;
         }while(0); \
     }
 
-#define	INIT_MEM_BLOCK(p_block, blk_size, p_pg_block1, p_heap1) { \
+#define	INIT_MEMBLOCK(p_block, blk_size, p_pg_block1, p_heap1) { \
         do { \
             ((pheap_mem_blck_t)(p_block))->magic = HEAP_MEMBLOCK_MAGIC; \
             ((pheap_mem_blck_t)(p_block))->allocated = false; \
@@ -57,11 +57,16 @@ static	heap_t							default_heap;
             ((pheap_mem_blck_t)(p_block))->p_parent = NULL; \
             ((pheap_mem_blck_t)(p_block))->p_lchild = NULL; \
             ((pheap_mem_blck_t)(p_block))->p_rchild = NULL; \
-            ((pheap_mem_blck_t)(p_block))->color = HEAP_MEM_BLOCK_BLACK; \
+            ((pheap_mem_blck_t)(p_block))->color = HEAP_MEMBLOCK_BLACK; \
             ((pheap_mem_blck_t)(p_block))->size = (blk_size); \
             ((pheap_mem_blck_t)(p_block))->p_heap = (p_heap1); \
         } while(0); \
     }
+
+#define	IS_BLACK(p_node)	((p_node) == NULL \
+                             || (p_node)->color == HEAP_MEMBLOCK_BLACK)
+#define	IS_RED				((p_node) != NULL \
+                             && (p_node)->color == HEAP_MEMBLOCK_RED)
 
 static	void				init_default_heap();
 static	pheap_mem_blck_t	get_free_mem_block(pheap_t p_heap, size_t size);
@@ -73,6 +78,9 @@ static	pheap_mem_blck_t	l_rotate(php_mem_blck_tree p_tree,
                                      pheap_mem_blck_t p_node);
 static	pheap_mem_blck_t	r_rotate(php_mem_blck_tree p_tree,
                                      pheap_mem_blck_t p_node);
+static	void				check_tree(php_mem_blck_tree p_tree);
+static	void				check_node(pheap_mem_blck_t p_node, long* p_num,
+                                       long count);
 
 pheap_t core_mm_heap_create(
     u32 attribute,
@@ -122,10 +130,10 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
         //Split the block
         p_new_mem_block = (pheap_mem_blck_t)((address_t)p_mem_block + size
                                              + HEAP_MEM_BLCK_SZ);
-        INIT_MEM_BLOCK(p_new_mem_block,
-                       p_mem_block->size - size - HEAP_MEM_BLCK_SZ,
-                       p_mem_block->p_pg_block,
-                       p_mem_block->p_heap);
+        INIT_MEMBLOCK(p_new_mem_block,
+                      p_mem_block->size - size - HEAP_MEM_BLCK_SZ,
+                      p_mem_block->p_pg_block,
+                      p_mem_block->p_heap);
         p_mem_block->size = size + HEAP_MEM_BLCK_SZ;
         insert_node(&(p_heap->p_empty_block_tree),
                     p_new_mem_block);
@@ -166,7 +174,7 @@ void core_mm_heap_free(
 
     //Get heap
     if(heap == NULL) {
-        p_heap = default_heap;
+        p_heap = &default_heap;
 
     } else {
         p_heap = heap;
@@ -185,7 +193,7 @@ void core_mm_heap_free(
 
     //Release page
     if(p_mem_block->p_pg_block->ref == 0
-       && (p_mem_block->p_pg_block->attr & HEAP_PAGE_BLOCK_FIX)) {
+       && (p_mem_block->p_pg_block->attr & HEAP_PAGEBLOCK_FIX)) {
         //TODO:Release page
     }
 
@@ -233,7 +241,50 @@ void core_mm_heap_destroy(
     size_t size,
     pheap_t heap);
 
-void core_mm_heap_chk(pheap_t heap);
+void core_mm_heap_chk(pheap_t heap)
+{
+    pheap_t p_heap;
+    pheap_pg_blck_t p_pg_blk;
+    pheap_mem_blck_t p_mem_blk;
+
+    if(heap == NULL) {
+        p_heap = &default_heap;
+
+    } else {
+        p_heap = heap;
+    }
+
+    if(p_heap->type & HEAP_MULITHREAD) {
+        core_pm_spnlck_unlock(p_heap->lock);
+    }
+
+    //Check memory blocks
+    for(p_pg_blk = p_heap->p_pg_block_list;
+        p_pg_blk != NULL;
+        p_pg_blk = p_pg_blk->p_next) {
+        for(p_mem_blk = (pheap_mem_blck_t)((address_t)p_pg_blk
+                                           + HEAP_PG_BLCK_SZ);
+            p_mem_blk != NULL;
+            p_mem_blk = p_mem_blk->p_next) {
+            if(p_mem_blk->magic != HEAP_MEMBLOCK_MAGIC) {
+                //TODO:Panic
+            }
+        }
+    }
+
+    //Check trees
+    num = -1;
+    check_tree(&(p_heap->p_empty_block_tree));
+
+    num = -1;
+    check_tree(&(p_heap->p_used_block_tree));
+
+    if(p_heap->type & HEAP_MULITHREAD) {
+        core_pm_spnlck_unlock(p_heap->lock);
+    }
+
+    return;
+}
 
 
 void init_default_heap()
@@ -244,17 +295,17 @@ void init_default_heap()
     INIT_HEAP(&default_heap, DEFAULT_HEAP_SCALE, HEAP_MULITHREAD);
 
     //Initialize page block
-    INIT_PG_BLOCK(default_heap_pg_block, HEAP_PAGE_BLOCK_FIX,
+    INIT_PG_BLOCK(default_heap_pg_block, HEAP_PAGEBLOCK_FIX,
                   DEFAULT_HEAP_SCALE, &default_heap);
     default_heap.p_pg_block_list = (pheap_pg_blck_t)default_heap_pg_block;
 
-    //Initialize first mem block
+    //Initialize first memory block
     p_mem_block = (pheap_mem_blck_t)((address_t)default_heap_pg_block
                                      + HEAP_PG_BLCK_SZ);
 
-    INIT_MEM_BLOCK(p_mem_block, DEFAULT_HEAP_SCALE
-                   - HEAP_PG_BLCK_SZ,
-                   (pheap_pg_blck_t)default_heap_pg_block , &default_heap);
+    INIT_MEMBLOCK(p_mem_block, DEFAULT_HEAP_SCALE
+                  - HEAP_PG_BLCK_SZ,
+                  (pheap_pg_blck_t)default_heap_pg_block , &default_heap);
 
     default_heap.p_empty_block_tree = p_mem_block;
     return;
@@ -307,8 +358,87 @@ pheap_mem_blck_t get_free_mem_block(pheap_t p_heap, size_t size)
     }
 }
 
+void				insert_node(php_mem_blck_tree p_tree,
+                                pheap_mem_blck_t p_node);
+void				remove_node(php_mem_blck_tree p_tree,
+                                pheap_mem_blck_t p_node);
 pheap_mem_blck_t	l_rotate(php_mem_blck_tree p_tree,
                              pheap_mem_blck_t p_node);
 pheap_mem_blck_t	r_rotate(php_mem_blck_tree p_tree,
                              pheap_mem_blck_t p_node);
 
+void check_tree(php_mem_blck_tree p_tree)
+{
+    long num;
+
+    if(*p_tree == NULL) {
+        return;
+
+    } else if((*p_tree)->color == HEAP_MEMBLOCK_RED) {
+        //TODO: Panic
+    }
+
+    num = -1;
+    check_tree(*p_tree, &num, 0);
+
+    return;
+}
+
+void check_node(pheap_mem_blck_t p_node, long* p_num, long count)
+{
+#define	CHECK_COUNT(p_num, count) { \
+        do { \
+            if(*(p_num) == -1) { \
+                *(p_num) = (count); \
+            } else if(*(p_num) != (count)) { \
+                \
+            } \
+        } while(0); \
+    }
+
+    if(p_node->magic != HEAP_MEMBLOCK_MAGIC) {
+        //TODO:Panic
+    }
+
+    if(p_node->color == HEAP_MEMBLOCK_RED) {
+        if(IS_RED(p_node->p_parent)
+           || IS_RED(p_node->p_lchild)
+           || IS_RED(p_node->p_rchild)) {
+            //TODO:Panic
+        }
+
+        if(p_node->p_lchild == NULL) {
+            CHECK_COUNT(p_num, count);
+
+        } else {
+            check_node(p_node->p_lchild, *p_num, count);
+        }
+
+        if(p_node->p_rchild == NULL) {
+            CHECK_COUNT(p_num, count);
+
+        } else {
+            check_node(p_node->p_rchild, *p_num, count);
+        }
+
+    } else if(p_node->color == HEAP_MEMBLOCK_BLACK) {
+        if(p_node->p_lchild == NULL) {
+            CHECK_COUNT(p_num, count + 1);
+
+        } else {
+            check_node(p_node->p_lchild, *p_num, count + 1);
+        }
+
+        if(p_node->p_rchild == NULL) {
+            CHECK_COUNT(p_num, count + 1);
+
+        } else {
+            check_node(p_node->p_rchild, *p_num, count + 1);
+        }
+
+    } else {
+        //TODO:Panic
+    }
+
+    return;
+}

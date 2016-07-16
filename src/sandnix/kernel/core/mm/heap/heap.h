@@ -30,10 +30,10 @@
 
 
 //Heap page block attribute
-#define	HEAP_PAGE_BLOCK_FIX		0x00000001
+#define	HEAP_PAGEBLOCK_FIX		0x00000001
 
-#define	HEAP_MEM_BLOCK_BLACK	0x00000000
-#define	HEAP_MEM_BLOCK_RED		0x00000001
+#define	HEAP_MEMBLOCK_BLACK		0x00000000
+#define	HEAP_MEMBLOCK_RED		0x00000001
 
 struct	_heap_t;
 
