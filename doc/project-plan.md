@@ -27,6 +27,7 @@
 * power
 * exception
 * debug
+* rtl
 
 ##### core层
 该层是内核的核心部分,大部分模块都位于此处.主要以面向对象的方式编写.模块列表如下:
@@ -625,6 +626,9 @@ void hal_cpu_init();
 #define hal_cpu_context_load(p_context)
 
 //多核心管理
+//唤醒核心
+void hal_cpu_core_awake(u32 cpuid);
+
 //释放当前核心
 void hal_cpu_core_release();
 
@@ -637,10 +641,6 @@ u32 hal_cpu_get_frequency();
 
 //设置cpu频率
 u32 hal_cpu_set_frequency();
-
-//Atomic
-#define hal_cpu_atomic_xaddl(dest, src)
-#define hal_cpu_atomic_cmpmovl(dest, src, cmp)
 ```
 ######文件列表
 ```c
@@ -652,9 +652,6 @@ src/sandnix/kernel/hal/cpu/context/$(arch)
 
 //cpu信息
 src/sandnix/kernel/hal/cpu/cpu-info/$(arch)
-
-//Atomic
-src/sandnix/kernel/hal/cpu/atomic/$(arch)
 ```
 #####exception
 负责处理kernel panic以及调用错误处理程序.
@@ -827,6 +824,41 @@ src/sandnix/kernel/hal/debug/debug.h
 
 //实现文件
 src/sandnix/kernel/hal/debug/debug.c
+```
+#####rtl
+运行时库中架构相关的部分
+######模块路径
+```
+src/sandnix/kernel/hal/rtl/
+```
+######接口数据结构
+```c
+
+```
+######接口函数及宏
+```c
+//Atomic
+#define hal_rtl_atomic_xaddl(dest, src)
+#define hal_rtl_atomic_cmpmovl(dest, src, cmp)
+
+//String
+#define hal_rtl_string_movsb(dest, src, count)
+#define hal_rtl_string_movsw(dest, src, count)
+#define hal_rtl_string_movsl(dest, src, count)
+#define hal_rtl_string_movsq(dest, src, count)
+
+#define hal_rtl_string_movsb_back(dest, src, count)
+#define hal_rtl_string_movsw_back(dest, src, count)
+#define hal_rtl_string_movsl_back(dest, src, count)
+#define hal_rtl_string_movsq_back(dest, src, count)
+```
+######文件列表
+```c
+//接口头文件
+src/sandnix/kernel/hal/rtl/rtl.h
+
+//Atomic
+src/sandnix/kernel/hal/rtl/atomic/$(arch)
 ```
 ####Core层
 #####main
@@ -2189,8 +2221,11 @@ s32 kstring_obj.search(pkstring_obj_t p_this);
 src/sandnix/kernel/core/rtl/rtl.h
 src/sandnix/kernel/core/rtl/rtl.c
 
+src/sandnix/kernel/core/rtl/varg.h
+
 src/sandnix/kernel/core/rtl/string/string.h
 src/sandnix/kernel/core/rtl/string/string.c
+src/sandnix/kernel/core/rtl/string/printf.c
 
 src/sandnix/kernel/core/rtl/math/math.h
 src/sandnix/kernel/core/rtl/math/math.c

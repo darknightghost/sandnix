@@ -65,7 +65,7 @@ static	heap_t							default_heap;
 
 #define	IS_BLACK(p_node)	((p_node) == NULL \
                              || (p_node)->color == HEAP_MEMBLOCK_BLACK)
-#define	IS_RED				((p_node) != NULL \
+#define	IS_RED(p_node)		((p_node) != NULL \
                              && (p_node)->color == HEAP_MEMBLOCK_RED)
 
 static	void				init_default_heap();
@@ -111,7 +111,7 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
     }
 
     if(p_heap->type & HEAP_MULITHREAD) {
-        core_pm_spnlck_lock(p_heap->lock);
+        core_pm_spnlck_lock(&(p_heap->lock));
     }
 
     size = (size % 8 ? (size / 8 + 1) * 8 : size);
@@ -153,12 +153,14 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
     (p_mem_block->p_pg_block->ref)++;
 
     if(p_heap->type & HEAP_MULITHREAD) {
-        core_pm_spnlck_unlock(p_heap->lock);
+        core_pm_spnlck_unlock(&(p_heap->lock));
     }
 
     if(p_heap->type & HEAP_PREALLOC) {
         //TODO:Pre-allocate page
     }
+
+    HEAP_CHECK(p_heap);
 
     return (void*)((address_t)p_mem_block + HEAP_MEM_BLCK_SZ);
 }
@@ -181,7 +183,7 @@ void core_mm_heap_free(
     }
 
     if(p_heap->type & HEAP_MULITHREAD) {
-        core_pm_spnlck_lock(p_heap->lock);
+        core_pm_spnlck_lock(&(p_heap->lock));
     }
 
     //Release memory block
@@ -231,8 +233,10 @@ void core_mm_heap_free(
     insert_node(&(p_heap->p_empty_block_tree), p_mem_block);
 
     if(p_heap->type & HEAP_MULITHREAD) {
-        core_pm_spnlck_unlock(p_heap->lock);
+        core_pm_spnlck_unlock(&(p_heap->lock));
     }
+
+    HEAP_CHECK(p_heap);
 
     return;
 }
@@ -255,7 +259,7 @@ void core_mm_heap_chk(pheap_t heap)
     }
 
     if(p_heap->type & HEAP_MULITHREAD) {
-        core_pm_spnlck_unlock(p_heap->lock);
+        core_pm_spnlck_unlock(&(p_heap->lock));
     }
 
     //Check memory blocks
@@ -273,14 +277,12 @@ void core_mm_heap_chk(pheap_t heap)
     }
 
     //Check trees
-    num = -1;
     check_tree(&(p_heap->p_empty_block_tree));
 
-    num = -1;
     check_tree(&(p_heap->p_used_block_tree));
 
     if(p_heap->type & HEAP_MULITHREAD) {
-        core_pm_spnlck_unlock(p_heap->lock);
+        core_pm_spnlck_unlock(&(p_heap->lock));
     }
 
     return;
@@ -358,14 +360,109 @@ pheap_mem_blck_t get_free_mem_block(pheap_t p_heap, size_t size)
     }
 }
 
-void				insert_node(php_mem_blck_tree p_tree,
-                                pheap_mem_blck_t p_node);
-void				remove_node(php_mem_blck_tree p_tree,
-                                pheap_mem_blck_t p_node);
-pheap_mem_blck_t	l_rotate(php_mem_blck_tree p_tree,
-                             pheap_mem_blck_t p_node);
-pheap_mem_blck_t	r_rotate(php_mem_blck_tree p_tree,
-                             pheap_mem_blck_t p_node);
+void insert_node(php_mem_blck_tree p_tree,
+                 pheap_mem_blck_t p_node)
+{
+    //TODO:
+    UNREFERRED_PARAMETER(p_tree);
+    UNREFERRED_PARAMETER(p_node);
+    UNREFERRED_PARAMETER(r_rotate);
+    UNREFERRED_PARAMETER(l_rotate);
+    return;
+}
+
+void remove_node(php_mem_blck_tree p_tree,
+                 pheap_mem_blck_t p_node)
+{
+    //TODO:
+    UNREFERRED_PARAMETER(p_tree);
+    UNREFERRED_PARAMETER(p_node);
+    return;
+}
+
+pheap_mem_blck_t l_rotate(php_mem_blck_tree p_tree,
+                          pheap_mem_blck_t p_node)
+{
+    pheap_mem_blck_t p_parent;
+    pheap_mem_blck_t p_x;
+    pheap_mem_blck_t p_y;
+
+    p_x = p_node;
+    p_parent = p_x->p_parent;
+
+    if(p_node->p_rchild == NULL) {
+        //TODO:Panic
+    }
+
+    p_y = p_node->p_rchild;
+    p_x->p_rchild = p_y->p_lchild;
+
+    if(p_x->p_rchild != NULL) {
+        p_x->p_rchild->p_parent = p_x;
+    }
+
+    p_y->p_lchild = p_x;
+    p_x->p_parent = p_y;
+
+    if(p_parent == NULL) {
+        *p_tree = p_y;
+        p_y->p_parent = NULL;
+
+    } else {
+        if(p_parent->p_lchild == p_x) {
+            p_parent->p_lchild = p_y;
+
+        } else {
+            p_parent->p_rchild = p_y;
+        }
+
+        p_y->p_parent = p_parent;
+    }
+
+    return p_y;
+}
+
+pheap_mem_blck_t r_rotate(php_mem_blck_tree p_tree,
+                          pheap_mem_blck_t p_node)
+{
+    pheap_mem_blck_t p_parent;
+    pheap_mem_blck_t p_x;
+    pheap_mem_blck_t p_y;
+
+    p_x = p_node;
+    p_parent = p_x->p_parent;
+
+    if(p_node->p_lchild == NULL) {
+        //TODO:Panic
+    }
+
+    p_y = p_node->p_lchild;
+    p_x->p_lchild = p_y->p_rchild;
+
+    if(p_x->p_lchild != NULL) {
+        p_x->p_lchild->p_parent = p_x;
+    }
+
+    p_y->p_rchild = p_x;
+    p_x->p_parent = p_y;
+
+    if(p_parent == NULL) {
+        *p_tree = p_y;
+        p_y->p_parent = NULL;
+
+    } else {
+        if(p_parent->p_lchild == p_x) {
+            p_parent->p_lchild = p_y;
+
+        } else {
+            p_parent->p_rchild = p_y;
+        }
+
+        p_y->p_parent = p_parent;
+    }
+
+    return p_y;
+}
 
 void check_tree(php_mem_blck_tree p_tree)
 {
@@ -379,7 +476,7 @@ void check_tree(php_mem_blck_tree p_tree)
     }
 
     num = -1;
-    check_tree(*p_tree, &num, 0);
+    check_node(*p_tree, &num, 0);
 
     return;
 }
@@ -411,14 +508,14 @@ void check_node(pheap_mem_blck_t p_node, long* p_num, long count)
             CHECK_COUNT(p_num, count);
 
         } else {
-            check_node(p_node->p_lchild, *p_num, count);
+            check_node(p_node->p_lchild, p_num, count);
         }
 
         if(p_node->p_rchild == NULL) {
             CHECK_COUNT(p_num, count);
 
         } else {
-            check_node(p_node->p_rchild, *p_num, count);
+            check_node(p_node->p_rchild, p_num, count);
         }
 
     } else if(p_node->color == HEAP_MEMBLOCK_BLACK) {
@@ -426,14 +523,14 @@ void check_node(pheap_mem_blck_t p_node, long* p_num, long count)
             CHECK_COUNT(p_num, count + 1);
 
         } else {
-            check_node(p_node->p_lchild, *p_num, count + 1);
+            check_node(p_node->p_lchild, p_num, count + 1);
         }
 
         if(p_node->p_rchild == NULL) {
             CHECK_COUNT(p_num, count + 1);
 
         } else {
-            check_node(p_node->p_rchild, *p_num, count + 1);
+            check_node(p_node->p_rchild, p_num, count + 1);
         }
 
     } else {

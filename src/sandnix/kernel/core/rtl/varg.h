@@ -15,39 +15,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "spnlck.h"
-#include "../../../../hal/rtl/rtl.h"
+#pragma once
 
-void core_pm_spnlck_init(pspnlck_t p_lock)
-{
-    p_lock->owner = 0;
-    p_lock->ticket = 0;
-    p_lock->priority = 0;
-    return;
-}
+#include "../../../../common/common.h"
 
-void core_pm_spnlck_lock(pspnlck_t p_lock);
+typedef	__builtin_va_list	va_list;
 
-void core_pm_spnlck_raw_lock(pspnlck_t p_lock)
-{
-    u32 ticket;
+#define	va_start(v, l)		__builtin_va_start(v, l)
+#define	va_end(v)			__builtin_va_end(v)
+#define	va_arg(v, l)		__builtin_va_arg(v, l)
 
-    //Get ticket
-    ticket = 1;
-    hal_cpu_atomic_xaddl(p_lock->ticket, ticket);
-
-    //Get lock
-    while(p_lock->owner != ticket);
-
-
-    return;
-}
-
-kstatus_t core_pm_spnlck_trylock(pspnlck_t p_lock);
-kstatus_t core_pm_spnlck_raw_trylock(pspnlck_t p_lock);
-void core_pm_spnlck_unlock(pspnlck_t p_lock);
-void core_pm_spnlck_raw_unlock(pspnlck_t p_lock)
-{
-    (p_lock->owner)++;
-    return;
-}

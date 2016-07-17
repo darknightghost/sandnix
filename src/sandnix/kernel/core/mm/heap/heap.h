@@ -54,8 +54,8 @@ typedef	struct _heap_pg_blck_t {
 typedef struct _heap_mem_blck_t {
     u32							magic;
     bool						allocated;
-    struct	_heap_mem_blck_t	p_prev;
-    struct	_heap_mem_blck_t	p_next;
+    struct	_heap_mem_blck_t*	p_prev;
+    struct	_heap_mem_blck_t*	p_next;
     struct	_heap_mem_blck_t*	p_parent;
     struct	_heap_mem_blck_t*	p_lchild;
     struct	_heap_mem_blck_t*	p_rchild;
@@ -118,4 +118,5 @@ void core_mm_heap_chk(pheap_t heap);
             } \
         } while(0); \
     }
+
 

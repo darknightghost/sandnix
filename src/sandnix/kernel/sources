@@ -9,5 +9,11 @@ hal/debug/debug.c
 #pm
 core/pm/lock/spinlock/spnlck.c
 
-##mm
+#mm
 core/mm/heap/heap.c
+
+#rtl
+core/rtl/rtl.c
+core/rtl/string/string.c
+core/rtl/string/printf.c
+core/rtl/math/math.c
