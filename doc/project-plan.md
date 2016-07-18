@@ -851,6 +851,11 @@ src/sandnix/kernel/hal/rtl/
 #define hal_rtl_string_movsw_back(dest, src, count)
 #define hal_rtl_string_movsl_back(dest, src, count)
 #define hal_rtl_string_movsq_back(dest, src, count)
+
+#define hal_rtl_string_setsb(dest, val, count)
+#define hal_rtl_string_setsw(dest, val, count)
+#define hal_rtl_string_setsl(dest, val, count)
+#define hal_rtl_string_setsq(dest, val, count)
 ```
 ######文件列表
 ```c

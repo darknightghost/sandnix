@@ -252,10 +252,10 @@ void* core_rtl_memcpy(void* dest, const void* src, size_t size)
     p_src = (u8*)src;
     p_dest = (u8*)dest;
 
-    if(((address_t)dest & 0x07) == ((address_t)src & 0x07)
+    if(((address_t)p_dest & 0x07) == ((address_t)p_src & 0x07)
        && size > 8) {
         //Align the address
-        len_to_cp = (address_t)dest & 0x07;
+        len_to_cp = 8 - ((address_t)p_dest & 0x07);
 
         if(len_to_cp > 0) {
             size -= len_to_cp;
@@ -276,10 +276,10 @@ void* core_rtl_memcpy(void* dest, const void* src, size_t size)
 
     }
 
-    if(((address_t)dest & 0x03) == ((address_t)src & 0x03)
+    if(((address_t)p_dest & 0x03) == ((address_t)p_src & 0x03)
        && size > 4) {
         //Align the address
-        len_to_cp = (address_t)dest & 0x03;
+        len_to_cp = 4 - ((address_t)p_dest & 0x03);
 
         if(len_to_cp > 0) {
             size -= len_to_cp;
@@ -299,10 +299,10 @@ void* core_rtl_memcpy(void* dest, const void* src, size_t size)
         }
     }
 
-    if(((address_t)dest & 0x01) == ((address_t)src & 0x01)
+    if(((address_t)p_dest & 0x01) == ((address_t)p_src & 0x01)
        && size > 2) {
         //Align the address
-        len_to_cp = (address_t)dest & 0x01;
+        len_to_cp = 2 - ((address_t)p_dest & 0x01);
 
         if(len_to_cp > 0) {
             size -= len_to_cp;
@@ -322,20 +322,172 @@ void* core_rtl_memcpy(void* dest, const void* src, size_t size)
         }
     }
 
-    hal_rtl_string_movsb(p_dest, p_src, size);
-    return dest;
-}
-
-void* core_rtl_memmove(void* dest, const void* src, size_t size)
-{
-    if((address_t)dest >= (address_t)src) {
-        core_rtl_memcpy(dest, src, size);
+    if(size >= 1) {
+        hal_rtl_string_movsb(p_dest, p_src, size);
     }
 
     return dest;
 }
 
-void* core_rtl_memset(void* dest, u8 value, size_t size);
+void* core_rtl_memmove(void* dest, const void* src, size_t size)
+{
+    u8* p_src;
+    u8* p_dest;
+    size_t len_to_cp;
+    size_t count;
+
+    if((address_t)dest >= (address_t)src) {
+        core_rtl_memcpy(dest, src, size);
+
+    } else {
+        p_src = (u8*)src + size;
+        p_dest = (u8*)dest + size;
+
+        if(((address_t)p_dest & 0x07) == ((address_t)p_src & 0x07)
+           && size > 8) {
+            //Align the address
+            len_to_cp = (address_t)p_dest & 0x07;
+
+            if(len_to_cp > 0) {
+                size -= len_to_cp;
+                p_dest -= len_to_cp;
+                p_src -= len_to_cp;
+                hal_rtl_string_movsb_back(p_dest, p_src, len_to_cp);
+            }
+
+            //Copy 8 bytes each time
+            if(size >= 8) {
+                len_to_cp = (~((size_t)0x07)) & size;
+                count = len_to_cp >> 3;
+                p_dest -= len_to_cp;
+                p_src -= len_to_cp;
+                hal_rtl_string_movsq_back(p_dest, p_src, count);
+                size -= len_to_cp;
+            }
+
+        }
+
+        if(((address_t)p_dest & 0x03) == ((address_t)p_src & 0x03)
+           && size > 4) {
+            //Align the address
+            len_to_cp = (address_t)p_dest & 0x03;
+
+            if(len_to_cp > 0) {
+                size -= len_to_cp;
+                p_dest -= len_to_cp;
+                p_src -= len_to_cp;
+                hal_rtl_string_movsb_back(p_dest, p_src, len_to_cp);
+            }
+
+            //Copy 8 bytes each time
+            if(size >= 4) {
+                len_to_cp = (~((size_t)0x03)) & size;
+                count = len_to_cp >> 2;
+                p_dest -= len_to_cp;
+                p_src -= len_to_cp;
+                hal_rtl_string_movsl_back(p_dest, p_src, count);
+                size -= len_to_cp;
+            }
+        }
+
+        if(((address_t)p_dest & 0x01) == ((address_t)p_src & 0x01)
+           && size > 2) {
+            //Align the address
+            len_to_cp = (address_t)p_dest & 0x01;
+
+            if(len_to_cp > 0) {
+                size -= len_to_cp;
+                p_dest -= len_to_cp;
+                p_src -= len_to_cp;
+                hal_rtl_string_movsb(p_dest, p_src, len_to_cp);
+            }
+
+            //Copy 8 bytes each time
+            if(size >= 2) {
+                len_to_cp = (~((size_t)0x01)) & size;
+                count = len_to_cp >> 1;
+                p_dest -= len_to_cp;
+                p_src -= len_to_cp;
+                hal_rtl_string_movsw(p_dest, p_src, count);
+                size -= len_to_cp;
+            }
+        }
+
+        p_dest -= size;
+        p_src -= size;
+
+        if(size >= 1) {
+            hal_rtl_string_movsb_back(p_dest, p_src, size);
+        }
+    }
+
+    return dest;
+}
+
+void* core_rtl_memset(void* dest, u8 value, size_t size)
+{
+    u8* p_dest;
+    size_t len_to_set;
+    size_t count;
+
+    p_dest = (u8*)dest;
+
+    //Set 8 bytes each time
+    if(((address_t)p_dest & 0x07) != 0) {
+        len_to_set = 8 - ((address_t)dest & 0x07);
+        hal_rtl_string_setsb(p_dest, value, len_to_set);
+        p_dest += len_to_set;
+        size -= len_to_set;
+    }
+
+    if(size >= 8) {
+        len_to_set = (~((size_t)0x07)) & size;
+        count = len_to_set >> 3;
+        size -= len_to_set;
+        hal_rtl_string_setsq(p_dest, value, count);
+        p_dest += len_to_set;
+    }
+
+    //Set 4 bytes each time
+    if(((address_t)p_dest & 0x03) != 0) {
+        len_to_set = 4 - ((address_t)dest & 0x03);
+        hal_rtl_string_setsb(p_dest, value, len_to_set);
+        p_dest += len_to_set;
+        size -= len_to_set;
+    }
+
+    if(size >= 4) {
+        len_to_set = (~((size_t)0x03)) & size;
+        count = len_to_set >> 2;
+        size -= len_to_set;
+        hal_rtl_string_setsl(p_dest, value, count);
+        p_dest += len_to_set;
+    }
+
+    //Set 2 bytes each time
+    if(((address_t)p_dest & 0x01) != 0) {
+        len_to_set = 2 - ((address_t)dest & 0x01);
+        hal_rtl_string_setsb(p_dest, value, len_to_set);
+        p_dest += len_to_set;
+        size -= len_to_set;
+    }
+
+    if(size >= 2) {
+        len_to_set = (~((size_t)0x01)) & size;
+        count = len_to_set >> 1;
+        size -= len_to_set;
+        hal_rtl_string_setsw(p_dest, value, count);
+        p_dest += len_to_set;
+    }
+
+    //Set 1 bytes each time
+    if(size >= 1) {
+        hal_rtl_string_setsb(p_dest, value, size);
+    }
+
+    return dest;
+}
+
 char* core_rtl_strchr(const char* str, char c);
 size_t core_rtl_strcspn(const char* str, const char* reject);
 size_t core_rtl_strlen(const char* str);

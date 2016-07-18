@@ -97,13 +97,14 @@
                                   "movl	%1, %%esi\n" \
                                   "movl	%2, %%eax\n" \
                                   "decl	%%eax\n" \
-                                  "mull	$2\n" \
+                                  "movl	$2, %%ebx\n" \
+                                  "mull	%%ebx\n" \
                                   "addl	%%eax, %%edi\n" \
                                   "addl	%%eax, %%esi\n" \
                                   "rep	movsw\n" \
                                   ::"m"((u32)(dest)), "m"((u32)(src)), \
                                   "ecx"((u32)(count)) \
-                                  :"eax", "edx", "esi", "edi", "memory"); \
+                                  :"eax", "ebx", "edx", "esi", "edi", "memory"); \
         } while(0); \
     }
 
@@ -116,13 +117,14 @@
                                   "movl	%1, %%esi\n" \
                                   "movl	%2, %%eax\n" \
                                   "decl	%%eax\n" \
-                                  "mull	$4\n" \
+                                  "movl	$4, %%ebx\n" \
+                                  "mull	%%ebx\n" \
                                   "addl	%%eax, %%edi\n" \
                                   "addl	%%eax, %%esi\n" \
                                   "rep	movsl\n" \
                                   ::"m"((u32)(dest)), "m"((u32)(src)), \
                                   "ecx"((u32)(count)) \
-                                  :"eax", "edx", "esi", "edi", "memory"); \
+                                  :"eax", "ebx", "edx", "esi", "edi", "memory"); \
         } while(0); \
     }
 
@@ -134,12 +136,72 @@
                                   "movl	%1, %%esi\n" \
                                   "movl	%2, %%eax\n" \
                                   "decl	%%eax\n" \
-                                  "mull	$4\n" \
+                                  "movl	$4, %%ebx\n" \
+                                  "mull	%%ebx\n" \
                                   "addl	%%eax, %%esi\n" \
                                   "addl	%%eax, %%edi\n" \
                                   "rep	movsl\n" \
                                   ::"m"((u32)(dest)), "m"((u32)(src)), \
                                   "ecx"((u32)(count * 2)) \
-                                  :"eax", "edx", "esi", "edi", "memory"); \
+                                  :"eax", "ebx",  "edx", "esi", "edi", "memory"); \
+        } while(0); \
+    }
+
+#define	hal_rtl_string_setsb(dest, val, count)	{ \
+        do { \
+            __asm__ __volatile__( \
+                                  "cld\n" \
+                                  "rep	stosb\n" \
+                                  ::"edi"((dest)), "al"((u8)(val)), \
+                                  "ecx"((u32)(count)) \
+                                  :"memory"); \
+        } while(0); \
+    }
+
+#define	hal_rtl_string_setsw(dest, val, count)	{ \
+        do { \
+            __asm__ __volatile__( \
+                                  "cld\n" \
+                                  "movb	%%al, %%ah\n" \
+                                  "rep	stosw\n" \
+                                  ::"edi"((dest)), "al"((u8)(val)), \
+                                  "ecx"((u32)(count)) \
+                                  :"memory"); \
+        } while(0); \
+    }
+
+#define	hal_rtl_string_setsl(dest, val, count)	{ \
+        do { \
+            __asm__ __volatile__( \
+                                  "cld\n" \
+                                  "xorl		%%edx, %%edx\n" \
+                                  "movb		%%al, %%ah\n" \
+                                  "pushl	%%edx\n" \
+                                  "movw		%%ax, %%dx\n" \
+                                  "shll		$16, %%eax\n" \
+                                  "addl		%%edx, %%eax\n" \
+                                  "popl		%%edx\n" \
+                                  "rep		stosl\n" \
+                                  ::"edi"((dest)), "al"((u8)(val)), \
+                                  "ecx"((u32)(count)) \
+                                  :"memory"); \
+        } while(0); \
+    }
+
+#define	hal_rtl_string_setsq(dest, val, count)	{ \
+        do { \
+            __asm__ __volatile__( \
+                                  "cld\n" \
+                                  "xorl		%%edx, %%edx\n" \
+                                  "movb		%%al, %%ah\n" \
+                                  "pushl	%%edx\n" \
+                                  "movw		%%ax, %%dx\n" \
+                                  "shll		$16, %%eax\n" \
+                                  "addl		%%edx, %%eax\n" \
+                                  "popl		%%edx\n" \
+                                  "rep		stosl\n" \
+                                  ::"edi"((dest)), "al"((u8)(val)), \
+                                  "ecx"((u32)(count) * 2) \
+                                  :"memory"); \
         } while(0); \
     }
