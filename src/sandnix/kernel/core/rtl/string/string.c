@@ -19,6 +19,7 @@
  */
 
 #include "string.h"
+#include "../../../hal/rtl/rtl.h"
 typedef unsigned long	longword;
 
 void* core_rtl_memccpy(void* dest, const void* src, u8 ch, size_t size)
@@ -241,8 +242,99 @@ int core_rtl_memcmp(const void* buf1, const void* buf2, size_t size)
     return 0;
 }
 
-void* core_rtl_memcpy(void* dest, const void* src, size_t size);
-void* core_rtl_memmove(void* dest, const void* src, size_t size);
+void* core_rtl_memcpy(void* dest, const void* src, size_t size)
+{
+    u8* p_src;
+    u8* p_dest;
+    size_t len_to_cp;
+    size_t count;
+
+    p_src = (u8*)src;
+    p_dest = (u8*)dest;
+
+    if(((address_t)dest & 0x07) == ((address_t)src & 0x07)
+       && size > 8) {
+        //Align the address
+        len_to_cp = (address_t)dest & 0x07;
+
+        if(len_to_cp > 0) {
+            size -= len_to_cp;
+            hal_rtl_string_movsb(p_dest, p_src, len_to_cp);
+            p_dest += len_to_cp;
+            p_src += len_to_cp;
+        }
+
+        //Copy 8 bytes each time
+        if(size >= 8) {
+            len_to_cp = (~((size_t)0x07)) & size;
+            count = len_to_cp >> 3;
+            hal_rtl_string_movsq(p_dest, p_src, count);
+            size -= len_to_cp;
+            p_dest += len_to_cp;
+            p_src += len_to_cp;
+        }
+
+    }
+
+    if(((address_t)dest & 0x03) == ((address_t)src & 0x03)
+       && size > 4) {
+        //Align the address
+        len_to_cp = (address_t)dest & 0x03;
+
+        if(len_to_cp > 0) {
+            size -= len_to_cp;
+            hal_rtl_string_movsb(p_dest, p_src, len_to_cp);
+            p_dest += len_to_cp;
+            p_src += len_to_cp;
+        }
+
+        //Copy 8 bytes each time
+        if(size >= 4) {
+            len_to_cp = (~((size_t)0x03)) & size;
+            count = len_to_cp >> 2;
+            hal_rtl_string_movsl(p_dest, p_src, count);
+            size -= len_to_cp;
+            p_dest += len_to_cp;
+            p_src += len_to_cp;
+        }
+    }
+
+    if(((address_t)dest & 0x01) == ((address_t)src & 0x01)
+       && size > 2) {
+        //Align the address
+        len_to_cp = (address_t)dest & 0x01;
+
+        if(len_to_cp > 0) {
+            size -= len_to_cp;
+            hal_rtl_string_movsb(p_dest, p_src, len_to_cp);
+            p_dest += len_to_cp;
+            p_src += len_to_cp;
+        }
+
+        //Copy 8 bytes each time
+        if(size >= 2) {
+            len_to_cp = (~((size_t)0x01)) & size;
+            count = len_to_cp >> 1;
+            hal_rtl_string_movsw(p_dest, p_src, count);
+            size -= len_to_cp;
+            p_dest += len_to_cp;
+            p_src += len_to_cp;
+        }
+    }
+
+    hal_rtl_string_movsb(p_dest, p_src, size);
+    return dest;
+}
+
+void* core_rtl_memmove(void* dest, const void* src, size_t size)
+{
+    if((address_t)dest >= (address_t)src) {
+        core_rtl_memcpy(dest, src, size);
+    }
+
+    return dest;
+}
+
 void* core_rtl_memset(void* dest, u8 value, size_t size);
 char* core_rtl_strchr(const char* str, char c);
 size_t core_rtl_strcspn(const char* str, const char* reject);

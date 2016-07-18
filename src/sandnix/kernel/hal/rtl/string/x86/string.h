@@ -23,9 +23,12 @@
         do {\
             __asm__ __volatile__( \
                                   "cld\n" \
+                                  "movl	%0, %%edi\n" \
+                                  "movl	%1, %%esi\n" \
                                   "rep	movsb\n" \
-                                  ::"edi"((dest)), "esi"((src)), "ecx"((count)) \
-                                  :"memory"); \
+                                  ::"m"((u32)(dest)), "m"((u32)(src)), \
+                                  "ecx"((u32)(count)) \
+                                  :"memory", "esi", "edi"); \
         } while(0); \
     }
 
@@ -33,9 +36,12 @@
         do {\
             __asm__ __volatile__( \
                                   "cld\n" \
+                                  "movl	%0, %%edi\n" \
+                                  "movl	%1, %%esi\n" \
                                   "rep	movsw\n" \
-                                  ::"edi"((dest)), "esi"((src)), "ecx"((count)) \
-                                  :"memory"); \
+                                  ::"m"((u32)(dest)), "m"((u32)(src)), \
+                                  "ecx"((u32)(count)) \
+                                  :"memory", "esi", "edi"); \
         } while(0); \
     }
 
@@ -44,9 +50,12 @@
         do {\
             __asm__ __volatile__( \
                                   "cld\n" \
+                                  "movl	%0, %%edi\n" \
+                                  "movl	%1, %%esi\n" \
                                   "rep	movsl\n" \
-                                  ::"edi"((dest)), "esi"((src)), "ecx"((count)) \
-                                  :"memory"); \
+                                  ::"m"((u32)(dest)), "m"((u32)(src)), \
+                                  "ecx"((u32)(count)) \
+                                  :"memory", "esi", "edi"); \
         } while(0); \
     }
 
@@ -54,9 +63,12 @@
         do {\
             __asm__ __volatile__( \
                                   "cld\n" \
+                                  "movl	%0, %%edi\n" \
+                                  "movl	%1, %%esi\n" \
                                   "rep	movsl\n" \
-                                  ::"edi"((dest)), "esi"((src)), "ecx"((count * 2)) \
-                                  :"memory"); \
+                                  ::"m"((u32)(dest)), "m"((u32)(src)), \
+                                  "ecx"((u32)(count * 2)) \
+                                  :"memory", "esi", "edi"); \
         } while(0); \
     }
 
@@ -64,13 +76,16 @@
         do {\
             __asm__ __volatile__( \
                                   "std\n" \
+                                  "movl	%0, %%edi\n" \
+                                  "movl	%1, %%esi\n" \
                                   "movl	%2, %%eax\n" \
                                   "decl	%%eax\n" \
-                                  "addl	%%eax, %0\n" \
-                                  "addl	%%eax, %1\n" \
+                                  "addl	%%eax, %%edi\n" \
+                                  "addl	%%eax, %%esi\n" \
                                   "rep	movsb\n" \
-                                  ::"edi"((dest)), "esi"((src)), "ecx"((count)) \
-                                  :"eax", "edx", "memory"); \
+                                  ::"m"((u32)(dest)), "m"((u32)(src)), \
+                                  "ecx"((u32)(count)) \
+                                  :"eax", "edx", "esi", "edi", "memory"); \
         } while(0); \
     }
 
@@ -78,14 +93,17 @@
         do {\
             __asm__ __volatile__( \
                                   "std\n" \
+                                  "movl	%0, %%edi\n" \
+                                  "movl	%1, %%esi\n" \
                                   "movl	%2, %%eax\n" \
                                   "decl	%%eax\n" \
                                   "mull	$2\n" \
-                                  "addl	%%eax, %0\n" \
-                                  "addl	%%eax, %1\n" \
+                                  "addl	%%eax, %%edi\n" \
+                                  "addl	%%eax, %%esi\n" \
                                   "rep	movsw\n" \
-                                  ::"edi"((dest)), "esi"((src)), "ecx"((count)) \
-                                  :"eax", "edx", "memory"); \
+                                  ::"m"((u32)(dest)), "m"((u32)(src)), \
+                                  "ecx"((u32)(count)) \
+                                  :"eax", "edx", "esi", "edi", "memory"); \
         } while(0); \
     }
 
@@ -94,14 +112,17 @@
         do {\
             __asm__ __volatile__( \
                                   "std\n" \
+                                  "movl	%0, %%edi\n" \
+                                  "movl	%1, %%esi\n" \
                                   "movl	%2, %%eax\n" \
                                   "decl	%%eax\n" \
                                   "mull	$4\n" \
-                                  "addl	%%eax, %0\n" \
-                                  "addl	%%eax, %1\n" \
+                                  "addl	%%eax, %%edi\n" \
+                                  "addl	%%eax, %%esi\n" \
                                   "rep	movsl\n" \
-                                  ::"edi"((dest)), "esi"((src)), "ecx"((count)) \
-                                  :"eax", "edx", "memory"); \
+                                  ::"m"((u32)(dest)), "m"((u32)(src)), \
+                                  "ecx"((u32)(count)) \
+                                  :"eax", "edx", "esi", "edi", "memory"); \
         } while(0); \
     }
 
@@ -109,13 +130,16 @@
         do {\
             __asm__ __volatile__( \
                                   "std\n" \
+                                  "movl	%0, %%edi\n" \
+                                  "movl	%1, %%esi\n" \
                                   "movl	%2, %%eax\n" \
                                   "decl	%%eax\n" \
                                   "mull	$4\n" \
-                                  "addl	%%eax, %0\n" \
-                                  "addl	%%eax, %1\n" \
+                                  "addl	%%eax, %%esi\n" \
+                                  "addl	%%eax, %%edi\n" \
                                   "rep	movsl\n" \
-                                  ::"edi"((dest)), "esi"((src)), "ecx"((count * 2)) \
-                                  :"eax", "edx", "memory"); \
+                                  ::"m"((u32)(dest)), "m"((u32)(src)), \
+                                  "ecx"((u32)(count * 2)) \
+                                  :"eax", "edx", "esi", "edi", "memory"); \
         } while(0); \
     }

@@ -26,7 +26,11 @@ void core_pm_spnlck_init(pspnlck_t p_lock)
     return;
 }
 
-void core_pm_spnlck_lock(pspnlck_t p_lock);
+void core_pm_spnlck_lock(pspnlck_t p_lock)
+{
+    core_pm_spnlck_raw_lock(p_lock);
+    return;
+}
 
 void core_pm_spnlck_raw_lock(pspnlck_t p_lock)
 {
@@ -45,7 +49,11 @@ void core_pm_spnlck_raw_lock(pspnlck_t p_lock)
 
 kstatus_t core_pm_spnlck_trylock(pspnlck_t p_lock);
 kstatus_t core_pm_spnlck_raw_trylock(pspnlck_t p_lock);
-void core_pm_spnlck_unlock(pspnlck_t p_lock);
+void core_pm_spnlck_unlock(pspnlck_t p_lock)
+{
+    core_pm_spnlck_raw_unlock(p_lock);
+}
+
 void core_pm_spnlck_raw_unlock(pspnlck_t p_lock)
 {
     (p_lock->owner)++;
