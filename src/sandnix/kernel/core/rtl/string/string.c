@@ -873,7 +873,7 @@ char* core_rtl_strncpy(char* dest, const char* src, size_t len)
     size_t count;
 
     for(count = 0, p_src = (char*)src, p_dest = dest;
-        count < len - 1;
+        count < len;
         p_src++, p_dest++, count++) {
         *p_dest = *p_src;
 
@@ -945,5 +945,58 @@ size_t core_rtl_strspn(const char* str, const char* accept)
     return ret;
 }
 
-char* core_rtl_strstr(const char* str1, const char* str2);
-char* core_rtl_strsplit(const char *str, const char *delim, char* buf, size_t size);
+char* core_rtl_strstr(const char* str1, const char* str2)
+{
+    char* p1;
+    char* p2;
+    char* p_tmp;
+
+    for(p1 = (char*)str1;
+        *p1 != '\0';
+        p1++) {
+        p2 = (char*)str2;
+
+        if(*p1 == *p2) {
+            p_tmp = p1;
+
+            while(true) {
+                if(*p2 == '\0') {
+                    return p1;
+
+                } else {
+                    if(*p_tmp != *p2) {
+                        break;
+                    }
+                }
+
+                p_tmp++;
+                p2++;
+            }
+        }
+    }
+
+    return NULL;
+}
+
+char* core_rtl_strsplit(const char *str, const char *delim, char* buf, size_t size)
+{
+    char* p;
+    size_t len_to_cp;
+
+    p = core_rtl_strstr(str, delim);
+
+    if(p == NULL) {
+        core_rtl_strncpy(buf, str, size - 1);
+        return NULL;
+    }
+
+    len_to_cp = p - str;
+
+    if(len_to_cp > size - 1) {
+        len_to_cp = size - 1;
+    }
+
+    core_rtl_strncpy(buf, str, len_to_cp);
+
+    return p + core_rtl_strlen(delim);
+}
