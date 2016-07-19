@@ -826,11 +826,124 @@ size_t core_rtl_strlen(const char* str)
     }
 }
 
-char* core_rtl_strncat(char *dest, const char *src, size_t len);
-int core_rtl_strncmp(const char* dest, const char* src, size_t len);
-char* core_rtl_strncpy(char* dest, const char* src, size_t len);
-char* core_rtl_strpbrk(const char* str1, const char* str2);
-char* core_rtl_strrchr(const char* str, char ch);
-size_t core_rtl_strspn(const char* str, const char* accept);
+char* core_rtl_strncat(char *dest, const char *src, size_t len)
+{
+    char* p;
+    size_t len_to_cp;
+
+    p = dest + core_rtl_strlen(dest);
+
+    //How many charachers to copy
+    len_to_cp = core_rtl_strlen(src);
+
+    if(len_to_cp > len) {
+        len_to_cp = len;
+    }
+
+    //Copy
+    p[len_to_cp] = '\0';
+    core_rtl_memcpy(p, src, len_to_cp);
+
+    return dest;
+}
+
+int core_rtl_strncmp(const char* s1, const char* s2, size_t len)
+{
+    unsigned char* p1;
+    unsigned char* p2;
+    int ret;
+
+    for(p1 = (unsigned char*)s1, p2 = (unsigned char*)s2;
+        len > 0;
+        p1++, p2++, len--) {
+        ret = *p1 = *p2;
+
+        if(ret != 0 || *p1 == '\0') {
+            return ret;
+        }
+    }
+
+    return 0;
+}
+
+char* core_rtl_strncpy(char* dest, const char* src, size_t len)
+{
+    char* p_src;
+    char* p_dest;
+    size_t count;
+
+    for(count = 0, p_src = (char*)src, p_dest = dest;
+        count < len - 1;
+        p_src++, p_dest++, count++) {
+        *p_dest = *p_src;
+
+        if(p_src == '\0') {
+            return dest;
+        }
+    }
+
+    p_dest = '\0';
+    return dest;
+}
+
+char* core_rtl_strpbrk(const char* str1, const char* accept)
+{
+    char* p_s;
+    char* p_a;
+
+    for(p_s = (char*)str1;
+        *p_s != '\0';
+        p_s++) {
+        for(p_a = (char*)accept;
+            *p_a != '\0';
+            p_a++) {
+            if(*p_s == *p_a) {
+                return p_s;
+            }
+        }
+    }
+
+    return NULL;
+}
+
+char* core_rtl_strrchr(const char* str, char ch)
+{
+    char* p;
+    char* found;
+
+    if(ch == '\0') {
+        return core_rtl_strchr(str, ch);
+    }
+
+    found = NULL;
+
+    for(p = (char*)str;
+        *p != '\0';
+        p++) {
+        if(*p == ch) {
+            found = p;
+        }
+    }
+
+    return found;
+}
+
+size_t core_rtl_strspn(const char* str, const char* accept)
+{
+    size_t ret;
+    char* p_s;
+    char* p_a;
+
+    for(ret = 0, p_s = (char*)str, p_a = (char*)accept;
+        *p_s != '\0';
+        p_s++, p_a++, ret++) {
+        if(*p_s != *p_a) {
+            break;
+        }
+    }
+
+    return ret;
+}
+
 char* core_rtl_strstr(const char* str1, const char* str2);
 char* core_rtl_strsplit(const char *str, const char *delim, char* buf, size_t size);
