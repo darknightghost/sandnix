@@ -1000,3 +1000,137 @@ char* core_rtl_strsplit(const char *str, const char *delim, char* buf, size_t si
 
     return p + core_rtl_strlen(delim);
 }
+
+char* core_rtl_itoa(char* buf, u64 num)
+{
+    char* p;
+    u64 n;
+    char* p1;
+    char* p2;
+    char t;
+
+    for(n = num, p = buf;
+        n != 0;
+        n = n / 10, p++) {
+        *p = n % 10 + '0';
+    }
+
+    for(p1 = buf, p2 = p - 1;
+        p2 > p1;
+        p1++, p2--) {
+        t = *p1;
+        *p1 = *p2;
+        *p2 = t;
+
+    }
+
+    *p = '\0';
+    return buf;
+}
+
+char* core_rtl_htoa(char* buf, u64 num, bool capital_flag)
+{
+    char* p;
+    u64 n;
+    u8 t;
+    char* p1;
+    char* p2;
+
+    for(n = num, p = buf;
+        n != 0;
+        n = n / 0x10, p++) {
+        t = n % 0x10;
+
+        if(t < 0x0A) {
+            *p = t + '0';
+
+        } else {
+            if(capital_flag) {
+                *p = t - 0x0A + 'A';
+
+            } else {
+                *p = t - 0x0A + 'a';
+            }
+        }
+    }
+
+    for(p1 = buf, p2 = p - 1;
+        p2 > p1;
+        p1++, p2--) {
+        t = *p1;
+        *p1 = *p2;
+        *p2 = t;
+
+    }
+
+    *p = '\0';
+    return buf;
+}
+
+char* core_rtl_otoa(char* buf, u64 num)
+{
+    char* p;
+    char* p1;
+    char* p2;
+    char t;
+    u64 n;
+
+    for(n = num, p = buf;
+        n != 0;
+        n = n / 010, p++) {
+        *p = n % 010 + '0';
+    }
+
+    for(p1 = buf, p2 = p - 1;
+        p2 > p1;
+        p1++, p2--) {
+        t = *p1;
+        *p1 = *p2;
+        *p2 = t;
+
+    }
+
+    *p = '\0';
+    return buf;
+}
+
+s32 core_rtl_atoi(char* str, int num_sys)
+{
+    char* p;
+    u32 len;
+    u32 ret;
+    len = core_rtl_strlen(str);
+
+    //Check arguments
+    if(num_sys != 2
+       && num_sys != 8
+       && num_sys != 10
+       && num_sys != 16) {
+        return 0;
+    }
+
+    //Convert string
+    ret = 0;
+
+    for(p = str; p < str + len; p++) {
+        if(*p >= '0' && *p <= '9') {
+            ret = ret * num_sys + (*p - '0');
+
+        } else if(num_sys == 16) {
+            if(*p >= 'a' && *p <= 'f') {
+                ret = ret * 0x10 + (*p - 'a' + 0x0A);
+
+            } else if(*p >= 'A' && *p <= 'F') {
+                ret = ret * 0x10 + (*p - 'A' + 0x0A);
+
+            } else {
+                return ret;
+            }
+
+        } else {
+            return ret;
+        }
+    }
+
+    return ret;
+}

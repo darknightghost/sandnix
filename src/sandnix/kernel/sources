@@ -5,6 +5,9 @@ hal/init/init.c
 #debug
 hal/debug/debug.c
 
+#exception
+hal/exception/panic.c
+
 #core
 #pm
 core/pm/lock/spinlock/spnlck.c

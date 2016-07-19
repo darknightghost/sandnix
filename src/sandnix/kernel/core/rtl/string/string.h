@@ -41,7 +41,14 @@ char*		core_rtl_strstr(const char* str1, const char* str2);
 
 char*		core_rtl_strsplit(const char *str, const char *delim, char* buf, size_t size);
 
+char*		core_rtl_itoa(char* buf, u64 num);
+char*		core_rtl_otoa(char* buf, u64 num);
+char*		core_rtl_htoa(char* buf, u64 num, bool capital_flag);
+
+s32			core_rtl_atoi(char* str, int num_sys);
+
 char*		core_rtl_snprintf(char* buf, size_t size, const char* fmt, ...);
 char*		core_rtl_vsnprintf(char* buf, size_t size, const char* fmt, va_list ap);
-
 char*		core_rtl_kprintf(const char* fmt, ...);
+
+
