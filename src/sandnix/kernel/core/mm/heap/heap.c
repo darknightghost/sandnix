@@ -16,6 +16,7 @@
 */
 
 #include "heap.h"
+#include "../../../hal/exception/exception.h"
 
 static	bool							is_default_heap_ready = false;
 static __attribute__((aligned(8)))	u8	default_heap_pg_block[4096 * 2];
@@ -271,7 +272,9 @@ void core_mm_heap_chk(pheap_t heap)
             p_mem_blk != NULL;
             p_mem_blk = p_mem_blk->p_next) {
             if(p_mem_blk->magic != HEAP_MEMBLOCK_MAGIC) {
-                //TODO:Panic
+                hal_exception_panic(EHPCORRUPTION,
+                                    "Corruption has been detected in heap %p.",
+                                    p_heap);
             }
         }
     }
@@ -391,7 +394,9 @@ pheap_mem_blck_t l_rotate(php_mem_blck_tree p_tree,
     p_parent = p_x->p_parent;
 
     if(p_node->p_rchild == NULL) {
-        //TODO:Panic
+        hal_exception_panic(EHPCORRUPTION,
+                            "Corruption has been detected in memory block %p.",
+                            p_node);
     }
 
     p_y = p_node->p_rchild;
@@ -433,7 +438,9 @@ pheap_mem_blck_t r_rotate(php_mem_blck_tree p_tree,
     p_parent = p_x->p_parent;
 
     if(p_node->p_lchild == NULL) {
-        //TODO:Panic
+        hal_exception_panic(EHPCORRUPTION,
+                            "Corruption has been detected in memory block %p.",
+                            p_node);
     }
 
     p_y = p_node->p_lchild;
@@ -472,7 +479,9 @@ void check_tree(php_mem_blck_tree p_tree)
         return;
 
     } else if((*p_tree)->color == HEAP_MEMBLOCK_RED) {
-        //TODO: Panic
+        hal_exception_panic(EHPCORRUPTION,
+                            "Corruption has been detected in memory block %p.",
+                            p_tree);
     }
 
     num = -1;
@@ -494,14 +503,18 @@ void check_node(pheap_mem_blck_t p_node, long* p_num, long count)
     }
 
     if(p_node->magic != HEAP_MEMBLOCK_MAGIC) {
-        //TODO:Panic
+        hal_exception_panic(EHPCORRUPTION,
+                            "Corruption has been detected in memory block %p.",
+                            p_node);
     }
 
     if(p_node->color == HEAP_MEMBLOCK_RED) {
         if(IS_RED(p_node->p_parent)
            || IS_RED(p_node->p_lchild)
            || IS_RED(p_node->p_rchild)) {
-            //TODO:Panic
+            hal_exception_panic(EHPCORRUPTION,
+                                "Corruption has been detected in memory block %p.",
+                                p_node);
         }
 
         if(p_node->p_lchild == NULL) {
@@ -534,7 +547,9 @@ void check_node(pheap_mem_blck_t p_node, long* p_num, long count)
         }
 
     } else {
-        //TODO:Panic
+        hal_exception_panic(EHPCORRUPTION,
+                            "Corruption has been detected in memory block %p.",
+                            p_node);
     }
 
     return;

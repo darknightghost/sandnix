@@ -16,10 +16,11 @@
 */
 /*
 	Some functions are copied from glibc.
- */
+*/
 
 #include "string.h"
 #include "../../../hal/rtl/rtl.h"
+#include "../../../hal/exception/exception.h"
 typedef unsigned long	longword_t;
 
 void* core_rtl_memccpy(void* dest, const void* src, u8 ch, size_t size)
@@ -548,8 +549,8 @@ char* core_rtl_strchr(const char* str, char c)
 #pragma GCC diagnostic pop
             break;
 
-            //default:
-            //TODO:Panic
+        default:
+            hal_exception_panic(ENOTSUP, "Unsupported Architecture.");
 
     }
 
@@ -567,7 +568,7 @@ char* core_rtl_strchr(const char* str, char c)
     }
 
     if(sizeof(longword) > 8) {
-        //TODO:Panic
+        hal_exception_panic(ENOTSUP, "Unsupported architecture.");
     }
 
     /*
@@ -774,7 +775,7 @@ size_t core_rtl_strlen(const char* str)
     }
 
     if(sizeof(longword) > 8) {
-        //TODO:Panic
+        hal_exception_panic(ENOTSUP, "Unsupported architecture.");
     }
 
     /*
