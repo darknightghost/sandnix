@@ -1219,7 +1219,7 @@ u32 core_pm_thread_create(thread_func_t thread_func, void* p_arg);
 void core_pm_exit(u32 exit_code);
 
 //join
-u32 core_pm_join(bool wait_threadid, u32 thread_id;
+u32 core_pm_join(bool wait_threadid, u32 thread_id);
 
 //暂停线程
 void core_pm_suspend(u32 thread_id);

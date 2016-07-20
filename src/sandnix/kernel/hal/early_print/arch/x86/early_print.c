@@ -119,12 +119,12 @@ void hal_early_print_cls()
 
 void hal_early_print_color(u32 new_fg, u32 new_bg)
 {
-    core_pm_spnlck_raw_lock(&lock);
+    core_pm_spnlck_lock(&lock);
 
     fg = new_fg;
     bg = new_bg;
 
-    core_pm_spnlck_raw_unlock(&lock);
+    core_pm_spnlck_unlock(&lock);
 
     return;
 }
@@ -135,7 +135,7 @@ void hal_early_print_puts(char* str)
     u16 ch;
     u32 num;
 
-    core_pm_spnlck_raw_lock(&lock);
+    core_pm_spnlck_lock(&lock);
 
     for(p = str; *p != '\0'; p++) {
         if(*p < 0x20) {

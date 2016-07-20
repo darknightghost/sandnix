@@ -15,12 +15,24 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "thread.h"
 
-#include "../../../../common/common.h"
+static int tmp_priority = PRIORITY_DISPATCH;
 
-//Spinlock
-#include "./lock/spinlock/spnlck.h"
+u32 core_pm_get_crrnt_thread_id()
+{
+    return 0;
+}
 
-//Thread
-#include "./thread/thread.h"
+u32 core_pm_get_thrd_priority(u32 thrd_id)
+{
+    UNREFERRED_PARAMETER(thrd_id);
+    return tmp_priority;
+}
+
+void core_pm_set_thrd_priority(u32 thrd_id, u32 priority)
+{
+    UNREFERRED_PARAMETER(thrd_id);
+    tmp_priority = priority;
+    return;
+}

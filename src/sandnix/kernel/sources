@@ -13,6 +13,7 @@ hal/rtl/math/math.c
 
 #core
 #pm
+core/pm/thread/thread.c
 core/pm/lock/spinlock/spnlck.c
 
 #mm

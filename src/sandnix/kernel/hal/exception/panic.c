@@ -181,7 +181,7 @@ void hal_exception_panic(u32 error_code, char* fmt, ...)
     hal_early_print_init();
     hal_early_print_color(FG_BRIGHT_WHITE, BG_RED);
     hal_early_print_cls();
-    hal_early_print_puts("\t\t\t\t\t\t>_<||| Sandnix Kernel Paniced\n"
+    hal_early_print_puts("\t\t\t>_<||| Sandnix Kernel Paniced\n"
                          "It\'s a pity that an exception has been happend and "
                          "sandnix cannot continue running.The reason of the "
                          "crash is:\n");
@@ -189,7 +189,7 @@ void hal_exception_panic(u32 error_code, char* fmt, ...)
     hal_early_print_puts("\n");
     hal_early_print_puts("If you are a developer,it\'s very kind of you to fix "
                          "this problem and push your code to our git repository. "
-                         "If you are just a user, reboot your compuer.\n");
+                         "If you are just a user, you can reboot your computer now.\n");
 
     va_start(ap, fmt);
     core_rtl_vsnprintf(panic_buf, PANIC_BUF_SIZE, fmt, ap);

@@ -19,6 +19,7 @@
 #include "../early_print/early_print.h"
 #include "../mmu/mmu.h"
 #include "../../core/rtl/rtl.h"
+#include "../../hal/exception/exception.h"
 
 static void test();
 
@@ -41,11 +42,6 @@ void kinit(void* p_kparams)
 
 void test()
 {
-    char* a = "123456789abcdefghi";
-    char b[256];
-
-    core_rtl_memccpy(a, b, '8', 10);
-
     while(1) {
     }
 }
