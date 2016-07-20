@@ -18,6 +18,9 @@
 #include "init.h"
 #include "../early_print/early_print.h"
 #include "../mmu/mmu.h"
+#include "../../core/rtl/rtl.h"
+
+static void test();
 
 void kinit(void* p_kparams)
 {
@@ -27,10 +30,22 @@ void kinit(void* p_kparams)
 
     //Analyse parameters
     hal_mmu_add_early_paging_addr(p_kparams);
-    hal_early_print_puts("aaaaa\n");
+
+    test();
 
     while(1);
 
     UNREFERRED_PARAMETER(p_kparams);
     return;
+}
+
+void test()
+{
+    char* a = "123456789abcdefghi";
+    char b[256];
+
+    core_rtl_memccpy(a, b, '8', 10);
+
+    while(1) {
+    }
 }

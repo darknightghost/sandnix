@@ -856,6 +856,9 @@ src/sandnix/kernel/hal/rtl/
 #define hal_rtl_string_setsw(dest, val, count)
 #define hal_rtl_string_setsl(dest, val, count)
 #define hal_rtl_string_setsq(dest, val, count)
+
+extern inline u64 rtl_math_div64(u64 dividend, u32 divisor);
+extern inline u64 rtl_math_mod64(u64 dividend, u32 divisor);
 ```
 ######文件列表
 ```c
@@ -864,6 +867,13 @@ src/sandnix/kernel/hal/rtl/rtl.h
 
 //Atomic
 src/sandnix/kernel/hal/rtl/atomic/$(arch)
+
+//String
+src/sandnix/kernel/hal/rtl/string/string.h
+src/sandnix/kernel/hal/rtl/string/$(arch)/string.h
+
+//Math
+src/sandnix/kernel/hal/rtl/math/math.h
 ```
 ####Core层
 #####main

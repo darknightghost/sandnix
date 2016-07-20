@@ -1012,8 +1012,8 @@ char* core_rtl_itoa(char* buf, u64 num)
 
     for(n = num, p = buf;
         n != 0;
-        n = n / 10, p++) {
-        *p = n % 10 + '0';
+        n = hal_rtl_math_div64(n, 10), p++) {
+        *p = hal_rtl_math_mod64(n, 10) + '0';
     }
 
     for(p1 = buf, p2 = p - 1;

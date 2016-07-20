@@ -8,6 +8,9 @@ hal/debug/debug.c
 #exception
 hal/exception/panic.c
 
+#rtl
+hal/rtl/math/math.c
+
 #core
 #pm
 core/pm/lock/spinlock/spnlck.c

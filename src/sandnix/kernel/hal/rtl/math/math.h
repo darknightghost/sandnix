@@ -17,7 +17,13 @@
 
 #pragma once
 
-#include "../../../../common/common.h"
-#include "./atomic/atomic.h"
-#include "./string/string.h"
-#include "./math/math.h"
+#include "../../../../../common/common.h"
+
+#if defined(X86) || defined(ARM)
+u64		hal_rtl_math_div64(u64 dividend, u32 divisor);
+u64		hal_rtl_math_mod64(u64 dividend, u32 divisor);
+
+#else
+#define		hal_rtl_math_div64(dividend, divisor)	((dividend) / (divisor))
+#define		hal_rtl_math_mod64(dividend, divisor)	((dividend) % (divisor))
+#endif
