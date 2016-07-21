@@ -79,10 +79,13 @@ static	pheap_mem_blck_t	l_rotate(php_mem_blck_tree p_tree,
                                      pheap_mem_blck_t p_node);
 static	pheap_mem_blck_t	r_rotate(php_mem_blck_tree p_tree,
                                      pheap_mem_blck_t p_node);
+static	void				remove_rebalance(php_mem_blck_tree p_tree,
+        pheap_mem_blck_t p_node, pheap_mem_blck_t p_parent);
 static	void				check_tree(php_mem_blck_tree p_tree);
 static	void				check_node(pheap_mem_blck_t p_node, long* p_num,
                                        long count);
 static	int					compare_node(pheap_mem_blck_t p1, pheap_mem_blck_t p2);
+static	void				swap_node(pheap_mem_blck_t p1, pheap_mem_blck_t p2);
 
 pheap_t core_mm_heap_create(
     u32 attribute,
@@ -474,9 +477,92 @@ void insert_node(php_mem_blck_tree p_tree,
 void remove_node(php_mem_blck_tree p_tree,
                  pheap_mem_blck_t p_node)
 {
-    //TODO:
-    UNREFERRED_PARAMETER(p_tree);
-    UNREFERRED_PARAMETER(p_node);
+    pheap_mem_blck_t p_tmp_node;
+    pheap_mem_blck_t p_x;
+    pheap_mem_blck_t p_parent;
+
+    //Remove node
+    //Find node to swap
+    if(p_node->p_lchild != NULL && p_node->p_rchild != NULL) {
+        p_tmp_node = p_node->p_lchild;
+
+        while(p_tmp_node->p_rchild != NULL) {
+            p_tmp_node = p_tmp_node->p_rchild;
+        }
+
+        //Swap
+        swap_node(p_node, p_tmp_node);
+    }
+
+    //Remove node
+    if(p_node->color == HEAP_MEMBLOCK_RED) {
+        //Red
+        if(p_node->p_lchild != NULL) {
+            if(p_node->p_parent->p_lchild == p_node) {
+                p_node->p_parent->p_lchild = p_node->p_lchild;
+
+            } else {
+                p_node->p_parent->p_rchild = p_node->p_lchild;
+            }
+
+            p_node->p_lchild->p_parent = p_node->p_parent;
+
+        } else {
+            if(p_node->p_parent->p_lchild == p_node) {
+                p_node->p_parent->p_lchild = NULL;
+
+            } else {
+                p_node->p_parent->p_rchild = NULL;
+            }
+
+        }
+
+    } else {
+        //Black
+        if(p_node == *p_tree) {
+            *p_tree = NULL;
+
+        } else {
+            if(p_node->p_lchild != NULL) {
+                if(p_node->p_parent->p_lchild == p_node) {
+                    p_node->p_parent->p_lchild = p_node->p_lchild;
+                    p_x = p_node->p_parent->p_rchild;
+
+                } else {
+                    p_node->p_parent->p_rchild = p_node->p_lchild;
+                    p_x = p_node->p_parent->p_lchild;
+                }
+
+                p_x = p_node->p_lchild;
+                p_node->p_lchild->p_parent = p_node->p_parent;
+
+            } else if(p_node->p_rchild != NULL) {
+                if(p_node->p_parent->p_lchild == p_node) {
+                    p_node->p_parent->p_lchild = p_node->p_rchild;
+
+                } else {
+                    p_node->p_parent->p_rchild = p_node->p_rchild;
+                }
+
+                p_x = p_node->p_rchild;
+                p_node->p_rchild->p_parent = p_node->p_parent;
+
+            } else {
+                if(p_node->p_parent->p_lchild == p_node) {
+                    p_node->p_parent->p_lchild = NULL;
+
+                } else {
+                    p_node->p_parent->p_rchild = NULL;
+                }
+
+                p_x = NULL;
+                p_parent = p_node->p_parent;
+            }
+
+            remove_rebalance(p_tree, p_x, p_parent);
+        }
+    }
+
     return;
 }
 
@@ -566,6 +652,127 @@ pheap_mem_blck_t r_rotate(php_mem_blck_tree p_tree,
     }
 
     return p_y;
+}
+
+void remove_rebalance(php_mem_blck_tree p_tree,
+                      pheap_mem_blck_t p_node, pheap_mem_blck_t p_parent)
+{
+    pheap_mem_blck_t p_sibling;
+
+#define color(p) (((p) == NULL || (p)->color == HEAP_MEMBLOCK_BLACK) \
+                  ? HEAP_MEMBLOCK_BLACK \
+                  : HEAP_MEMBLOCK_RED)
+
+    while(true) {
+        if(p_node != NULL) {
+            p_parent = p_node->p_parent;
+        }
+
+        if(color(p_node) == HEAP_MEMBLOCK_RED) {
+            p_node->color = HEAP_MEMBLOCK_BLACK;
+            break;
+
+        } else if(p_node == *p_tree) {
+            break;
+        }
+
+        if(p_parent->p_lchild == p_node) {
+            p_sibling = p_parent->p_rchild;
+
+            //Case 1:
+            if(p_sibling->color == HEAP_MEMBLOCK_RED) {
+                p_sibling->color = HEAP_MEMBLOCK_BLACK;
+                p_parent->color = HEAP_MEMBLOCK_RED;
+                l_rotate(p_tree, p_parent);
+            }
+
+            p_sibling = p_parent->p_rchild;
+
+            //Case 2:
+            if(p_sibling->color == HEAP_MEMBLOCK_BLACK
+               && color(p_sibling->p_lchild) == HEAP_MEMBLOCK_BLACK
+               && color(p_sibling->p_rchild) == HEAP_MEMBLOCK_BLACK) {
+                p_sibling->color = HEAP_MEMBLOCK_RED;
+                p_node = p_parent;
+                continue;
+            }
+
+            //Case 3:
+            if(color(p_sibling) == HEAP_MEMBLOCK_BLACK
+               && color(p_sibling->p_lchild) == HEAP_MEMBLOCK_RED) {
+                p_sibling->color = HEAP_MEMBLOCK_RED;
+                p_sibling->p_lchild->color = HEAP_MEMBLOCK_BLACK;
+                r_rotate(p_tree, p_sibling);
+                p_sibling = p_parent->p_rchild;
+            }
+
+            //Case 4:
+            if(color(p_sibling) == HEAP_MEMBLOCK_BLACK
+               && color(p_sibling->p_rchild) == HEAP_MEMBLOCK_RED) {
+                l_rotate(p_tree, p_parent);
+                p_sibling->color = p_parent->color;
+
+                if(p_sibling->p_lchild != NULL) {
+                    p_sibling->p_lchild->color = HEAP_MEMBLOCK_BLACK;
+                }
+
+                if(p_sibling->p_rchild != NULL) {
+                    p_sibling->p_rchild->color = HEAP_MEMBLOCK_BLACK;
+                }
+
+                break;
+            }
+
+        } else {
+            p_sibling = p_parent->p_lchild;
+
+            //Case 1:
+            if(p_sibling->color == HEAP_MEMBLOCK_RED) {
+                p_sibling->color = HEAP_MEMBLOCK_BLACK;
+                p_parent->color = HEAP_MEMBLOCK_RED;
+                r_rotate(p_tree, p_parent);
+            }
+
+            p_sibling = p_parent->p_lchild;
+
+            //Case 2:
+            if(p_sibling->color == HEAP_MEMBLOCK_BLACK
+               && color(p_sibling->p_lchild) == HEAP_MEMBLOCK_BLACK
+               && color(p_sibling->p_rchild) == HEAP_MEMBLOCK_BLACK) {
+                p_sibling->color = HEAP_MEMBLOCK_RED;
+                p_node = p_parent;
+                continue;
+            }
+
+            //Case 3:
+            if(color(p_sibling) == HEAP_MEMBLOCK_BLACK
+               && color(p_sibling->p_rchild) == HEAP_MEMBLOCK_RED) {
+                p_sibling->color = HEAP_MEMBLOCK_RED;
+                p_sibling->p_rchild->color = HEAP_MEMBLOCK_BLACK;
+                l_rotate(p_tree, p_sibling);
+                p_sibling = p_parent->p_lchild;
+            }
+
+            //Case 4:
+            if(color(p_sibling) == HEAP_MEMBLOCK_BLACK
+               && color(p_sibling->p_lchild) == HEAP_MEMBLOCK_RED) {
+                r_rotate(p_tree, p_parent);
+                p_sibling->color = p_parent->color;
+
+                if(p_sibling->p_lchild != NULL) {
+                    p_sibling->p_lchild->color = HEAP_MEMBLOCK_BLACK;
+                }
+
+                if(p_sibling->p_rchild != NULL) {
+                    p_sibling->p_rchild->color = HEAP_MEMBLOCK_BLACK;
+                }
+
+                break;
+            }
+        }
+    }
+
+    return;
 }
 
 void check_tree(php_mem_blck_tree p_tree)
@@ -671,4 +878,61 @@ int compare_node(pheap_mem_blck_t p1, pheap_mem_blck_t p2)
             return 0;
         }
     }
+}
+
+void swap_node(pheap_mem_blck_t p1, pheap_mem_blck_t p2)
+{
+    pheap_mem_blck_t p_tmp;
+
+    //Parent
+    if(p1->p_parent != NULL) {
+        if(p1 == p1->p_parent->p_lchild) {
+            p1->p_parent->p_lchild = p2;
+
+        } else {
+            p1->p_parent->p_rchild = p2;
+        }
+    }
+
+    if(p2->p_parent != NULL) {
+        if(p2 == p2->p_parent->p_lchild) {
+            p2->p_parent->p_lchild = p1;
+
+        } else {
+            p2->p_parent->p_rchild = p1;
+        }
+    }
+
+    p_tmp = p1->p_parent;
+    p1->p_parent = p2->p_parent;
+    p2->p_parent = p_tmp;
+
+    //Left child
+    p_tmp = p1->p_lchild;
+    p1->p_lchild = p2->p_lchild;
+    p2->p_lchild = p_tmp;
+
+    if(p1->p_lchild != NULL) {
+        p1->p_lchild->p_parent = p1;
+    }
+
+    if(p2->p_lchild != NULL) {
+        p2->p_lchild->p_parent = p2;
+    }
+
+    //Right child
+    p_tmp = p1->p_rchild;
+    p1->p_rchild = p2->p_rchild;
+    p2->p_rchild = p_tmp;
+
+    if(p1->p_rchild != NULL) {
+        p1->p_rchild->p_parent = p1;
+    }
+
+    if(p2->p_rchild != NULL) {
+        p2->p_rchild->p_parent = p2;
+    }
+
+
+    return;
 }
