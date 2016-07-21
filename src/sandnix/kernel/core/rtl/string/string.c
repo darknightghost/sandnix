@@ -342,10 +342,10 @@ void* core_rtl_memmove(void* dest, const void* src, size_t size)
     size_t len_to_cp;
     size_t count;
 
-    if((address_t)dest >= (address_t)src) {
+    if((address_t)dest < (address_t)src) {
         core_rtl_memcpy(dest, src, size);
 
-    } else {
+    } else if((address_t)dest > (address_t)src) {
         p_src = (u8*)src + size;
         p_dest = (u8*)dest + size;
 

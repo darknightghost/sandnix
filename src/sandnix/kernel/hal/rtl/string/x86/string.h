@@ -151,10 +151,11 @@
         do { \
             __asm__ __volatile__( \
                                   "cld\n" \
+                                  "movl	%0, %%edi\n" \
                                   "rep	stosb\n" \
-                                  ::"edi"((dest)), "al"((u8)(val)), \
+                                  ::""((dest)), "eax"((u8)(val)), \
                                   "ecx"((u32)(count)) \
-                                  :"memory"); \
+                                  :"edi", "memory"); \
         } while(0); \
     }
 
@@ -163,10 +164,11 @@
             __asm__ __volatile__( \
                                   "cld\n" \
                                   "movb	%%al, %%ah\n" \
+                                  "movl	%0, %%edi\n" \
                                   "rep	stosw\n" \
-                                  ::"edi"((dest)), "al"((u8)(val)), \
+                                  ::"m"((dest)), "al"((u8)(val)), \
                                   "ecx"((u32)(count)) \
-                                  :"memory"); \
+                                  :"edi", "memory"); \
         } while(0); \
     }
 
@@ -181,10 +183,11 @@
                                   "shll		$16, %%eax\n" \
                                   "addl		%%edx, %%eax\n" \
                                   "popl		%%edx\n" \
+                                  "movl		%0, %%edi\n" \
                                   "rep		stosl\n" \
-                                  ::"edi"((dest)), "al"((u8)(val)), \
+                                  ::"m"((dest)), "al"((u8)(val)), \
                                   "ecx"((u32)(count)) \
-                                  :"memory"); \
+                                  :"edi", "memory"); \
         } while(0); \
     }
 
@@ -199,9 +202,10 @@
                                   "shll		$16, %%eax\n" \
                                   "addl		%%edx, %%eax\n" \
                                   "popl		%%edx\n" \
+                                  "movl		%0, %%edi\n" \
                                   "rep		stosl\n" \
-                                  ::"edi"((dest)), "al"((u8)(val)), \
+                                  ::"m"((dest)), "al"((u8)(val)), \
                                   "ecx"((u32)(count) * 2) \
-                                  :"memory"); \
+                                  :"edi", "memory"); \
         } while(0); \
     }

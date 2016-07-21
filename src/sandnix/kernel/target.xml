@@ -21,15 +21,15 @@
             <LDRULE>$(LD) $(LDFLAGS) -o $@ $^</LDRULE>
             <AFTER>cp $(LINKED) $(OUTDIR)/$(OUTPUT)</AFTER>
         </arch>
-        <arch name="arm.raseberry">
+        <arch name="arm.samsung_exynos4412.itop_4412">
             <PREV></PREV>
             <DEP>arm-none-eabi-gcc</DEP>
             <DEPRULE>$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then cat $@|awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(OBJDIR)/$(ARCH)/&quot;,$$0)} NR != 1 {print $$0}' &gt; $@; fi</DEPRULE>
             <CC>arm-none-eabi-gcc</CC>
-            <CFLAGS>-Wall -DARM -DARM_RASEBERRY -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -c -Werror -march=armv7-a</CFLAGS>
+            <CFLAGS>-Wall -DARM -DARM_SAMSUNG_EXYNOS4412 -DARM_SAMSUNG_EXYNOS4412_ITOP_4412 -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -c -Werror -march=armv7-a</CFLAGS>
             <CCRULE>$(CC) $(CFLAGS) -o $@ $&lt;</CCRULE>
             <AS>arm-none-eabi-gcc</AS>
-            <ASFLAGS>-c -DARM -DARM_RASEBERRY -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -Werror</ASFLAGS>
+            <ASFLAGS>-c -DARM -DARM_SAMSUNG_EXYNOS4412 -DARM_SAMSUNG_EXYNOS4412_ITOP_4412 -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -Werror</ASFLAGS>
             <ASRULE>$(AS) $(ASFLAGS) -o $@ $&lt;</ASRULE>
             <LD>arm-none-eabi-ldc</LD>
             <LDFLAGS>-Ttext 0xc0100000 -e _start --no-omagic</LDFLAGS>

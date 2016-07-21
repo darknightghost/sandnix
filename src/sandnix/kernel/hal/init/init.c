@@ -42,6 +42,10 @@ void kinit(void* p_kparams)
 
 void test()
 {
+    char a[] = "123456789abcdefghijklmnopqrstuvwxyz";
+
+    core_rtl_memset(a, '5', 10);
+
     while(1) {
     }
 }

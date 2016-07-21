@@ -21,15 +21,15 @@
             <LDRULE>$(LD) $(LDFLAGS) -o $@ $^</LDRULE>
             <AFTER></AFTER>
         </arch>
-        <arch name="arm.raseberry">
+        <arch name="arm.samsung_exynos4412.itop_4412">
             <PREV></PREV>
             <DEP>arm-none-eabi-gcc</DEP>
             <DEPRULE>$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then cat $@|awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(OBJDIR)/$(ARCH)/&quot;,$$0)} NR != 1 {print $$0}' &gt; $@; fi</DEPRULE>
             <CC>arm-none-eabi-gcc</CC>
-            <CFLAGS>-c</CFLAGS>
+            <CFLAGS>-c -DARM -DARM_SAMSUNG_EXYNOS4412 -DARM_SAMSUNG_EXYNOS4412_ITOP_4412</CFLAGS>
             <CCRULE>$(CC) $(CFLAGS) -o $@ $&lt;</CCRULE>
             <AS>arm-none-eabi-gcc</AS>
-            <ASFLAGS>-c</ASFLAGS>
+            <ASFLAGS>-c -D_ASM -DARM -DARM_SAMSUNG_EXYNOS4412 -DARM_SAMSUNG_EXYNOS4412_ITOP_4412</ASFLAGS>
             <ASRULE>$(AS) $(ASFLAGS) -o $@ $&lt;</ASRULE>
             <LD>arm-none-eabi-gcc</LD>
             <LDFLAGS>$(LD) $(LDFLAGS) -o $@ $^</LDFLAGS>
