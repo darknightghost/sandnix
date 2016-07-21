@@ -20,6 +20,8 @@
 
 #include "errno.h"
 
+#define	NOT_SUPPORT		hal_exception_panic(ENOTSUP,"Function not completed!.")
+
 void	hal_exception_panic(
     u32 error_code,		//errno
     char* fmt,			//format

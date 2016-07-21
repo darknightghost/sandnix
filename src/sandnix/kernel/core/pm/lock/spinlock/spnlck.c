@@ -18,6 +18,7 @@
 #include "spnlck.h"
 #include "../../thread/thread.h"
 #include "../../../../hal/rtl/rtl.h"
+#include "../../../../hal/exception/exception.h"
 
 void core_pm_spnlck_init(pspnlck_t p_lock)
 {
@@ -76,6 +77,9 @@ kstatus_t core_pm_spnlck_trylock(pspnlck_t p_lock)
 {
     u32 thrd_id;
     u32 priority;
+    u32 old_lock;
+    u32 new_lock;
+    u32 result;
 
     thrd_id = core_pm_get_crrnt_thread_id();
     priority = core_pm_get_thrd_priority(thrd_id);

@@ -82,6 +82,7 @@ static	pheap_mem_blck_t	r_rotate(php_mem_blck_tree p_tree,
 static	void				check_tree(php_mem_blck_tree p_tree);
 static	void				check_node(pheap_mem_blck_t p_node, long* p_num,
                                        long count);
+static	int					compare_node(pheap_mem_blck_t p1, pheap_mem_blck_t p2);
 
 pheap_t core_mm_heap_create(
     u32 attribute,
@@ -122,6 +123,7 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
 
     if(p_mem_block == NULL) {
         //TODO:Allocate more pages
+        NOT_SUPPORT;
     }
 
     remove_node(&(p_heap->p_empty_block_tree),
@@ -159,6 +161,7 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
 
     if(p_heap->type & HEAP_PREALLOC) {
         //TODO:Pre-allocate page
+        NOT_SUPPORT;
     }
 
     HEAP_CHECK(p_heap);
@@ -198,6 +201,7 @@ void core_mm_heap_free(
     if(p_mem_block->p_pg_block->ref == 0
        && (p_mem_block->p_pg_block->attr & HEAP_PAGEBLOCK_FIX)) {
         //TODO:Release page
+        NOT_SUPPORT;
     }
 
     //Join memory blocks
@@ -211,6 +215,7 @@ void core_mm_heap_free(
         p_prev_mem_block->p_next = p_mem_block->p_next;
 
         if(p_mem_block->p_next != NULL) {
+
             p_mem_block->p_next->p_prev = p_prev_mem_block;
         }
 
@@ -366,11 +371,103 @@ pheap_mem_blck_t get_free_mem_block(pheap_t p_heap, size_t size)
 void insert_node(php_mem_blck_tree p_tree,
                  pheap_mem_blck_t p_node)
 {
-    //TODO:
-    UNREFERRED_PARAMETER(p_tree);
-    UNREFERRED_PARAMETER(p_node);
-    UNREFERRED_PARAMETER(r_rotate);
-    UNREFERRED_PARAMETER(l_rotate);
+    pheap_mem_blck_t p_insert_node;
+    pheap_mem_blck_t p_z;
+    pheap_mem_blck_t p_y;
+    int cmp_result;
+
+    p_node->p_parent = NULL;
+    p_node->p_lchild = NULL;
+    p_node->p_rchild = NULL;
+
+    if(*p_tree == NULL) {
+        //The tree is empty
+        *p_tree = p_node;
+        p_node->color = HEAP_MEMBLOCK_BLACK;
+
+    } else {
+        //Find where to insert the node
+        p_insert_node = *p_tree;
+
+        while(true) {
+            cmp_result = compare_node(p_node, p_insert_node);
+
+            if(cmp_result <= 0) {
+                if(p_insert_node->p_lchild == NULL) {
+                    p_insert_node->p_lchild = p_node;
+                    p_node->p_parent = p_insert_node;
+                    break;
+
+                } else {
+                    p_insert_node = p_insert_node->p_lchild;
+                }
+
+            } else {
+                if(p_insert_node->p_rchild == NULL) {
+                    p_insert_node->p_rchild = p_node;
+                    p_node->p_parent = p_insert_node;
+                    break;
+
+                } else {
+                    p_insert_node = p_insert_node->p_rchild;
+                }
+            }
+        }
+
+        p_node->color = HEAP_MEMBLOCK_RED;
+
+        //Fix tree
+        p_z = p_node;
+
+        while(p_z->p_parent != NULL
+              && p_z->p_parent->color == HEAP_MEMBLOCK_RED) {
+            if(p_z->p_parent == p_z->p_parent->p_parent->p_lchild) {
+                p_y = p_z->p_parent->p_parent->p_rchild;
+
+                if(p_y != NULL && p_y->color == HEAP_MEMBLOCK_RED) {
+                    p_z->p_parent->color = HEAP_MEMBLOCK_BLACK;
+                    p_y->color = HEAP_MEMBLOCK_BLACK;
+                    p_z->p_parent->p_parent->color = HEAP_MEMBLOCK_RED;
+                    p_z = p_z->p_parent->p_parent;
+
+                } else if(p_z == p_z->p_parent->p_rchild) {
+                    p_z = p_z->p_parent;
+                    l_rotate(p_tree, p_z);
+                }
+
+                if(p_z->p_parent != NULL
+                   && p_z->p_parent->p_parent != NULL) {
+                    p_z->p_parent->color = HEAP_MEMBLOCK_BLACK;
+                    p_z->p_parent->p_parent->color = HEAP_MEMBLOCK_RED;
+                    r_rotate(p_tree, p_z->p_parent->p_parent);
+                }
+
+            } else {
+                p_y = p_z->p_parent->p_parent->p_lchild;
+
+                if(p_y == NULL && p_y->color == HEAP_MEMBLOCK_RED) {
+                    p_z->p_parent->color = HEAP_MEMBLOCK_BLACK;
+                    p_y->color = HEAP_MEMBLOCK_BLACK;
+                    p_z->p_parent->p_parent->color = HEAP_MEMBLOCK_RED;
+                    p_z = p_z->p_parent->p_parent;
+
+                } else if(p_z == p_z->p_parent->p_lchild) {
+                    p_z = p_z->p_parent;
+                    r_rotate(p_tree, p_z);
+                }
+
+                if(p_z->p_parent != NULL
+                   && p_z->p_parent->p_parent != NULL) {
+                    p_z->p_parent->color = HEAP_MEMBLOCK_BLACK;
+                    p_z->p_parent->p_parent->color = HEAP_MEMBLOCK_RED;
+                    l_rotate(p_tree, p_z->p_parent->p_parent);
+                }
+            }
+        }
+
+        (*p_tree)->color = HEAP_MEMBLOCK_BLACK;
+    }
+
     return;
 }
 
@@ -490,7 +587,7 @@ void check_tree(php_mem_blck_tree p_tree)
     return;
 }
 
-void check_node(pheap_mem_blck_t p_node, long* p_num, long count)
+void check_node(pheap_mem_blck_t p_node, long * p_num, long count)
 {
 #define	CHECK_COUNT(p_num, count) { \
         do { \
@@ -553,4 +650,25 @@ void check_node(pheap_mem_blck_t p_node, long* p_num, long count)
     }
 
     return;
+}
+
+int compare_node(pheap_mem_blck_t p1, pheap_mem_blck_t p2)
+{
+    if(p1->size > p2->size) {
+        return 1;
+
+    } else if(p1->size < p2->size) {
+        return -1;
+
+    } else {
+        if(p1->p_pg_block->index > p2->p_pg_block->index) {
+            return 1;
+
+        } else if(p1->p_pg_block->index < p2->p_pg_block->index) {
+            return -1;
+
+        } else {
+            return 0;
+        }
+    }
 }

@@ -21,13 +21,13 @@
 #define hal_cpu_atomic_xaddl(dest, src) { \
         do { \
             __asm__ __volatile ( \
-                                 "_XADD:\n" \
+                                 "1:\n" \
                                  "ldrex	r0, [%1]\n" \
                                  "mov	r1, r0\n" \
                                  "add	r0, %0, r1\n" \
                                  "strex	r2, r0, [%1]\n" \
                                  "teq	r2, #0\n" \
-                                 "bne	_XADD\n" \
+                                 "bne	1b\n" \
                                  "mov	%0, r1\n" \
                                  :"+r"((src)) \
                                  :"r"(&(dest)) \
@@ -38,13 +38,13 @@
 #define hal_cpu_atomic_xaddw(dest, src) { \
         do { \
             __asm__ __volatile ( \
-                                 "_XADD:\n" \
+                                 "1:\n" \
                                  "ldrexh	r0, [%1]\n" \
                                  "mov		r1, r0\n" \
                                  "add		r0, %0, r1\n" \
                                  "strexh	r2, r0, [%1]\n" \
                                  "teq		r2, #0\n" \
-                                 "bne		_XADD\n" \
+                                 "bne		1b\n" \
                                  "mov		%0, r1\n" \
                                  :"+r"((src)) \
                                  :"r"(&(dest)) \
@@ -58,12 +58,12 @@
                                    "ldrex	r0, [%2]\n" \
                                    "cmp		r0, %3\n" \
                                    "movne	%1, 0\n" \
-                                   "bne		_END\n" \
+                                   "bne		1f\n" \
                                    "strex	r1, %0, %2\n" \
                                    "teq		r1, #0\n" \
                                    "moveq	%1, #0\n" \
                                    "movne	%1, #1\n" \
-                                   "_END:\n" \
+                                   "1:\n" \
                                    "clrex\n" \
                                    :"+r"((src)), "r"(result) \
                                    :"r"(&(dest)), "r"((cmp)) \

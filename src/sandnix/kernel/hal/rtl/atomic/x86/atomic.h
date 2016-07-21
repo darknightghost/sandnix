@@ -39,12 +39,12 @@
         do { \
             __asm__ __volatile__ ( \
                                    "lock cmpxchgl	%2, %0\n" \
-                                   "jz				_EQUAL\n" \
+                                   "jz				1f\n" \
                                    "xorl			%1, %1\n" \
-                                   "jmp				_END\n" \
-                                   "_EQUAL:\n" \
+                                   "jmp				2f\n" \
+                                   "1:\n" \
                                    "movl			$1, %1\n" \
-                                   "_END:\n" \
+                                   "2:\n" \
                                    :"=m"(dest), "=r"(result), "+r"(src) \
                                    :"eax"(cmp) \
                                    :"memory"); \
