@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define hal_cpu_atomic_xaddl(dest, src) { \
+#define hal_rtl_atomic_xaddl(dest, src) { \
         do { \
             __asm__ __volatile__( \
                                   "lock		xaddl %0, %1\n" \
@@ -25,20 +25,28 @@
                                   :: "memory");\
         } while(0); \
     }
-/*
-#define hal_cpu_atomic_cmpmovl(dest, src, cmp, result) { \
+
+#define hal_rtl_atomic_xaddw(dest, src) { \
+        do { \
+            __asm__ __volatile__( \
+                                  "lock		xaddw %0, %1\n" \
+                                  :"+ax"((src)), "+m"((dest)) \
+                                  :: "memory");\
+        } while(0); \
+    }
+
+#define hal_rtl_atomic_cmpxchgl(dest, src, cmp, result) { \
         do { \
             __asm__ __volatile__ ( \
-                                   "lock	cmpxchgl %1, %2\n" \
-                                   "jz		_EQUAL\n" \
-                                   "xorl	%3, %3\n" \
-                                   "jmp		_END\n" \
-                                   "_EQULA:\n" \
-                                   "movl	$1,%3\n" \
-                                   "_END\n" \
-                                   :"=eax"(cmp), "=r"(src) \
-                                   :"m"(dest), "r"(result) \
+                                   "lock cmpxchgl	%2, %0\n" \
+                                   "jz				_EQUAL\n" \
+                                   "xorl			%1, %1\n" \
+                                   "jmp				_END\n" \
+                                   "_EQUAL:\n" \
+                                   "movl			$1, %1\n" \
+                                   "_END:\n" \
+                                   :"=m"(dest), "=r"(result), "+r"(src) \
+                                   :"eax"(cmp) \
                                    :"memory"); \
         } while(0); \
     }
-	*/

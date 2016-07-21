@@ -20,8 +20,13 @@
 #include "../../../../../../common/common.h"
 
 typedef struct _spnlck_t {
-    volatile u32		owner;
-    volatile u32		ticket;
+    union {
+        volatile u32		lock;
+        struct {
+            volatile u16		ticket;
+            volatile u16		owner;
+        } __attribute__((aligned(1)));
+    };
     volatile u32		priority;
 } spnlck_t, *pspnlck_t;
 

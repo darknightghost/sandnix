@@ -24,7 +24,7 @@
                                  "_XADD:\n" \
                                  "ldrex	r0, [%1]\n" \
                                  "mov	r1, r0\n" \
-                                 "add	r1, %0, r0\n" \
+                                 "add	r0, %0, r1\n" \
                                  "strex	r2, r0, [%1]\n" \
                                  "teq	r2, #0\n" \
                                  "bne	_XADD\n" \
@@ -35,22 +35,38 @@
         } while(0); \
     }
 
-/*
-#define hal_cpu_atomic_cmpmovl(dest, src, cmp, result) { \
+#define hal_cpu_atomic_xaddw(dest, src) { \
         do { \
             __asm__ __volatile ( \
-                                 "movl		%3, #0\n" \
-                                 "ldrex 	r3, [%2]\n" \
-                                 "teql		%1, r3\n" \
-                                 "moveql	r3, %0\n" \
-                                 "moveql	%3, #1\n" \
-                                 "strex		r4, r3, [%2]\n" \
-                                 "teql		r4, #0\n" \
-                                 "movnel	%3, #0\n" \
-                                 :"=r0"((volatile u32)(src)), \
-                                 "=r1"((volatile u32)cmp) \
-                                 :"m"(dest), "r2"(result) \
-                                 :"r3", "r4"); \
+                                 "_XADD:\n" \
+                                 "ldrexh	r0, [%1]\n" \
+                                 "mov		r1, r0\n" \
+                                 "add		r0, %0, r1\n" \
+                                 "strexh	r2, r0, [%1]\n" \
+                                 "teq		r2, #0\n" \
+                                 "bne		_XADD\n" \
+                                 "mov		%0, r1\n" \
+                                 :"+r"((src)) \
+                                 :"r"(&(dest)) \
+                                 :"memory", "r0", "r1", "r2"); \
         } while(0); \
     }
-	*/
+
+#define hal_cpu_atomic_cmpxchgl(dest, src, cmp, result) { \
+        do { \
+            __asm__ __volatile__ ( \
+                                   "ldrex	r0, [%2]\n" \
+                                   "cmp		r0, %3\n" \
+                                   "movne	%1, 0\n" \
+                                   "bne		_END\n" \
+                                   "strex	r1, %0, %2\n" \
+                                   "teq		r1, #0\n" \
+                                   "moveq	%1, #0\n" \
+                                   "movne	%1, #1\n" \
+                                   "_END:\n" \
+                                   "clrex\n" \
+                                   :"+r"((src)), "r"(result) \
+                                   :"r"(&(dest)), "r"((cmp)) \
+                                   :"r0", "r1", "memory"); \
+        } while(0); \
+    }

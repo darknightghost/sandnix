@@ -839,7 +839,7 @@ src/sandnix/kernel/hal/rtl/
 ```c
 //Atomic
 #define hal_rtl_atomic_xaddl(dest, src)
-#define hal_rtl_atomic_cmpmovl(dest, src, cmp)
+#define hal_rtl_atomic_cmpxchgl(dest, src, cmp)
 
 //String
 #define hal_rtl_string_movsb(dest, src, count)

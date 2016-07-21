@@ -29,7 +29,7 @@ void core_pm_spnlck_init(pspnlck_t p_lock)
 
 void core_pm_spnlck_lock(pspnlck_t p_lock)
 {
-    u32 ticket;
+    u16 ticket;
     u32 thrd_id;
     u32 priority;
 
@@ -37,7 +37,7 @@ void core_pm_spnlck_lock(pspnlck_t p_lock)
 
     //Get ticket
     ticket = 1;
-    hal_cpu_atomic_xaddl(p_lock->ticket, ticket);
+    hal_rtl_atomic_xaddw(p_lock->ticket, ticket);
 
     //Get lock
     priority = core_pm_get_thrd_priority(thrd_id);
@@ -57,11 +57,11 @@ void core_pm_spnlck_lock(pspnlck_t p_lock)
 
 void core_pm_spnlck_raw_lock(pspnlck_t p_lock)
 {
-    u32 ticket;
+    u16 ticket;
 
     //Get ticket
     ticket = 1;
-    hal_cpu_atomic_xaddl(p_lock->ticket, ticket);
+    hal_rtl_atomic_xaddw(p_lock->ticket, ticket);
 
     //Get lock
     while(p_lock->owner != ticket) {
@@ -72,8 +72,54 @@ void core_pm_spnlck_raw_lock(pspnlck_t p_lock)
     return;
 }
 
-kstatus_t core_pm_spnlck_trylock(pspnlck_t p_lock);
-kstatus_t core_pm_spnlck_raw_trylock(pspnlck_t p_lock);
+kstatus_t core_pm_spnlck_trylock(pspnlck_t p_lock)
+{
+    u32 thrd_id;
+    u32 priority;
+
+    thrd_id = core_pm_get_crrnt_thread_id();
+    priority = core_pm_get_thrd_priority(thrd_id);
+
+    if(priority < PRIORITY_DISPATCH) {
+        core_pm_set_thrd_priority(thrd_id, PRIORITY_DISPATCH);
+    }
+
+    old_lock = p_lock->lock;
+    new_lock = old_lock;
+    (*((u16*)(&new_lock)))++;
+
+    hal_rtl_atomic_cmpxchgl(p_lock->lock, new_lock, old_lock, result);
+
+    if(!result) {
+        core_pm_set_thrd_priority(thrd_id, priority);
+        return EAGAIN;
+
+    } else {
+        p_lock->priority = priority;
+        return ESUCCESS;
+    }
+}
+
+kstatus_t core_pm_spnlck_raw_trylock(pspnlck_t p_lock)
+{
+    u32 old_lock;
+    u32 new_lock;
+    u32 result;
+
+    old_lock = p_lock->lock;
+    new_lock = old_lock;
+    (*((u16*)(&new_lock)))++;
+
+    hal_rtl_atomic_cmpxchgl(p_lock->lock, new_lock, old_lock, result);
+
+    if(!result) {
+        return EAGAIN;
+
+    } else {
+        return ESUCCESS;
+    }
+}
+
 void core_pm_spnlck_unlock(pspnlck_t p_lock)
 {
     u32 thrd_id;

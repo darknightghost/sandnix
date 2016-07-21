@@ -43,8 +43,9 @@ void kinit(void* p_kparams)
 void test()
 {
     char a[] = "123456789abcdefghijklmnopqrstuvwxyz";
+    char *b = "ac";
 
-    core_rtl_memset(a, '5', 10);
+    core_rtl_strcspn(a, b);
 
     while(1) {
     }
