@@ -20,6 +20,7 @@
 #include "../mmu/mmu.h"
 #include "../../core/rtl/rtl.h"
 #include "../../hal/exception/exception.h"
+#include "../../core/mm/mm.h"
 
 static void test();
 
@@ -42,10 +43,22 @@ void kinit(void* p_kparams)
 
 void test()
 {
-    char a[] = "123456789abcdefghijklmnopqrstuvwxyz";
-    char *b = "ac";
+    int i;
+    int a[] = {1, 5, 6, 7, 89, 4, 5, 3, 9, 8, 1, 5, 54, 13,
+               1, 5, 13, 35, 13, 414, 8, 6, 5, 6, 37, 5, 6, 58,
+               9, 4, 3, 8, 7, 2, 6, 5
+              };
+    void* b[sizeof(a) / sizeof(int)];
 
-    core_rtl_strcspn(a, b);
+    for(i = 0; i < sizeof(a) / sizeof(int); i++) {
+        b[i] = core_mm_heap_alloc(a[i], NULL);
+    }
+
+    for(i = 0; i < sizeof(a) / sizeof(int); i++) {
+        core_mm_heap_free(b[i], NULL);
+    }
+
+    hal_early_print_puts("finished\n");
 
     while(1) {
     }

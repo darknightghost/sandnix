@@ -268,7 +268,7 @@ void core_mm_heap_chk(pheap_t heap)
     }
 
     if(p_heap->type & HEAP_MULITHREAD) {
-        core_pm_spnlck_unlock(&(p_heap->lock));
+        core_pm_spnlck_lock(&(p_heap->lock));
     }
 
     //Check memory blocks
@@ -321,6 +321,7 @@ void init_default_heap()
                   (pheap_pg_blck_t)default_heap_pg_block , &default_heap);
 
     default_heap.p_empty_block_tree = p_mem_block;
+    is_default_heap_ready = true;
     return;
 }
 
@@ -428,47 +429,61 @@ void insert_node(php_mem_blck_tree p_tree,
                 p_y = p_z->p_parent->p_parent->p_rchild;
 
                 if(p_y != NULL && p_y->color == HEAP_MEMBLOCK_RED) {
+                    //Case 1
                     p_z->p_parent->color = HEAP_MEMBLOCK_BLACK;
                     p_y->color = HEAP_MEMBLOCK_BLACK;
                     p_z->p_parent->p_parent->color = HEAP_MEMBLOCK_RED;
                     p_z = p_z->p_parent->p_parent;
+                    continue;
 
                 } else if(p_z == p_z->p_parent->p_rchild) {
+                    //Case 3
                     p_z = p_z->p_parent;
                     l_rotate(p_tree, p_z);
                 }
 
                 if(p_z->p_parent != NULL
                    && p_z->p_parent->p_parent != NULL) {
+                    //Case 2
                     p_z->p_parent->color = HEAP_MEMBLOCK_BLACK;
                     p_z->p_parent->p_parent->color = HEAP_MEMBLOCK_RED;
                     r_rotate(p_tree, p_z->p_parent->p_parent);
+                    break;
                 }
 
             } else {
                 p_y = p_z->p_parent->p_parent->p_lchild;
 
-                if(p_y == NULL && p_y->color == HEAP_MEMBLOCK_RED) {
+                if(p_y != NULL && p_y->color == HEAP_MEMBLOCK_RED) {
+                    //Case 1
                     p_z->p_parent->color = HEAP_MEMBLOCK_BLACK;
                     p_y->color = HEAP_MEMBLOCK_BLACK;
                     p_z->p_parent->p_parent->color = HEAP_MEMBLOCK_RED;
                     p_z = p_z->p_parent->p_parent;
+                    continue;
 
                 } else if(p_z == p_z->p_parent->p_lchild) {
+                    //Case 3
                     p_z = p_z->p_parent;
                     r_rotate(p_tree, p_z);
                 }
 
                 if(p_z->p_parent != NULL
                    && p_z->p_parent->p_parent != NULL) {
+                    //Case 2
                     p_z->p_parent->color = HEAP_MEMBLOCK_BLACK;
                     p_z->p_parent->p_parent->color = HEAP_MEMBLOCK_RED;
                     l_rotate(p_tree, p_z->p_parent->p_parent);
+                    break;
                 }
             }
         }
 
         (*p_tree)->color = HEAP_MEMBLOCK_BLACK;
+    }
+
+    if(hal_is_on_debug()) {
+        check_tree(p_tree);
     }
 
     return;
@@ -520,7 +535,18 @@ void remove_node(php_mem_blck_tree p_tree,
     } else {
         //Black
         if(p_node == *p_tree) {
-            *p_tree = NULL;
+            if(p_node->p_lchild == NULL
+               && p_node->p_rchild == NULL) {
+                *p_tree = NULL;
+
+            } else if(p_node->p_lchild != NULL) {
+                *p_tree = p_node->p_lchild;
+                p_node->p_lchild->p_parent = NULL;
+
+            } else {
+                *p_tree = p_node->p_rchild;
+                p_node->p_rchild->p_parent = NULL;
+            }
 
         } else {
             if(p_node->p_lchild != NULL) {
@@ -563,18 +589,17 @@ void remove_node(php_mem_blck_tree p_tree,
         }
     }
 
+    if(hal_is_on_debug()) {
+        check_tree(p_tree);
+    }
+
     return;
 }
 
 pheap_mem_blck_t l_rotate(php_mem_blck_tree p_tree,
                           pheap_mem_blck_t p_node)
 {
-    pheap_mem_blck_t p_parent;
-    pheap_mem_blck_t p_x;
-    pheap_mem_blck_t p_y;
-
-    p_x = p_node;
-    p_parent = p_x->p_parent;
+    pheap_mem_blck_t p_new_parent;
 
     if(p_node->p_rchild == NULL) {
         hal_exception_panic(EHPCORRUPTION,
@@ -582,43 +607,38 @@ pheap_mem_blck_t l_rotate(php_mem_blck_tree p_tree,
                             p_node);
     }
 
-    p_y = p_node->p_rchild;
-    p_x->p_rchild = p_y->p_lchild;
+    p_new_parent = p_node->p_rchild;
 
-    if(p_x->p_rchild != NULL) {
-        p_x->p_rchild->p_parent = p_x;
-    }
+    p_new_parent->p_parent = p_node->p_parent;
 
-    p_y->p_lchild = p_x;
-    p_x->p_parent = p_y;
-
-    if(p_parent == NULL) {
-        *p_tree = p_y;
-        p_y->p_parent = NULL;
+    if(p_node->p_parent == NULL) {
+        *p_tree = p_new_parent;
 
     } else {
-        if(p_parent->p_lchild == p_x) {
-            p_parent->p_lchild = p_y;
+        if(p_node == p_node->p_parent->p_lchild) {
+            p_node->p_parent->p_lchild = p_new_parent;
 
         } else {
-            p_parent->p_rchild = p_y;
+            p_node->p_parent->p_rchild = p_new_parent;
         }
-
-        p_y->p_parent = p_parent;
     }
 
-    return p_y;
+    p_node->p_rchild = p_new_parent->p_lchild;
+
+    if(p_node->p_rchild != NULL) {
+        p_node->p_rchild->p_parent = p_node;
+    }
+
+    p_new_parent->p_lchild = p_node;
+    p_node->p_parent = p_new_parent;
+
+    return p_new_parent;
 }
 
 pheap_mem_blck_t r_rotate(php_mem_blck_tree p_tree,
                           pheap_mem_blck_t p_node)
 {
-    pheap_mem_blck_t p_parent;
-    pheap_mem_blck_t p_x;
-    pheap_mem_blck_t p_y;
-
-    p_x = p_node;
-    p_parent = p_x->p_parent;
+    pheap_mem_blck_t p_new_parent;
 
     if(p_node->p_lchild == NULL) {
         hal_exception_panic(EHPCORRUPTION,
@@ -626,32 +646,32 @@ pheap_mem_blck_t r_rotate(php_mem_blck_tree p_tree,
                             p_node);
     }
 
-    p_y = p_node->p_lchild;
-    p_x->p_lchild = p_y->p_rchild;
+    p_new_parent = p_node->p_lchild;
 
-    if(p_x->p_lchild != NULL) {
-        p_x->p_lchild->p_parent = p_x;
-    }
+    p_new_parent->p_parent = p_node->p_parent;
 
-    p_y->p_rchild = p_x;
-    p_x->p_parent = p_y;
-
-    if(p_parent == NULL) {
-        *p_tree = p_y;
-        p_y->p_parent = NULL;
+    if(p_node->p_parent == NULL) {
+        *p_tree = p_new_parent;
 
     } else {
-        if(p_parent->p_lchild == p_x) {
-            p_parent->p_lchild = p_y;
+        if(p_node == p_node->p_parent->p_lchild) {
+            p_node->p_parent->p_lchild = p_new_parent;
 
         } else {
-            p_parent->p_rchild = p_y;
+            p_node->p_parent->p_rchild = p_new_parent;
         }
-
-        p_y->p_parent = p_parent;
     }
 
-    return p_y;
+    p_node->p_lchild = p_new_parent->p_rchild;
+
+    if(p_node->p_lchild != NULL) {
+        p_node->p_lchild->p_parent = p_node;
+    }
+
+    p_new_parent->p_rchild = p_node;
+    p_node->p_parent = p_new_parent;
+
+    return p_new_parent;
 }
 
 void remove_rebalance(php_mem_blck_tree p_tree,
@@ -825,6 +845,12 @@ void check_node(pheap_mem_blck_t p_node, long * p_num, long count)
             CHECK_COUNT(p_num, count);
 
         } else {
+            if(p_node->p_lchild->p_parent != p_node) {
+                hal_exception_panic(EHPCORRUPTION,
+                                    "Corruption has been detected in memory block %p.",
+                                    p_node);
+            }
+
             check_node(p_node->p_lchild, p_num, count);
         }
 
@@ -832,6 +858,12 @@ void check_node(pheap_mem_blck_t p_node, long * p_num, long count)
             CHECK_COUNT(p_num, count);
 
         } else {
+            if(p_node->p_rchild->p_parent != p_node) {
+                hal_exception_panic(EHPCORRUPTION,
+                                    "Corruption has been detected in memory block %p.",
+                                    p_node);
+            }
+
             check_node(p_node->p_rchild, p_num, count);
         }
 
@@ -840,6 +872,12 @@ void check_node(pheap_mem_blck_t p_node, long * p_num, long count)
             CHECK_COUNT(p_num, count + 1);
 
         } else {
+            if(p_node->p_lchild->p_parent != p_node) {
+                hal_exception_panic(EHPCORRUPTION,
+                                    "Corruption has been detected in memory block %p.",
+                                    p_node);
+            }
+
             check_node(p_node->p_lchild, p_num, count + 1);
         }
 
@@ -847,6 +885,12 @@ void check_node(pheap_mem_blck_t p_node, long * p_num, long count)
             CHECK_COUNT(p_num, count + 1);
 
         } else {
+            if(p_node->p_rchild->p_parent != p_node) {
+                hal_exception_panic(EHPCORRUPTION,
+                                    "Corruption has been detected in memory block %p.",
+                                    p_node);
+            }
+
             check_node(p_node->p_rchild, p_num, count + 1);
         }
 
