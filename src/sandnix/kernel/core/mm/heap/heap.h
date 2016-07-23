@@ -113,7 +113,7 @@ void core_mm_heap_chk(pheap_t heap);
 
 #define HEAP_CHECK(heap) { \
         do { \
-            if(hal_is_on_debug()) { \
+            if(hal_debug_is_on_dbg()) { \
                 core_mm_heap_chk((heap)); \
             } \
         } while(0); \

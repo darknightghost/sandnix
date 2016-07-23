@@ -24,3 +24,5 @@ core/rtl/rtl.c
 core/rtl/string/string.c
 core/rtl/string/printf.c
 core/rtl/math/math.c
+core/rtl/frame/list/list.c
+core/rtl/frame/map/map.c

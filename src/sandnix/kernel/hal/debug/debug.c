@@ -22,7 +22,7 @@ void hal_debug_init()
     return;
 }
 
-bool hal_is_on_debug()
+bool hal_debug_is_on_dbg()
 {
     return true;
 }

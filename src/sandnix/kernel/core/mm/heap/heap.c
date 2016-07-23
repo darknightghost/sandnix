@@ -506,7 +506,7 @@ void insert_node(php_mem_blck_tree p_tree,
         (*p_tree)->color = HEAP_MEMBLOCK_BLACK;
     }
 
-    if(hal_is_on_debug()) {
+    if(hal_debug_is_on_dbg()) {
         check_tree(p_tree);
     }
 
@@ -615,7 +615,7 @@ void remove_node(php_mem_blck_tree p_tree,
         }
     }
 
-    if(hal_is_on_debug()) {
+    if(hal_debug_is_on_dbg()) {
         check_tree(p_tree);
     }
 

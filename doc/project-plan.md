@@ -815,7 +815,7 @@ src/sandnix/kernel/hal/debug/
 void hal_debug_init();
 
 //是否开启调试
-bool hal_is_on_debug();
+bool hal_debug_is_on_dbg());
 ```
 ######文件列表
 ```c
@@ -2087,7 +2087,7 @@ void* core_rtl_map_next(
     void* p_key);
 
 //销毁
-void core_rtl_map_destroy
+void core_rtl_map_destroy(
 	pmap_t p_map,
     item_destroyer_t destroier,
     void* arg);

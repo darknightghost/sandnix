@@ -22,4 +22,4 @@
 void hal_debug_init();
 
 //Check if debuging is enabled
-bool hal_is_on_debug();
+bool hal_debug_is_on_dbg();
