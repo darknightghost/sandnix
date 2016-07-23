@@ -85,7 +85,8 @@ static	void				check_tree(php_mem_blck_tree p_tree);
 static	void				check_node(pheap_mem_blck_t p_node, long* p_num,
                                        long count);
 static	int					compare_node(pheap_mem_blck_t p1, pheap_mem_blck_t p2);
-static	void				swap_node(pheap_mem_blck_t p1, pheap_mem_blck_t p2);
+static	void				swap_node(pheap_mem_blck_t p1, pheap_mem_blck_t p2,
+                                      php_mem_blck_tree p_tree);
 
 pheap_t core_mm_heap_create(
     u32 attribute,
@@ -202,7 +203,7 @@ void core_mm_heap_free(
 
     //Release page
     if(p_mem_block->p_pg_block->ref == 0
-       && (p_mem_block->p_pg_block->attr & HEAP_PAGEBLOCK_FIX)) {
+       && (!(p_mem_block->p_pg_block->attr & HEAP_PAGEBLOCK_FIX))) {
         //TODO:Release page
         NOT_SUPPORT;
     }
@@ -283,6 +284,29 @@ void core_mm_heap_chk(pheap_t heap)
                 hal_exception_panic(EHPCORRUPTION,
                                     "Corruption has been detected in heap %p.",
                                     p_heap);
+            }
+
+            if(p_mem_blk->p_parent == NULL) {
+                if(p_mem_blk->allocated
+                   && p_mem_blk != p_heap->p_used_block_tree) {
+                    hal_exception_panic(EHPCORRUPTION,
+                                        "Corruption has been detected in heap %p.",
+                                        p_heap);
+
+                } else if((!p_mem_blk->allocated)
+                          && p_mem_blk != p_heap->p_empty_block_tree) {
+                    hal_exception_panic(EHPCORRUPTION,
+                                        "Corruption has been detected in heap %p.",
+                                        p_heap);
+                }
+
+            } else {
+                if(p_mem_blk != p_mem_blk->p_parent->p_lchild
+                   && p_mem_blk != p_mem_blk->p_parent->p_rchild) {
+                    hal_exception_panic(EHPCORRUPTION,
+                                        "Corruption has been detected in heap %p.",
+                                        p_heap);
+                }
             }
         }
     }
@@ -506,7 +530,7 @@ void remove_node(php_mem_blck_tree p_tree,
         }
 
         //Swap
-        swap_node(p_node, p_tmp_node);
+        swap_node(p_node, p_tmp_node, p_tree);
     }
 
     //Remove node
@@ -547,6 +571,8 @@ void remove_node(php_mem_blck_tree p_tree,
                 *p_tree = p_node->p_rchild;
                 p_node->p_rchild->p_parent = NULL;
             }
+
+            (*p_tree)->color = HEAP_MEMBLOCK_BLACK;
 
         } else {
             if(p_node->p_lchild != NULL) {
@@ -924,12 +950,17 @@ int compare_node(pheap_mem_blck_t p1, pheap_mem_blck_t p2)
     }
 }
 
-void swap_node(pheap_mem_blck_t p1, pheap_mem_blck_t p2)
+void swap_node(pheap_mem_blck_t p1, pheap_mem_blck_t p2,
+               php_mem_blck_tree p_tree)
 {
     pheap_mem_blck_t p_tmp;
+    u32 tmp_color;
 
     //Parent
-    if(p1->p_parent != NULL) {
+    if(p1->p_parent == NULL) {
+        *p_tree = p2;
+
+    } else {
         if(p1 == p1->p_parent->p_lchild) {
             p1->p_parent->p_lchild = p2;
 
@@ -938,7 +969,10 @@ void swap_node(pheap_mem_blck_t p1, pheap_mem_blck_t p2)
         }
     }
 
-    if(p2->p_parent != NULL) {
+    if(p2->p_parent == NULL) {
+        *p_tree = p1;
+
+    } else {
         if(p2 == p2->p_parent->p_lchild) {
             p2->p_parent->p_lchild = p1;
 
@@ -977,6 +1011,10 @@ void swap_node(pheap_mem_blck_t p1, pheap_mem_blck_t p2)
         p2->p_rchild->p_parent = p2;
     }
 
+    //Color
+    tmp_color = p1->color;
+    p1->color = p2->color;
+    p2->color = tmp_color;
 
     return;
 }
