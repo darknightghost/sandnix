@@ -28,19 +28,21 @@ typedef struct	_list_node {
 } list_node_t, *plist_node_t, *list_t, **plist_t;
 
 //Initialize
-#define core_rtl_list_init(list)
+#define core_rtl_list_init(p_list)		(*(p_list) = NULL)
 
 //Check if the list is empty
-#define core_rtl_list_empty(list)
+#define core_rtl_list_empty(p_list)		(*(p_list) == NULL)
 
 //Insert afer pos
+//Return the position of the new item
 plist_node_t core_rtl_list_insert_before(
-    plist_node_t pos,	//位置
-    plist_t p_list,		//链表地址
-    void* p_item,		//元素
-    pheap_t heap);		//堆
+    plist_node_t pos,	//Position
+    plist_t p_list,		//Link list
+    void* p_item,		//Item
+    pheap_t heap);		//Heap
 
 //Insert before pos
+//Return the position of the new item
 plist_node_t core_rtl_list_insert_after(
     plist_node_t pos,
     plist_t p_list,
@@ -49,35 +51,39 @@ plist_node_t core_rtl_list_insert_after(
 
 //Remove
 void core_rtl_list_remove(
-    plist_node_t pos,	//位置
-    plist_t p_list,		//链表地址
-    pheap_t heap);		//堆
+    plist_node_t pos,	//Position
+    plist_t p_list,		//List
+    pheap_t heap);		//Heap
 
 //Destroy
 void core_rtl_list_destroy(
-    plist_t p_list,				//链表
-    pheap_t heap,				//堆
-    item_destroyer_t destroier,	//销毁元素用的回调函数
-    void* arg);					//回调函数额外参数
+    plist_t p_list,				//List
+    pheap_t heap,				//Heap
+    item_destroyer_t destroier,	//The callback to destroy items
+    void* arg);					//The arguments of the callback
 
 //Join
 void core_rtl_list_join(
-    plist_t p_src,		//原链表
-    plist_t p_dest,		//目的链表
-    pheap_t src_heap,	//原链表所在堆
-    pheap_t dest_heap);	//目的链表所在堆
+    plist_t p_src,		//Source
+    plist_t p_dest,		//Destination
+    pheap_t src_heap,	//Heap of sourve
+    pheap_t dest_heap);	//Heap of dest
 
 //Get prev node
-#define core_rtl_list_prev(pos)
+#define core_rtl_list_prev(pos, p_list)		(((pos) == *(p_list)) \
+        ? NULL \
+        : ((pos)->p_prev))
 
 //Get next node
-#define core_rtl_list_next(pos)
+#define core_rtl_list_next(pos, p_list)		((pos == *(p_list)->p_prev) \
+        ? NULL \
+        : ((pos)->p_next))
 
 //Get item
-#define core_rtl_list_get(pos)
+#define core_rtl_list_get(pos)				((pos)->p_item)
 
 //Quick sort
 void core_rtl_list_qsort(
-    plist_t p_list,			//链表
-    item_compare_t compare,	//比较大小用的回调函数
-    bool b2s);				//true从大到小,false则反之
+    plist_t p_list,			//List
+    item_compare_t compare,	//Callback to compare items
+    bool b2s);				//If true, in ascending order, if false in descending order

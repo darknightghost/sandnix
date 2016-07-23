@@ -28,7 +28,13 @@ typedef struct	_rbtree_node {
     u32						color;
     void*					p_key;
     void*					p_value;
-} rbtree_node_t, *prbtree_node_t, *map_t, **pmap_t;
+} rbtree_node_t, *prbtree_node_t, *rbtree_t, **prbtree_t;
+
+typedef struct _map {
+    rbtree_t		p_tree;
+    item_compare_t	compare_func;
+    pheap_t			p_heap;
+} map_t, *pmap_t;
 
 //Initialize
 void core_rtl_map_init(

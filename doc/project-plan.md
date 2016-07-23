@@ -1933,10 +1933,10 @@ size_t core_rtl_sha512sum(
 //数据结构
 //链表
 //初始化
-#define core_rtl_list_init(list)
+#define core_rtl_list_init(p_list)
 
 //检测是否为空
-#define core_rtl_list_empty(list)
+#define core_rtl_list_empty(p_list)
 
 //在后面插入
 plist_node_t core_rtl_list_insert_before(
@@ -1973,10 +1973,10 @@ void core_rtl_list_join(
     pheap_t dest_heap);	//目的链表所在堆
 
 //获得上一项的位置
-#define core_rtl_list_prev(pos)
+#define core_rtl_list_prev(pos, p_list)
 
 //获得下一项的位置
-#define core_rtl_list_next(pos)
+#define core_rtl_list_next(pos, p_list)
 
 //得到链表项
 #define core_rtl_list_get(pos)
