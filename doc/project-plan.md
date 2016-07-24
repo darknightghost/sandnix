@@ -1953,7 +1953,7 @@ plist_node_t core_rtl_list_insert_after(
 	pheap_t heap);
 
 //删除
-void core_rtl_list_remove(
+void* core_rtl_list_remove(
 	plist_node_t pos,	//位置
     plist_t p_list,		//链表地址
 	pheap_t heap);		//堆
@@ -2089,7 +2089,8 @@ void* core_rtl_map_next(
 //销毁
 void core_rtl_map_destroy(
 	pmap_t p_map,
-    item_destroyer_t destroier,
+    item_destroyer_t key_destroier,
+    item_destroyer_t value_destroier,
     void* arg);
 
 //向量

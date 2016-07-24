@@ -36,6 +36,9 @@ typedef struct _map {
     pheap_t			p_heap;
 } map_t, *pmap_t;
 
+#define	RBTREE_NODE_BLACK		0
+#define	RBTREE_NODE_RED			1
+
 //Initialize
 void core_rtl_map_init(
     pmap_t p_map,
@@ -43,6 +46,9 @@ void core_rtl_map_init(
     pheap_t heap);
 
 //Set key value, If value == NULL, the key will be removed.
+//On sucess, if the operation is an insert operation, the return value is p_value,
+//otherwise, the return value is the previous value.
+//On failed, the function returns NULL
 void* core_rtl_map_set(
     pmap_t p_map,
     void* p_key,
@@ -61,5 +67,6 @@ void* core_rtl_map_next(
 //Destroy the map
 void core_rtl_map_destroy(
     pmap_t p_map,
-    item_destroyer_t destroier,
+    item_destroyer_t key_destroier,
+    item_destroyer_t value_destroier,
     void* arg);

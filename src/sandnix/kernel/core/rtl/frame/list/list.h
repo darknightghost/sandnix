@@ -36,7 +36,7 @@ typedef struct	_list_node {
 //Insert afer pos
 //Return the position of the new item
 plist_node_t core_rtl_list_insert_before(
-    plist_node_t pos,	//Position
+    plist_node_t pos,	//Position. If NULL, insert in the front of the list.
     plist_t p_list,		//Link list
     void* p_item,		//Item
     pheap_t heap);		//Heap
@@ -44,13 +44,13 @@ plist_node_t core_rtl_list_insert_before(
 //Insert before pos
 //Return the position of the new item
 plist_node_t core_rtl_list_insert_after(
-    plist_node_t pos,
+    plist_node_t pos,	//If NULL, insert at the end of the list.
     plist_t p_list,
     void* p_item,
     pheap_t heap);
 
 //Remove
-void core_rtl_list_remove(
+void* core_rtl_list_remove(
     plist_node_t pos,	//Position
     plist_t p_list,		//List
     pheap_t heap);		//Heap
