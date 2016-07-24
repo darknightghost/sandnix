@@ -15,12 +15,4 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
-
-#include "../../../../common/common.h"
-
-#include "varg.h"
-#include "./string/string.h"
-#include "./math/math.h"
-#include "./frame/frame.h"
-
+#include "kparam.h"

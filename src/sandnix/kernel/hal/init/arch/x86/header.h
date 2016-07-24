@@ -16,11 +16,7 @@
 */
 
 #pragma once
+#include "../../../../../../common/common.h"
+#include "../../../../core/rtl/rtl.h"
 
-#include "../../../../common/common.h"
-
-#include "varg.h"
-#include "./string/string.h"
-#include "./math/math.h"
-#include "./frame/frame.h"
-
+void	analyse_bootloader_info(void* p_info);

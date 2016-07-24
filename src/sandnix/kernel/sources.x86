@@ -1,9 +1,10 @@
 #hal
-#init
+##init
 hal/init/arch/x86/init.S
+hal/init/arch/x86/header.c
 
-#early_print
+##early_print
 hal/early_print/arch/x86/early_print.c
 
-#mmu
+##mmu
 hal/mmu/paging/arch/x86/paging.c

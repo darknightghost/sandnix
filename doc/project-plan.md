@@ -309,15 +309,15 @@ void* init_stack;
 void _start():
 
 //返回bootloader传来的memory map,格式为physical_memory_info_t,类型定义在mmu模块中.
-list_t hal_init_get_boot_memory_map():
+list_t hal_init_get_boot_memory_map();
 
 //返回初始化内存盘的位置和大小.
 void hal_init_get_initrd_addr(
 	void** p_addr,		//返回的起始地址
-    size_t* p_size):	//返回的大小
+    size_t* p_size);	//返回的大小
 
 //获得内核的命令行参数.
-char* hal_init_get_kernel_cmdline():
+char* hal_init_get_kernel_cmdline();
 ```
 ######文件列表
 ```c
@@ -377,6 +377,13 @@ physical_memory_info_t
 ```
 ######接口函数及宏
 ```c
+//物理内存属性
+#define	PHYMEM_AVAILABLE	0x00
+#define	PHYMEM_USED			0x01
+#define	PHYMEM_SYSTEM		0x02
+#define	PHYMEM_RESERVED		0x03
+#define	PHYMEM_BAD			0x04
+
 //页面大小
 #define	SANDNIX_KERNEL_PAGE_SIZE	4096
 

@@ -22,44 +22,23 @@
 #include "../../hal/exception/exception.h"
 #include "../../core/mm/mm.h"
 
-static void test();
+#if defined(X86)
+    #include "./arch/x86/header.h"
+#endif
 
-void kinit(void* p_kparams)
+void kinit(void* p_bootloader_info)
 {
     hal_early_print_init();
     hal_early_print_puts(VER_STR);
     hal_early_print_puts(" loading...\n");
 
     //Analyse parameters
-    hal_mmu_add_early_paging_addr(p_kparams);
-
-    test();
+    hal_mmu_add_early_paging_addr(p_bootloader_info);
+    analyse_bootloader_info(p_bootloader_info);
 
     while(1);
 
-    UNREFERRED_PARAMETER(p_kparams);
     return;
 }
 
-void test()
-{
-    int i;
-    int a[] = {1, 5, 6, 7, 89, 4, 5, 3, 9, 8, 1, 5, 54, 13,
-               1, 5, 13, 35, 13, 414,  5, 6, 58,
-               9, 4, 3, 8, 7, 2, 6, 5, 16, 18, 50, 20, 89, 48, 123
-              };
-    void* b[sizeof(a) / sizeof(int)];
 
-    for(i = 0; i < sizeof(a) / sizeof(int); i++) {
-        b[i] = core_mm_heap_alloc(a[i], NULL);
-    }
-
-    for(i = 0; i < sizeof(a) / sizeof(int); i++) {
-        core_mm_heap_free(b[i], NULL);
-    }
-
-    hal_early_print_puts("finished\n");
-
-    while(1) {
-    }
-}

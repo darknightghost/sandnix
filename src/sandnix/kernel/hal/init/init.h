@@ -30,6 +30,8 @@
 
 #ifndef _ASM
 
+#include "../../core/rtl/rtl.h"
+
 #pragma pack(push)
 #pragma pack(1)
 typedef struct _krnl_hdr_t {
@@ -45,4 +47,8 @@ typedef struct _krnl_hdr_t {
 
 extern	krnl_hdr_t	kernel_header;
 extern	void*		init_stack;
+
+list_t	hal_init_get_boot_memory_map();
+void	hal_init_get_initrd_addr(void** p_addr, size_t* p_size);
+char*	hal_init_get_kernel_cmdline();
 #endif	//!	_ASM

@@ -22,3 +22,15 @@
 
 #define	SANDNIX_KERNEL_PAGE_SIZE	4096
 #define	KERNEL_MAX_SIZE				(16 * 1024 * 1024)
+
+#define	PHYMEM_AVAILABLE	0x00
+#define	PHYMEM_USED			0x01
+#define	PHYMEM_SYSTEM		0x02
+#define	PHYMEM_RESERVED		0x03
+#define	PHYMEM_BAD			0x04
+
+typedef	struct	_physical_memory_info {
+    void*		begin;
+    size_t		size;
+    u32			type;
+} physical_memory_info_t, *pphysical_memory_info_t;

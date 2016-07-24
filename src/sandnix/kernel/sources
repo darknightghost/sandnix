@@ -2,24 +2,28 @@
 ##init
 hal/init/init.c
 
-#debug
+##kparam
+hal/kparam/kparam.c
+hal/kparam/kparam_loader.c
+
+##debug
 hal/debug/debug.c
 
-#exception
+##exception
 hal/exception/panic.c
 
-#rtl
+##rtl
 hal/rtl/math/math.c
 
 #core
-#pm
+##pm
 core/pm/thread/thread.c
 core/pm/lock/spinlock/spnlck.c
 
-#mm
+##mm
 core/mm/heap/heap.c
 
-#rtl
+##rtl
 core/rtl/rtl.c
 core/rtl/string/string.c
 core/rtl/string/printf.c

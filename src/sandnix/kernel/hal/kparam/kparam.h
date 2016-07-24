@@ -18,9 +18,3 @@
 #pragma once
 
 #include "../../../../common/common.h"
-
-#include "varg.h"
-#include "./string/string.h"
-#include "./math/math.h"
-#include "./frame/frame.h"
-
