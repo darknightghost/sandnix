@@ -20,3 +20,14 @@
 #include "../../../../core/rtl/rtl.h"
 
 void	analyse_bootloader_info(void* p_info);
+
+//Get pyhsical memory map from bootloader
+list_t	hal_init_get_boot_memory_map();
+
+//Get physical address and size initialize ramdisk.
+void	hal_init_get_initrd_addr(
+    void** p_addr,
+    size_t* p_size);
+
+//Get kernel commandline
+char*	hal_init_get_kernel_cmdline();

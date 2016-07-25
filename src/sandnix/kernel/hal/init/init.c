@@ -32,8 +32,7 @@ void kinit(void* p_bootloader_info)
     hal_early_print_puts(VER_STR);
     hal_early_print_puts(" loading...\n");
 
-    //Analyse parameters
-    hal_mmu_add_early_paging_addr(p_bootloader_info);
+    //Analyse bootloader parameters
     analyse_bootloader_info(p_bootloader_info);
 
     while(1);

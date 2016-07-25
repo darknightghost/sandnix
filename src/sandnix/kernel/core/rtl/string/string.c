@@ -867,6 +867,11 @@ int core_rtl_strncmp(const char* s1, const char* s2, size_t len)
     return 0;
 }
 
+int core_rtl_strcmp(const char* s1, const char* s2)
+{
+    return core_rtl_strncmp(s1, s2, 0xFFFFFFFF);
+}
+
 char* core_rtl_strncpy(char* dest, const char* src, size_t len)
 {
     char* p_src;

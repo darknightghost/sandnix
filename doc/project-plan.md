@@ -358,11 +358,8 @@ kstatus_t hal_kparam_get_value(char* key, char* buf, size_t size);
 //接口头文件
 src/sandnix/kernel/hal/kparam/kparam.h
 
-//参数管理代码
+//参数解析,管理代码
 src/sandnix/kernel/hal/kparam/kparam.c
-
-//参数解析代码
-src/sandnix/kernel/hal/kparam/kparam_loader.c
 ```
 #####mmu
 负责初始化分页机制,管理mmu以及提供分页管理的接口.

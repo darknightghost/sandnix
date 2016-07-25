@@ -33,6 +33,7 @@ size_t		core_rtl_strcspn(const char* str, const char* reject);
 size_t		core_rtl_strlen(const char* str);
 char*		core_rtl_strncat(char *dest, const char *src, size_t len);
 int			core_rtl_strncmp(const char* s1, const char* s2, size_t len);
+int			core_rtl_strcmp(const char* s1, const char* s2);
 char*		core_rtl_strncpy(char* dest, const char* src, size_t len);
 char*		core_rtl_strpbrk(const char* str1, const char* accept);
 char*		core_rtl_strrchr(const char* str, char ch);

@@ -18,3 +18,9 @@
 #pragma once
 
 #include "../../../../common/common.h"
+
+//Initialize module
+void hal_kparam_init();
+
+//Get kernel param
+kstatus_t hal_kparam_get_value(char* key, char* buf, size_t size);

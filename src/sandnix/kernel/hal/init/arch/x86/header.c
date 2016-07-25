@@ -39,6 +39,8 @@ void analyse_bootloader_info(void* p_info)
     pmultiboot_tag_string_t p_cmdline_info;
     pmultiboot_tag_mmap_t p_mmap_info;
 
+    p_info = hal_mmu_add_early_paging_addr(p_info);
+
     //Initialize variables
     core_rtl_list_init(&boot_mem_map);
     initrd_addr = NULL;
@@ -95,6 +97,23 @@ void analyse_bootloader_info(void* p_info)
     if(kernel_cmdline == NULL) {
         hal_exception_panic(EKERNELARG, "Kernel command line is missing.\n");
     }
+}
+
+list_t hal_init_get_boot_memory_map()
+{
+    return boot_mem_map;
+}
+
+void hal_init_get_initrd_addr(void** p_addr, size_t* p_size)
+{
+    *p_addr = initrd_addr;
+    *p_size = initrd_size;
+    return;
+}
+
+char* hal_init_get_kernel_cmdline()
+{
+    return kernel_cmdline;
 }
 
 void analyse_map_info(pmultiboot_tag_mmap_t p_mmap_tag)

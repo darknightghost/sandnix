@@ -4,7 +4,6 @@ hal/init/init.c
 
 ##kparam
 hal/kparam/kparam.c
-hal/kparam/kparam_loader.c
 
 ##debug
 hal/debug/debug.c
