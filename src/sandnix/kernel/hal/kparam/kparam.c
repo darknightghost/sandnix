@@ -20,6 +20,7 @@
 #include "../mmu/mmu.h"
 #include "../../core/rtl/rtl.h"
 #include "../exception/exception.h"
+#include "../early_print/early_print.h"
 
 static	map_t		krnl_param_map;
 
@@ -33,8 +34,9 @@ void hal_kparam_init()
     char* p_value;
     char* p_key;
 
-    p_cmdline = hal_mmu_add_early_paging_addr(
-                    hal_init_get_kernel_cmdline());
+    hal_early_print_puts("\nAnalysing kernel parameters...\n");
+
+    p_cmdline = hal_init_get_kernel_cmdline();
     core_rtl_map_init(&krnl_param_map, (item_compare_t)core_rtl_strcmp, NULL);
 
     //Analyse parameters
@@ -56,6 +58,10 @@ void hal_kparam_init()
             p_value = "";
         }
 
+        hal_early_print_puts(p_key);
+        hal_early_print_puts(" = ");
+        hal_early_print_puts(p_value);
+        hal_early_print_puts("\n");
         core_rtl_map_set(&krnl_param_map, p_key, p_value);
     }
 

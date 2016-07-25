@@ -47,15 +47,13 @@ void analyse_bootloader_info(void* p_info)
     initrd_size = 0;
     kernel_cmdline = NULL;
 
-    hal_early_print_puts("Analysing boot informations...\n");
+    hal_early_print_puts("\nAnalysing boot informations...\n");
     hal_early_print_puts("Booting protocol : Multiboot2\n");
 
     boot_info_size = *((u32*)p_info);
     p_tag = (pmultiboot_tag_t)((address_t)p_info + 8);
 
-
-    while((address_t)p_tag - (address_t)p_info > boot_info_size) {
-        p_tag = (pmultiboot_tag_t)((address_t)p_tag + p_tag->size);
+    while((address_t)p_tag - (address_t)p_info < boot_info_size) {
 
         if(p_tag->type == MULTIBOOT_TAG_TYPE_END) {
             break;
@@ -80,7 +78,10 @@ void analyse_bootloader_info(void* p_info)
                 break;
         }
 
+
         //Make p_tag 8 bytes aligned
+        p_tag = (pmultiboot_tag_t)((address_t)p_tag + p_tag->size);
+
         if((address_t)p_tag % 8 != 0) {
             p_tag = (pmultiboot_tag_t)((address_t)p_tag + (8 - (address_t)p_tag % 8));
         }

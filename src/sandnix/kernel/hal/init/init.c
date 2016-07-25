@@ -21,6 +21,7 @@
 #include "../../core/rtl/rtl.h"
 #include "../../hal/exception/exception.h"
 #include "../../core/mm/mm.h"
+#include "../../hal/kparam/kparam.h"
 
 #if defined(X86)
     #include "./arch/x86/header.h"
@@ -34,6 +35,7 @@ void kinit(void* p_bootloader_info)
 
     //Analyse bootloader parameters
     analyse_bootloader_info(p_bootloader_info);
+    hal_kparam_init();
 
     while(1);
 
