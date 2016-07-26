@@ -75,7 +75,7 @@ void core_rtl_list_join(
         : ((pos)->p_prev))
 
 //Get next node
-#define core_rtl_list_next(pos, p_list)		((pos == *(p_list)->p_prev) \
+#define core_rtl_list_next(pos, p_list)		((pos == (*(p_list))->p_prev) \
         ? NULL \
         : ((pos)->p_next))
 

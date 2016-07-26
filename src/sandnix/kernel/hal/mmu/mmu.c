@@ -16,9 +16,11 @@
 */
 
 #include "mmu.h"
+#include "../early_print/early_print.h"
 
 void hal_mmu_init()
 {
+    hal_early_print_printf("\nInitializing mmu...\n");
     phymem_init();
     return;
 }

@@ -29,8 +29,8 @@
 #define	PHYMEM_BAD			0x06
 
 typedef	struct	_physical_memory_info {
-    void*		begin;
-    size_t		size;
+    u64			begin;
+    u64			size;
     u32			type;
 } physical_memory_info_t, *pphysical_memory_info_t;
 

@@ -70,6 +70,7 @@ void analyse_bootloader_info(void* p_info)
             case MULTIBOOT_TAG_TYPE_CMDLINE:
                 p_cmdline_info = (pmultiboot_tag_string_t)p_tag;
                 kernel_cmdline = p_cmdline_info->string;
+                kernel_cmdline = (char*)((address_t)kernel_cmdline - KERNEL_MEM_BASE);
                 break;
 
             case MULTIBOOT_TAG_TYPE_MMAP:
@@ -98,6 +99,10 @@ void analyse_bootloader_info(void* p_info)
     if(kernel_cmdline == NULL) {
         hal_exception_panic(EKERNELARG, "Kernel command line is missing.\n");
     }
+
+    hal_early_print_printf("Initrd address : %p.\n", initrd_addr);
+    hal_early_print_printf("Initrd size : %p.\n", initrd_size);
+    hal_early_print_printf("Kernel cmdline address : %p.\n", kernel_cmdline);
 }
 
 list_t hal_init_get_boot_memory_map()
@@ -126,8 +131,8 @@ void analyse_map_info(pmultiboot_tag_mmap_t p_mmap_tag)
         (address_t)p_entry < (address_t)p_mmap_tag + p_mmap_tag->size;
         p_entry = (pmultiboot_mmap_entry_t)((address_t)p_entry + p_mmap_tag->entry_size)) {
         p_phymem_info = core_mm_heap_alloc(sizeof(physical_memory_info_t), NULL);
-        p_phymem_info->begin = (void*)(address_t)(p_entry->addr);
-        p_phymem_info->size = (address_t)(p_entry->len);
+        p_phymem_info->begin = (u64)(p_entry->addr);
+        p_phymem_info->size = (u64)(p_entry->len);
 
         switch(p_entry->type) {
             case MULTIBOOT_MEMORY_AVAILABLE:
