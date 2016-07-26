@@ -27,6 +27,7 @@
     #include "./arch/x86/header.h"
 #endif
 
+u8	__attribute__((aligned(4096)))	init_stack[DEFAULT_STACK_SIZE];
 void kinit(void* p_bootloader_info)
 {
     hal_early_print_init();

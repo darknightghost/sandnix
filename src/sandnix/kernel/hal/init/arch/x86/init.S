@@ -18,15 +18,8 @@
 #include "../../init.h"
 
 .global		_start
-.global		init_stack
 .global		gdt
 .global		kernel_header
-
-.section	.bss
-init_stack:
-.rept
-.byte
-.endr
 
 .section	.data
 gdt:
@@ -124,7 +117,7 @@ _KERNEL_MEM:
 	//Reload stack
 	popl	%edi
 	movl	$init_stack, %ebx
-	addl	$INIT_STACK_SIZE, %ebx
+	addl	$DEFAULT_STACK_SIZE, %ebx
 	movl	%ebx, %ebp
 	movl	%ebx, %esp
 	push	%edi

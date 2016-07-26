@@ -5,6 +5,13 @@ hal/init/init.c
 ##kparam
 hal/kparam/kparam.c
 
+##mmu
+hal/mmu/mmu.c
+hal/mmu/phymem/phymem.c
+
+##early_print
+hal/early_print/early_print.c
+
 ##debug
 hal/debug/debug.c
 

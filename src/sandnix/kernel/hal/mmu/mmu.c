@@ -15,22 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "mmu.h"
 
-#include "../../../../common/common.h"
-#include "./paging/paging.h"
-#include "./phymem/phymem.h"
-
-#define	SANDNIX_KERNEL_PAGE_SIZE	4096
-#define	KERNEL_MAX_SIZE				(16 * 1024 * 1024)
-
-//Initialize mmu module
-void hal_mmu_init();
-
-//Initialize cpu core
-void hal_mmu_core_init(
-    int cpuid);
-
-//Release cpu core
-void hal_mmu_core_release(
-    int cpuid);
+void hal_mmu_init()
+{
+    phymem_init();
+    return;
+}

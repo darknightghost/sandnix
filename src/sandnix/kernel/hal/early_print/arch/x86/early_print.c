@@ -46,7 +46,7 @@ static void		update_cursor();
 static void		scoll_down();
 static void		out_ch(u16 ch);
 
-void hal_early_print_init()
+void hal_early_print_arch_init()
 {
     //Initialize lock
     core_pm_spnlck_init(&lock);
@@ -136,6 +136,8 @@ void hal_early_print_puts(char* str)
     u32 num;
 
     core_pm_spnlck_lock(&lock);
+
+    //TODO:Write but
 
     for(p = str; *p != '\0'; p++) {
         if(*p < 0x20) {

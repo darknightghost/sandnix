@@ -15,22 +15,30 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "phymem.h"
+#include "../../init/init.h"
 
-#include "../../../../common/common.h"
-#include "./paging/paging.h"
-#include "./phymem/phymem.h"
+static	map_t	phymem_info_map;
 
-#define	SANDNIX_KERNEL_PAGE_SIZE	4096
-#define	KERNEL_MAX_SIZE				(16 * 1024 * 1024)
+void phymem_init()
+{
+    list_t info_list;
 
-//Initialize mmu module
-void hal_mmu_init();
+    //Get physical memeory information from bootloader.
+    info_list = hal_init_get_boot_memory_map();
 
-//Initialize cpu core
-void hal_mmu_core_init(
-    int cpuid);
+    archecture_phyaddr_edit(&info_list);
+}
 
-//Release cpu core
-void hal_mmu_core_release(
-    int cpuid);
+kstatus_t hal_mmu_phymem_alloc(
+    void** p_addr,		//Start address
+    bool is_dma,		//DMA page
+    size_t page_num);	//Num
+
+void hal_mmu_phymem_free(
+    void* addr,			//Address
+    size_t page_num);	//Num
+
+size_t hal_mmu_get_phymem_info(
+    pphysical_memory_info_t p_buf,	//Pointer to buffer
+    size_t size);

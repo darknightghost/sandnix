@@ -15,22 +15,19 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "../../phymem.h"
+#include "../../../../../core/mm/mm.h"
 
-#include "../../../../common/common.h"
-#include "./paging/paging.h"
-#include "./phymem/phymem.h"
+void archecture_phyaddr_edit(plist_t p_phy_addr_list)
+{
+    pphysical_memory_info_t p_dma_info;
 
-#define	SANDNIX_KERNEL_PAGE_SIZE	4096
-#define	KERNEL_MAX_SIZE				(16 * 1024 * 1024)
+    p_dma_info = core_mm_heap_alloc(sizeof(physical_memory_info_t), NULL);
 
-//Initialize mmu module
-void hal_mmu_init();
+    p_dma_info->begin = (void*)0x00000000;
+    p_dma_info->size = 4096 * 4096 * 4;
+    p_dma_info->type = PHYMEM_DMA;
 
-//Initialize cpu core
-void hal_mmu_core_init(
-    int cpuid);
-
-//Release cpu core
-void hal_mmu_core_release(
-    int cpuid);
+    core_rtl_list_insert_after(NULL, p_phy_addr_list, p_dma_info, NULL);
+    return;
+}

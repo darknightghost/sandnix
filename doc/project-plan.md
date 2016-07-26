@@ -376,10 +376,12 @@ physical_memory_info_t
 ```c
 //物理内存属性
 #define	PHYMEM_AVAILABLE	0x00
-#define	PHYMEM_USED			0x01
-#define	PHYMEM_SYSTEM		0x02
-#define	PHYMEM_RESERVED		0x03
-#define	PHYMEM_BAD			0x04
+#define	PHYMEM_DMA			0x01
+#define	PHYMEM_USED			0x02
+#define	PHYMEM_DMA_USED		0x03
+#define	PHYMEM_SYSTEM		0x04
+#define	PHYMEM_RESERVED		0x05
+#define	PHYMEM_BAD			0x06
 
 //页面大小
 #define	SANDNIX_KERNEL_PAGE_SIZE	4096
@@ -406,6 +408,7 @@ void hal_mmu_core_release(
 //申请物理内存
 kstatus_t hal_mmu_phymem_alloc(
 	void** p_addr,		//起始地址
+    bool is_dma,		//是否为DMA保留内存
 	size_t page_num);	//页面数
 
 //释放物理内存
@@ -491,6 +494,12 @@ void hal_early_print_color(
 //打印字符串
 void hal_early_print_puts(
 	char* str);	//被打印的字符串
+
+//格式化输出
+void hal_early_print__printf(char* fmt, ...);
+
+//读取输出缓冲区
+size_t hal_early_print_read(char* buf, size_t len);
 ```
 ######文件列表
 ```c

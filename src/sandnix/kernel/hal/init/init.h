@@ -20,17 +20,19 @@
 #include "../../../../common/common.h"
 
 #if defined X86
-    #define	INIT_STACK_SIZE		4096
+    #define	DEFAULT_STACK_SIZE		(12 * 4096)
     #define KERNEL_HEADER_MAGIC		0x444E4153
     #include "./arch/x86/init.h"
 #elif defined ARM
-    #define	INIT_STACK_SIZE		4096
+    #define	DEFAULT_STACK_SIZE		(12 * 4096)
     #define KERNEL_HEADER_MAGIC		0x444E4153
 #endif
 
 #ifndef _ASM
 
 #include "../../core/rtl/rtl.h"
+
+#define	DEFAULT_STACK_SIZE		(12 * 4096)
 
 #pragma pack(push)
 #pragma pack(1)
@@ -46,7 +48,7 @@ typedef struct _krnl_hdr_t {
 #pragma pack(pop)
 
 extern	krnl_hdr_t	kernel_header;
-extern	void*		init_stack;
+extern	u8			init_stack[];
 
 list_t	hal_init_get_boot_memory_map();
 void	hal_init_get_initrd_addr(void** p_addr, size_t* p_size);
