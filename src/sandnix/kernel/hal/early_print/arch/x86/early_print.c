@@ -278,26 +278,36 @@ void update_cursor()
 void scoll_down()
 {
     u16 filled_char;
+    u32 src;
+    u32 dest;
+    u32 count;
 
     //Scoll
+    src = (address_t)BASIC_VIDEO_ADDR + DEFAULT_STDOUT_WIDTH * sizeof(u16);
+    dest = BASIC_VIDEO_ADDR;
+    count = DEFAULT_STDOUT_WIDTH * (DEFAULT_STDOUT_HEIGHT - 1);
     __asm__ __volatile__(
         "cld\n"
+        "movl	%0, %%ecx\n"
+        "movl	%1, %%esi\n"
+        "movl	%2, %%edi\n"
         "rep	movsw\n"
-        ::"ecx"(DEFAULT_STDOUT_WIDTH * (DEFAULT_STDOUT_HEIGHT - 1)),
-        "esi"((address_t)BASIC_VIDEO_ADDR + DEFAULT_STDOUT_WIDTH * sizeof(u16)),
-        "edi"(BASIC_VIDEO_ADDR)
-        :"memory");
+        ::"m"(count), "m"(src),
+        "m"(dest)
+        :"ecx", "esi", "edi", "memory");
 
     //Clear last line
     filled_char = ((u16)(bg | fg)) << 8 | ' ';
+    dest = (address_t)BASIC_VIDEO_ADDR +
+           DEFAULT_STDOUT_WIDTH * (DEFAULT_STDOUT_HEIGHT - 1) * 2;
     __asm__ __volatile__(
         "cld\n"
+        "movb	%0, %%al\n"
+        "movl	%1, %%ecx\n"
+        "movl	%2, %%edi\n"
         "rep	stosw\n"
-        ::"ax"(filled_char),
-        "ecx"(DEFAULT_STDOUT_WIDTH),
-        "edi"((address_t)BASIC_VIDEO_ADDR +
-              DEFAULT_STDOUT_WIDTH * (DEFAULT_STDOUT_HEIGHT - 1) * 2)
-        :"memory");
+        ::"m"(filled_char), "i"(DEFAULT_STDOUT_WIDTH), "m"(dest)
+        :"eax", "ecx", "edi", "memory");
 
     current_cursor_line--;
     MEM_BLOCK;

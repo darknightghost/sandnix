@@ -96,7 +96,37 @@ pheap_t core_mm_heap_create_on_buf(
     u32 attribute,
     size_t scale,
     void* init_buf,
-    size_t init_buf_size);
+    size_t init_buf_size)
+{
+    pheap_t ret;
+    pheap_mem_blck_t p_mem_block;
+
+    ret = core_mm_heap_alloc(sizeof(heap_t), NULL);
+
+    if(ret == NULL) {
+        return NULL;
+    }
+
+    //Initialize heap
+    INIT_HEAP(ret, scale, attribute);
+
+    //Initialize page block
+    INIT_PG_BLOCK(init_buf, HEAP_PAGEBLOCK_FIX,
+                  init_buf_size, ret);
+    ret->p_pg_block_list = (pheap_pg_blck_t)init_buf;
+
+    //Initialize first memory block
+    p_mem_block = (pheap_mem_blck_t)((address_t)init_buf
+                                     + HEAP_PG_BLCK_SZ);
+
+    INIT_MEMBLOCK(p_mem_block, init_buf_size
+                  - HEAP_PG_BLCK_SZ,
+                  (pheap_pg_blck_t)init_buf , ret);
+
+    ret->p_empty_block_tree = p_mem_block;
+
+    return ret;
+}
 
 void* core_mm_heap_alloc(size_t size, pheap_t heap)
 {
