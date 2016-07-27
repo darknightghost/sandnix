@@ -26,7 +26,7 @@
 //static	map_t			phymem_info_map;
 static	bool			initialized = false;
 
-static	bool			if_conflict(plist_node_t p_pos1, plist_node_t p_pos2);
+static	bool			should_merge(plist_node_t p_pos1, plist_node_t p_pos2);
 static	void			merge_mem(plist_node_t* p_p_pos1, plist_node_t* p_p_pos2,
                                   plist_t p_list);
 static	int				compare_memblock(pphysical_memory_info_t p1,
@@ -112,7 +112,7 @@ void phymem_init()
         p_pos2 = core_rtl_list_next(p_pos1, &info_list);
 
         while(true) {
-            if(if_conflict(p_pos1, p_pos2)) {
+            if(should_merge(p_pos1, p_pos2)) {
                 merge_mem(&p_pos1, &p_pos2, &info_list);
                 continue;
 
@@ -192,7 +192,7 @@ size_t hal_mmu_get_phymem_info(
     pphysical_memory_info_t p_buf,	//Pointer to buffer
     size_t size);
 
-bool if_conflict(plist_node_t p_pos1, plist_node_t p_pos2)
+bool should_merge(plist_node_t p_pos1, plist_node_t p_pos2)
 {
     pphysical_memory_info_t p1;
     pphysical_memory_info_t p2;
@@ -203,6 +203,12 @@ bool if_conflict(plist_node_t p_pos1, plist_node_t p_pos2)
 
     p1 = (pphysical_memory_info_t)(p_pos1->p_item);
     p2 = (pphysical_memory_info_t)(p_pos2->p_item);
+
+    if((p1->begin + p1->size == p2->begin
+        || p2->begin + p2->size == p1->begin)
+       && p1->type == p2->type) {
+        return true;
+    }
 
     if(IN_RANGE(p1->begin, p2->begin, p2->size)
        || IN_RANGE(p1->begin + p1->size - 1, p2->begin, p2->size)
@@ -239,7 +245,7 @@ void merge_mem(plist_node_t* p_p_pos1, plist_node_t* p_p_pos2, plist_t p_list)
 
         if(p_1->begin + p_1->size > p_2->begin
            && p_2->begin + p_2->size > p_1->begin + p_1->size
-           && p_1->begin <= p_2->begin) {
+           && p_1->begin < p_2->begin) {
             //End of pos1
             end = p_2->begin + p_2->size;
             p_2->begin = p_1->begin + p_1->size;
@@ -248,7 +254,7 @@ void merge_mem(plist_node_t* p_p_pos1, plist_node_t* p_p_pos2, plist_t p_list)
 
         } else if(p_2->begin + p_2->size > p_1->begin
                   && p_1->begin + p_1->size > p_2->begin + p_2->size
-                  && p_1->begin >= p_2->begin) {
+                  && p_1->begin > p_2->begin) {
             //Begining of pos1
             p_2->size = p_1->begin - p_2->begin;
             p_ret_pos2 = core_rtl_list_next(p_pos2, p_list);
@@ -314,7 +320,7 @@ void merge_mem(plist_node_t* p_p_pos1, plist_node_t* p_p_pos2, plist_t p_list)
         //2>1
         if(p_2->begin + p_2->size > p_1->begin
            && p_1->begin + p_1->size > p_2->begin + p_2->size
-           && p_2->begin <= p_1->begin) {
+           && p_2->begin < p_1->begin) {
             //End of pos2
             end = p_1->begin + p_1->size;
             p_1->begin = p_2->begin + p_2->size;
@@ -324,7 +330,7 @@ void merge_mem(plist_node_t* p_p_pos1, plist_node_t* p_p_pos2, plist_t p_list)
 
         } else if(p_1->begin + p_1->size > p_2->begin
                   && p_2->begin + p_2->size > p_1->begin + p_1->size
-                  && p_2->begin >= p_1->begin) {
+                  && p_2->begin > p_1->begin) {
             //Begining of pos2
             p_1->size = p_2->begin - p_1->begin;
             p_ret_pos1 = p_pos1;
@@ -341,7 +347,7 @@ void merge_mem(plist_node_t* p_p_pos1, plist_node_t* p_p_pos2, plist_t p_list)
             begin = MIN(p_1->begin, p_2->begin);
             p_2->begin = begin;
             p_2->size = end - begin;
-            core_mm_heap_free(p_2, NULL);
+            core_mm_heap_free(p_1, NULL);
 
             if(p_ret_pos1 == NULL) {
                 p_ret_pos1 = *p_list;
