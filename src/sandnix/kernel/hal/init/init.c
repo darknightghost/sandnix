@@ -30,15 +30,16 @@
 u8	__attribute__((aligned(4096)))	init_stack[DEFAULT_STACK_SIZE];
 void kinit(void* p_bootloader_info)
 {
-    hal_early_print_init();
-    hal_early_print_printf("%s loading...\n", VER_STR);
+    //hal_early_print_init();
+    //hal_early_print_printf("%s loading...\n", VER_STR);
 
     //Analyse bootloader parameters
-    analyse_bootloader_info(p_bootloader_info);
-    hal_kparam_init();
+    //analyse_bootloader_info(p_bootloader_info);
+    //hal_kparam_init();
 
     //Initialize modules
-    hal_mmu_init();
+    //hal_mmu_init();
+    UNREFERRED_PARAMETER(p_bootloader_info);
 
     while(1);
 

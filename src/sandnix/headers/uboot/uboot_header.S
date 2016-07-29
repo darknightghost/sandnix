@@ -15,12 +15,48 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "./uboot.h"
 
-#include "../../../../../common/common.h"
+.section	.text 
+.global		_start
 
-#if defined X86
-#include "./x86/string.h"
-#elif defined ARM
-//#include "./arm/string.h"
-#endif
+ih_magic:
+	.long	IH_MAGIC
+
+ih_hcrc:
+	.long	0
+
+ih_time:
+	.long	0
+
+ih_size:
+	.long	0
+
+ih_load:
+	.long	0
+
+ih_ep:
+	.long	0
+
+ih_dcrc:
+	.long	0
+
+ih_os:
+	.byte	IH_OS_LINUX
+
+ih_arch
+	.byte	0
+
+ih_type
+	.byte	0
+
+ih_comp
+	.byte	IH_COMP_NONE
+
+ih_name:
+	.asciz	"SANDNIX"
+
+.rept		IH_NMLEN - 8
+	.byte	0
+.endr
+
