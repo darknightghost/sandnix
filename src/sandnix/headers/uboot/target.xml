@@ -19,7 +19,7 @@
             <LD>arm-none-eabi-ld</LD>
             <LDFLAGS>-Ttext 0x30800000</LDFLAGS>
             <LDRULE>$(LD) $(LDFLAGS) -o $@.tmp $^;arm-none-eabi-objcopy -O binary -S $@.tmp $@</LDRULE>
-            <AFTER>./image-builder.py -t kernel -h $(LINKED) -i $(OUTDIR)/kernel -o $(OUTDIR)/$(OUTPUT) -p 0xC0000000</AFTER>
+            <AFTER>./image-builder.py -t kernel -h $(LINKED) -i $(OUTDIR)/kernel -o $(OUTDIR)/$(OUTPUT) -p 0x70000000</AFTER>
         </arch>
     </archs>
     <dependencies>

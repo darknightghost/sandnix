@@ -61,4 +61,4 @@ _start:
 	mov		r0, #1
 	mov		r0, #2
 	mov		r0, #3
-	b	_start
+	b		_start

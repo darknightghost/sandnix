@@ -32,7 +32,7 @@
             <ASFLAGS>-c -DARM -DARM_SAMSUNG_EXYNOS4412 -DARM_SAMSUNG_EXYNOS4412_ITOP_4412 -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -Werror -march=armv7-a</ASFLAGS>
             <ASRULE>$(AS) $(ASFLAGS) -o $@ $&lt;</ASRULE>
             <LD>arm-none-eabi-ld</LD>
-            <LDFLAGS>-Ttext 0xc0100000 -e _start --no-omagic</LDFLAGS>
+            <LDFLAGS>-Ttext 0x70000000 -e _start --no-omagic</LDFLAGS>
             <LDRULE>$(LD) $(LDFLAGS) -o $@ $^</LDRULE>
             <AFTER>cp $(LINKED) $(OUTDIR)/$(OUTPUT)</AFTER>
         </arch>
