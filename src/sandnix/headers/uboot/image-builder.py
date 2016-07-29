@@ -29,6 +29,7 @@
 import sys
 from elf import elf
 from kernel_header import kernel_header
+import uboot
 
 def main(argv):
     #Analyse args
@@ -90,9 +91,78 @@ def main(argv):
     return ret
 
 def mk_kernel(arg_dict):
+    #Analyse elf file
+    kernel = elf.elf(arg_dict["input"])
+
+    #Fill kernel header
+    if len(kernel.program_headers) > 2:
+        print("Too many segments in kernel image.\n")
+        return -1
+    for ph in kernel.program_headers:
+        if ph.flags & elf.program_header.PF_X:
+            kheader.code_start = ph.vaddr
+            kheader.code_size = ph.memsz
+        else:
+            kheader.data_start = ph.vaddr
+            kheader.data_size = ph.memsz
+
+    kheader.update()
+    print(str(kheader))
+
+    #Create kernel image
+    for ph in kernel.program_headers:
+        if ph.flags & elf.program_header.PF_X:
+            code_data = ph.data
+        else:
+            data_data = ph.data
+
+    vaddr_base = min(kheader.code_start, kheader.data_start)
+    vaddr_size = max(kheader.code_start + kheader.code_size, \
+            kheader.data_start + kheader.data_size) - vaddr_base;
+    kernel_img = b'\x00' * vaddr_size
+    kernel_img = kernel_img[kheader.code_start - vaddr_base : \
+            kheader.code_start - vaddr_base + kheader.code_size] \
+            + code_data + kernel_img[kheader.code_start - vaddr_base + \
+            kheader.code_size :]
+    kernel_img = kernel_img[kheader.data_start - vaddr_base : \
+            kheader.data_start - vaddr_base + kheader.data_size] \
+            + data_data + kernel_img[kheader.data_start - vaddr_base + \
+            kheader.data_size :]
+
+    #Create uboot header
+    uboot_header = uboot,uboot(arg_dict["header"], "arm")
+    uboot_header.set_data_address(arg_dict["load_address"])
+    uboot_header.set_data_size(len(kernel_img))
+    uboot_header.set_type(uboot.uboot.IH_TYPE_KERNEL)
+    uboot_header.set_entry_point(kernel.entry - vaddr_base + \
+            arg_dict["load_address"])
+
+    fout = open(arg_dict["output"], "wr")
+
+    #Write image file
+    uboot_header.save(kernel_img, fout);
+    fout,close()
+
     return 0
 
 def mk_initrd(arg_dict):
+    #Load image
+    f = open(arg_dict["input"], "rb")
+    img = f.read()
+
+    #Create uboot header
+    uboot_header = uboot,uboot(arg_dict["header"], "arm")
+    uboot_header.set_data_address(arg_dict["load_address"])
+    uboot_header.set_data_size(len(img))
+    uboot_header.set_type(uboot.uboot.IH_TYPE_RAMDISK)
+    uboot_header.set_entry_point(arg_dict["load_address"])
+
+    fout = open(arg_dict["output"], "wr")
+
+    #Write image file
+    uboot_header.save(kernel_img, fout);
+    fout,close()
+
     return 0
 
 def usage():

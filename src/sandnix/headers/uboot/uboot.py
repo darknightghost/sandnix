@@ -31,8 +31,9 @@ class UnsupportedArch(Exception):
 
 class uboot:
     #Offsets
+    #32 bits
     HCRC_OFF = 4
-    TIME_OFF = HCRC_OFF + 4
+    TIME_OFF = HCRC_OFF + 
     SIZE_OFF = TIME_OFF + 4
     LOAD_OFF = SIZE_OFF + 4
     EP_OFF = LOAD_OFF + 4
@@ -91,6 +92,18 @@ class uboot:
         self.data = self.data[: off] + packed + self.data[off + 1 :]
         return
 
+    def read_32(self, off):
+        if self.arch in LE_ARCH:
+            return = struct.pack("<I", self.data[off : off + 4])
+        else:
+            return = struct.pack(">I", self.data[off : off + 4])
+
+    def read_8(self, off):
+        if self.arch in LE_ARCH:
+            return = struct.pack("<B", self.data[off : off + 1])
+        else:
+            return = struct.pack(">B", self.data[off : off + 1])
+
     def save(self, image_data, f):
         #Fill uimage header
         write_32(uboot.TIME_OFF, int(time.time()))
@@ -110,3 +123,13 @@ class uboot:
         f.write(self.data)
         f.write(self.image_data)
         return
+
+    def __str__(self):
+        return "Uboot header info:\n" \
+                + "Header crc : 0x%.8X\n"%(self.read_32(HCRC_OFF)) \
+                + "Time stamp : 0x%.8X\n"%(self.read_32(TIME_OFF)) \
+                + "Data size : 0x%.8X\n"%(self.read_32(SIZE_OFF)) \
+                + "Data load address : 0x%.8X\n"%(self.read_32(LOAD_OFF)) \
+                + "Entry point : 0x%.8X\n"%(self.read_32(EP_OFF)) \
+                + "Data crc : 0x%.8X\n"%(self.read_32(DCRC_OFF)) \
+                + "Architecture : %s\n"%(self.arch) \
