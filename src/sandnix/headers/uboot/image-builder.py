@@ -1,4 +1,4 @@
- #! /usr/bin/env python3
+#! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 '''
@@ -17,15 +17,6 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
-
-'''
-    TODO:
-        1. Create memory image.
-        2. Fill kernel header.
-        3. Create uboot header.
-        4. Write image.
-'''
-
 import sys
 from elf import elf
 from kernel_header import kernel_header
@@ -75,7 +66,7 @@ def main(argv):
         return -1
 
     print("\n-----------------------------------------------------------------")
-    if arg_dict["tyoe"] == "kernel":
+    if arg_dict["type"] == "kernel":
         print("Header file : \"%s\""%(arg_dict["header"]))
         print("Kernel file : \"%s\""%(arg_dict["input"]))
         print("Output file : \"%s\""%(arg_dict["output"]))
@@ -95,6 +86,7 @@ def mk_kernel(arg_dict):
     kernel = elf.elf(arg_dict["input"])
 
     #Fill kernel header
+    kheader = kernel_header.kernel_header(kernel);
     if len(kernel.program_headers) > 2:
         print("Too many segments in kernel image.\n")
         return -1
@@ -120,28 +112,28 @@ def mk_kernel(arg_dict):
     vaddr_size = max(kheader.code_start + kheader.code_size, \
             kheader.data_start + kheader.data_size) - vaddr_base;
     kernel_img = b'\x00' * vaddr_size
-    kernel_img = kernel_img[kheader.code_start - vaddr_base : \
-            kheader.code_start - vaddr_base + kheader.code_size] \
+    kernel_img = kernel_img[: kheader.code_start - vaddr_base] \
             + code_data + kernel_img[kheader.code_start - vaddr_base + \
-            kheader.code_size :]
-    kernel_img = kernel_img[kheader.data_start - vaddr_base : \
-            kheader.data_start - vaddr_base + kheader.data_size] \
+            len(code_data) :]
+    kernel_img = kernel_img[: kheader.data_start - vaddr_base] \
             + data_data + kernel_img[kheader.data_start - vaddr_base + \
-            kheader.data_size :]
+            len(data_data) :]
 
     #Create uboot header
-    uboot_header = uboot,uboot(arg_dict["header"], "arm")
+    uboot_header = uboot.uboot(arg_dict["header"], "arm")
     uboot_header.set_data_address(arg_dict["load_address"])
     uboot_header.set_data_size(len(kernel_img))
     uboot_header.set_type(uboot.uboot.IH_TYPE_KERNEL)
     uboot_header.set_entry_point(kernel.entry - vaddr_base + \
             arg_dict["load_address"])
 
-    fout = open(arg_dict["output"], "wr")
+    fout = open(arg_dict["output"], "wb")
 
     #Write image file
     uboot_header.save(kernel_img, fout);
-    fout,close()
+
+    print(str(uboot_header))
+    fout.close()
 
     return 0
 
@@ -161,7 +153,7 @@ def mk_initrd(arg_dict):
 
     #Write image file
     uboot_header.save(kernel_img, fout);
-    fout,close()
+    fout.close()
 
     return 0
 

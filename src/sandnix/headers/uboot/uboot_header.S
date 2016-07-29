@@ -44,13 +44,13 @@ ih_dcrc:
 ih_os:
 	.byte	IH_OS_LINUX
 
-ih_arch
+ih_arch:
 	.byte	0
 
-ih_type
+ih_type:
 	.byte	0
 
-ih_comp
+ih_comp:
 	.byte	IH_COMP_NONE
 
 ih_name:

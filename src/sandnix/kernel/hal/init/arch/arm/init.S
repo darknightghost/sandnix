@@ -15,9 +15,30 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "../../init.h"
+
 .global		_start
 
 .section	.text
+.align		8
+kernel_header:
+	//magic
+	.long	KERNEL_HEADER_MAGIC
+	//code_start
+	.long	0
+	//code_size
+	.long	0
+	//data_start
+	.long	0
+	//data_size
+	.long	0
+	//header_size
+	.long	_kernel_header_end - kernel_header
+	//checksum
+	.long	0x100000000 - ((KERNEL_HEADER_MAGIC + (_kernel_header_end - kernel_header)) & 0xFFFFFFFF)
+_kernel_header_end:
+	.long	0
+
 _start:
 	mov		r0, #1
 	mov		r0, #2

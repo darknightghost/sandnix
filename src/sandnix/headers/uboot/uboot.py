@@ -33,7 +33,7 @@ class uboot:
     #Offsets
     #32 bits
     HCRC_OFF = 4
-    TIME_OFF = HCRC_OFF + 
+    TIME_OFF = HCRC_OFF + 4
     SIZE_OFF = TIME_OFF + 4
     LOAD_OFF = SIZE_OFF + 4
     EP_OFF = LOAD_OFF + 4
@@ -53,7 +53,7 @@ class uboot:
         self.data = f.read()
         f.close();
 
-        if not (arch in LE_ARCH.keys() or arch in BE_ARCH.keys()):
+        if not (arch in uboot.LE_ARCH.keys() or arch in uboot.BE_ARCH.keys()):
             raise UnsupportedArch(arch)
 
         self.arch = arch
@@ -77,7 +77,7 @@ class uboot:
         return
 
     def write_32(self, off, num):
-        if self.arch in LE_ARCH:
+        if self.arch in uboot.LE_ARCH:
             packed = struct.pack("<I", num)
         else:
             packed = struct.pack(">I", num)
@@ -85,7 +85,7 @@ class uboot:
         return
         
     def write_8(self, off, num):
-        if self.arch in LE_ARCH:
+        if self.arch in uboot.LE_ARCH:
             packed = struct.pack("<B", num)
         else:
             packed = struct.pack(">B", num)
@@ -93,43 +93,43 @@ class uboot:
         return
 
     def read_32(self, off):
-        if self.arch in LE_ARCH:
-            return = struct.pack("<I", self.data[off : off + 4])
+        if self.arch in uboot.LE_ARCH:
+            return struct.unpack("<I", self.data[off : off + 4])[0]
         else:
-            return = struct.pack(">I", self.data[off : off + 4])
+            return struct.unpack(">I", self.data[off : off + 4])[0]
 
     def read_8(self, off):
-        if self.arch in LE_ARCH:
-            return = struct.pack("<B", self.data[off : off + 1])
+        if self.arch in uboot.LE_ARCH:
+            return struct.unpack("<B", self.data[off : off + 1])[0]
         else:
-            return = struct.pack(">B", self.data[off : off + 1])
+            return struct.unpack(">B", self.data[off : off + 1])[0]
 
     def save(self, image_data, f):
         #Fill uimage header
-        write_32(uboot.TIME_OFF, int(time.time()))
+        self.write_32(uboot.TIME_OFF, int(time.time()))
 
         if self.arch in uboot.LE_ARCH:
-            write_8(uboot.ARCH_OFF, uboot.LE_ARCH[self.arch])
+            self.write_8(uboot.ARCH_OFF, uboot.LE_ARCH[self.arch])
         else:
-            write_8(uboot.ARCH_OFF, uboot.BE_ARCH[self.arch])
+            self.write_8(uboot.ARCH_OFF, uboot.BE_ARCH[self.arch])
 
         #Data crc32
-        write_32(uboot.DCRC_OFF, binascii.crc32(image_data))
+        self.write_32(uboot.DCRC_OFF, binascii.crc32(image_data))
 
         #Header crc32
-        write_32(uboot.HCRC_OFF, 0)
-        write_32(uboot.HCRC_OFF, binascii.crc32(self.data))
+        self.write_32(uboot.HCRC_OFF, 0)
+        self.write_32(uboot.HCRC_OFF, binascii.crc32(self.data))
 
         f.write(self.data)
-        f.write(self.image_data)
+        f.write(image_data)
         return
 
     def __str__(self):
         return "Uboot header info:\n" \
-                + "Header crc : 0x%.8X\n"%(self.read_32(HCRC_OFF)) \
-                + "Time stamp : 0x%.8X\n"%(self.read_32(TIME_OFF)) \
-                + "Data size : 0x%.8X\n"%(self.read_32(SIZE_OFF)) \
-                + "Data load address : 0x%.8X\n"%(self.read_32(LOAD_OFF)) \
-                + "Entry point : 0x%.8X\n"%(self.read_32(EP_OFF)) \
-                + "Data crc : 0x%.8X\n"%(self.read_32(DCRC_OFF)) \
-                + "Architecture : %s\n"%(self.arch) \
+                + "Header crc : 0x%.8X\n"%(self.read_32(self.HCRC_OFF)) \
+                + "Time stamp : 0x%.8X\n"%(self.read_32(self.TIME_OFF)) \
+                + "Data size : 0x%.8X\n"%(self.read_32(self.SIZE_OFF)) \
+                + "Data load address : 0x%.8X\n"%(self.read_32(self.LOAD_OFF)) \
+                + "Entry point : 0x%.8X\n"%(self.read_32(self.EP_OFF)) \
+                + "Data crc : 0x%.8X\n"%(self.read_32(self.DCRC_OFF)) \
+                + "Architecture : %s\n"%(self.arch) 

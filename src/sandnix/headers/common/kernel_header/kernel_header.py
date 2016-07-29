@@ -32,7 +32,7 @@ class kernel_header:
 
     def __init__(self, image):
         self.image = image
-        if image.machine in [0x0003]:
+        if image.machine in [0x0003, 0x0028]:
             for ph in image.program_headers:
                 if ph.flags & elf.program_header.PF_X != 0:
                     if self.search_kernel_header(ph.data):

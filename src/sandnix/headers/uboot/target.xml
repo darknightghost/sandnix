@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?><target name="uboot" type="build">
+    <output name="kernel.uboot"/>
+    <outdir path="../../../../bin/$(ARCH)/sandnix"/>
+    <middir path="../../../../obj/$(ARCH)/sandnix"/>
+    <introduction>
+        Uboot header arm only.
+    </introduction>
+    <archs>
+        <arch name="arm.samsung_exynos4412.itop_4412">
+            <PREV></PREV>
+            <DEP>arm-none-eabi-gcc</DEP>
+            <DEPRULE>$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then cat $@|awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(OBJDIR)/$(ARCH)/&quot;,$$0)} NR != 1 {print $$0}' &gt; $@; fi</DEPRULE>
+            <CC>arm-none-eabi-gcc</CC>
+            <CFLAGS>-c</CFLAGS>
+            <CCRULE>$(CC) $(CFLAGS) -o $@ $&lt;</CCRULE>
+            <AS>arm-none-eabi-gcc</AS>
+            <ASFLAGS>-x assembler-with-cpp -c -D_ASM</ASFLAGS>
+            <ASRULE>$(AS) $(ASFLAGS) -o $@ $&lt;</ASRULE>
+            <LD>arm-none-eabi-ld</LD>
+            <LDFLAGS>-Ttext 0x30800000</LDFLAGS>
+            <LDRULE>$(LD) $(LDFLAGS) -o $@.tmp $^;arm-none-eabi-objcopy -O binary -S $@.tmp $@</LDRULE>
+            <AFTER>./image-builder.py -t kernel -h $(LINKED) -i $(OUTDIR)/kernel -o $(OUTDIR)/$(OUTPUT) -p 0xC0000000</AFTER>
+        </arch>
+    </archs>
+    <dependencies>
+    </dependencies>
+    <sub-targets>
+    </sub-targets>
+    <options>
+    </options>
+</target>
