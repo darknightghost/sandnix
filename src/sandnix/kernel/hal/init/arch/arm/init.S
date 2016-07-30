@@ -61,4 +61,5 @@ _start:
 	mov		r0, #1
 	mov		r0, #2
 	mov		r0, #3
+	mov		pc, #0x0
 	b		_start

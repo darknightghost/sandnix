@@ -38,7 +38,7 @@ class uboot:
     LOAD_OFF = SIZE_OFF + 4
     EP_OFF = LOAD_OFF + 4
     DCRC_OFF  = EP_OFF + 4
-    ARCH_OFF = EP_OFF + 5
+    ARCH_OFF = DCRC_OFF + 5
     TYPE_OFF = ARCH_OFF + 1
 
     #Architectures
@@ -77,26 +77,26 @@ class uboot:
         return
 
     def write_32(self, off, num):
-        if self.arch in uboot.LE_ARCH:
-            packed = struct.pack("<I", num)
-        else:
-            packed = struct.pack(">I", num)
+        #if self.arch in uboot.LE_ARCH:
+            #packed = struct.pack("<I", num)
+        #else:
+        packed = struct.pack(">I", num)
         self.data = self.data[: off] + packed + self.data[off + 4 :]
         return
         
     def write_8(self, off, num):
-        if self.arch in uboot.LE_ARCH:
-            packed = struct.pack("<B", num)
-        else:
-            packed = struct.pack(">B", num)
+        #if self.arch in uboot.LE_ARCH:
+            #packed = struct.pack("<B", num)
+        #else:
+        packed = struct.pack(">B", num)
         self.data = self.data[: off] + packed + self.data[off + 1 :]
         return
 
     def read_32(self, off):
-        if self.arch in uboot.LE_ARCH:
-            return struct.unpack("<I", self.data[off : off + 4])[0]
-        else:
-            return struct.unpack(">I", self.data[off : off + 4])[0]
+        #if self.arch in uboot.LE_ARCH:
+            #return struct.unpack("<I", self.data[off : off + 4])[0]
+        #else:
+        return struct.unpack(">I", self.data[off : off + 4])[0]
 
     def read_8(self, off):
         if self.arch in uboot.LE_ARCH:

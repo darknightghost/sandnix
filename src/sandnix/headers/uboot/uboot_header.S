@@ -21,7 +21,7 @@
 .global		_start
 
 ih_magic:
-	.long	IH_MAGIC
+	.long	0x56190527
 
 ih_hcrc:
 	.long	0
