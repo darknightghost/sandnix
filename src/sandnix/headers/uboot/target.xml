@@ -6,7 +6,7 @@
         Uboot header arm only.
     </introduction>
     <archs>
-        <arch name="arm.samsung_exynos4412.itop_4412">
+        <arch name="arm.armv7.cortex-a9.samsung_exynos4412.itop_4412">
             <PREV></PREV>
             <DEP>arm-none-eabi-gcc</DEP>
             <DEPRULE>$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then cat $@|awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(OBJDIR)/$(ARCH)/&quot;,$$0)} NR != 1 {print $$0}' &gt; $@; fi</DEPRULE>
@@ -19,7 +19,7 @@
             <LD>arm-none-eabi-ld</LD>
             <LDFLAGS>-Ttext 0x30800000</LDFLAGS>
             <LDRULE>$(LD) $(LDFLAGS) -o $@.tmp $^;arm-none-eabi-objcopy -O binary -S $@.tmp $@</LDRULE>
-            <AFTER>./image-builder.py -t kernel -h $(LINKED) -i $(OUTDIR)/kernel -o $(OUTDIR)/$(OUTPUT) -p 0x70000000</AFTER>
+            <AFTER>./image-builder.py -t kernel -h $(LINKED) -i $(OUTDIR)/kernel -o $(OUTDIR)/$(OUTPUT) -p 0x50000000</AFTER>
         </arch>
     </archs>
     <dependencies>

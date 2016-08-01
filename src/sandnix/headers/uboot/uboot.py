@@ -21,6 +21,8 @@
 import struct
 import time
 import binascii
+import gzip
+import os
 
 class UnsupportedArch(Exception):
     def __init__(self, arch_name):
@@ -64,10 +66,6 @@ class uboot:
         self.write_32(uboot.LOAD_OFF, addr)
         return
 
-    def set_data_size(self, addr):
-        self.write_32(uboot.SIZE_OFF, addr)
-        return
-
     def set_type(self, header_type):
         self.write_8(uboot.TYPE_OFF, header_type)
         return
@@ -77,25 +75,16 @@ class uboot:
         return
 
     def write_32(self, off, num):
-        #if self.arch in uboot.LE_ARCH:
-            #packed = struct.pack("<I", num)
-        #else:
         packed = struct.pack(">I", num)
         self.data = self.data[: off] + packed + self.data[off + 4 :]
         return
         
     def write_8(self, off, num):
-        #if self.arch in uboot.LE_ARCH:
-            #packed = struct.pack("<B", num)
-        #else:
         packed = struct.pack(">B", num)
         self.data = self.data[: off] + packed + self.data[off + 1 :]
         return
 
     def read_32(self, off):
-        #if self.arch in uboot.LE_ARCH:
-            #return struct.unpack("<I", self.data[off : off + 4])[0]
-        #else:
         return struct.unpack(">I", self.data[off : off + 4])[0]
 
     def read_8(self, off):
@@ -112,6 +101,9 @@ class uboot:
             self.write_8(uboot.ARCH_OFF, uboot.LE_ARCH[self.arch])
         else:
             self.write_8(uboot.ARCH_OFF, uboot.BE_ARCH[self.arch])
+
+        #Data size
+        self.write_32(uboot.SIZE_OFF, len(image_data))
 
         #Data crc32
         self.write_32(uboot.DCRC_OFF, binascii.crc32(image_data))
@@ -132,4 +124,4 @@ class uboot:
                 + "Data load address : 0x%.8X\n"%(self.read_32(self.LOAD_OFF)) \
                 + "Entry point : 0x%.8X\n"%(self.read_32(self.EP_OFF)) \
                 + "Data crc : 0x%.8X\n"%(self.read_32(self.DCRC_OFF)) \
-                + "Architecture : %s\n"%(self.arch) 
+                + "Architecture : %s\n"%(self.arch)

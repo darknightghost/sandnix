@@ -40,26 +40,25 @@ _kernel_header_end:
 	.long	0
 
 _start:
-	mov		r0, #1
-	mov		r0, #2
-	mov		r0, #3
-	mov		r0, #4
-	mov		r0, #5
-	mov		r0, #6
-	mov		r0, #7
-	mov		r0, #8
-	mov		r0, #9
-	mov		r0, #1
-	mov		r0, #2
-	mov		r0, #3
-	mov		r0, #4
-	mov		r0, #5
-	mov		r0, #6
-	mov		r0, #7
-	mov		r0, #8
-	mov		r0, #9
-	mov		r0, #1
-	mov		r0, #2
-	mov		r0, #3
-	mov		pc, #0x0
-	b		_start
+	//Compute offset
+	mov		r5, pc
+	sub		r5, r5, #8
+	ldr		r6, =_start
+	sub		r5, r5, r6		//r5 = offset
+
+	//Prepare stack
+	ldr		sp,	=init_stack
+	add		sp, sp, r5
+
+#if BOOTLOADER == MULTIBOOT2
+
+	//Push kernel args
+	stmfd	sp!, {r2}
+#endif
+
+	//Start paging
+
+	//Call kinit
+	ldmfd	sp!, {r0}
+	ldr		r0,	=kinit
+	mov		pc, r0

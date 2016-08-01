@@ -15,22 +15,24 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
-
-#if defined X86
-    #define	KERNEL_MEM_BASE		0xC0000000
-    #define	KERNEL_MEM_SIZE		(1024 * 1024 * 1024)
-    #include "./arch/x86/page_table.h"
-
-#elif defined ARM_ARMV7
-    #define	KERNEL_MEM_BASE		0xC0000000
-    #define	KERNEL_MEM_SIZE		(1024 * 1024 * 1024)
-    #include "./arch/arm/armv7/page_table.h"
-#endif
+#include "../../../paging.h"
+#include "../../../../mmu.h"
+#include "../../../../../init/init.h"
 
 
-//Start paging
-void	start_paging();
+#define	REQUIRED_INIT_PAGE_NUM	((KERNEL_MAX_SIZE) / 4096)
+#define	MAX_INIT_PAGE_NUM		(REQUIRED_INIT_PAGE_NUM % 1024 > 0 \
+                                 ? (REQUIRED_INIT_PAGE_NUM / 1024 + 1) * 1024 \
+                                 : REQUIRED_INIT_PAGE_NUM)
 
-//Add more pages to initialize page table
-void*	hal_mmu_add_early_paging_addr(void* phy_addr);
+
+//static tlb_entry_t __attribute__((aligned(4096)))	init_pg_tbl[MAX_INIT_PAGE_NUM];
+//static u32		used_pg_table;
+
+
+//static bool		initialized = false;
+
+
+void start_paging();
+
+void* hal_mmu_add_early_paging_addr(void* phy_addr);

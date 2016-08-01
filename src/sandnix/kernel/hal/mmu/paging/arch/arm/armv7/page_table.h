@@ -17,20 +17,16 @@
 
 #pragma once
 
-#if defined X86
-    #define	KERNEL_MEM_BASE		0xC0000000
-    #define	KERNEL_MEM_SIZE		(1024 * 1024 * 1024)
-    #include "./arch/x86/page_table.h"
+#include "../../../../../../../../common/common.h"
 
-#elif defined ARM_ARMV7
-    #define	KERNEL_MEM_BASE		0xC0000000
-    #define	KERNEL_MEM_SIZE		(1024 * 1024 * 1024)
-    #include "./arch/arm/armv7/page_table.h"
-#endif
-
-
-//Start paging
-void	start_paging();
-
-//Add more pages to initialize page table
-void*	hal_mmu_add_early_paging_addr(void* phy_addr);
+/* MMU page table */
+typedef	struct	_tlb_entry {
+    u32		vitrual_page_number	: 20;
+    u32		valid				: 1;
+    u32		page_size			: 2;
+    u32		phypage_base_addr1	: 9;
+    u16		phypage_base_addr2	: 11;
+    u16		shareable			: 1;
+    u16		none_secure			: 1;
+    u16		access_permission	: 3;
+} __attribute__((aligned(1))) tlb_entry_t, *ptlb_entry_t;

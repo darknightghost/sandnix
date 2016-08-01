@@ -85,6 +85,8 @@ def mk_kernel(arg_dict):
     #Analyse elf file
     kernel = elf.elf(arg_dict["input"])
 
+    print(str(kernel))
+
     #Fill kernel header
     kheader = kernel_header.kernel_header(kernel);
     if len(kernel.program_headers) > 2:
@@ -121,8 +123,7 @@ def mk_kernel(arg_dict):
 
     #Create uboot header
     uboot_header = uboot.uboot(arg_dict["header"], "arm")
-    uboot_header.set_data_address(arg_dict["load_address"])
-    uboot_header.set_data_size(len(kernel_img))
+    uboot_header.set_data_address(arg_dict["load_address"] - 0x40)
     uboot_header.set_type(uboot.uboot.IH_TYPE_KERNEL)
     uboot_header.set_entry_point(kernel.entry - vaddr_base + \
             arg_dict["load_address"])
@@ -145,7 +146,6 @@ def mk_initrd(arg_dict):
     #Create uboot header
     uboot_header = uboot,uboot(arg_dict["header"], "arm")
     uboot_header.set_data_address(arg_dict["load_address"])
-    uboot_header.set_data_size(len(img))
     uboot_header.set_type(uboot.uboot.IH_TYPE_RAMDISK)
     uboot_header.set_entry_point(arg_dict["load_address"])
 
