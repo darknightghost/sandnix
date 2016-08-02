@@ -45,10 +45,32 @@
 
 //Descriptor type
 #define	LV1_PG_TYPE_FAULT1		0x00
-#define	LV1_PG_TYPE_FAULT2		0x11
+#define	LV1_PG_TYPE_FAULT2		0x03
 #define	LV1_PG_TYPE_LV2ENT		0x01
-#define	LV1_PG_TYPE_LAGEPAGE	0x10
+#define	LV1_PG_TYPE_LAGEPAGE	0x02
 
+#define	LV1_DESC_TYPE_SET(p_desc, type) { \
+        if((type) == MMU_PG_FAULT) { \
+            (p_desc)->type = LV1_PG_TYPE_FAULT1; \
+        } else if((type) == MMU_PG_LV2ENT) { \
+            (p_desc)->type = LV1_PG_TYPE_LV2ENT; \
+        } else { \
+            (p_desc)->type = LV1_PG_TYPE_LAGEPAGE; \
+            if((type) == MMU_PG_1MB) { \
+                (p_desc)->pg_1MB.zero = 0; \
+            } else { \
+                (p_desc)->pg_16MB.one = 1; \
+            } \
+        } \
+    }
+
+//Descriptor access permission
+#define	PG_AP_NA_NA		0x00	//Privileged mode : no access, user mode : no access
+#define	PG_AP_RW_NA		0x01	//Privileged mode : read/write, user mode : no access
+#define	PG_AP_RW_RO		0x02	//Privileged mode : read/write, user mode : read-only
+#define	PG_AP_RW_RW		0x03	//Privileged mode : read/write, user mode : read/write
+#define	PG_AP_RO_NA		0x05	//Privileged mode : read-only, user mode : no access
+#define	PG_AP_RO_RO		0x06	//Privileged mode : read-only, user mode : read-only
 
 //Physical address
 #define	MMU_PG_DESC_GET_ADDR(p_desc, mask)	((p_desc)->value & (mask))
@@ -80,7 +102,7 @@ typedef	union _lv1_pg_desc {
     struct {
         u32	type		: 2;	//Descriptor type
         u32	reserv1		: 1;	//Reserved
-        u32	ns			: 1;	//NS	TODO:What???
+        u32	none_secure	: 1;	//Non-secure
         u32	reserv2		: 6;	//Reserved
         u32	lv2_phyaddr	: 22;	//Physical address of level2 table
     } __attribute__((aligned(1))) lv2_entry;
@@ -88,24 +110,24 @@ typedef	union _lv1_pg_desc {
     struct {
         u32	type			: 2;	//Descriptor type
         u32	reserv1			: 8;	//Reserved
-        u32	ap1				: 2;	//AP	TODO:What??
+        u32	ap1				: 2;	//Access permission
         u32	reserv2			: 3;	//Reserved
-        u32	ap2				: 1;	//AP
+        u32	ap2				: 1;	//Access permission
         u32	reserv3			: 2;	//Reserved
         u32	zero			: 1;	//Must be zero
-        u32	ns				: 1;	//NS
+        u32	none_secure		: 1;	//Non-secure
         u32	pg_base_phyaddr	: 12;	//Physical base address of the 1MB page
     } __attribute__((aligned(1))) pg_1MB;
     `
     struct {
         u32	type			: 2;	//Descriptor type
         u32	reserv1			: 8;	//Reserved
-        u32	ap1				: 2;	//AP	TODO:What??
+        u32	ap1				: 2;	//Access permission
         u32	reserv2			: 3;	//Reserved
-        u32	ap2				: 1;	//AP
+        u32	ap2				: 1;	//Access permission
         u32	reserv3			: 2;	//Reserved
         u32	one				: 1;	//Must be one
-        u32	ns				: 1;	//NS
+        u32	none_secure		: 1;	//Non-secure
         u32	reserv4			: 4;	//Reserved
         u32	pg_base_phyaddr	: 8;	//Physical base address of the 16MB page
     } __attribute__((aligned(1))) pg_16MB;
@@ -130,8 +152,18 @@ typedef	union _lv1_pg_desc {
 //Descriptor type
 #define	LV2_PG_TYPE_FAULT		0x00
 #define	LV2_PG_TYPE_64KB		0x01
-#define	LV2_PG_TYPE_4KB1		0x10
-#define	LV2_PG_TYPE_4KB2		0x11
+#define	LV2_PG_TYPE_4KB1		0x02
+#define	LV2_PG_TYPE_4KB2		0x03
+
+#define	LV2_DESC_TYPE_SET(p_desc, type) { \
+        if((type) == MMU_PG_FAULT) { \
+            (p_desc)->type = LV2_PG_TYPE_FAULT; \
+        } else if((type) == MMU_PG_64KB) { \
+            (p_desc)->type = LV2_PG_TYPE_64KB; \
+        } else { \
+            (p_desc)->type = LV2_PG_TYPE_4KB1; \
+        } \
+    }
 
 //Physical addres
 #define	LV2_64KB_ADDR_MASK		0xFFFF0000
@@ -153,9 +185,9 @@ typedef	union _lv2_pg_desc {
     struct {
         u32	type				: 2;	//Descriptor type
         u32	reserv1				: 2;	//Reserved
-        u32	ap1					: 2;	//AP
+        u32	ap1					: 2;	//Access permission
         u32	reserv2				: 3;	//Reserved
-        u32	ap2					: 1;	//AP
+        u32	ap2					: 1;	//Access permission
         u32 reserv3				: 6;	//Reserved
         u32	pg_base_phyaddr		: 16;	//Physical base address of the 64KB page
     } __attribute__((aligned(1))) pg_64KB;
@@ -163,9 +195,9 @@ typedef	union _lv2_pg_desc {
     struct {
         u32	type				: 2;	//Descriptor type
         u32	reserv1				: 2;	//Reserved
-        u32	ap1					: 2;	//AP
+        u32	ap1					: 2;	//Access permission
         u32	reserv2				: 3;	//Reserved
-        u32	ap2					: 1;	//AP
+        u32	ap2					: 1;	//Accesss permission
         u32 reserv3				: 2;	//Reserved
         u32	pg_base_phyaddr		: 20;	//Physical base address of the 4KB page
     } __attribute__((aligned(1))) pg_4KB;
