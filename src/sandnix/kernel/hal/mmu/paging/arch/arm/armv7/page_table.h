@@ -20,6 +20,157 @@
 #include "../../../../../../../../common/common.h"
 
 /* MMU page table */
+//LV1 descriptor
+//Types
+#define	MMU_PG_FAULT			0x00
+#define	MMU_PG_LV2ENT			0x01
+#define	MMU_PG_1MB				0x02
+#define	MMU_PG_16MB				0x03
+
+#define	LV1_DESC_TYPE(p_desc, ret) { \
+        if((p_desc)->type == LV_PG_TYPE_FAULT1 \
+           || (p_desc)->type == LV_PG_TYPE_FAULT2) { \
+            (ret) = MMU_PG_FAULT; \
+        } else if ((p_dest)->type == LV_PG_TYPE_LV2ENT) { \
+            (ret) = MMU_PG_LV2ENT; \
+        } else { \
+            if((p_desc)->type & 0x00040000) { \
+                (ret) = MMU_PG_16MB; \
+            } else { \
+                (ret) = MMU_PG_1MB; \
+            } \
+        } \
+        (ret); \
+    }
+
+//Descriptor type
+#define	LV1_PG_TYPE_FAULT1		0x00
+#define	LV1_PG_TYPE_FAULT2		0x11
+#define	LV1_PG_TYPE_LV2ENT		0x01
+#define	LV1_PG_TYPE_LAGEPAGE	0x10
+
+
+//Physical address
+#define	MMU_PG_DESC_GET_ADDR(p_desc, mask)	((p_desc)->value & (mask))
+#define	MMU_PG_DESC_SET_ADDR(p_desc, addr, mask)	(((p_desc)->value & (~(mask))) \
+        | ((addr) & (mask)))
+
+#define	LV1_LV2ENT_ADDR_MASK				0xFFFFFC00
+#define	LV1_LV2ENT_GET_ADDR(p_desc)			MMU_PG_DESC_GET_ADDR((p_desc), \
+        LV1_LV2ENT_ADDR_MASK)
+#define	LV1_LV2ENT_SET_ADDR(p_desc, addr)	MMU_PG_DESC_SET_ADDR((p_desc), \
+        (addr), LV1_LV2ENT_ADDR_MASK)
+
+#define	LV1_1MB_ADDR_MASK					0xFFF00000
+#define	LV1_1MB_GET_ADDR(p_desc)			MMU_PG_DESC_GET_ADDR((p_desc), \
+        LV1_1MB_ADDR_MASK)
+#define	LV1_1MB_SET_ADDR(p_desc, addr)		MMU_PG_DESC_SET_ADDR((p_desc), \
+        (addr), LV1_1MB_ADDR_MASK)
+
+#define	LV1_16MB_ADDR_MASK					0xFF000000
+#define	LV1_16MB_GET_ADDR(p_desc)			MMU_PG_DESC_GET_ADDR((p_desc), \
+        LV1_16MB_ADDR_MASK)
+#define	LV1_16MB_SET_ADDR(p_desc, addr)		MMU_PG_DESC_SET_ADDR((p_desc), \
+        (addr), LV1_16MB_ADDR_MASK)
+
+typedef	union _lv1_pg_desc {
+    u32	value;			//Value of the descriptor
+    u32	type	: 2;	//Descriptor type
+
+    struct {
+        u32	type		: 2;	//Descriptor type
+        u32	reserv1		: 1;	//Reserved
+        u32	ns			: 1;	//NS	TODO:What???
+        u32	reserv2		: 6;	//Reserved
+        u32	lv2_phyaddr	: 22;	//Physical address of level2 table
+    } __attribute__((aligned(1))) lv2_entry;
+
+    struct {
+        u32	type			: 2;	//Descriptor type
+        u32	reserv1			: 8;	//Reserved
+        u32	ap1				: 2;	//AP	TODO:What??
+        u32	reserv2			: 3;	//Reserved
+        u32	ap2				: 1;	//AP
+        u32	reserv3			: 2;	//Reserved
+        u32	zero			: 1;	//Must be zero
+        u32	ns				: 1;	//NS
+        u32	pg_base_phyaddr	: 12;	//Physical base address of the 1MB page
+    } __attribute__((aligned(1))) pg_1MB;
+    `
+    struct {
+        u32	type			: 2;	//Descriptor type
+        u32	reserv1			: 8;	//Reserved
+        u32	ap1				: 2;	//AP	TODO:What??
+        u32	reserv2			: 3;	//Reserved
+        u32	ap2				: 1;	//AP
+        u32	reserv3			: 2;	//Reserved
+        u32	one				: 1;	//Must be one
+        u32	ns				: 1;	//NS
+        u32	reserv4			: 4;	//Reserved
+        u32	pg_base_phyaddr	: 8;	//Physical base address of the 16MB page
+    } __attribute__((aligned(1))) pg_16MB;
+
+} __attribute__((aligned(1)))lv1_pg_desc_t, *plv1_pg_desc_t;
+
+//LV2 descriptor
+#define	MMU_PG_64KB		0x04
+#define	MMU_PG_4KB		0x05
+
+#define	LV2_DESC_TYPE(p_desc, ret) { \
+        if((p_desc)->type == LV2_PG_TYPE_FAULT) { \
+            (ret) = MMU_PG_FAULT; \
+        } else if((p_desc)->type == LV2_PG_TYPE_64KB) { \
+            (ret) = MMU_PG_64KB; \
+        } else { \
+            (ret) = MMU_PG_4KB; \
+        } \
+        (ret); \
+    }
+
+//Descriptor type
+#define	LV2_PG_TYPE_FAULT		0x00
+#define	LV2_PG_TYPE_64KB		0x01
+#define	LV2_PG_TYPE_4KB1		0x10
+#define	LV2_PG_TYPE_4KB2		0x11
+
+//Physical addres
+#define	LV2_64KB_ADDR_MASK		0xFFFF0000
+#define	LV2_64KB_GET_ADDR(p_desc)		MMU_PG_DESC_GET_ADDR((p_desc), \
+        LV2_64KB_ADDR_MASK)
+#define	LV2_64KB_SET_ADDR(p_desc, addr)	MMU_PG_DESC_SET_ADDR((p_desc), \
+        (addr), LV2_64KB_ADDR_MASK)
+
+#define	LV2_4KB_ADDR_MASK		0xFFFFF000
+#define	LV2_4KB_GET_ADDR(p_desc)		MMU_PG_DESC_GET_ADDR((p_desc), \
+        LV2_4KB_ADDR_MASK)
+#define	LV2_4KB_SET_ADDR(p_desc, addr)	MMU_PG_DESC_SET_ADDR((p_desc), \
+        (addr), LV2_4KB_ADDR_MASK)
+
+typedef	union _lv2_pg_desc {
+    u32	value;			//Value of the descriptor
+    u32	type	: 2;	//Descriptor type
+
+    struct {
+        u32	type				: 2;	//Descriptor type
+        u32	reserv1				: 2;	//Reserved
+        u32	ap1					: 2;	//AP
+        u32	reserv2				: 3;	//Reserved
+        u32	ap2					: 1;	//AP
+        u32 reserv3				: 6;	//Reserved
+        u32	pg_base_phyaddr		: 16;	//Physical base address of the 64KB page
+    } __attribute__((aligned(1))) pg_64KB;
+
+    struct {
+        u32	type				: 2;	//Descriptor type
+        u32	reserv1				: 2;	//Reserved
+        u32	ap1					: 2;	//AP
+        u32	reserv2				: 3;	//Reserved
+        u32	ap2					: 1;	//AP
+        u32 reserv3				: 2;	//Reserved
+        u32	pg_base_phyaddr		: 20;	//Physical base address of the 4KB page
+    } __attribute__((aligned(1))) pg_4KB;
+} __attribute__((aligned(1)))lv2_pg_desc_t, *plv2_pg_desc_t;
+
 typedef	struct	_tlb_entry {
     u32		vitrual_page_number	: 20;
     u32		valid				: 1;

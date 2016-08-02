@@ -33,6 +33,9 @@
 //static bool		initialized = false;
 
 
-void start_paging();
+void start_paging()
+{
+    return;
+}
 
 void* hal_mmu_add_early_paging_addr(void* phy_addr);
