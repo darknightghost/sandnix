@@ -18,6 +18,7 @@
 #include "../../paging.h"
 #include "../../../mmu.h"
 #include "../../../../init/init.h"
+#include "../../../../exception/exception.h"
 
 
 #define	REQUIRED_INIT_PAGE_NUM	((1024 * 1024 + KERNEL_MAX_SIZE) / 4096)
@@ -49,7 +50,9 @@ void start_paging()
     u32 empty_pte_num;
 
     if(initialized) {
-        //TODO:panic
+        hal_exception_panic(ENOTSUP,
+                            "Function start_paging() can only be used when mmu module "
+                            "has not been initialized");
     }
 
     /*
@@ -199,7 +202,9 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr)
     u32 index;
 
     if(initialized) {
-        //TODO: panic
+        hal_exception_panic(ENOTSUP,
+                            "Function hal_mmu_add_early_paging_addr() can only "
+                            "be used when mmu module has not been initialized");
     }
 
     //Test if the PDE item presents
@@ -232,7 +237,7 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr)
         //The PDE item does not exists.
         //Get a new PTE table
         if(used_pte_table >= MAX_INIT_PAGE_NUM) {
-            //TODO:panic
+            hal_exception_panic(ENOMEM, "Not enough temporary page table!\n");
         }
 
         used_pte_table++;

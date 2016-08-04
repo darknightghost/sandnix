@@ -112,12 +112,16 @@ void start_paging()
     enable_dcache();
     enable_icache();
 
-    //load_offset = offset;
-    UNREFERRED_PARAMETER(used_lv2_table);
+    load_offset = offset;
     return;
 }
 
-void* hal_mmu_add_early_paging_addr(void* phy_addr);
+void* hal_mmu_add_early_paging_addr(void* phy_addr)
+{
+    if(initialized) {
+        //TODO:panic
+    }
+}
 
 void lv1_prepare(address_t kernel_base, size_t kernel_size, size_t offset)
 {
@@ -272,6 +276,8 @@ void load_TTBR(address_t phyaddr)
     address_t val = (phyaddr & 0xFFFFC000) | 0x00000011;
     __asm__ __volatile__(
         "mcr    p15, 0, %0, c2, c0, 0\n"
+        "nop\n"
+        "nop\n"
         ::"r"(val)
         :);
     return;
@@ -291,6 +297,8 @@ void invalidate_icache()
     __asm__  __volatile__(
         "mov    r0, #0\n"
         "mcr    p15, 0, r0, c7, c5, 0\n"
+        "nop\n"
+        "nop\n"
         ::: "r0");
 }
 
@@ -299,6 +307,8 @@ void invalidate_dcache()
     __asm__  __volatile__(
         "mov    r0,#0\n"
         "mcr    p15,0,r0,c7,c6,0\n"
+        "nop\n"
+        "nop\n"
         ::: "r0");
 }
 

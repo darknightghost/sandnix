@@ -47,15 +47,16 @@ _start:
 	msr		cpsr, r5
 
 	//Compute offset
+_offchk_addr:
 	mov		r5, pc
 	sub		r5, r5, #8
-	ldr		r6, =_start
+	ldr		r6, =_offchk_addr
 	sub		r5, r5, r6		//r5 = offset
 
 	//Prepare stack
 	ldr		sp,	=init_stack
 	add		sp, sp, r5
-	ldr		r6,`=DEFAULT_STACK_SIZE
+	ldr		r6,=DEFAULT_STACK_SIZE
 	add		sp, sp, r6
 
 #if BOOTLOADER == MULTIBOOT2
