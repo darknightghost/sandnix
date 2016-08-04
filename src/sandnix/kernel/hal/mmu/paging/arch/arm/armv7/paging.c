@@ -36,10 +36,9 @@
                                  : REQUIRED_INIT_PAGE_NUM)
 
 static lv1_pg_desc_t __attribute__((aligned(1024 * 16)))	init_lv1_pg_tbl[4096];
-static lv2_pg_desc_t __attribute__((aligned(1024)))			init_lv2_pg_tbl[REQUIRED_INIT_PAGE_NUM];
-static u32			used_lv2_table;
-//static address_t	load_offset;
-
+static lv2_pg_desc_t __attribute__((aligned(1024)))			init_lv2_pg_tbl[MAX_INIT_PAGE_NUM];
+static u32			used_lv2_desc;
+static address_t	load_offset;
 
 static bool		initialized = false;
 
@@ -118,9 +117,59 @@ void start_paging()
 
 void* hal_mmu_add_early_paging_addr(void* phy_addr)
 {
+    u32 desc_type;
+
     if(initialized) {
         //TODO:panic
     }
+
+    address_t pg_addr = (address_t)phy_addr;
+    pg_addr -= pg_addr % 4096;
+    address_t addr_off = (address_t)phy_addr - pg_addr;
+
+    //Check if the address has been mapped
+    u32 i;
+
+    for(i = 0; i < used_lv2_desc; i++) {
+        if(LV2_DESC_TYPE(&init_lv2_pg_tbl[i], desc_type) == MMU_PG_4KB) {
+            if(LV2_4KB_GET_ADDR(&init_lv2_pg_tbl[i]) == pg_addr) {
+                //The address has been mapped
+                return (void*)(KERNEL_MEM_BASE + i * 4096 + addr_off);
+            }
+        }
+    }
+
+    //Get a free page
+    if(used_lv2_desc >= MAX_INIT_PAGE_NUM) {
+        //TODO:panic
+    }
+
+    used_lv2_desc++;
+
+    //Fill the page descriptor
+    LV2_DESC_TYPE_SET(&init_lv2_pg_tbl[i], MMU_PG_4KB);
+    init_lv2_pg_tbl[i].pg_4KB.xn = 0;
+    init_lv2_pg_tbl[i].pg_4KB.reserv1 = 0;
+    init_lv2_pg_tbl[i].pg_4KB.reserv2 = 0;
+    init_lv2_pg_tbl[i].pg_4KB.reserv3 = 0;
+    LV2_SET_AP(&init_lv2_pg_tbl[i], PG_AP_RW_NA);
+    LV2_4KB_SET_ADDR(&init_lv2_pg_tbl[i], pg_addr);
+
+    if(i % 256 == 0) {
+        //Fill the lv1 descriptor
+        plv1_pg_desc_t p_lv1_desc = &init_lv1_pg_tbl[i / 256
+                                    + KERNEL_MEM_BASE / 4096 / 256];
+        LV1_DESC_TYPE_SET(p_lv1_desc, MMU_PG_LV2ENT);
+        p_lv1_desc->lv2_entry.reserv1 = 0;
+        p_lv1_desc->lv2_entry.none_secure = 1;
+        p_lv1_desc->lv2_entry.reserv2 = 0;
+        LV1_LV2ENT_SET_ADDR(p_lv1_desc, (address_t)(&init_lv2_pg_tbl[i])
+                            + load_offset);
+    }
+
+    invalidate_TLB();
+
+    return (void*)(KERNEL_MEM_BASE + i * 4096 + addr_off);
 }
 
 void lv1_prepare(address_t kernel_base, size_t kernel_size, size_t offset)
@@ -169,12 +218,6 @@ void lv1_prepare(address_t kernel_base, size_t kernel_size, size_t offset)
         }
     }
 
-    used_lv2_table = kernel_size / (256 * 4096);
-
-    if(kernel_size % (256 * 4096)) {
-        used_lv2_table++;
-    }
-
     return;
 }
 
@@ -209,6 +252,9 @@ void lv2_prepare(address_t kernel_base, size_t kernel_size, size_t offset)
             LV2_DESC_TYPE_SET(p_lv2_desc, MMU_PG_FAULT);
         }
     }
+
+    used_lv2_desc = pg_num;
+    return;
 }
 
 void init_SCTLR()

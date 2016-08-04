@@ -144,16 +144,16 @@ typedef	union _lv1_pg_desc {
 #define	MMU_PG_64KB		0x04
 #define	MMU_PG_4KB		0x05
 
-#define	LV2_DESC_TYPE(p_desc, ret) { \
+#define	LV2_DESC_TYPE(p_desc, desc_type) ({ \
         if((p_desc)->type == LV2_PG_TYPE_FAULT) { \
-            (ret) = MMU_PG_FAULT; \
+            (desc_type) = MMU_PG_FAULT; \
         } else if((p_desc)->type == LV2_PG_TYPE_64KB) { \
-            (ret) = MMU_PG_64KB; \
+            (desc_type) = MMU_PG_64KB; \
         } else { \
-            (ret) = MMU_PG_4KB; \
+            (desc_type) = MMU_PG_4KB; \
         } \
-        (ret); \
-    }
+        (desc_type); \
+    })
 
 //Descriptor type
 #define	LV2_PG_TYPE_FAULT		0x00
@@ -161,7 +161,7 @@ typedef	union _lv1_pg_desc {
 #define	LV2_PG_TYPE_4KB1		0x02
 #define	LV2_PG_TYPE_4KB2		0x03
 
-#define	LV2_DESC_TYPE_SET(p_desc, desc_type) { \
+#define	LV2_DESC_TYPE_SET(p_desc, desc_type) ({ \
         if((desc_type) == MMU_PG_FAULT) { \
             (p_desc)->type = LV2_PG_TYPE_FAULT; \
         } else if((desc_type) == MMU_PG_64KB) { \
@@ -169,7 +169,7 @@ typedef	union _lv1_pg_desc {
         } else { \
             (p_desc)->type = LV2_PG_TYPE_4KB1; \
         } \
-    }
+    })
 
 //Access permission
 #define	LV2_SET_AP(p_desc, ap) { \

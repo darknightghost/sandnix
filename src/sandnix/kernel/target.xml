@@ -11,7 +11,7 @@
             <DEP>gcc</DEP>
             <DEPRULE>$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then cat $@|awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(OBJDIR)/$(ARCH)/&quot;,$$0)} NR != 1 {print $$0}' &gt; $@; fi</DEPRULE>
             <CC>gcc</CC>
-            <CFLAGS>-Wall -DX86 -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -c -Werror -mno-sse2 -mno-sse</CFLAGS>
+            <CFLAGS>-O2 -Wall -DX86 -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -c -Werror -mno-sse2 -mno-sse</CFLAGS>
             <CCRULE>$(CC) $(CFLAGS) -o $@ $&lt;</CCRULE>
             <AS>gcc</AS>
             <ASFLAGS>-c -DX86 -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -Werror</ASFLAGS>
@@ -26,7 +26,7 @@
             <DEP>arm-none-eabi-gcc</DEP>
             <DEPRULE>$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then cat $@|awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(OBJDIR)/$(ARCH)/&quot;,$$0)} NR != 1 {print $$0}' &gt; $@; fi</DEPRULE>
             <CC>arm-none-eabi-gcc</CC>
-            <CFLAGS>-Wall -DARM -DARM_ARMV7 -DARM_ARMV7_CORTEXA9 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412_ITOP_4412 -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -c -Werror -march=armv7-a</CFLAGS>
+            <CFLAGS>-O2 -Wall -DARM -DARM_ARMV7 -DARM_ARMV7_CORTEXA9 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412_ITOP_4412 -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -c -Werror -march=armv7-a</CFLAGS>
             <CCRULE>$(CC) $(CFLAGS) -o $@ $&lt;</CCRULE>
             <AS>arm-none-eabi-gcc</AS>
             <ASFLAGS>-c -DARM -DARM_ARMV7 -DARM_ARMV7_CORTEXA9 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412_ITOP_4412 -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -Werror -march=armv7-a</ASFLAGS>

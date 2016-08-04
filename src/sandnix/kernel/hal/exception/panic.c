@@ -23,7 +23,7 @@
 
 #define PANIC_BUF_SIZE		1024
 
-static	char*	errno_tbl[ERRNO_MAX] = {
+static const		char*	errno_tbl[ERRNO_MAX] = {
     [0] = "Succeed",
     [1] = "Operation not permitted",
     [2] = "No such file or directory",
