@@ -18,6 +18,7 @@
 #include "../../init.h"
 
 .global		_start
+.global		kernel_header
 
 .section	.text
 .align		8
@@ -40,6 +41,11 @@ _kernel_header_end:
 	.long	0
 
 _start:
+	//Make sure we are in SVC mode
+	ldr		r5,	=0x000000D3
+	msr		spsr, r5
+	msr		cpsr, r5
+
 	//Compute offset
 	mov		r5, pc
 	sub		r5, r5, #8
@@ -49,6 +55,8 @@ _start:
 	//Prepare stack
 	ldr		sp,	=init_stack
 	add		sp, sp, r5
+	ldr		r6,`=DEFAULT_STACK_SIZE
+	add		sp, sp, r6
 
 #if BOOTLOADER == MULTIBOOT2
 
@@ -57,6 +65,10 @@ _start:
 #endif
 
 	//Start paging
+	bl		start_paging
+
+	//Relocate stack
+	sub		sp, sp, r5
 
 	//Call kinit
 	ldmfd	sp!, {r0}

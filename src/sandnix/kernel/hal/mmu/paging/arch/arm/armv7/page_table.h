@@ -27,6 +27,12 @@
 #define	MMU_PG_1MB				0x02
 #define	MMU_PG_16MB				0x03
 
+//Descriptor type
+#define	LV1_PG_TYPE_FAULT1		0x00
+#define	LV1_PG_TYPE_FAULT2		0x03
+#define	LV1_PG_TYPE_LV2ENT		0x01
+#define	LV1_PG_TYPE_LAGEPAGE	0x02
+
 #define	LV1_DESC_TYPE(p_desc, ret) { \
         if((p_desc)->type == LV_PG_TYPE_FAULT1 \
            || (p_desc)->type == LV_PG_TYPE_FAULT2) { \
@@ -43,20 +49,14 @@
         (ret); \
     }
 
-//Descriptor type
-#define	LV1_PG_TYPE_FAULT1		0x00
-#define	LV1_PG_TYPE_FAULT2		0x03
-#define	LV1_PG_TYPE_LV2ENT		0x01
-#define	LV1_PG_TYPE_LAGEPAGE	0x02
-
-#define	LV1_DESC_TYPE_SET(p_desc, type) { \
-        if((type) == MMU_PG_FAULT) { \
+#define	LV1_DESC_TYPE_SET(p_desc, desc_type) { \
+        if((desc_type) == MMU_PG_FAULT) { \
             (p_desc)->type = LV1_PG_TYPE_FAULT1; \
-        } else if((type) == MMU_PG_LV2ENT) { \
+        } else if((desc_type) == MMU_PG_LV2ENT) { \
             (p_desc)->type = LV1_PG_TYPE_LV2ENT; \
         } else { \
             (p_desc)->type = LV1_PG_TYPE_LAGEPAGE; \
-            if((type) == MMU_PG_1MB) { \
+            if((desc_type) == MMU_PG_1MB) { \
                 (p_desc)->pg_1MB.zero = 0; \
             } else { \
                 (p_desc)->pg_16MB.one = 1; \
@@ -72,10 +72,16 @@
 #define	PG_AP_RO_NA		0x05	//Privileged mode : read-only, user mode : no access
 #define	PG_AP_RO_RO		0x06	//Privileged mode : read-only, user mode : read-only
 
+#define	LV1_SET_AP(p_desc, ap) { \
+        (p_desc)->pg_1MB.ap1 = (ap) & 0x03; \
+        (p_desc)->pg_1MB.ap2 = ((ap) & 0x04) >> 2; \
+    }
+
 //Physical address
 #define	MMU_PG_DESC_GET_ADDR(p_desc, mask)	((p_desc)->value & (mask))
-#define	MMU_PG_DESC_SET_ADDR(p_desc, addr, mask)	(((p_desc)->value & (~(mask))) \
-        | ((addr) & (mask)))
+#define	MMU_PG_DESC_SET_ADDR(p_desc, addr, mask)	((p_desc)->value = \
+        (((p_desc)->value & (~(mask))) \
+         | ((addr) & (mask))))
 
 #define	LV1_LV2ENT_ADDR_MASK				0xFFFFFC00
 #define	LV1_LV2ENT_GET_ADDR(p_desc)			MMU_PG_DESC_GET_ADDR((p_desc), \
@@ -118,7 +124,7 @@ typedef	union _lv1_pg_desc {
         u32	none_secure		: 1;	//Non-secure
         u32	pg_base_phyaddr	: 12;	//Physical base address of the 1MB page
     } __attribute__((aligned(1))) pg_1MB;
-    `
+
     struct {
         u32	type			: 2;	//Descriptor type
         u32	reserv1			: 8;	//Reserved
@@ -155,14 +161,20 @@ typedef	union _lv1_pg_desc {
 #define	LV2_PG_TYPE_4KB1		0x02
 #define	LV2_PG_TYPE_4KB2		0x03
 
-#define	LV2_DESC_TYPE_SET(p_desc, type) { \
-        if((type) == MMU_PG_FAULT) { \
+#define	LV2_DESC_TYPE_SET(p_desc, desc_type) { \
+        if((desc_type) == MMU_PG_FAULT) { \
             (p_desc)->type = LV2_PG_TYPE_FAULT; \
-        } else if((type) == MMU_PG_64KB) { \
+        } else if((desc_type) == MMU_PG_64KB) { \
             (p_desc)->type = LV2_PG_TYPE_64KB; \
         } else { \
             (p_desc)->type = LV2_PG_TYPE_4KB1; \
         } \
+    }
+
+//Access permission
+#define	LV2_SET_AP(p_desc, ap) { \
+        (p_desc)->pg_64KB.ap1 = (ap) & 0x03; \
+        (p_desc)->pg_64KB.ap2 = ((ap) & 0x04) >> 2; \
     }
 
 //Physical addres
@@ -193,7 +205,8 @@ typedef	union _lv2_pg_desc {
     } __attribute__((aligned(1))) pg_64KB;
 
     struct {
-        u32	type				: 2;	//Descriptor type
+        u32	xn					: 1;	//Never execute
+        u32	type				: 1;	//Descriptor type
         u32	reserv1				: 2;	//Reserved
         u32	ap1					: 2;	//Access permission
         u32	reserv2				: 3;	//Reserved

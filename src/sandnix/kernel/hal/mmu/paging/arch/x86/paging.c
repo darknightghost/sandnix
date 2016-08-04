@@ -28,7 +28,8 @@
 
 static pde_t __attribute__((aligned(4096)))	init_pde_tbl[1024];
 static pte_t __attribute__((aligned(4096)))	init_pte_tbl[MAX_INIT_PAGE_NUM];
-static u32		used_pte_table;
+static u32			used_pte_table;
+static address_t	load_offset;
 
 
 static bool		initialized = false;
@@ -185,6 +186,7 @@ void start_paging()
         :::"eax", "memory");
 
     used_pte_table = ((total_pg_num + empty_pte_num) >> 10);	//2^10 == 1024
+    load_offset = offset;
 
     return;
 }
@@ -247,7 +249,7 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr)
         p_pde->page_size = PG_SIZE_4K;
         p_pde->global_page = 0;
         p_pde->avail = 0;
-        p_pde->page_table_base_addr = ((address_t)p_pte) >> 12;
+        p_pde->page_table_base_addr = ((address_t)p_pte + load_offset) >> 12;
 
         //Initialize pte table
         index = ((address_t)phy_addr) % (4096 * 1024) / 4096;
