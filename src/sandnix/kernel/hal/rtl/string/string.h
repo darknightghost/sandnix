@@ -22,5 +22,5 @@
 #if defined X86
 #include "./x86/string.h"
 #elif defined ARM
-//#include "./arm/string.h"
+#include "./arm/string.h"
 #endif

@@ -20,7 +20,16 @@
 
 #if defined X86
     #include "./arch/x86/early_print.h"
+#elif defined ARM
+    #if defined ARM_ARMV7
+        #if defined ARM_ARMV7_CORTEXA9
+            #if defined ARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412
+                #include "./arch/arm/armv7/cortex-a9/samsung_exynos4412/early_print.h"
+            #endif
+        #endif
+    #endif
 #endif
+
 
 //Initialize
 void hal_early_print_init();

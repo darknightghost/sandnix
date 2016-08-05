@@ -23,6 +23,3 @@
 #define	FG_BLACK			0x00
 #define	FG_BRIGHT_RED		0x0C
 #define	FG_BRIGHT_WHITE		0x0F
-
-
-void	hal_early_print_arch_init();

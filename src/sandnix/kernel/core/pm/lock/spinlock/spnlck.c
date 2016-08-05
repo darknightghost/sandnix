@@ -90,7 +90,10 @@ kstatus_t core_pm_spnlck_trylock(pspnlck_t p_lock)
 
     old_lock = p_lock->lock;
     new_lock = old_lock;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
     (*((u16*)(&new_lock)))++;
+#pragma GCC diagnostic pop
 
     hal_rtl_atomic_cmpxchgl(p_lock->lock, new_lock, old_lock, result);
 
@@ -112,7 +115,10 @@ kstatus_t core_pm_spnlck_raw_trylock(pspnlck_t p_lock)
 
     old_lock = p_lock->lock;
     new_lock = old_lock;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
     (*((u16*)(&new_lock)))++;
+#pragma GCC diagnostic pop
 
     hal_rtl_atomic_cmpxchgl(p_lock->lock, new_lock, old_lock, result);
 

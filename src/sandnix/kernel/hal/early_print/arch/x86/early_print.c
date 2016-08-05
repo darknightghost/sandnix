@@ -240,7 +240,7 @@ void hal_early_print_puts(char* str)
         }
     }
 
-    core_pm_spnlck_raw_unlock(&lock);
+    core_pm_spnlck_unlock(&lock);
 
     return;
 }

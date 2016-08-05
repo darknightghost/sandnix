@@ -253,7 +253,7 @@ void lv2_prepare(address_t kernel_base, size_t kernel_size, size_t offset)
         }
     }
 
-    used_lv2_desc = pg_num;
+    *((u32*)((address_t)(&used_lv2_desc) + offset)) = pg_num;
     return;
 }
 

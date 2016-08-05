@@ -15,16 +15,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "early_print.h"
 #include "../../../../../early_print.h"
 #include "../../../../../../mmu/mmu.h"
 #include "../../../../../../../core/pm/pm.h"
+#include "../../../../../../../core/rtl/rtl.h"
 
 #define	DEFAULT_STDOUT_WIDTH	80
 #define	DEFAULT_STDOUT_HEIGHT	25
 
 //Serial reisters
-#define	UART2_PHYBASE		0x13820000
-static	address_t			uart2_base = NULL;
+#define	UART2_PHYBASE		((void*)0x13820000)
+static	address_t			uart2_base = (address_t)NULL;
 #define	ULCON2				(*((volatile u32*)(uart2_base + 0x0000)))
 #define	UCON2				(*((volatile u32*)(uart2_base + 0x0004)))
 #define	UFCON2				(*((volatile u32*)(uart2_base + 0x0008)))
@@ -41,20 +43,28 @@ static	address_t			uart2_base = NULL;
 #define	UINTSP2				(*((volatile u32*)(uart2_base + 0x0034)))
 #define	UINTMN2				(*((volatile u32*)(uart2_base + 0x0038)))
 
-#define	CLOCK_PHYBASE		0x10030000
-static	address_t			clock_base = NULL;
-#define	CLK_SRC_PERIL0		(*((volatile u32*)(clock_base + 0xC250)))
+#define	CLOCK_PHYBASE			((void*)0x10030000)
+#define	CLK_SRC_PERIL0_PHYADDR	(CLOCK_PHYBASE + 0xC250)
+static	address_t				clk_src_peril0 = (address_t)NULL;
+#define	CLK_SRC_PERIL0			(*((volatile u32*)(clk_src_peril0)))
+
+//Seriel configs
+#define	BAUD_RATE			115200
+
+//Control characters
+#define	CTLR_CLEAR					"\033[2J"
+#define	CTLR_CLEAR_LEN				(sizeof(CTLR_CLEAR) - 1)
+#define	CTLR_CURSOR_RESET			"\033[0;0H"
+#define	CTLR_CURSOR_RESET_LEN		(sizeof(CTLR_CURSOR_RESET) - 1)
 
 static volatile	u32	current_cursor_line;
 static volatile	u32	current_cursor_row;
-
-static volatile	u8	bg;
-static volatile	u8	fg;
 
 static spnlck_t	lock;
 
 static void		init_UART2();
 static void		send_ch(u8 ch);
+static void		sends(u8* buf, size_t size);
 
 
 void hal_early_print_init()
@@ -66,7 +76,8 @@ void hal_early_print_init()
     init_UART2();
 
     //Set bachground color
-    hal_early_print_color(FG_BRIGHT_WHITE, BG_BLACK);
+    //hal_early_print_color(FG_BRIGHT_WHITE, BG_BLACK);
+    hal_early_print_color(FG_BRIGHT_WHITE, BG_RED);
 
     //Clear screen
     hal_early_print_cls();
@@ -77,18 +88,20 @@ void hal_early_print_init()
 void hal_early_print_cls()
 {
     core_pm_spnlck_lock(&lock);
-
+    sends((u8*)CTLR_CLEAR, CTLR_CLEAR_LEN);
+    sends((u8*)CTLR_CURSOR_RESET, CTLR_CURSOR_RESET_LEN);
     core_pm_spnlck_unlock(&lock);
 
     return;
 }
-/*
+
 void hal_early_print_color(u32 new_fg, u32 new_bg)
 {
+    char str[9];
     core_pm_spnlck_lock(&lock);
 
-    fg = new_fg;
-    bg = new_bg;
+    core_rtl_snprintf(str, sizeof(str), "\033[%u;%um", new_bg, new_fg);
+    sends((u8*)str, core_rtl_strlen(str));
 
     core_pm_spnlck_unlock(&lock);
 
@@ -99,28 +112,70 @@ void hal_early_print_puts(char* str)
 {
     core_pm_spnlck_lock(&lock);
 
-    core_pm_spnlck_raw_unlock(&lock);
+    for(char* p = str;
+        *p != '\0';
+        p++) {
+        if(*p == '\n') {
+            send_ch('\r');
+            send_ch('\n');
+
+        } else {
+            send_ch(*p);
+        }
+    }
+
+    core_pm_spnlck_unlock(&lock);
 
     return;
 }
 
-*/
-
 void init_UART2()
 {
     //Map register memories.
-    if(uart2_base == NULL) {
-        uart2_base = hal_mmu_add_early_paging_addr(UART2_PHYBASE);
+    if(uart2_base == (address_t)NULL) {
+        uart2_base = (address_t)hal_mmu_add_early_paging_addr(UART2_PHYBASE);
     }
 
-    if(clock_base == NULL) {
-        clock_base = hal_mmu_add_early_paging_addr(CLOCK_PHYBASE);
+    if(clk_src_peril0 == (address_t)NULL) {
+        clk_src_peril0 = (address_t)hal_mmu_add_early_paging_addr(
+                             CLK_SRC_PERIL0_PHYADDR);
     }
 
-    //Select clock, we use SCLK_USBPHY0 here, It is always 48 MHz.
-    CLK_SRC_PERIL0 = (CLK_SRC_PERIL0 & ~0x00000F00) | 0x00000300;
+    /*
+        //Select clock, we use SCLK_USBPHY0 here, It is always 48 MHz.
+        CLK_SRC_PERIL0 = (CLK_SRC_PERIL0 & ~0x00000F00) | 0x00000300;
 
-    //Set baud-rate
+        //Set baud-rate
+        // UBRDIV2 = 48000000 / (BAUD_RATE * 16);
+        UBRDIV2 = 26;
+
+        //UFRACVAL2 = (48000000.0 / (BAUD_RATE * 16) - UBRDIV2) * 16;
+        UFRACVAL2 = 1;
+    */
+    //Set mode
+    ULCON2 = 0x00000003;
+    UCON2 = 0x00000005;
+
+    return;
 }
 
-void send_ch(u8 ch);
+void send_ch(u8 ch)
+{
+    while(!(UTRSTAT2 & 0x02));
+
+    UTXH2 = ch;
+    return;
+}
+
+void sends(u8* buf, size_t size)
+{
+    u8* p = buf;
+
+    while(size > 0) {
+        send_ch(*p);
+        size--;
+        p++;
+    }
+
+    return;
+}

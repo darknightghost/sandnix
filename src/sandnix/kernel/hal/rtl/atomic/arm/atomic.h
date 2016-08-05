@@ -18,7 +18,7 @@
 #pragma once
 
 
-#define hal_cpu_atomic_xaddl(dest, src) { \
+#define hal_rtl_atomic_xaddl(dest, src) { \
         do { \
             __asm__ __volatile ( \
                                  "1:\n" \
@@ -35,7 +35,7 @@
         } while(0); \
     }
 
-#define hal_cpu_atomic_xaddw(dest, src) { \
+#define hal_rtl_atomic_xaddw(dest, src) { \
         do { \
             __asm__ __volatile ( \
                                  "1:\n" \
@@ -52,20 +52,20 @@
         } while(0); \
     }
 
-#define hal_cpu_atomic_cmpxchgl(dest, src, cmp, result) { \
+#define hal_rtl_atomic_cmpxchgl(dest, src, cmp, result) { \
         do { \
             __asm__ __volatile__ ( \
                                    "ldrex	r0, [%2]\n" \
                                    "cmp		r0, %3\n" \
-                                   "movne	%1, 0\n" \
+                                   "movne	%1, #0\n" \
                                    "bne		1f\n" \
-                                   "strex	r1, %0, %2\n" \
+                                   "strex	r1, %0, [%2]\n" \
                                    "teq		r1, #0\n" \
                                    "moveq	%1, #0\n" \
                                    "movne	%1, #1\n" \
                                    "1:\n" \
                                    "clrex\n" \
-                                   :"+r"((src)), "r"(result) \
+                                   :"+r"((src)), "=r"(result) \
                                    :"r"(&(dest)), "r"((cmp)) \
                                    :"r0", "r1", "memory"); \
         } while(0); \
