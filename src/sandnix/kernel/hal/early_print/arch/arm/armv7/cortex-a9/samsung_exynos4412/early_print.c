@@ -76,8 +76,7 @@ void hal_early_print_init()
     init_UART2();
 
     //Set bachground color
-    //hal_early_print_color(FG_BRIGHT_WHITE, BG_BLACK);
-    hal_early_print_color(FG_BRIGHT_WHITE, BG_RED);
+    hal_early_print_color(FG_BRIGHT_WHITE, BG_BLACK);
 
     //Clear screen
     hal_early_print_cls();
