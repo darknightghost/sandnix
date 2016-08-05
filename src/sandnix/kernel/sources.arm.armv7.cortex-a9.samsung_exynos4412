@@ -1,0 +1,3 @@
+#hal
+##early_print
+hal/early_print/arch/arm/armv7/cortex-a9/samsung_exynos4412/early_print.c

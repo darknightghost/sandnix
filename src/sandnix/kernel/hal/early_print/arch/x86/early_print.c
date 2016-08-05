@@ -46,7 +46,7 @@ static void		update_cursor();
 static void		scoll_down();
 static void		out_ch(u16 ch);
 
-void hal_early_print_arch_init()
+void hal_early_print_init()
 {
     //Initialize lock
     core_pm_spnlck_init(&lock);
