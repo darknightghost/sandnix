@@ -73,5 +73,5 @@ _offchk_addr:
 
 	//Call kinit
 	ldmfd	sp!, {r0}
-	ldr		r0,	=kinit
-	mov		pc, r0
+	ldr		r1,	=kinit
+	mov		pc, r1

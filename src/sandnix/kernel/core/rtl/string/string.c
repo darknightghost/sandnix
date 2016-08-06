@@ -405,7 +405,7 @@ void* core_rtl_memmove(void* dest, const void* src, size_t size)
                 size -= len_to_cp;
                 p_dest -= len_to_cp;
                 p_src -= len_to_cp;
-                hal_rtl_string_movsb(p_dest, p_src, len_to_cp);
+                hal_rtl_string_movsb_back(p_dest, p_src, len_to_cp);
             }
 
             //Copy 8 bytes each time
@@ -414,7 +414,7 @@ void* core_rtl_memmove(void* dest, const void* src, size_t size)
                 count = len_to_cp >> 1;
                 p_dest -= len_to_cp;
                 p_src -= len_to_cp;
-                hal_rtl_string_movsw(p_dest, p_src, count);
+                hal_rtl_string_movsw_back(p_dest, p_src, count);
                 size -= len_to_cp;
             }
         }

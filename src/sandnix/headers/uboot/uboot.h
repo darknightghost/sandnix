@@ -152,4 +152,37 @@ typedef struct image_header {
     u8			ih_comp;			/* Compression Type		*/
     u8			ih_name[IH_NMLEN];	/* Image Name		*/
 } __attribute__((aligned(1))) image_header_t;
+
+#define	ATAG_NONE		0x00000000		//The list ends with an ATAG_NONE node.
+#define	ATAG_CORE		0x54410001		//The list must start with an ATAG_CORE node.
+#define	ATAG_MEM		0x54410002		//It is allowed to have multiple ATAG_MEM nodes.
+#define	ATAG_INITRD		0x54410005		//Initrd.
+#define ATAG_INITRD2	0x54420005		//Initrd.
+#define ATAG_CMDLINE	0x54410009		//Command line: \0 terminated string. 
+
+typedef	struct _uboot_tag_header {
+    u32 size;
+    u32 tag;
+} uboot_tag_header_t, *puboot_tag_header_t;
+
+typedef struct _uboot_tag_core {
+    u32 flags;		/* bit 0 = read-only */
+    u32 pagesize;
+    u32 rootdev;
+} uboot_tag_core_t, *puboot_tag_core_t;
+
+typedef struct _uboot_tag_mem32 {
+    u32	size;
+    u32	start;	/* physical start address */
+} uboot_tag_mem32_t, *puboot_tag_mem32_t;;
+
+typedef struct _uboot_tag_initrd {
+    u32 start;	/* physical start address */
+    u32 size;	/* size of compressed ramdisk image in bytes */
+} uboot_tag_initrd_t, *puboot_tag_initrf_t;;
+
+typedef struct _uboot_tag_cmdline {
+    char	cmdline[];	/* this is the minimum size */
+} uboot_tag_cmdline_t, *puboot_tag_cmdline_t;
+
 #endif	//!	_ASM

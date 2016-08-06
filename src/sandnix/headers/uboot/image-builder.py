@@ -77,7 +77,7 @@ def main(argv):
         print("Ramdisk file : \"%s\""%(arg_dict["input"]))
         print("Output file : \"%s\""%(arg_dict["output"]))
         print("Load address : \"0x%.16X\""%(arg_dict["load_address"]))
-        ret = mk_initrd(argv_dict);
+        ret = mk_initrd(arg_dict);
     
     return ret
 
@@ -144,15 +144,17 @@ def mk_initrd(arg_dict):
     img = f.read()
 
     #Create uboot header
-    uboot_header = uboot,uboot(arg_dict["header"], "arm")
-    uboot_header.set_data_address(arg_dict["load_address"])
+    uboot_header = uboot.uboot(arg_dict["header"], "arm")
+    uboot_header.set_data_address(arg_dict["load_address"] - 0x40)
     uboot_header.set_type(uboot.uboot.IH_TYPE_RAMDISK)
     uboot_header.set_entry_point(arg_dict["load_address"])
 
-    fout = open(arg_dict["output"], "wr")
+    fout = open(arg_dict["output"], "wb")
 
     #Write image file
-    uboot_header.save(kernel_img, fout);
+    uboot_header.save(img, fout);
+    print("\n")
+    print(str(uboot_header))
     fout.close()
 
     return 0

@@ -1578,18 +1578,18 @@ char* core_rtl_vsnprintf(char* buf, size_t size, const char* fmt, va_list ap)
                         num_len = core_rtl_strlen(data_str);
 
                         if(num_len < width) {
-                            for(i = 0; i < width - num_len; i++) {
-                                num_buf[i] = ' ';
-                            }
-
-                            num_buf[i] = '\0';
-
                             if(flag & FLAG_LEFT_ALIGN) {
                                 write_buf(buf, size, &p_output, data_str);
-                                write_buf(buf, size, &p_output, num_buf);
+
+                                for(i = 0; i < width - num_len; i++) {
+                                    write_buf(buf, size, &p_output, " ");
+                                }
 
                             } else {
-                                write_buf(buf, size, &p_output, num_buf);
+                                for(i = 0; i < width - num_len; i++) {
+                                    write_buf(buf, size, &p_output, " ");
+                                }
+
                                 write_buf(buf, size, &p_output, data_str);
                             }
 
