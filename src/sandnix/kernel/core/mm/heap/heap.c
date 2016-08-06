@@ -602,7 +602,9 @@ void remove_node(php_mem_blck_tree p_tree,
                 p_node->p_rchild->p_parent = NULL;
             }
 
-            (*p_tree)->color = HEAP_MEMBLOCK_BLACK;
+            if(*p_tree != NULL) {
+                (*p_tree)->color = HEAP_MEMBLOCK_BLACK;
+            }
 
         } else {
             if(p_node->p_lchild != NULL) {

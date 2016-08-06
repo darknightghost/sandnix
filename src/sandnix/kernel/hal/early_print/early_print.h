@@ -41,7 +41,7 @@ void hal_early_print_cls();
 void hal_early_print_color(u32 fg, u32 bg);
 
 //Print string
-void hal_early_print_puts(char* str);
+void hal_early_print_puts(const char* str);
 
 //Printf
 void hal_early_print_printf(char* fmt, ...);

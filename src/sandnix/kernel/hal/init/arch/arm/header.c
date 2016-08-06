@@ -29,10 +29,79 @@ static	size_t		initrd_size;
 static	char*		kernel_cmdline;
 
 #if BOOTLOADER == UBOOT
-static	void	analyse_map_info(pmultiboot_tag_mmap_t p_mmap_tag);
-
 void analyse_bootloader_info(void* p_info)
 {
+    puboot_tag_t p_tag;
+    puboot_tag_t p_begin_tag;
+    pphysical_memory_info_t p_phymem;
+
+    core_rtl_list_init(&boot_mem_map);
+    hal_early_print_puts("\nAnalysing boot informations...\n");
+    hal_early_print_puts("Booting protocol : u-boot\n");
+
+    //Check first tag
+    p_begin_tag = (puboot_tag_t)hal_mmu_add_early_paging_addr(p_info);
+    p_tag = p_begin_tag;
+
+    if(p_tag->tag_header.tag != ATAG_CORE) {
+        hal_exception_panic(EKERNELARG,
+                            "Illegal type of first u-boot argument tag.\n");
+    }
+
+    p_tag = (puboot_tag_t)(
+                (address_t)p_tag + p_tag->tag_header.size * sizeof(u32));
+
+    //Analyse tags
+    while(1) {
+        switch(p_tag->tag_header.tag) {
+            case ATAG_NONE:
+                goto _end;
+
+            case ATAG_CORE:
+                break;
+
+            case ATAG_MEM:
+                p_phymem = core_mm_heap_alloc(sizeof(physical_memory_info_t),
+                                              NULL);
+
+                if(p_phymem == NULL) {
+                    hal_exception_panic(ENOMEM, "Failed to allocate memory for "
+                                        "physical memory information.");
+                }
+
+                p_phymem->begin = p_tag->data.tag_mem.start;
+                p_phymem->size = p_tag->data.tag_mem.size;
+                p_phymem->type = PHYMEM_AVAILABLE;
+
+                if(core_rtl_list_insert_after(NULL, &boot_mem_map,
+                                              p_phymem, NULL) == NULL) {
+                    hal_exception_panic(ENOMEM, "Failed to allocate memory for "
+                                        "physical memory information.");
+                }
+
+                break;
+
+            case ATAG_INITRD:
+            case ATAG_INITRD2:
+                initrd_addr = (void*)(p_tag->data.tag_initrd.start);
+                initrd_size = p_tag->data.tag_initrd.size;
+                break;
+
+            case ATAG_CMDLINE:
+                kernel_cmdline = (char*)((address_t)(p_tag->data.tag_cmdline.cmdline)
+                                         - (address_t)p_begin_tag + (address_t)p_info);
+                break;
+        }
+
+        p_tag = (puboot_tag_t)(
+                    (address_t)p_tag + p_tag->tag_header.size * sizeof(u32));
+    }
+
+_end:
+    hal_early_print_printf("Initrd address : %p.\n", initrd_addr);
+    hal_early_print_printf("Initrd size : %p.\n", initrd_size);
+    hal_early_print_printf("Kernel cmdline address : %p.\n", kernel_cmdline);
+    return;
 }
 
 list_t hal_init_get_boot_memory_map()
@@ -50,48 +119,5 @@ void hal_init_get_initrd_addr(void** p_addr, size_t* p_size)
 char* hal_init_get_kernel_cmdline()
 {
     return kernel_cmdline;
-}
-
-void analyse_map_info(pmultiboot_tag_mmap_t p_mmap_tag)
-{
-    pmultiboot_mmap_entry_t p_entry;
-    pphysical_memory_info_t p_phymem_info;
-
-    for(p_entry = p_mmap_tag->entries;
-        (address_t)p_entry < (address_t)p_mmap_tag + p_mmap_tag->size;
-        p_entry = (pmultiboot_mmap_entry_t)((address_t)p_entry + p_mmap_tag->entry_size)) {
-        p_phymem_info = core_mm_heap_alloc(sizeof(physical_memory_info_t), NULL);
-        p_phymem_info->begin = (u64)(p_entry->addr);
-        p_phymem_info->size = (u64)(p_entry->len);
-
-        switch(p_entry->type) {
-            case MULTIBOOT_MEMORY_AVAILABLE:
-                p_phymem_info->type = PHYMEM_AVAILABLE;
-                break;
-
-            case MULTIBOOT_MEMORY_RESERVED:
-                p_phymem_info->type = PHYMEM_RESERVED;
-                break;
-
-            case MULTIBOOT_MEMORY_ACPI_RECLAIMABLE:
-                p_phymem_info->type = PHYMEM_RESERVED;
-                break;
-
-            case MULTIBOOT_MEMORY_NVS:
-                p_phymem_info->type = PHYMEM_RESERVED;
-                break;
-
-            case MULTIBOOT_MEMORY_BADRAM:
-                p_phymem_info->type = PHYMEM_BAD;
-                break;
-
-            default:
-                p_phymem_info->type = PHYMEM_RESERVED;
-        }
-
-        core_rtl_list_insert_after(NULL, &boot_mem_map, p_phymem_info, NULL);
-    }
-
-    return;
 }
 #endif

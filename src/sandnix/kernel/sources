@@ -3,7 +3,7 @@
 hal/init/init.c
 
 ##kparam
-#hal/kparam/kparam.c
+hal/kparam/kparam.c
 
 ##mmu
 #hal/mmu/mmu.c
@@ -13,10 +13,10 @@ hal/init/init.c
 hal/early_print/early_print.c
 
 ##debug
-#hal/debug/debug.c
+hal/debug/debug.c
 
 ##exception
-#hal/exception/panic.c
+hal/exception/panic.c
 
 ##rtl
 hal/rtl/math/math.c
@@ -27,12 +27,12 @@ core/pm/thread/thread.c
 core/pm/lock/spinlock/spnlck.c
 
 ##mm
-#core/mm/heap/heap.c
+core/mm/heap/heap.c
 
 ##rtl
 core/rtl/rtl.c
 core/rtl/string/string.c
 core/rtl/string/printf.c
-#core/rtl/math/math.c
-#core/rtl/frame/list/list.c
-#core/rtl/frame/map/map.c
+core/rtl/math/math.c
+core/rtl/frame/list/list.c
+core/rtl/frame/map/map.c

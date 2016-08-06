@@ -107,11 +107,11 @@ void hal_early_print_color(u32 new_fg, u32 new_bg)
     return;
 }
 
-void hal_early_print_puts(char* str)
+void hal_early_print_puts(const char* str)
 {
     core_pm_spnlck_lock(&lock);
 
-    for(char* p = str;
+    for(const char* p = str;
         *p != '\0';
         p++) {
         if(*p == '\n') {

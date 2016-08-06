@@ -1,2 +1,4 @@
-#init
+#hal
+##init
 hal/init/arch/arm/init.S
+hal/init/arch/arm/header.c

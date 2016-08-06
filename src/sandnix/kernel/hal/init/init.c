@@ -25,6 +25,8 @@
 
 #if defined(X86)
     #include "./arch/x86/header.h"
+#elif defined(ARM)
+    #include "./arch/arm/header.h"
 #endif
 
 u8	__attribute__((aligned(4096)))	init_stack[DEFAULT_STACK_SIZE];
@@ -33,12 +35,9 @@ void kinit(void* p_bootloader_info)
     hal_early_print_init();
     hal_early_print_printf("%s loading...\n", VER_STR);
 
-    void* p_info = hal_mmu_add_early_paging_addr(p_bootloader_info);
-    hal_early_print_printf("%p\n", p_info);
-
     //Analyse bootloader parameters
-    //analyse_bootloader_info(p_bootloader_info);
-    //hal_kparam_init();
+    analyse_bootloader_info(p_bootloader_info);
+    hal_kparam_init();
 
     //Initialize modules
     //hal_mmu_init();

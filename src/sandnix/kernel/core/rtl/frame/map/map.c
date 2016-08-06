@@ -408,7 +408,9 @@ prbtree_node_t remove_node(pmap_t p_map, prbtree_node_t p_node)
                 p_node->p_rchild->p_parent = NULL;
             }
 
-            (p_map->p_tree)->color = RBTREE_NODE_BLACK;
+            if(p_map->p_tree != NULL) {
+                (p_map->p_tree)->color = RBTREE_NODE_BLACK;
+            }
 
         } else {
             if(p_node->p_lchild != NULL) {

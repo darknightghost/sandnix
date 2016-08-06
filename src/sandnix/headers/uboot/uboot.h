@@ -182,7 +182,17 @@ typedef struct _uboot_tag_initrd {
 } uboot_tag_initrd_t, *puboot_tag_initrf_t;;
 
 typedef struct _uboot_tag_cmdline {
-    char	cmdline[];	/* this is the minimum size */
+    char	cmdline[0];	/* this is the minimum size */
 } uboot_tag_cmdline_t, *puboot_tag_cmdline_t;
+
+typedef	struct	_uboot_tag {
+    uboot_tag_header_t			tag_header;
+    union {
+        uboot_tag_core_t	tag_core;
+        uboot_tag_mem32_t	tag_mem;
+        uboot_tag_initrd_t	tag_initrd;
+        uboot_tag_cmdline_t	tag_cmdline;
+    } data;
+} uboot_tag_t, *puboot_tag_t;
 
 #endif	//!	_ASM
