@@ -2098,6 +2098,13 @@ void* core_rtl_map_get(
 void* core_rtl_map_next(
 	pmap_t p_map,
     void* p_key);
+    
+//搜索键值
+typedef int (*map_search_func_t)(void* p_condition, void* p_key, void* p_value);
+void* core_rtl_map_search(
+	pmap_t p_map,
+    void* p_condition,
+    map_search_func_t search_func);
 
 //销毁
 void core_rtl_map_destroy(

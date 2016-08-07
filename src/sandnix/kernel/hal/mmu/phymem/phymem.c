@@ -19,18 +19,26 @@
 #include "../../init/init.h"
 #include "../../early_print/early_print.h"
 #include "../../rtl/rtl.h"
+#include "../../exception/exception.h"
 #include "../mmu.h"
 
 #define	IN_RANGE(n, start, size) ((n) >= (start) && (n) < (start) + (size))
 
-//static	map_t			phymem_info_map;
+static	map_t			unusable_map;
+static	map_t			free_map;
+static	map_t			used_map;
+static	map_t			dma_map;
 static	bool			initialized = false;
+static	pheap_t			phymem_heap;
+static	u8				phymem_heap_block[4096];
 
 static	bool			should_merge(plist_node_t p_pos1, plist_node_t p_pos2);
 static	void			merge_mem(plist_node_t* p_p_pos1, plist_node_t* p_p_pos2,
                                   plist_t p_list);
 static	int				compare_memblock(pphysical_memory_info_t p1,
         pphysical_memory_info_t p2);
+static	void			print_mem_list(list_t list);
+static	void			init_map(list_t mem_list);
 
 void phymem_init()
 {
@@ -38,7 +46,6 @@ void phymem_init()
     plist_node_t p_pos1;
     plist_node_t p_pos2;
     pphysical_memory_info_t p_phy_mem;
-    char* type_str;
     u64 offset;
     pphysical_memory_info_t p_system_info;
     void* initrd_addr;
@@ -50,46 +57,12 @@ void phymem_init()
 
     //Print boot informatiom
     hal_early_print_printf("\nPhysical memory infomation from bootloader:\n");
-    hal_early_print_printf("%-20s%-20s%s\n", "Base", "Size", "Type");
+    print_mem_list(info_list);
 
     for(p_pos1 = info_list;
         p_pos1 != NULL;
         p_pos1 = core_rtl_list_next(p_pos1, &info_list)) {
         p_phy_mem = (pphysical_memory_info_t)(p_pos1->p_item);
-
-        switch(p_phy_mem->type) {
-            case PHYMEM_AVAILABLE:
-                type_str = "PHYMEM_AVAILABLE";
-                break;
-
-            case PHYMEM_DMA:
-                type_str = "PHYMEM_DMA";
-                break;
-
-            case PHYMEM_USED:
-                type_str = "PHYMEM_USED";
-                break;
-
-            case PHYMEM_DMA_USED:
-                type_str = "PHYMEM_DMA_USED";
-                break;
-
-            case PHYMEM_SYSTEM:
-                type_str = "PHYMEM_SYSTEM";
-                break;
-
-            case PHYMEM_RESERVED:
-                type_str = "PHYMEM_RESERVED";
-                break;
-
-            case PHYMEM_BAD:
-                type_str = "PHYMEM_BAD";
-                break;
-        }
-
-        hal_early_print_printf("0x%-18.16llX0x%-18.16llX%s\n", p_phy_mem->begin,
-                               p_phy_mem->size, type_str);
-
         //Make the memory block SANDNIX_KERNEL_PAGE_SIZE aligned.
         offset = hal_rtl_math_mod64(p_phy_mem->begin, SANDNIX_KERNEL_PAGE_SIZE);
 
@@ -112,6 +85,11 @@ void phymem_init()
     //Kernel
     p_system_info = core_mm_heap_alloc(sizeof(physical_memory_info_t), NULL);
 
+    if(p_system_info == NULL) {
+        hal_exception_panic(ENOMEM,
+                            "Failed to allocate memory for physical memory information.");
+    }
+
     p_system_info->begin = (u64)(address_t)(MIN(kernel_header.code_start,
                                             kernel_header.data_start) + get_load_pffset());
     p_system_info->size = (u64)(address_t)(MAX(kernel_header.code_start
@@ -125,6 +103,11 @@ void phymem_init()
     //Initrd
     hal_init_get_initrd_addr(&initrd_addr, &initrd_size);
     p_system_info = core_mm_heap_alloc(sizeof(physical_memory_info_t), NULL);
+
+    if(p_system_info == NULL) {
+        hal_exception_panic(ENOMEM,
+                            "Failed to allocate memory for physical memory information.");
+    }
 
     p_system_info->begin = (u64)((address_t)initrd_addr / 4096 * 4096);
     initrd_end = (address_t)initrd_addr + initrd_size;
@@ -162,50 +145,24 @@ void phymem_init()
 
     //Print the result
     hal_early_print_printf("\nPhysical memory infomation:\n");
-    hal_early_print_printf("%-20s%-20s%s\n", "Base", "Size", "Type");
+    print_mem_list(info_list);
 
-    for(p_pos1 = info_list;
-        p_pos1 != NULL;
-        p_pos1 = core_rtl_list_next(p_pos1, &info_list)) {
-        p_phy_mem = (pphysical_memory_info_t)(p_pos1->p_item);
+    //Create the heap
+    phymem_heap = core_mm_heap_create_on_buf(
+                      HEAP_MULITHREAD | HEAP_PREALLOC,
+                      4096, phymem_heap_block, sizeof(phymem_heap_block));
 
-        switch(p_phy_mem->type) {
-            case PHYMEM_AVAILABLE:
-                type_str = "PHYMEM_AVAILABLE";
-                break;
-
-            case PHYMEM_DMA:
-                type_str = "PHYMEM_DMA";
-                break;
-
-            case PHYMEM_USED:
-                type_str = "PHYMEM_USED";
-                break;
-
-            case PHYMEM_DMA_USED:
-                type_str = "PHYMEM_DMA_USED";
-                break;
-
-            case PHYMEM_SYSTEM:
-                type_str = "PHYMEM_SYSTEM";
-                break;
-
-            case PHYMEM_RESERVED:
-                type_str = "PHYMEM_RESERVED";
-                break;
-
-            case PHYMEM_BAD:
-                type_str = "PHYMEM_BAD";
-                break;
-        }
-
-        hal_early_print_printf("0x%-18.16llX0x%-18.16llX%s\n", p_phy_mem->begin,
-                               p_phy_mem->size, type_str);
-
+    if(phymem_heap == NULL) {
+        hal_exception_panic(ENOMEM,
+                            "Not enough memory for physical memory managment.");
     }
 
-    //TODO: Create the heap
+    //Create maps
+    init_map(info_list);
+
     //Destroy the list
+    core_rtl_list_destroy(&info_list, NULL, (item_destroyer_t)core_mm_heap_free,
+                          NULL);
     initialized = true;
     return;
 }
@@ -310,6 +267,12 @@ void merge_mem(plist_node_t* p_p_pos1, plist_node_t* p_p_pos2, plist_t p_list)
             core_rtl_list_remove(p_pos2, p_list, NULL);
 
             p_new = core_mm_heap_alloc(sizeof(physical_memory_info_t), NULL);
+
+            if(p_new == NULL) {
+                hal_exception_panic(ENOMEM,
+                                    "Failed to allocate memory for physical memory information.");
+            }
+
             p_new->type = p_2->type;
 
             p_new->begin = p_1->begin + p_1->size;
@@ -395,6 +358,12 @@ void merge_mem(plist_node_t* p_p_pos1, plist_node_t* p_p_pos2, plist_t p_list)
             core_rtl_list_remove(p_pos1, p_list, NULL);
 
             p_new = core_mm_heap_alloc(sizeof(physical_memory_info_t), NULL);
+
+            if(p_new == NULL) {
+                hal_exception_panic(ENOMEM,
+                                    "Failed to allocate memory for physical memory information.");
+            }
+
             p_new->type = p_1->type;
 
             p_new->begin = p_2->begin + p_2->size;
@@ -455,4 +424,144 @@ int compare_memblock(pphysical_memory_info_t p1, pphysical_memory_info_t p2)
     } else {
         return -1;
     }
+}
+
+void print_mem_list(list_t list)
+{
+    char* type_str;
+    plist_node_t p_pos;
+    pphysical_memory_info_t p_phy_mem;
+
+    hal_early_print_printf("%-20s%-20s%s\n", "Base", "Size", "Type");
+
+    for(p_pos = list;
+        p_pos != NULL;
+        p_pos = core_rtl_list_next(p_pos, &list)) {
+        p_phy_mem = (pphysical_memory_info_t)(p_pos->p_item);
+
+        switch(p_phy_mem->type) {
+            case PHYMEM_AVAILABLE:
+                type_str = "PHYMEM_AVAILABLE";
+                break;
+
+            case PHYMEM_DMA:
+                type_str = "PHYMEM_DMA";
+                break;
+
+            case PHYMEM_USED:
+                type_str = "PHYMEM_USED";
+                break;
+
+            case PHYMEM_DMA_USED:
+                type_str = "PHYMEM_DMA_USED";
+                break;
+
+            case PHYMEM_SYSTEM:
+                type_str = "PHYMEM_SYSTEM";
+                break;
+
+            case PHYMEM_RESERVED:
+                type_str = "PHYMEM_RESERVED";
+                break;
+
+            case PHYMEM_BAD:
+                type_str = "PHYMEM_BAD";
+                break;
+        }
+
+        hal_early_print_printf("0x%-18.16llX0x%-18.16llX%s\n", p_phy_mem->begin,
+                               p_phy_mem->size, type_str);
+
+    }
+
+    return;
+}
+
+void init_map(list_t mem_list)
+{
+    plist_node_t p_node;
+    pphysical_memory_info_t p_phymem;
+    pphysical_memory_info_t p_new_phymem;
+
+    //Initialize maps
+    core_rtl_map_init(&unusable_map, (item_compare_t)compare_memblock,
+                      phymem_heap);
+    core_rtl_map_init(&free_map, (item_compare_t)compare_memblock,
+                      phymem_heap);
+    core_rtl_map_init(&used_map, (item_compare_t)compare_memblock,
+                      phymem_heap);
+    core_rtl_map_init(&dma_map, (item_compare_t)compare_memblock,
+                      phymem_heap);
+
+    //Add memory blocks to the map
+    p_node = mem_list;
+
+    do {
+        p_phymem = (pphysical_memory_info_t)(p_node->p_item);
+        p_new_phymem = core_mm_heap_alloc(sizeof(physical_memory_info_t),
+                                          phymem_heap);
+
+        if(p_new_phymem == NULL) {
+            hal_exception_panic(ENOMEM,
+                                "Failed to allocate memory for physical memory "
+                                "managment module.");
+        }
+
+        core_rtl_memcpy(p_new_phymem, p_phymem, sizeof(physical_memory_info_t));
+
+        switch(p_new_phymem->type) {
+            case PHYMEM_AVAILABLE:
+                if(core_rtl_map_set(&free_map, p_new_phymem, p_new_phymem)
+                   == NULL) {
+                    hal_exception_panic(ENOMEM,
+                                        "Failed to allocate memory for physical memory "
+                                        "managment module.");
+                }
+
+                break;
+
+            case PHYMEM_DMA:
+                if(core_rtl_map_set(&dma_map, p_new_phymem, p_new_phymem)
+                   == NULL) {
+                    hal_exception_panic(ENOMEM,
+                                        "Failed to allocate memory for physical memory "
+                                        "managment module.");
+                }
+
+                break;
+
+            case PHYMEM_USED:
+            case PHYMEM_DMA_USED:
+                if(core_rtl_map_set(&used_map, p_new_phymem, p_new_phymem)
+                   == NULL) {
+                    hal_exception_panic(ENOMEM,
+                                        "Failed to allocate memory for physical memory "
+                                        "managment module.");
+                }
+
+                break;
+
+            case PHYMEM_SYSTEM:
+            case PHYMEM_RESERVED:
+            case PHYMEM_BAD:
+                if(core_rtl_map_set(&unusable_map, p_new_phymem, p_new_phymem)
+                   == NULL) {
+                    hal_exception_panic(ENOMEM,
+                                        "Failed to allocate memory for physical memory "
+                                        "managment module.");
+                }
+
+                break;
+
+            default:
+                hal_exception_panic(EINVAL,
+                                    "Illegal physical memory type :\"%u\"."
+                                    , p_new_phymem->type);
+
+        }
+
+        p_node = core_rtl_list_next(p_node, &mem_list);
+    } while(p_node != NULL);
+
+    return;
 }

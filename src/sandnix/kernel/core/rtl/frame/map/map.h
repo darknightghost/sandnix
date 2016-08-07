@@ -64,6 +64,14 @@ void* core_rtl_map_next(
     pmap_t p_map,
     void* p_key);
 
+//Search key and value
+//int	(*map_search_func_t)(void* p_condition, void* p_key, void* p_value);
+typedef	int	(*map_search_func_t)(void*, void*, void*);
+void* core_rtl_map_search(
+    pmap_t p_map,
+    void* p_condition,
+    map_search_func_t search_func);
+
 //Destroy the map
 void core_rtl_map_destroy(
     pmap_t p_map,

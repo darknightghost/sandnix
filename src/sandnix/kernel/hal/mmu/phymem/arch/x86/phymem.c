@@ -19,12 +19,18 @@
 #include "../../../../../core/mm/mm.h"
 #include "../../../../init/init.h"
 #include "../../../mmu.h"
+#include "../../../../exception/exception.h"
 
 void archecture_phyaddr_edit(plist_t p_phy_addr_list)
 {
     pphysical_memory_info_t p_dma_info;
 
     p_dma_info = core_mm_heap_alloc(sizeof(physical_memory_info_t), NULL);
+
+    if(p_dma_info == NULL) {
+        hal_exception_panic(ENOMEM,
+                            "Failed to allocate memory for physical memory information.");
+    }
 
     p_dma_info->begin = 0x00000000;
     p_dma_info->size = 1024 * 1024 * 4;

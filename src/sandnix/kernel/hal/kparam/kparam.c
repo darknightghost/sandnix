@@ -59,7 +59,10 @@ void hal_kparam_init()
         }
 
         hal_early_print_printf("%s = \"%s\".\n", p_key, p_value);
-        core_rtl_map_set(&krnl_param_map, p_key, p_value);
+
+        if(core_rtl_map_set(&krnl_param_map, p_key, p_value) == NULL) {
+            hal_exception_panic(ENOMEM, "Failed to allocate memory for kernel parameter.");
+        }
     }
 
     return;
@@ -131,6 +134,10 @@ char* get_word(char** p_p)
 
     len = (address_t)(*p_p) - (address_t)p_start + 1;
     p_ret = core_mm_heap_alloc(len, NULL);
+
+    if(p_ret == NULL) {
+        hal_exception_panic(ENOMEM, "Failed to allocate memory for kernel parameter.");
+    }
 
     core_rtl_strncpy(p_ret, p_start, len - 1);
 

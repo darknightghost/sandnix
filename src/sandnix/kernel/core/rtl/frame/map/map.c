@@ -111,7 +111,32 @@ void* core_rtl_map_next(pmap_t p_map, void* p_key)
     }
 }
 
+void* core_rtl_map_search(pmap_t p_map, void* p_condition,
+                          map_search_func_t search_func)
+{
+    prbtree_node_t p_node;
+    int compare_result;
 
+    p_node = p_map->p_tree;
+
+    while(p_node != NULL) {
+        compare_result = search_func(p_condition, p_node->p_key, p_node->p_value);
+
+        if(compare_result > 0) {
+            p_node = p_node->p_rchild;
+            continue;
+
+        } else if(compare_result == 0) {
+            return p_node->p_key;
+
+        } else {
+            p_node = p_node->p_lchild;
+            continue;
+        }
+    }
+
+    return NULL;
+}
 
 void core_rtl_map_destroy(pmap_t p_map, item_destroyer_t key_destroier,
                           item_destroyer_t value_destroier, void* arg)
