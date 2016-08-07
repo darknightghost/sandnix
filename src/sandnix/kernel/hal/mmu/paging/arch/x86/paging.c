@@ -284,3 +284,8 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr)
 
     return (void*)((address_t)phy_addr + KERNEL_MEM_BASE);
 }
+
+address_t get_load_pffset()
+{
+    return load_offset;
+}

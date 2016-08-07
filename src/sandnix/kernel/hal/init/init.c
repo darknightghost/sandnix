@@ -40,7 +40,7 @@ void kinit(void* p_bootloader_info)
     hal_kparam_init();
 
     //Initialize modules
-    //hal_mmu_init();
+    hal_mmu_init();
     UNREFERRED_PARAMETER(p_bootloader_info);
 
     while(1);

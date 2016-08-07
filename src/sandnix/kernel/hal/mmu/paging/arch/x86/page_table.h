@@ -46,7 +46,7 @@ typedef	struct {
     u32		global_page			: 1;
     u32		avail				: 3;
     u32		page_table_base_addr: 20;
-} __attrbute__((aligned(1))) pde_t, *ppde_t;
+} __attribute__((packed)) pde_t, *ppde_t;
 
 //Page-Table Entry
 typedef	struct {
@@ -61,5 +61,5 @@ typedef	struct {
     u32		global_page				: 1;
     u32		avail					: 3;
     u32		page_base_addr			: 20;
-} __attrbute__((aligned(1))) pte_t, *ppte_t;
+} __attribute__((packed)) pte_t, *ppte_t;
 

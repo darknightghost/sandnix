@@ -202,7 +202,7 @@ typedef	union _lv2_pg_desc {
         u32	ap2					: 1;	//Access permission
         u32 reserv3				: 6;	//Reserved
         u32	pg_base_phyaddr		: 16;	//Physical base address of the 64KB page
-    } __attribute__((aligned(1))) pg_64KB;
+    } __attribute__((packed)) pg_64KB;
 
     struct {
         u32	xn					: 1;	//Never execute
@@ -214,7 +214,7 @@ typedef	union _lv2_pg_desc {
         u32 reserv3				: 2;	//Reserved
         u32	pg_base_phyaddr		: 20;	//Physical base address of the 4KB page
     } __attribute__((aligned(1))) pg_4KB;
-} __attribute__((aligned(1)))lv2_pg_desc_t, *plv2_pg_desc_t;
+} __attribute__((packed))lv2_pg_desc_t, *plv2_pg_desc_t;
 
 typedef	struct	_tlb_entry {
     u32		vitrual_page_number	: 20;
@@ -225,4 +225,4 @@ typedef	struct	_tlb_entry {
     u16		shareable			: 1;
     u16		none_secure			: 1;
     u16		access_permission	: 3;
-} __attribute__((aligned(1))) tlb_entry_t, *ptlb_entry_t;
+} __attribute__((packed)) tlb_entry_t, *ptlb_entry_t;

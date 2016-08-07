@@ -34,8 +34,6 @@
 
 #define	DEFAULT_STACK_SIZE		(12 * 4096)
 
-#pragma pack(push)
-#pragma pack(1)
 typedef struct _krnl_hdr_t {
     address_t	magic;
     void*		code_start;
@@ -44,8 +42,7 @@ typedef struct _krnl_hdr_t {
     size_t		data_size;
     size_t		header_size;
     address_t	checksum;
-} krnl_hdr_t, *pkrnl_hdr_t;
-#pragma pack(pop)
+} __attribute__((packed)) krnl_hdr_t, *pkrnl_hdr_t;
 
 extern	krnl_hdr_t	kernel_header;
 extern	u8			init_stack[];

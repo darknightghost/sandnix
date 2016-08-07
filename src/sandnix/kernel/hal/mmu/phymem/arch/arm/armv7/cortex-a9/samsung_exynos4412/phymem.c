@@ -15,25 +15,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "../../../../../phymem.h"
+#include "../../../../../../../../core/mm/mm.h"
+#include "../../../../../../../init/init.h"
+#include "../../../../../../mmu.h"
 
-#if defined X86
-    #define	KERNEL_MEM_BASE		0xC0000000
-    #define	KERNEL_MEM_SIZE		(1024 * 1024 * 1024)
-    #include "./arch/x86/page_table.h"
-
-#elif defined ARM_ARMV7
-    #define	KERNEL_MEM_BASE		0xC0000000
-    #define	KERNEL_MEM_SIZE		(1024 * 1024 * 1024)
-    #include "./arch/arm/armv7/page_table.h"
-#endif
-
-
-//Start paging
-void		start_paging();
-
-//Add more pages to initialize page table
-void*		hal_mmu_add_early_paging_addr(void* phy_addr);
-
-
-address_t	get_load_pffset();
+void archecture_phyaddr_edit(plist_t p_phy_addr_list)
+{
+    UNREFERRED_PARAMETER(p_phy_addr_list);
+    return;
+}

@@ -6,8 +6,8 @@ hal/init/init.c
 hal/kparam/kparam.c
 
 ##mmu
-#hal/mmu/mmu.c
-#hal/mmu/phymem/phymem.c
+hal/mmu/mmu.c
+hal/mmu/phymem/phymem.c
 
 ##early_print
 hal/early_print/early_print.c

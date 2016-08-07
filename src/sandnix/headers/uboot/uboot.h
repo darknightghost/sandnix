@@ -151,7 +151,7 @@ typedef struct image_header {
     u8			ih_type;			/* Image Type			*/
     u8			ih_comp;			/* Compression Type		*/
     u8			ih_name[IH_NMLEN];	/* Image Name		*/
-} __attribute__((aligned(1))) image_header_t;
+} __attribute__((packed)) image_header_t;
 
 #define	ATAG_NONE		0x00000000		//The list ends with an ATAG_NONE node.
 #define	ATAG_CORE		0x54410001		//The list must start with an ATAG_CORE node.

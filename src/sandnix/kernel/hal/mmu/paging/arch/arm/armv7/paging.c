@@ -17,6 +17,7 @@
 
 #include "../../../paging.h"
 #include "../../../../mmu.h"
+#include "../../../../../exception/exception.h"
 #include "../../../../../init/init.h"
 
 /*
@@ -62,7 +63,9 @@ static inline void	load_TTBR(address_t phyaddr);
 void start_paging()
 {
     if(initialized) {
-        //TODO:panic
+        hal_exception_panic(ENOTSUP,
+                            "Function start_paging() can only "
+                            "be used when mmu module has not been initialized");
     }
 
     //Compute offset
@@ -120,7 +123,9 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr)
     u32 desc_type;
 
     if(initialized) {
-        //TODO:panic
+        hal_exception_panic(ENOTSUP,
+                            "Function hal_mmu_add_early_paging_addr() can only "
+                            "be used when mmu module has not been initialized");
     }
 
     address_t pg_addr = (address_t)phy_addr;
@@ -141,7 +146,7 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr)
 
     //Get a free page
     if(used_lv2_desc >= MAX_INIT_PAGE_NUM) {
-        //TODO:panic
+        hal_exception_panic(ENOMEM, "Not enough temporary page table!\n");
     }
 
     used_lv2_desc++;
@@ -170,6 +175,11 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr)
     invalidate_TLB();
 
     return (void*)(KERNEL_MEM_BASE + i * 4096 + addr_off);
+}
+
+address_t get_load_pffset()
+{
+    return load_offset;
 }
 
 void lv1_prepare(address_t kernel_base, size_t kernel_size, size_t offset)

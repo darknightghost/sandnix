@@ -23,10 +23,6 @@
 void archecture_phyaddr_edit(plist_t p_phy_addr_list)
 {
     pphysical_memory_info_t p_dma_info;
-    pphysical_memory_info_t p_system_info;
-    void* initrd_addr;
-    size_t initrd_size;
-    address_t initrd_end;
 
     p_dma_info = core_mm_heap_alloc(sizeof(physical_memory_info_t), NULL);
 
@@ -36,33 +32,6 @@ void archecture_phyaddr_edit(plist_t p_phy_addr_list)
 
     core_rtl_list_insert_after(NULL, p_phy_addr_list, p_dma_info, NULL);
 
-    //Kernel
-    p_system_info = core_mm_heap_alloc(sizeof(physical_memory_info_t), NULL);
-
-    p_system_info->begin = (u64)(address_t)MIN(kernel_header.code_start,
-                           kernel_header.data_start) - KERNEL_MEM_BASE;
-    p_system_info->size = (u64)(address_t)MAX(kernel_header.code_start
-                          + kernel_header.code_size,
-                          kernel_header.data_start + kernel_header.data_size)
-                          - KERNEL_MEM_BASE - p_system_info->begin;
-    p_system_info->type = PHYMEM_SYSTEM;
-
-    core_rtl_list_insert_after(NULL, p_phy_addr_list, p_system_info, NULL);
-
-    //Initrd
-    hal_init_get_initrd_addr(&initrd_addr, &initrd_size);
-    p_system_info = core_mm_heap_alloc(sizeof(physical_memory_info_t), NULL);
-
-    p_system_info->begin = (u64)((address_t)initrd_addr / 4096 * 4096);
-
-    initrd_end = (address_t)initrd_addr + initrd_size;
-
-    p_system_info->size = (u64)(initrd_end % 4096 > 0
-                                ? (initrd_end / 4096 + 1) * 4096
-                                : initrd_end) - p_system_info->begin;
-    p_system_info->type = PHYMEM_SYSTEM;
-
-    core_rtl_list_insert_after(NULL, p_phy_addr_list, p_system_info, NULL);
 
     return;
 }
