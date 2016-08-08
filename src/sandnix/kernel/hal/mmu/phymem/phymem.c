@@ -105,11 +105,11 @@ void phymem_init()
     }
 
     p_system_info->begin = (u64)(address_t)(MIN(kernel_header.code_start,
-                                            kernel_header.data_start) + get_load_pffset());
+                                            kernel_header.data_start) + get_load_offset());
     p_system_info->size = (u64)(address_t)(MAX(kernel_header.code_start
                                            + kernel_header.code_size,
                                            kernel_header.data_start + kernel_header.data_size)
-                                           + get_load_pffset() - p_system_info->begin);
+                                           + get_load_offset() - p_system_info->begin);
     p_system_info->type = PHYMEM_SYSTEM;
 
     core_rtl_list_insert_after(NULL, &info_list, p_system_info, NULL);

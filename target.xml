@@ -5,7 +5,7 @@
     <introduction>
       Sandnix 0.0.2 configuration tool.
     </introduction>
-    <archs actived="arm.armv7.cortex-a9.samsung_exynos4412.itop_4412">
+    <archs actived="x86">
         <arch name="x86">
             <PREV></PREV>
             <DEP>gcc</DEP>

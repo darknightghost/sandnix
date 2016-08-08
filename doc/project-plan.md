@@ -422,12 +422,12 @@ size_t hal_mmu_get_phymem_info(
 
 //分页管理
 //获得内核地址范围
-void hal_mmu_get_krnl_addr_rgn(
+void hal_mmu_get_krnl_addr_range(
 	void** p_base,		//指向首地址
     size_t* p_size);	//指向大小
 
 //获得用户地址范围
-void hal_mmu_get_usr_addr_rgn(
+void hal_mmu_get_usr_addr_range(
 	void** p_base,		//首地址
     size_t* p_size);	//大小
 

@@ -34,6 +34,36 @@ void		start_paging();
 
 //Add more pages to initialize page table
 void*		hal_mmu_add_early_paging_addr(void* phy_addr);
+/*
+//Get kernel virtual address range
+void		hal_mmu_get_krnl_addr_range(
+    void** p_base,		//Pointer to basic address
+    size_t* p_size);	//Pointer to size
 
+//Get user virtual address range
+void		hal_mmu_get_usr_addr_range(
+    void** p_base,		//首地址
+    size_t* p_size);	//大小
 
-address_t	get_load_pffset();
+//Create page table
+kstatus_t	hal_mmu_pg_tbl_create(
+    u32* page_id);		//指向新页表id
+
+//Destroy page table
+void		hal_mmu_pg_tbl_destroy(
+    u32 page_id);		//页表id
+
+//Set page table
+void		hal_mmu_pg_tbl_set(
+    void* virt_addr,				//起始地址
+    u32 num,						//页面数
+    pkrnl_pg_tbl_t page_tables);	//页表
+
+//Refresh TLB
+void		hal_mmu_pg_tbl_refresh();
+
+//Switch page table
+void		hal_mmu_pg_tbl_switch(
+    u32 id);			//切换到的页表id
+*/
+address_t	get_load_offset();

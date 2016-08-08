@@ -28,7 +28,7 @@
 #define	PHYMEM_RESERVED		0x05
 #define	PHYMEM_BAD			0x06
 
-#ifdef	x86
+#ifdef	X86
     #define	RESERVE_DMA
 #endif
 
