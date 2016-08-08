@@ -47,5 +47,3 @@ void kinit(void* p_bootloader_info)
 
     return;
 }
-
-

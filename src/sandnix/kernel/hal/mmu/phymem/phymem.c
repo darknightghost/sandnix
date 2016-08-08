@@ -24,7 +24,6 @@
 
 #define	IN_RANGE(n, start, size) ((n) >= (start) && (n) < (start) + (size))
 
-static	map_t			unusable_map;
 static	map_t			free_map;
 static	map_t			index_map;
 #ifdef	RESERVE_DMA
@@ -41,6 +40,8 @@ static	void			merge_mem(plist_node_t* p_p_pos1, plist_node_t* p_p_pos2,
                                   plist_t p_list);
 static	int				compare_memblock(pphysical_memory_info_t p1,
         pphysical_memory_info_t p2);
+static	int				compare_addr(pphysical_memory_info_t p1,
+                                     pphysical_memory_info_t p2);
 static	int				compare_memblock_size(pphysical_memory_info_t p1,
         pphysical_memory_info_t p2);
 static	void			print_mem_list(list_t list);
@@ -182,6 +183,11 @@ void phymem_init()
 
 kstatus_t hal_mmu_phymem_alloc(void** p_addr, bool is_dma, size_t page_num)
 {
+    if(!initialized) {
+        hal_exception_panic(ENOTSUP,
+                            "Module has not been initialized.\n");
+    }
+
     kstatus_t status = ESUCCESS;
 
     //Which map does the memblock in
@@ -272,6 +278,11 @@ _RELEASE_SEARCH:
 
 void hal_mmu_phymem_free(void* addr)
 {
+    if(!initialized) {
+        hal_exception_panic(ENOTSUP,
+                            "Module has not been initialized.\n");
+    }
+
     core_pm_spnlck_lock(&lock);
 
     //Search for memory block
@@ -281,10 +292,10 @@ void hal_mmu_phymem_free(void* addr)
 
     if(p_memblock->begin != (u64)(address_t)addr
    #if defined	RESERVE_DMA
-       || (p_memblock->type == PHYMEM_USED
-           && p_memblock->type == PHYMEM_DMA_USED)
+       || (p_memblock->type != PHYMEM_USED
+           && p_memblock->type != PHYMEM_DMA_USED)
    #else
-       || p_memblock->type == PHYMEM_USED
+       || p_memblock->type != PHYMEM_USED
    #endif
       ) {
         hal_exception_panic(EINVAL, "Illegal physical address %p for free.",
@@ -346,6 +357,11 @@ void hal_mmu_phymem_free(void* addr)
 
 size_t hal_mmu_get_phymem_info(pphysical_memory_info_t p_buf, size_t size)
 {
+    if(!initialized) {
+        hal_exception_panic(ENOTSUP,
+                            "Module has not been initialized.\n");
+    }
+
     size_t len;
 
     core_pm_spnlck_lock(&lock);
@@ -357,6 +373,7 @@ size_t hal_mmu_get_phymem_info(pphysical_memory_info_t p_buf, size_t size)
         }
 
         p_buf++;
+        p_memblock = core_rtl_map_next(&index_map, p_memblock);
     }
 
     core_pm_spnlck_unlock(&lock);
@@ -615,7 +632,7 @@ int compare_memblock_size(pphysical_memory_info_t p1, pphysical_memory_info_t p2
         return 1;
 
     } else if(p1->size == p2->size) {
-        return 0;
+        return compare_addr(p1, p2);
 
     } else {
         return -1;
@@ -680,11 +697,9 @@ void init_map(list_t mem_list)
     pphysical_memory_info_t p_new_phymem;
 
     //Initialize maps
-    core_rtl_map_init(&unusable_map, (item_compare_t)compare_memblock_size,
-                      phymem_heap);
     core_rtl_map_init(&free_map, (item_compare_t)compare_memblock_size,
                       phymem_heap);
-    core_rtl_map_init(&index_map, (item_compare_t)compare_memblock,
+    core_rtl_map_init(&index_map, (item_compare_t)compare_addr,
                       phymem_heap);
     #ifdef	RESERVE_DMA
     core_rtl_map_init(&dma_map, (item_compare_t)compare_memblock_size,
@@ -740,13 +755,6 @@ void init_map(list_t mem_list)
             case PHYMEM_SYSTEM:
             case PHYMEM_RESERVED:
             case PHYMEM_BAD:
-                if(core_rtl_map_set(&unusable_map, p_new_phymem, p_new_phymem)
-                   == NULL) {
-                    hal_exception_panic(ENOMEM,
-                                        "Failed to allocate memory for physical memory "
-                                        "managment module.");
-                }
-
                 break;
 
             default:
@@ -754,12 +762,13 @@ void init_map(list_t mem_list)
                                     "Illegal physical memory type :\"%u\"."
                                     , p_new_phymem->type);
 
-                if(core_rtl_map_set(&index_map, p_new_phymem, p_new_phymem)
-                   == NULL) {
-                    hal_exception_panic(ENOMEM,
-                                        "Failed to allocate memory for physical memory "
-                                        "managment module.");
-                }
+        }
+
+        if(core_rtl_map_set(&index_map, p_new_phymem, p_new_phymem)
+           == NULL) {
+            hal_exception_panic(ENOMEM,
+                                "Failed to allocate memory for physical memory "
+                                "managment module.");
         }
 
         p_node = core_rtl_list_next(p_node, &mem_list);
@@ -790,12 +799,22 @@ int search_size_func(size_t size, pphysical_memory_info_t p_key,
     if(size > p_key->size) {
         return 1;
 
-    } else if(size == p_key->size) {
+    }  else {
+        return 0;
+    }
+
+    UNREFERRED_PARAMETER(p_value);
+}
+
+int compare_addr(pphysical_memory_info_t p1, pphysical_memory_info_t p2)
+{
+    if(p1->begin > p2->begin) {
+        return 1;
+
+    } else if(p1->begin == p2->begin) {
         return 0;
 
     } else {
         return -1;
     }
-
-    UNREFERRED_PARAMETER(p_value);
 }

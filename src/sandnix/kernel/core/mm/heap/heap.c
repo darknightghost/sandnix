@@ -195,7 +195,7 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
 
     if(p_heap->type & HEAP_PREALLOC) {
         //TODO:Pre-allocate page
-        NOT_SUPPORT;
+        //NOT_SUPPORT;
     }
 
     HEAP_CHECK(p_heap);

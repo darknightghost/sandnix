@@ -108,7 +108,13 @@ void* core_rtl_map_prev(pmap_t p_map, void* p_key)
         }
 
         p_node = prev_node(p_node);
-        return p_node->p_key;
+
+        if(p_node == NULL) {
+            return NULL;
+
+        } else {
+            return p_node->p_key;
+        }
     }
 }
 
@@ -137,7 +143,13 @@ void* core_rtl_map_next(pmap_t p_map, void* p_key)
         }
 
         p_node = next_node(p_node);
-        return p_node->p_key;
+
+        if(p_node == NULL) {
+            return NULL;
+
+        } else {
+            return p_node->p_key;
+        }
     }
 }
 
@@ -252,7 +264,7 @@ prbtree_node_t prev_node(prbtree_node_t p_node)
         //p_node is root and have not left child
         return NULL;
 
-    } else if(p_node->p_parent->p_rchild) {
+    } else if(p_node == p_node->p_parent->p_rchild) {
         //p_node have not left child and is right child
         return p_node->p_parent;
 
@@ -286,7 +298,7 @@ prbtree_node_t next_node(prbtree_node_t p_node)
         //p_node is root and have not right child
         return NULL;
 
-    } else if(p_node->p_parent->p_lchild) {
+    } else if(p_node == p_node->p_parent->p_lchild) {
         //p_node have not right child and is left child
         return p_node->p_parent;
 
