@@ -413,8 +413,7 @@ kstatus_t hal_mmu_phymem_alloc(
 
 //释放物理内存
 void hal_mmu_phymem_free(
-	void* addr,			//起始地址
-    size_t page_num);	//页面数
+	void* addr);		//起始地址
 
 //获得物理内存信息,返回所需内存大小
 size_t hal_mmu_get_phymem_info(
@@ -496,7 +495,7 @@ void hal_early_print_puts(
 	char* str);	//被打印的字符串
 
 //格式化输出
-void hal_early_print__printf(char* fmt, ...);
+void hal_early_print_printf(char* fmt, ...);
 
 //读取输出缓冲区
 size_t hal_early_print_read(char* buf, size_t len);
@@ -1270,12 +1269,12 @@ void core_pm_spnlck_raw_unlock(pspnlck_t p_lock);
 
 //r/w lock
 void core_pm_spnlck_rw_init(pspnlck_rw_t p_lock);
-void pm_spnlck_rw_r_lock(pspnlck_rw_t p_lock);
-kstataus_t pm_spnlck_rw_r_trylock(pspnlck_rw_t p_lock);
-void pm_spnlck_rw_r_unlock(pspnlck_rw_t p_lock);
-void pm_spnlck_rw_w_lock(pspnlck_rw_t p_lock);
-kstataus_t pm_spnlck_rw_w_trylock(pspnlck_rw_t p_lock);
-void pm_spnlck_rw_w_unlock(pspnlck_rw_t p_lock);
+void core_pm_spnlck_rw_r_lock(pspnlck_rw_t p_lock);
+kstataus_t core_pm_spnlck_rw_r_trylock(pspnlck_rw_t p_lock);
+void core_pm_spnlck_rw_r_unlock(pspnlck_rw_t p_lock);
+void core_pm_spnlck_rw_w_lock(pspnlck_rw_t p_lock);
+kstataus_t core_pm_spnlck_rw_w_trylock(pspnlck_rw_t p_lock);
+void core_pm_spnlck_rw_w_unlock(pspnlck_rw_t p_lock);
 
 //rcu
 void core_pm_spnlck_rcu_init(pspnlck_rcu_t p_lock);
@@ -1299,20 +1298,20 @@ void core_pm_mutex_destroy(pmutex_t p_mutex);
 //r/w lock
 void core_pm_mutex_rw_init(pmutex_rw_t p_mutex);
 void core_pm_mutex_rw_r_lock(pmutex_rw_t p_mutex, u32 timeout);
-kstataus_t core_pm_mutex_rw_r_trylock(pmutex_rw_t p_mutex);
+kstatus_t core_pm_mutex_rw_r_trylock(pmutex_rw_t p_mutex);
 void core_pm_mutex_rw_r_unlock(pmutex_rw_t p_mutex);
 void core_pm_mutex_rw_w_lock(pmutex_rw_t p_mutex, u32 timeout);
-kstataus_t core_pm_mutex_rw_w_trylock(pmutex_rw_t p_mutex);
+kstatus_t core_pm_mutex_rw_w_trylock(pmutex_rw_t p_mutex);
 void core_pm_mutex_rw_w_unlock(pmutex_rw_t p_mutex);
 void core_pm_mutex_rw_release(pmutex_rw_t p_mutex);
 
 //rcu
 void core_pm_mutex_rcu_init(pmutex_rcu_t p_mutex);
 void core_pm_mutex_rcu_r_lock(pmutex_rcu_t p_mutex, u32 timeout);
-kstataus_t core_pm_mutex_rcu_r_trylock(pmutex_rcu_t p_mutex);
+kstatus_t core_pm_mutex_rcu_r_trylock(pmutex_rcu_t p_mutex);
 void core_pm_mutex_rcu_r_unlock(pmutex_rcu_t p_mutex);
 void core_pm_mutex_rcu_w_lock(pmutex_rcu_t p_mutex, u32 timeout);
-kstataus_t core_pm_mutex_rcu_w_trylock(pmutex_rcu_t p_mutex);
+kstatus_t core_pm_mutex_rcu_w_trylock(pmutex_rcu_t p_mutex);
 void core_pm_mutex_rcu_w_sync(pmutex_rcu_t p_mutex);
 void core_pm_mutex_rcu_w_unlock(pmutex_rcu_t p_mutex);
 void core_pm_mutex_rcu_release(pmutex_rcu_t p_mutex);
@@ -2065,6 +2064,11 @@ void* core_rtl_hash_table_set(
     void* p_key,
     void* p_value);
 
+//获得上一个键值
+void* core_rtl_hash_table_prev(
+	phash_table_t p_hash_table,
+    void* p_key);
+   
 //获得下一个键值
 void* core_rtl_hash_table_next(
 	phash_table_t p_hash_table,

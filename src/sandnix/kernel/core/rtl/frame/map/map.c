@@ -21,6 +21,7 @@
 static prbtree_node_t	get_node(pmap_t p_map, void* p_key);
 static prbtree_node_t	insert_node(pmap_t p_map, void* p_key, void* p_value);
 static prbtree_node_t	remove_node(pmap_t p_map, prbtree_node_t p_node);
+static prbtree_node_t	prev_node(prbtree_node_t p_node);
 static prbtree_node_t	next_node(prbtree_node_t p_node);
 static prbtree_node_t	l_rotate(pmap_t p_map, prbtree_node_t p_node);
 static prbtree_node_t	r_rotate(pmap_t p_map, prbtree_node_t p_node);
@@ -79,6 +80,35 @@ void* core_rtl_map_get(pmap_t p_map, void* p_key)
 
     } else {
         return p_node->p_value;
+    }
+}
+
+void* core_rtl_map_prev(pmap_t p_map, void* p_key)
+{
+    prbtree_node_t p_node;
+
+    if(p_key == NULL) {
+        if(p_map->p_tree == NULL) {
+            return NULL;
+
+        } else {
+            for(p_node = p_map->p_tree;
+                p_node->p_rchild != NULL;
+                p_node = p_node->p_rchild);
+
+            return p_node->p_key;
+        }
+
+    } else {
+        p_node = get_node(p_map, p_key);
+
+        if(p_node == NULL) {
+            return NULL;
+
+        }
+
+        p_node = prev_node(p_node);
+        return p_node->p_key;
     }
 }
 
@@ -206,6 +236,40 @@ prbtree_node_t get_node(pmap_t p_map, void* p_key)
     }
 
     return p_node;
+}
+
+prbtree_node_t prev_node(prbtree_node_t p_node)
+{
+    if(p_node->p_lchild != NULL) {
+        //p_node has left child
+        for(p_node = p_node->p_lchild;
+            p_node->p_rchild != NULL;
+            p_node = p_node->p_rchild);
+
+        return p_node;
+
+    } else if(p_node->p_parent == NULL) {
+        //p_node is root and have not left child
+        return NULL;
+
+    } else if(p_node->p_parent->p_rchild) {
+        //p_node have not left child and is right child
+        return p_node->p_parent;
+
+    } else {
+        //p_node is left child and have not left child
+        while(true) {
+            if(p_node->p_parent == NULL) {
+                return NULL;
+            }
+
+            if(p_node == p_node->p_parent->p_rchild) {
+                return p_node->p_parent;
+            }
+
+            p_node = p_node->p_parent;
+        }
+    }
 }
 
 prbtree_node_t next_node(prbtree_node_t p_node)

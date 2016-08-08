@@ -75,18 +75,15 @@ kstatus_t hal_kparam_get_value(char* key, char* buf, size_t size)
     p_ret = core_rtl_map_get(&krnl_param_map, key);
 
     if(p_ret == NULL) {
-        //TODO:Set errno
         return ENOENT;
     }
 
     core_rtl_strncpy(buf, p_ret, size);
 
     if(size < core_rtl_strlen(p_ret) + 1) {
-        //TODO:Set errno
         return EOVERFLOW;
 
     } else {
-        //TODO:Set errno
         return ESUCCESS;
     }
 }

@@ -26,19 +26,31 @@
 
 static	map_t			unusable_map;
 static	map_t			free_map;
-static	map_t			used_map;
-static	map_t			dma_map;
+static	map_t			index_map;
+#ifdef	RESERVE_DMA
+    static	map_t			dma_map;
+#endif
 static	bool			initialized = false;
 static	pheap_t			phymem_heap;
 static	u8				phymem_heap_block[4096];
+
+static	spnlck_t		lock;
 
 static	bool			should_merge(plist_node_t p_pos1, plist_node_t p_pos2);
 static	void			merge_mem(plist_node_t* p_p_pos1, plist_node_t* p_p_pos2,
                                   plist_t p_list);
 static	int				compare_memblock(pphysical_memory_info_t p1,
         pphysical_memory_info_t p2);
+static	int				compare_memblock_size(pphysical_memory_info_t p1,
+        pphysical_memory_info_t p2);
 static	void			print_mem_list(list_t list);
 static	void			init_map(list_t mem_list);
+static	int				search_addr_func(address_t base_address,
+        pphysical_memory_info_t p_key,
+        pphysical_memory_info_t p_value);
+static	int				search_size_func(size_t size,
+        pphysical_memory_info_t p_key,
+        pphysical_memory_info_t p_value);
 
 void phymem_init()
 {
@@ -52,6 +64,7 @@ void phymem_init()
     size_t initrd_size;
     address_t initrd_end;
 
+    core_pm_spnlck_init(&lock);
     //Get physical memeory information from bootloader.
     info_list = hal_init_get_boot_memory_map();
 
@@ -167,18 +180,188 @@ void phymem_init()
     return;
 }
 
-kstatus_t hal_mmu_phymem_alloc(
-    void** p_addr,		//Start address
-    bool is_dma,		//DMA page
-    size_t page_num);	//Num
+kstatus_t hal_mmu_phymem_alloc(void** p_addr, bool is_dma, size_t page_num)
+{
+    kstatus_t status = ESUCCESS;
 
-void hal_mmu_phymem_free(
-    void* addr,			//Address
-    size_t page_num);	//Num
+    //Which map does the memblock in
+    pmap_t p_free_map = &free_map;
+    #ifdef	RESERVE_DMA
 
-size_t hal_mmu_get_phymem_info(
-    pphysical_memory_info_t p_buf,	//Pointer to buffer
-    size_t size);
+    if(is_dma) {
+        p_free_map = &dma_map;
+    }
+
+    #endif
+
+    core_pm_spnlck_lock(&lock);
+
+    //Search for memory block
+    pphysical_memory_info_t p_memblock = core_rtl_map_search(p_free_map,
+                                         (void*)(page_num * SANDNIX_KERNEL_PAGE_SIZE),
+                                         (map_search_func_t)search_size_func);
+
+    if(p_memblock == NULL) {
+        status = ENOMEM;
+        goto _RELEASE_SEARCH;
+    }
+
+    //Allocate memory
+    if(p_memblock->size > page_num * SANDNIX_KERNEL_PAGE_SIZE) {
+        //Split memory block
+        //Allocate memory
+        pphysical_memory_info_t p_new_memblock = core_mm_heap_alloc(
+                    sizeof(physical_memory_info_t), phymem_heap);
+
+        if(p_new_memblock == NULL) {
+            status = ENOMEM;
+            goto _RELEASE_SEARCH;
+        }
+
+        //Split
+        p_new_memblock->begin = p_memblock->begin
+                                + page_num * SANDNIX_KERNEL_PAGE_SIZE;
+        p_new_memblock->size = p_memblock->size
+                               - page_num * SANDNIX_KERNEL_PAGE_SIZE;
+        p_new_memblock->type = p_memblock->type;
+
+        //Insert new block
+        if(core_rtl_map_set(p_free_map, p_new_memblock, p_new_memblock) == NULL) {
+            core_mm_heap_free(p_new_memblock, phymem_heap);
+            status = ENOMEM;
+            goto _RELEASE_SEARCH;
+        }
+
+        if(core_rtl_map_set(&index_map, p_new_memblock, p_new_memblock) == NULL) {
+            core_rtl_map_set(p_free_map, p_new_memblock, NULL);
+            core_mm_heap_free(p_new_memblock, phymem_heap);
+            status = ENOMEM;
+            goto _RELEASE_SEARCH;
+        }
+
+        p_memblock->size = page_num * SANDNIX_KERNEL_PAGE_SIZE;
+
+    }
+
+    if(p_memblock->type == PHYMEM_AVAILABLE) {
+        p_memblock->type = PHYMEM_USED;
+
+        #ifdef	RESERVE_DMA
+
+    } else if(p_memblock->type == PHYMEM_DMA) {
+        p_memblock->type = PHYMEM_DMA_USED;
+        #endif
+
+    } else {
+        hal_exception_panic(EOVERFLOW,
+                            "Physical memory map has been corrupted.");
+    }
+
+    core_rtl_map_set(p_free_map, p_memblock, NULL);
+    *p_addr = (void*)(address_t)p_memblock->begin;
+
+_RELEASE_SEARCH:
+    core_pm_spnlck_unlock(&lock);
+
+    #ifndef	RESERVE_DMA
+    UNREFERRED_PARAMETER(is_dma);
+    #endif
+
+    return status;
+}
+
+void hal_mmu_phymem_free(void* addr)
+{
+    core_pm_spnlck_lock(&lock);
+
+    //Search for memory block
+    pphysical_memory_info_t p_memblock = core_rtl_map_search(&index_map,
+                                         addr,
+                                         (map_search_func_t)search_addr_func);
+
+    if(p_memblock->begin != (u64)(address_t)addr
+   #if defined	RESERVE_DMA
+       || (p_memblock->type == PHYMEM_USED
+           && p_memblock->type == PHYMEM_DMA_USED)
+   #else
+       || p_memblock->type == PHYMEM_USED
+   #endif
+      ) {
+        hal_exception_panic(EINVAL, "Illegal physical address %p for free.",
+                            addr);
+    }
+
+    pmap_t p_free_map;
+
+    if(p_memblock->type == PHYMEM_USED) {
+        p_memblock->type = PHYMEM_AVAILABLE;
+        p_free_map = &free_map;
+        #ifdef	RESERVE_DMA
+
+    } else if(p_memblock->type == PHYMEM_DMA_USED) {
+        p_memblock->type = PHYMEM_DMA;
+        p_free_map = &dma_map;
+        #endif
+    }
+
+    if(core_rtl_map_set(&free_map, p_memblock, p_memblock) == NULL) {
+        hal_exception_panic(ENOMEM,
+                            "Failed to insert free memory map into physical memory map.");
+    }
+
+    //Merge blocks
+    //Prev block
+    pphysical_memory_info_t p_prev_blk
+        = (pphysical_memory_info_t)core_rtl_map_prev(&index_map,
+                p_memblock);
+
+    if(p_prev_blk != NULL
+       && p_prev_blk->type == p_memblock->type
+       && p_prev_blk->begin + p_prev_blk->size == p_memblock->begin) {
+        p_prev_blk->size += p_memblock->size;
+        core_rtl_map_set(&index_map, p_memblock, NULL);
+        core_rtl_map_set(p_free_map, p_memblock, NULL);
+        core_mm_heap_free(p_memblock, phymem_heap);
+        p_memblock = p_prev_blk;
+    }
+
+    //Next block
+    pphysical_memory_info_t p_next_blk
+        = (pphysical_memory_info_t)core_rtl_map_next(&index_map,
+                p_memblock);
+
+    if(p_next_blk != NULL
+       && p_next_blk->type == p_memblock->type
+       && p_memblock->begin + p_memblock->size == p_next_blk->begin) {
+        p_memblock->size += p_next_blk->size;
+        core_rtl_map_set(&index_map, p_next_blk, NULL);
+        core_rtl_map_set(p_free_map, p_next_blk, NULL);
+        core_mm_heap_free(p_next_blk, phymem_heap);
+    }
+
+    core_pm_spnlck_unlock(&lock);
+
+    return;
+}
+
+size_t hal_mmu_get_phymem_info(pphysical_memory_info_t p_buf, size_t size)
+{
+    size_t len;
+
+    core_pm_spnlck_lock(&lock);
+    pphysical_memory_info_t p_memblock = core_rtl_map_next(&index_map, NULL);
+
+    for(len = 0; p_memblock != NULL; len += sizeof(physical_memory_info_t)) {
+        if(len < size) {
+            core_rtl_memcpy(p_buf, p_memblock, sizeof(physical_memory_info_t));
+        }
+
+        p_buf++;
+    }
+
+    core_pm_spnlck_unlock(&lock);
+    return len;
+}
 
 bool should_merge(plist_node_t p_pos1, plist_node_t p_pos2)
 {
@@ -426,6 +609,19 @@ int compare_memblock(pphysical_memory_info_t p1, pphysical_memory_info_t p2)
     }
 }
 
+int compare_memblock_size(pphysical_memory_info_t p1, pphysical_memory_info_t p2)
+{
+    if(p1->size > p2->size) {
+        return 1;
+
+    } else if(p1->size == p2->size) {
+        return 0;
+
+    } else {
+        return -1;
+    }
+}
+
 void print_mem_list(list_t list)
 {
     char* type_str;
@@ -484,14 +680,16 @@ void init_map(list_t mem_list)
     pphysical_memory_info_t p_new_phymem;
 
     //Initialize maps
-    core_rtl_map_init(&unusable_map, (item_compare_t)compare_memblock,
+    core_rtl_map_init(&unusable_map, (item_compare_t)compare_memblock_size,
                       phymem_heap);
-    core_rtl_map_init(&free_map, (item_compare_t)compare_memblock,
+    core_rtl_map_init(&free_map, (item_compare_t)compare_memblock_size,
                       phymem_heap);
-    core_rtl_map_init(&used_map, (item_compare_t)compare_memblock,
+    core_rtl_map_init(&index_map, (item_compare_t)compare_memblock,
                       phymem_heap);
-    core_rtl_map_init(&dma_map, (item_compare_t)compare_memblock,
+    #ifdef	RESERVE_DMA
+    core_rtl_map_init(&dma_map, (item_compare_t)compare_memblock_size,
                       phymem_heap);
+    #endif
 
     //Add memory blocks to the map
     p_node = mem_list;
@@ -520,6 +718,8 @@ void init_map(list_t mem_list)
 
                 break;
 
+                #ifdef	RESERVE_DMA
+
             case PHYMEM_DMA:
                 if(core_rtl_map_set(&dma_map, p_new_phymem, p_new_phymem)
                    == NULL) {
@@ -529,16 +729,12 @@ void init_map(list_t mem_list)
                 }
 
                 break;
+                #endif
 
             case PHYMEM_USED:
+                #ifdef	RESERVE_DMA
             case PHYMEM_DMA_USED:
-                if(core_rtl_map_set(&used_map, p_new_phymem, p_new_phymem)
-                   == NULL) {
-                    hal_exception_panic(ENOMEM,
-                                        "Failed to allocate memory for physical memory "
-                                        "managment module.");
-                }
-
+                #endif
                 break;
 
             case PHYMEM_SYSTEM:
@@ -558,10 +754,48 @@ void init_map(list_t mem_list)
                                     "Illegal physical memory type :\"%u\"."
                                     , p_new_phymem->type);
 
+                if(core_rtl_map_set(&index_map, p_new_phymem, p_new_phymem)
+                   == NULL) {
+                    hal_exception_panic(ENOMEM,
+                                        "Failed to allocate memory for physical memory "
+                                        "managment module.");
+                }
         }
 
         p_node = core_rtl_list_next(p_node, &mem_list);
     } while(p_node != NULL);
 
     return;
+}
+
+int search_addr_func(address_t base_address, pphysical_memory_info_t p_key,
+                     pphysical_memory_info_t p_value)
+{
+    if(IN_RANGE(base_address, p_key->begin, p_key->size)) {
+        return 0;
+
+    } else if(base_address < p_key->begin) {
+        return - 1;
+
+    } else {
+        return 1;
+    }
+
+    UNREFERRED_PARAMETER(p_value);
+}
+
+int search_size_func(size_t size, pphysical_memory_info_t p_key,
+                     pphysical_memory_info_t p_value)
+{
+    if(size > p_key->size) {
+        return 1;
+
+    } else if(size == p_key->size) {
+        return 0;
+
+    } else {
+        return -1;
+    }
+
+    UNREFERRED_PARAMETER(p_value);
 }

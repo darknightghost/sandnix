@@ -15,14 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
-
-#include "../../../../common/common.h"
-
-//Spinlock
-#include "./lock/spinlock/spnlck.h"
-#include "./lock/spinlock/spnlck_rw.h"
-
-//Thread
-#include "./thread/thread.h"
-
+#include "spnlck.h"
+#include "../../thread/thread.h"
+#include "../../../../hal/rtl/rtl.h"
+#include "../../../../hal/exception/exception.h"

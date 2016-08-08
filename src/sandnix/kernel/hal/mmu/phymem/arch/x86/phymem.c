@@ -24,6 +24,7 @@
 void archecture_phyaddr_edit(plist_t p_phy_addr_list)
 {
     pphysical_memory_info_t p_dma_info;
+    plist_node_t p_node;
 
     p_dma_info = core_mm_heap_alloc(sizeof(physical_memory_info_t), NULL);
 
@@ -37,6 +38,25 @@ void archecture_phyaddr_edit(plist_t p_phy_addr_list)
     p_dma_info->type = PHYMEM_DMA;
 
     core_rtl_list_insert_after(NULL, p_phy_addr_list, p_dma_info, NULL);
+
+    p_node = *p_phy_addr_list;
+
+    while(p_node != NULL) {
+        pphysical_memory_info_t p_memblk = (pphysical_memory_info_t)(
+                                               p_node->p_item);
+
+        if(p_memblk->begin >= 0x0000000100000000) {
+            plist_node_t p_remove_node = p_node;
+            p_node = core_rtl_list_next(p_node, p_phy_addr_list);
+            core_rtl_list_remove(p_remove_node, p_phy_addr_list, NULL);
+            continue;
+
+        } else if(p_memblk->begin + p_memblk->size >= 0x0000000100000000) {
+            p_memblk->size = 0x0000000100000000 - p_memblk->begin;
+        }
+
+        p_node = core_rtl_list_next(p_node, p_phy_addr_list);
+    }
 
 
     return;

@@ -28,6 +28,10 @@
 #define	PHYMEM_RESERVED		0x05
 #define	PHYMEM_BAD			0x06
 
+#ifdef	x86
+    #define	RESERVE_DMA
+#endif
+
 typedef	struct	_physical_memory_info {
     u64			begin;
     u64			size;
@@ -42,8 +46,7 @@ kstatus_t hal_mmu_phymem_alloc(
     size_t page_num);	//Num
 
 void hal_mmu_phymem_free(
-    void* addr,			//Address
-    size_t page_num);	//Num
+    void* addr);		//Address
 
 size_t hal_mmu_get_phymem_info(
     pphysical_memory_info_t p_buf,	//Pointer to buffer

@@ -59,6 +59,11 @@ void* core_rtl_map_get(
     pmap_t p_map,
     void* p_key);
 
+//Get prev key
+void* core_rtl_map_prev(
+    pmap_t p_map,
+    void* p_key);
+
 //Get next key
 void* core_rtl_map_next(
     pmap_t p_map,
