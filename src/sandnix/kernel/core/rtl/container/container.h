@@ -17,10 +17,19 @@
 
 #pragma once
 
-#include "../../../../common/common.h"
+#include "../../../../../common/common.h"
 
-#include "varg.h"
-#include "./string/string.h"
-#include "./math/math.h"
-#include "./container/container.h"
-#include "./obj/obj.h"
+//Call back functions
+//Destroy item
+//void item_destroyer(void* p_item, void* p_arg)
+typedef void (*item_destroyer_t)(void*, void*);
+
+//Compare two item.If item1 > item2, the return value > 0.
+//If the two item equals, return 0.
+//If item1 < item2, the return value < 0.
+//int item_compare(void* p_item1, void* p_item2);
+typedef int (*item_compare_t)(void*, void*);
+
+#include "./list/list.h"
+#include "./map/map.h"
+#include "./array/array.h"

@@ -34,7 +34,8 @@ core/rtl/rtl.c
 core/rtl/string/string.c
 core/rtl/string/printf.c
 core/rtl/math/math.c
-core/rtl/frame/list/list.c
-core/rtl/frame/map/map.c
+core/rtl/container/list/list.c
+core/rtl/container/map/map.c
+core/rtl/container/array/array.c
 core/rtl/obj/obj.c
 core/rtl/kstring/kstring.c
