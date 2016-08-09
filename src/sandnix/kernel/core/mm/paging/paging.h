@@ -38,7 +38,4 @@
 
 typedef struct _krnl_pg_tbl {
     address_t	base_addr;
-    address_t	physical_base_addr;
-    u32			num;
-    u32			attribute;
 } krnl_pg_tbl_t, *pkrnl_pg_tbl_t;

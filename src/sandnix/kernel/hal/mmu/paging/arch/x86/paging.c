@@ -285,6 +285,32 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr)
     return (void*)((address_t)phy_addr + KERNEL_MEM_BASE);
 }
 
+void init_paging();
+
+void hal_mmu_get_krnl_addr_range(void** p_base, size_t* p_size)
+{
+    *p_base = (void*)KERNEL_MEM_BASE;
+    *p_size = KERNEL_MEM_SIZE;
+    return;
+}
+
+void hal_mmu_get_usr_addr_range(void** p_base, size_t* p_size)
+{
+    *p_base = (void*)SANDNIX_KERNEL_PAGE_SIZE;
+    *p_size = (address_t)KERNEL_MEM_BASE - (address_t)(*p_base);
+    return;
+}
+
+kstatus_t hal_mmu_pg_tbl_create(u32* page_id);
+
+void hal_mmu_pg_tbl_destroy(u32 page_id);
+
+void hal_mmu_pg_tbl_set(void* virt_addr, u32 attribute, void* phy_addr);
+
+void hal_mmu_pg_tbl_refresh();
+
+void hal_mmu_pg_tbl_switch(u32 id);
+
 address_t get_load_offset()
 {
     return load_offset;

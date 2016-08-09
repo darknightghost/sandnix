@@ -59,8 +59,8 @@ void		hal_mmu_pg_tbl_destroy(
 //Set page table
 void		hal_mmu_pg_tbl_set(
     void* virt_addr,				//Virtual address
-    u32 num,						//Count of pages
-    pkrnl_pg_tbl_t page_tables);	//Kernel page table
+    u32 attribute,					//Attribute
+    void* phy_addr);				//Physical address
 
 //Refresh TLB
 void		hal_mmu_pg_tbl_refresh();
@@ -69,4 +69,5 @@ void		hal_mmu_pg_tbl_refresh();
 void		hal_mmu_pg_tbl_switch(
     u32 id);			//Page table id
 
+void		init_paging();
 address_t	get_load_offset();

@@ -67,7 +67,7 @@ def create_makefile(build_tree):
         for s in sources:
             basename = os.path.splitext(s)[0]
             filelist.append([os.path.abspath(s),
-                os.path.abspath("$(MIDDIR)/" + basename + ".obj"),
+                os.path.abspath("$(MIDDIR)/" + basename + ".o"),
                 os.path.abspath("$(MIDDIR)/" + basename + ".dep")])
 
         #Create Makefile
@@ -86,6 +86,8 @@ def create_makefile(build_tree):
         
         #all
         makefile.write("all : target\n\n")
+        for f in filelist:
+            makefile.write("\trm -f %s\n"%(f[2].strip()))
         
         #clean
         makefile.write("clean : \n")
@@ -93,13 +95,11 @@ def create_makefile(build_tree):
             for s in build_tree[1]:
                 cmd = "\tcd " + os.path.dirname(s[0].path) + ";make clean\n"
                 makefile.write(cmd)
-        rm_list = ""
+
         for f in filelist:
-            if rm_list != "":
-                rm_list = rm_list + " "
-            rm_list = rm_list + f[1] + " " + f[2]
-        rm_list = rm_list + " " + linkfile
-        makefile.write("\trm -f %s\n"%(rm_list.strip()))
+            makefile.write("\trm -f %s\n"%(f[1].strip()))
+            makefile.write("\trm -f %s\n"%(f[2].strip()))
+        makefile.write("\trm -f %s\n"%(linkfile.strip()))
         makefile.write("\n")
         
         #delete
@@ -108,13 +108,12 @@ def create_makefile(build_tree):
             for s in build_tree[1]:
                 cmd = "\tcd " + os.path.dirname(s[0].path) + ";make clean\n"
                 makefile.write(cmd)
-        rm_list = ""
+
         for f in filelist:
-            if rm_list != "":
-                rm_list = rm_list + " "
-            rm_list = rm_list + f[1] + " " + f[2]
-        rm_list = rm_list + " " + linkfile + " $(OUTDIR)/$(OUTPUT)"
-        makefile.write("\trm -f %s\n"%(rm_list.strip()))
+            makefile.write("\trm -f %s\n"%(f[1].strip()))
+            makefile.write("\trm -f %s\n"%(f[2].strip()))
+        makefile.write("\trm -f %s\n"%(linkfile.strip()))
+        makefile.write("\trm -f $(OUTDIR)/$(OUTPUT)\n")
         makefile.write("\n")
         
         #rebuild
@@ -149,7 +148,10 @@ def create_makefile(build_tree):
         #link
         link_deps = ""
         for f in filelist:
-            link_deps = link_deps + " " + f[1]
+            if len(link_deps) == 0:
+                link_deps = link_deps + f[1]
+            else:
+                link_deps = link_deps + " \\\n\t" + f[1]
         link_deps = link_deps.strip()
         makefile.write("$(LINKED) : %s\n"%(link_deps))
         makefile.write("\t$(LDRULE)\n")
@@ -157,17 +159,19 @@ def create_makefile(build_tree):
         
         #sources
         for f in filelist:
-            makefile.write("sinclude %s\n"%(f[2]))
+            makefile.write("include %s\n"%(f[2]))
             makefile.write("%s : %s\n"%(f[2], f[0]))
             makefile.write("\tmkdir -p $(dir $@)\n")
             makefile.write("\t$(DEPRULE)\n")
+
             makefile.write("%s : %s\n"%(f[1], f[0]))
             makefile.write("\tmkdir -p $(dir $@)\n")
             if os.path.splitext(f[0])[1] in (".s", ".S"):
                 makefile.write("\t$(ASRULE)")
             elif os.path.splitext(f[0])[1] in (".c", ".cc", ".C", ".cpp"):
                 makefile.write("\t$(CCRULE)")
-            makefile.write("\n\trm %s"%(f[2]))
+            makefile.write("\n\trm -f %s"%(f[2]))
+            
             makefile.write("\n")
         
     else:
