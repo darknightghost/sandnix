@@ -38,25 +38,21 @@ typedef struct	_kstring_obj {
     struct  _kstring_obj*	(*substr)(struct _kstring_obj*, u32, u32);
 
     //Contract string
-    //kstatus_t kstring_obj.append(pkstring_obj_t p_this, pktring_obj_t p_str);
+    //pkstring_obj_t kstring_obj.append(pkstring_obj_t p_this, pktring_obj_t p_str);
     struct _kstring_obj*	(*append)(struct _kstring_obj*, struct _kstring_obj*);
 
     //Set all characters uppercase.
-    //void kstring_obj.upper(pkstring_obj_t p_this);
-    void	(*upper)(struct _kstring_obj*);
+    //pkstring_obj_t kstring_obj.upper(pkstring_obj_t p_this);
+    struct _kstring_obj*	(*upper)(struct _kstring_obj*);
 
     //Set all characters lowercase.
-    //void kstring_obj.lower(pkstring_obj_t p_this);
-    void	(*lower)(struct _kstring_obj*);
+    //pkstring_obj_t kstring_obj.lower(pkstring_obj_t p_this);
+    struct _kstring_obj*	(*lower)(struct _kstring_obj*);
 
     //Search the beging position of sub string.
-    //kstatus_t kstring_obj.search(pkstring_obj_t p_this, pkstring_obj_t p_substr, u32* ret);
-    kstatus_t	(*search)(struct _kstring_obj*, struct _kstring_obj* , u32*);
-
-    //Split the string
-    //pkstring_obj_t kstring_obj.split(pkstring_obj_t p_this, char* separator, u32 begin);
-    struct _kstring_obj*	(*split)(struct _kstring_obj*, char*, u32);
+    //int kstring_obj.search(pkstring_obj_t p_this, pkstring_obj_t p_substr);
+    int	(*search)(struct _kstring_obj*, struct _kstring_obj*);
 } kstring_obj_t, *pkstring_obj_t;
 
 //Constructor
-pkstring_obj_t kstring_obj(char* str, pheap_t heap);
+pkstring_obj_t kstring(char* str, pheap_t heap);

@@ -25,7 +25,7 @@ struct	_obj;
 struct	_kstring_obj;
 
 //kstring_obj_t obj_t.to_string(pobj_t p_this);
-typedef	struct _kstring_obj(*to_string_t)(struct _obj*);
+typedef	struct _kstring_obj*	(*to_string_t)(struct _obj*);
 
 //int obj_t.compare(pobj_t p_this, pobj_t p_obj2);
 typedef	int	(*compare_obj_t)(struct _obj*, struct _obj*);
@@ -57,13 +57,10 @@ typedef	struct	_obj {
 //class id
 #define	CLASS_ID(p_obj)				(*(((pobj_t)(p_obj))->class_id))
 
-//Call method
-#define	METHOD(p_obj, method, ...)	((p_obj)->##method(((p_obj), __VA_ARGS__)))
-
 //Constructor
-void		core_rtl_obj(pobj_t p_obj, u32 class_id, destructor_t destructor,
-                         compare_obj_t compare_func, to_string_t to_string_func,
-                         pheap_t heap);
+void		obj(pobj_t p_obj, u32 class_id, destructor_t destructor,
+                compare_obj_t compare_func, to_string_t to_string_func,
+                pheap_t heap);
 
 //Increase reference count
 void		core_rtl_obj_inc_ref(pobj_t p_obj);

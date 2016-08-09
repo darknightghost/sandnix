@@ -16,6 +16,7 @@
 */
 
 #include "string.h"
+#include "../obj/obj.h"
 
 #define	FLAG_LEFT_ALIGN			0x01
 #define	FLAG_SIGN				0x02
@@ -98,6 +99,8 @@ char* core_rtl_vsnprintf(char* buf, size_t size, const char* fmt, va_list ap)
     s16 data_s16;
     s32 data_s32;
     s64 data_s64;
+    pkstring_obj_t p_kstr;
+    pobj_t p_obj;
     char* data_str;
 
     while(*p_fmt != '\0') {
@@ -1656,7 +1659,38 @@ char* core_rtl_vsnprintf(char* buf, size_t size, const char* fmt, va_list ap)
 
                     //%k
                     case TYPE_KOBJ:
-                        //TODO:
+                        p_obj = va_arg(ap, pobj_t);
+                        p_kstr = TO_STRING(p_obj);
+                        num_len = p_kstr->len(p_kstr);
+                        data_str = p_kstr->buf;
+
+                        if(num_len < width) {
+                            if(flag & FLAG_LEFT_ALIGN) {
+                                write_buf(buf, size, &p_output, data_str);
+
+                                for(i = 0; i < width - num_len; i++) {
+                                    write_buf(buf, size, &p_output, " ");
+                                }
+
+                            } else {
+                                for(i = 0; i < width - num_len; i++) {
+                                    write_buf(buf, size, &p_output, " ");
+                                }
+
+                                write_buf(buf, size, &p_output, data_str);
+                            }
+
+                        } else {
+                            write_buf(buf, size, &p_output, data_str);
+                        }
+
+                        DEC_REF(p_kstr);
+
+                        if((u32)(p_output - buf) > size - 2) {
+                            *p_output = '\0';
+                            return buf;
+                        }
+
                         break;
 
                     default:

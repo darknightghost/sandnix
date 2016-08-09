@@ -2216,11 +2216,8 @@ size_t core_rtl_buffer_write(
 //class id
 #define	CLASS_ID(p_obj)
 
-//Call method
-#define	METHOD(p_obj, method, ...)
-
 //构造函数
-void core_rtl_obj(pobj_t p_obj, u32 class_id, destructor_t destructor,
+void obj(pobj_t p_obj, u32 class_id, destructor_t destructor,
 	compare_obj_t compare_func, to_string_t to_string_func,
     pheap_t heap);
 
@@ -2239,12 +2236,12 @@ void obj_t.destructor(pobj_t p_this);
 int obj_t.compare(pobj_t p_this, pobj_t p_obj2);
 
 //格式化
-kstring_obj_t obj_t.to_string(pobj_t p_this);
+pkstring_obj_t obj_t.to_string(pobj_t p_this);
 
 //kstring_obj_t
 //methods
 //构造函数
-pkstring_obj_t kstring_obj(char* str, pheap_t heap);
+pkstring_obj_t kstring(char* str, pheap_t heap);
 
 //获得长度
 size_t kstring_obj.len(pkstring_obj_t p_this);
@@ -2269,9 +2266,6 @@ void kstring_obj.lower(pkstring_obj_t p_this);
 
 //搜索子串起始位置
 kstatus_t kstring_obj.search(pkstring_obj_t p_this, pkstring_obj_t p_substr, u32* ret);
-
-//分割
-pkstring_obj_t kstring_obj.split(pkstring_obj_t p_this, char* separator, u32 begin);
 ```
 ######文件列表
 ```c

@@ -17,9 +17,9 @@
 
 #include "obj.h"
 
-void core_rtl_obj(pobj_t p_obj, u32 class_id, destructor_t destructor,
-                  compare_obj_t compare_func, to_string_t to_string_func,
-                  pheap_t heap)
+void obj(pobj_t p_obj, u32 class_id, destructor_t destructor,
+         compare_obj_t compare_func, to_string_t to_string_func,
+         pheap_t heap)
 {
     p_obj->class_id = class_id;
     p_obj->ref_count = 1;
