@@ -989,7 +989,7 @@ page_obj_t
 #define PAGE_SWAPPABLE			0x00000040
 #define PAGE_SWAPPED			0x00000080
 
-#define	PAGE_DMA				0x00000080
+#define	PAGE_DMA				0x00000100
 
 #define	PAGE_KERNEL				0x80000000
 
@@ -2205,13 +2205,24 @@ size_t core_rtl_buffer_write(
 
 //面向对象
 //增加引用计数
-#define INC_REF(obj)
+#define INC_REF(p_obj)
 
 //减少引用计数
-#define DEC_REF(obj)
+#define DEC_REF(p_obj)
 
 //格式化
-#define TO_STRING(obj)
+#define TO_STRING(p_obj)
+
+//class id
+#define	CLASS_ID(p_obj)
+
+//Call method
+#define	METHOD(p_obj, method, ...)
+
+//构造函数
+void core_rtl_obj(pobj_t p_obj, u32 class_id, destructor_t destructor,
+	compare_obj_t compare_func, to_string_t to_string_func,
+    pheap_t heap);
 
 //增加引用计数
 void core_rtl_obj_inc_ref(pobj_t p_obj);
@@ -2228,15 +2239,18 @@ void obj_t.destructor(pobj_t p_this);
 int obj_t.compare(pobj_t p_this, pobj_t p_obj2);
 
 //格式化
-kstring_t obj_t.to_string(pobj_t p_this);
+kstring_obj_t obj_t.to_string(pobj_t p_this);
 
 //kstring_obj_t
 //methods
 //构造函数
-pkstring_obj_t kstring_obj(char* str, pheap_t buf);
+pkstring_obj_t kstring_obj(char* str, pheap_t heap);
+
+//获得长度
+size_t kstring_obj.len(pkstring_obj_t p_this);
 
 //复制
-pkstring_obj_t kstring_obj.copy(pkstring_obj_t p_this);
+pkstring_obj_t kstring_obj.copy(pkstring_obj_t p_this, pheap_t heap);
 
 //获得子串
 pkstring_obj_t kstring_obj.substr(
@@ -2244,7 +2258,7 @@ pkstring_obj_t kstring_obj.substr(
     u32 begin,			//起始
     u32 end);			//结束
 
-//合并
+//连接
 kstatus_t kstring_obj.append(pkstring_obj_t p_this, pktring_obj_t p_str);
 
 //所有字符大写
@@ -2254,7 +2268,10 @@ void kstring_obj.upper(pkstring_obj_t p_this);
 void kstring_obj.lower(pkstring_obj_t p_this);
 
 //搜索子串起始位置
-s32 kstring_obj.search(pkstring_obj_t p_this);
+kstatus_t kstring_obj.search(pkstring_obj_t p_this, pkstring_obj_t p_substr, u32* ret);
+
+//分割
+pkstring_obj_t kstring_obj.split(pkstring_obj_t p_this, char* separator, u32 begin);
 ```
 ######文件列表
 ```c
@@ -2296,6 +2313,7 @@ src/sandnix/kernel/core/rtl/kstring/kstring.h
 src/sandnix/kernel/core/rtl/kstring/kstring.c
 
 src/sandnix/kernel/core/rtl/obj/obj.h
+src/sandnix/kernel/core/rtl/obj/class_ids.h
 src/sandnix/kernel/core/rtl/obj/obj.c
 
 src/sandnix/kernel/core/rtl/frame/list/list.h

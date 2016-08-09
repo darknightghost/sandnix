@@ -15,8 +15,4 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
-
-#include "../../../../common/common.h"
-#include "./heap/heap.h"
-#include "./paging/paging.h"
+#include "kstring.h"

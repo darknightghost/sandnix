@@ -17,6 +17,8 @@
 
 #pragma once
 
-#include "../../../../common/common.h"
-#include "./heap/heap.h"
-#include "./paging/paging.h"
+#include "../../../../../common/common.h"
+
+//Runtime
+#define		CLASS_OBJ			0x00000000
+#define		CLASS_KSTRING		0x00000001

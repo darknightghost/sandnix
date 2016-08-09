@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "../../../../../common/common.h"
+
 #if defined X86
     #define	KERNEL_MEM_BASE		0xC0000000
     #define	KERNEL_MEM_SIZE		(1024 * 1024 * 1024)
@@ -28,13 +30,14 @@
     #include "./arch/arm/armv7/page_table.h"
 #endif
 
+#include "../../../core/mm/mm.h"
 
 //Start paging
 void		start_paging();
 
 //Add more pages to initialize page table
 void*		hal_mmu_add_early_paging_addr(void* phy_addr);
-/*
+
 //Get kernel virtual address range
 void		hal_mmu_get_krnl_addr_range(
     void** p_base,		//Pointer to basic address
@@ -42,28 +45,28 @@ void		hal_mmu_get_krnl_addr_range(
 
 //Get user virtual address range
 void		hal_mmu_get_usr_addr_range(
-    void** p_base,		//首地址
-    size_t* p_size);	//大小
+    void** p_base,		//Pointer to basic address
+    size_t* p_size);	//Pointer to size
 
 //Create page table
 kstatus_t	hal_mmu_pg_tbl_create(
-    u32* page_id);		//指向新页表id
+    u32* page_id);		//Pointer to new page table id
 
 //Destroy page table
 void		hal_mmu_pg_tbl_destroy(
-    u32 page_id);		//页表id
+    u32 page_id);		//Page table id
 
 //Set page table
 void		hal_mmu_pg_tbl_set(
-    void* virt_addr,				//起始地址
-    u32 num,						//页面数
-    pkrnl_pg_tbl_t page_tables);	//页表
+    void* virt_addr,				//Virtual address
+    u32 num,						//Count of pages
+    pkrnl_pg_tbl_t page_tables);	//Kernel page table
 
 //Refresh TLB
 void		hal_mmu_pg_tbl_refresh();
 
 //Switch page table
 void		hal_mmu_pg_tbl_switch(
-    u32 id);			//切换到的页表id
-*/
+    u32 id);			//Page table id
+
 address_t	get_load_offset();
