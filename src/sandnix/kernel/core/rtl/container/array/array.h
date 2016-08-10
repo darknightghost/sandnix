@@ -22,58 +22,60 @@
 #include "../../../mm/mm.h"
 
 typedef	struct	_array_blk {
-    size_t		count;
     size_t		ref;
-    void*		p_datas;
+    void**		p_p_items;
 } array_blk_t, *parray_blk_t;
-
 
 typedef	struct	_array {
     size_t			size;
     size_t			scale;
     pheap_t			heap;
-    parray_blk_t	p_blks;
+    parray_blk_t*	p_p_blks;
 } array_t, *parray_t;
 
-void core_rtl_array_init(
-    parray_t p_array,		//数组地址
-    u32 num,				//大小上限
-    pheap_t heap);			//堆
+//Initialize.
+kstatus_t core_rtl_array_init(
+    parray_t p_array,		//Array
+    u32 num,				//Max num
+    pheap_t heap);			//heap
 
-//获得元素
+//Get item.
 void* core_rtl_array_get(
-    parray_t p_array,		//数组地址
-    u32 index);				//下标
+    parray_t p_array,		//Array
+    u32 index);				//Index
 
-//设置n元素值,设成NULL即remove
+//Set item. NULL will remove the item.
 void* core_rtl_array_set(
-    parray_t p_array,		//数组地址
-    u32 index,				//下标
-    void* value);			//值
+    parray_t p_array,		//Array
+    u32 index,				//Index
+    void* value);			//Value
 
-//检测该元素是否被赋值
+//Check if the index is used.
 bool core_rtl_array_used(
-    parray_t p_array,		//数组地址
-    u32 index);				//下标
+    parray_t p_array,		//Array
+    u32 index);				//Index
 
-//获得当前元素个数
-u32 core_rtl_array_size{
-    parray_t p_array};		//数组地址
+//Get the number of item.
+u32 core_rtl_array_size(
+    parray_t p_arra);		//Array
 
-//获得最大索引值
-u32 core_rtl_array_get_current_max_index(
-    parray_t p_array);		//数组地址
+//Get a used index
+bool core_rtl_array_get_used_index(
+    parray_t p_array,		//Array
+    u32 begin,				//Begining index
+    u32* ret);				//Next index
 
-//获得一个空闲的索引
-u32 core_rtl_array_get_free_index(
-    parray_t p_array);		//数组地址
+//Get a free index
+bool core_rtl_array_get_free_index(
+    parray_t p_array,		//Array
+    u32* p_ret);			//Index
 
-//获得空闲索引个数
+//Get the number of free indexes
 u32 core_rtl_array_get_free_index_num(
-    parray_t p_array);		//数组地址
+    parray_t p_array);		//Array
 
-//销毁
+//Destroy the array
 void core_rtl_array_destroy(
-    parray_t p_array,			//数组地址
-    item_destroyer_t destroier,	//销毁元素回调
-    void* arg);					//回调函数参数
+    parray_t p_array,			//Array
+    item_destroyer_t destroier,	//Destroy callback
+    void* arg);					//Argument of callback

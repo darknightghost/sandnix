@@ -2001,7 +2001,7 @@ void core_rtl_list_qsort(
 
 //动态数组
 //初始化
-void core_rtl_array_init(
+kstatus_t core_rtl_array_init(
 	parray_t p_array,		//数组地址
     u32 num,				//大小上限
 	pheap_t heap);			//堆
@@ -2023,12 +2023,14 @@ bool core_rtl_array_used(
     u32 index);				//下标
 
 //获得当前元素个数
-u32 core_rtl_array_size{
-	parray_t p_array};		//数组地址
-
-//获得最大索引值
-u32 core_rtl_array_get_current_max_index(
+u32 core_rtl_array_size(
 	parray_t p_array);		//数组地址
+
+//获得索引
+bool core_rtl_array_get_used_index(
+    parray_t p_array,		//数组地址
+    u32 begin,				//起始索引
+    u32* ret);				//返回的下一个索引
 
 //获得一个空闲的索引
 u32 core_rtl_array_get_free_index(

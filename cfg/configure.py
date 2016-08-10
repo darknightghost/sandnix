@@ -170,8 +170,7 @@ def create_makefile(build_tree):
                 makefile.write("\t$(ASRULE)")
             elif os.path.splitext(f[0])[1] in (".c", ".cc", ".C", ".cpp"):
                 makefile.write("\t$(CCRULE)")
-            makefile.write("\n\trm -f %s"%(f[2]))
-            
+
             makefile.write("\n")
         
     else:
