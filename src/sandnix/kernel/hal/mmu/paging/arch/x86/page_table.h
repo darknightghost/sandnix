@@ -18,6 +18,7 @@
 #pragma once
 
 #include "../../../../../../../common/common.h"
+#include "../../../../../core/rtl/rtl.h"
 
 /* MMU page table */
 
@@ -62,4 +63,15 @@ typedef	struct {
     u32		avail					: 3;
     u32		page_base_addr			: 20;
 } __attribute__((packed)) pte_t, *ppte_t;
+
+//Page table information
+typedef	struct	_pte_tbl_info {
+    address_t	physical_addr;
+    u32			used_count;
+} pte_tbl_info_t, *ppte_tbl_info_t;
+
+typedef	struct _pdt_info {
+    address_t	physical_addr;
+    list_t		pte_info_list;
+} pg_tbl_info_t, *ppg_tbl_info_t;
 

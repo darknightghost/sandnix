@@ -62,8 +62,13 @@ void		hal_mmu_pg_tbl_set(
     u32 attribute,					//Attribute
     void* phy_addr);				//Physical address
 
+//Get mapping info
+bool hal_mmu_pg_tbl_get(
+    void* virt_addr,		//Virtual address
+    void** phy_addr);		//Returning physical address
+
 //Refresh TLB
-void		hal_mmu_pg_tbl_refresh();
+void hal_mmu_pg_tbl_refresh(void* virt_addr);
 
 //Switch page table
 void		hal_mmu_pg_tbl_switch(

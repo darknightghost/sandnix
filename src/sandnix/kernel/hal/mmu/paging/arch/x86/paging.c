@@ -17,6 +17,7 @@
 
 #include "../../paging.h"
 #include "../../../mmu.h"
+#include "../../../../../core/pm/pm.h"
 #include "../../../../init/init.h"
 #include "../../../../exception/exception.h"
 
@@ -32,9 +33,20 @@ static pte_t __attribute__((aligned(4096)))	init_pte_tbl[MAX_INIT_PAGE_NUM];
 static u32			used_pte_table;
 static address_t	load_offset;
 
+static array_t		mmu_globl_pg_table;
+static list_t		mmu_krnl_pte_tbl_list;
+static pheap_t		mmu_paging_heap;
+static u8			mmu_paging_heap_block[4096];
+static void*		page_operate_addr;
 
 static bool		initialized = false;
 
+//static void			krnl_pdt_sync();
+//static void*			map_pg_tbl(void* phy_addr);
+//static void			switch_editing_page(void* phy_addr);
+static void			early_switch_editing_page(void* phy_addr);
+static void			create_0();
+static void			refresh_TLB(void* address);
 
 void start_paging()
 {
@@ -282,10 +294,35 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr)
 
     }
 
-    return (void*)((address_t)phy_addr + KERNEL_MEM_BASE);
+    void* ret = (void*)((address_t)phy_addr + KERNEL_MEM_BASE);
+    refresh_TLB(ret);
+
+    return ret;
 }
 
-void init_paging();
+void init_paging()
+{
+    mmu_paging_heap = core_mm_heap_create_on_buf(
+                          HEAP_MULITHREAD | HEAP_PREALLOC,
+                          4096, mmu_paging_heap_block,
+                          sizeof(mmu_paging_heap_block));
+
+    if(mmu_paging_heap == NULL) {
+        hal_exception_panic(ENOMEM,
+                            "Not enough memory for mmu paging managment.");
+    }
+
+    if(core_rtl_array_init(&mmu_globl_pg_table, MAX_PROCESS_NUM,
+                           mmu_paging_heap) != ESUCCESS) {
+        hal_exception_panic(ENOMEM,
+                            "Not enough memory for mmu paging managment.");
+    }
+
+    core_rtl_list_init(&mmu_krnl_pte_tbl_list);
+
+    //Create process 0 page table
+    create_0();
+}
 
 void hal_mmu_get_krnl_addr_range(void** p_base, size_t* p_size)
 {
@@ -307,11 +344,125 @@ void hal_mmu_pg_tbl_destroy(u32 page_id);
 
 void hal_mmu_pg_tbl_set(void* virt_addr, u32 attribute, void* phy_addr);
 
-void hal_mmu_pg_tbl_refresh();
+bool hal_mmu_pg_tbl_get(void* virt_addr, void** phy_addr);
 
+void hal_mmu_pg_tbl_refresh(void* virt_addr);
 void hal_mmu_pg_tbl_switch(u32 id);
 
 address_t get_load_offset()
 {
     return load_offset;
+}
+
+void create_0()
+{
+    ppg_tbl_info_t p_pdt_info;
+
+    //Allocate memory for pdt
+    p_pdt_info = core_mm_heap_alloc(sizeof(pg_tbl_info_t), mmu_paging_heap);
+
+    if(p_pdt_info == NULL) {
+        hal_exception_panic(ENOMEM,
+                            "Not enough memory for mmu paging managment.");
+    }
+
+    //Allocate physical memory
+    if(hal_mmu_phymem_alloc((void**) & (p_pdt_info->physical_addr),
+                            false, 1) != ESUCCESS) {
+        hal_exception_panic(ENOMEM,
+                            "Not enough memory for mmu paging managment.");
+    }
+
+    core_rtl_list_init(&(p_pdt_info->pte_info_list));
+
+    page_operate_addr = hal_mmu_add_early_paging_addr(
+                            (void*)(p_pdt_info->physical_addr));
+
+    if(core_rtl_array_set(&mmu_globl_pg_table, 0, p_pdt_info) == NULL) {
+        hal_exception_panic(ENOMEM,
+                            "Not enough memory for mmu paging managment.");
+    }
+
+    core_rtl_memset(page_operate_addr, 0 , 4096);
+
+    //Copy init_pte_tbl
+    for(u32 i = KERNEL_MEM_BASE / 4096 / 1024;
+        i < KERNEL_MEM_BASE / 4096 / 1024 + used_pte_table;
+        i++) {
+        ppte_tbl_info_t p_pte_info = core_mm_heap_alloc(sizeof(pte_tbl_info_t),
+                                     mmu_paging_heap);
+
+        if(p_pte_info == NULL) {
+            hal_exception_panic(ENOMEM,
+                                "Not enough memory for mmu paging managment.");
+        }
+
+        if(hal_mmu_phymem_alloc((void*) & (p_pte_info->physical_addr),
+                                false, 1) != ESUCCESS) {
+            hal_exception_panic(ENOMEM,
+                                "Not enough memory for mmu paging managment.");
+        }
+
+        p_pte_info->used_count = 0;
+
+        //Set pde attribute
+        early_switch_editing_page((void*)(p_pdt_info->physical_addr));
+        ppde_t p_pde = (ppde_t)page_operate_addr + i;
+        p_pde->present = PG_P;
+        p_pde->read_write = PG_RW;
+        p_pde->user_supervisor = PG_SUPERVISOR;
+        p_pde->write_through = PG_WRITE_THROUGH;
+        p_pde->cache_disabled = PG_ENCACHE;
+        p_pde->page_size = PG_SIZE_4K;
+        p_pde->global_page = 1;
+        p_pde->page_table_base_addr = (p_pte_info->physical_addr) >> 12;
+
+        //Set pte attribute
+        early_switch_editing_page((void*)(p_pte_info->physical_addr));
+        core_rtl_memcpy(page_operate_addr, &init_pte_tbl[i * 1024], 4096);
+
+        for(int j = 0; j < 1024; j++) {
+            ppte_t p_pte = (ppte_t)page_operate_addr + j;
+            address_t vaddr = (i * 1024 + j) * 4096;
+
+            if(p_pte->avail == PG_P) {
+                (p_pte_info->used_count)++;
+            }
+
+            if(vaddr >= (address_t)kernel_header.code_start
+               && vaddr < (address_t)kernel_header.code_start + kernel_header.code_size) {
+                //If the page is in code segment
+                p_pte->read_write = PG_RDONLY;
+
+            } else {
+                p_pte->read_write = PG_RW;
+            }
+
+            p_pte->user_supervisor = PG_SUPERVISOR;
+            p_pte->write_through = PG_WRITE_THROUGH;
+            p_pte->cache_disabled = PG_ENCACHE;
+            p_pte->global_page = 1;
+        }
+
+    }
+
+    return;
+}
+
+void early_switch_editing_page(void* phy_addr)
+{
+    init_pte_tbl[
+        ((address_t)page_operate_addr - KERNEL_MEM_BASE) / 4096].page_base_addr
+        = (address_t)phy_addr >> 12;
+    refresh_TLB((void*)page_operate_addr);
+
+    return;
+}
+
+void refresh_TLB(void* address)
+{
+    __asm__ __volatile__(
+        "invlpg		(%0)\n"
+        ::"a"(address));
+    return;
 }

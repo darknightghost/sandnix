@@ -32,7 +32,9 @@
 #define	START_ADDR_H_REG	0x0C
 #define	START_ADDR_L_REG	0x0D
 
-#define	BASIC_VIDEO_ADDR	(0x000A0000 + KERNEL_MEM_BASE)
+#define	BASIC_VIDEO_ADDR	(void*)(0x000A0000)
+
+static void*	basic_video_addr = NULL;
 
 static volatile	u32	current_cursor_line;
 static volatile	u32	current_cursor_row;
@@ -50,6 +52,11 @@ void hal_early_print_init()
 {
     //Initialize lock
     core_pm_spnlck_init(&lock);
+
+    //Map memory
+    if(basic_video_addr == NULL) {
+        basic_video_addr = hal_mmu_add_early_paging_addr(BASIC_VIDEO_ADDR);
+    }
 
     //Set video card to VGA text mode.
     __asm__ __volatile__(
@@ -104,12 +111,10 @@ void hal_early_print_cls()
     //Fill screen
     __asm__ __volatile__(
         "cld\n"
-        "movl	%1, %%ecx\n"
-        "movl	%2, %%edi\n"
         "rep	stosw\n"
         ::"ax"(filled_char),
-        "i"(DEFAULT_STDOUT_WIDTH * DEFAULT_STDOUT_HEIGHT),
-        "i"(BASIC_VIDEO_ADDR)
+        "c"(DEFAULT_STDOUT_WIDTH * DEFAULT_STDOUT_HEIGHT),
+        "D"(basic_video_addr)
         :"memory");
 
     core_pm_spnlck_unlock(&lock);
@@ -281,15 +286,15 @@ void scoll_down()
         "cld\n"
         "rep	movsw\n"
         ::"c"(DEFAULT_STDOUT_WIDTH * (DEFAULT_STDOUT_HEIGHT - 1)),
-        "S"((address_t)BASIC_VIDEO_ADDR + DEFAULT_STDOUT_WIDTH * sizeof(u16)),
-        "D"(BASIC_VIDEO_ADDR)
+        "S"((address_t)basic_video_addr + DEFAULT_STDOUT_WIDTH * sizeof(u16)),
+        "D"(basic_video_addr)
         : "memory");
 
     __asm__ __volatile__(
         "cld\n"
         "rep	stosw\n"
         ::"a"(((u16)(bg | fg)) << 8 | ' '),
-        "c"(DEFAULT_STDOUT_WIDTH), "D"((address_t)BASIC_VIDEO_ADDR +
+        "c"(DEFAULT_STDOUT_WIDTH), "D"((address_t)basic_video_addr +
                                        DEFAULT_STDOUT_WIDTH * (DEFAULT_STDOUT_HEIGHT - 1) * 2)
         :"memory");
 
@@ -302,7 +307,7 @@ void scoll_down()
 
 void out_ch(u16 ch)
 {
-    *((u16*)BASIC_VIDEO_ADDR + current_cursor_line * DEFAULT_STDOUT_WIDTH
+    *((u16*)basic_video_addr + current_cursor_line * DEFAULT_STDOUT_WIDTH
       + current_cursor_row) = ch;
     current_cursor_row++;
 

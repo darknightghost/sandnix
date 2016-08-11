@@ -19,6 +19,8 @@
 
 #include "../../../../common/common.h"
 
+#define	MAX_PROCESS_NUM			65535
+
 //Spinlock
 #include "./lock/spinlock/spnlck.h"
 #include "./lock/spinlock/spnlck_rw.h"

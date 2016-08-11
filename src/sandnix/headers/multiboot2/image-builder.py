@@ -91,17 +91,17 @@ def main(argv):
     img_header = multiboot2.multiboot2(arg_dict["header"]);
 
     if min(kheader.code_start, kheader.data_start) - arg_dict["kernel_base"] \
-            - 0x100000 < len(img_header.data):
+            < len(img_header.data):
         print("Not enough space for kernel header!")
         return -1;
-
+    
     img_header.header_addr = 0x100000
     img_header.load_addr = kernel.program_headers[0].vaddr \
             - arg_dict["kernel_base"]
     img_header.load_end_addr = kernel.program_headers[0].vaddr \
             + kernel.program_headers[0].filesz - arg_dict["kernel_base"]
     img_header.bss_end_addr = kernel.program_headers[0].vaddr \
-            + kernel.program_headers[0].memsz - arg_dict["kernel_base"]
+            + kernel.program_headers[0].memsz - arg_dict["kernel_base"] 
     img_header.entry_addr = kernel.entry - arg_dict["kernel_base"]
 
     for ph in kernel.program_headers:
