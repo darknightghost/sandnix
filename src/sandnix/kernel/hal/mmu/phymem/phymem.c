@@ -33,7 +33,7 @@ static	bool			initialized = false;
 static	pheap_t			phymem_heap;
 static	u8				phymem_heap_block[4096];
 
-static	spnlck_t		lock;
+static	spnlck_rw_t		lock;
 
 static	bool			should_merge(plist_node_t p_pos1, plist_node_t p_pos2);
 static	void			merge_mem(plist_node_t* p_p_pos1, plist_node_t* p_p_pos2,
@@ -65,7 +65,7 @@ void phymem_init()
     size_t initrd_size;
     address_t initrd_end;
 
-    core_pm_spnlck_init(&lock);
+    core_pm_spnlck_rw_init(&lock);
     //Get physical memeory information from bootloader.
     info_list = hal_init_get_boot_memory_map();
 
@@ -200,7 +200,7 @@ kstatus_t hal_mmu_phymem_alloc(void** p_addr, bool is_dma, size_t page_num)
 
     #endif
 
-    core_pm_spnlck_lock(&lock);
+    core_pm_spnlck_rw_w_lock(&lock);
 
     //Search for memory block
     pphysical_memory_info_t p_memblock = core_rtl_map_search(p_free_map,
@@ -267,7 +267,7 @@ kstatus_t hal_mmu_phymem_alloc(void** p_addr, bool is_dma, size_t page_num)
     *p_addr = (void*)(address_t)p_memblock->begin;
 
 _RELEASE_SEARCH:
-    core_pm_spnlck_unlock(&lock);
+    core_pm_spnlck_rw_w_unlock(&lock);
 
     #ifndef	RESERVE_DMA
     UNREFERRED_PARAMETER(is_dma);
@@ -283,7 +283,7 @@ void hal_mmu_phymem_free(void* addr)
                             "Module has not been initialized.\n");
     }
 
-    core_pm_spnlck_lock(&lock);
+    core_pm_spnlck_rw_w_lock(&lock);
 
     //Search for memory block
     pphysical_memory_info_t p_memblock = core_rtl_map_search(&index_map,
@@ -350,7 +350,7 @@ void hal_mmu_phymem_free(void* addr)
         core_mm_heap_free(p_next_blk, phymem_heap);
     }
 
-    core_pm_spnlck_unlock(&lock);
+    core_pm_spnlck_rw_w_unlock(&lock);
 
     return;
 }
@@ -364,7 +364,7 @@ size_t hal_mmu_get_phymem_info(pphysical_memory_info_t p_buf, size_t size)
 
     size_t len;
 
-    core_pm_spnlck_lock(&lock);
+    core_pm_spnlck_rw_r_lock(&lock);
     pphysical_memory_info_t p_memblock = core_rtl_map_next(&index_map, NULL);
 
     for(len = 0; p_memblock != NULL; len += sizeof(physical_memory_info_t)) {
@@ -376,7 +376,7 @@ size_t hal_mmu_get_phymem_info(pphysical_memory_info_t p_buf, size_t size)
         p_memblock = core_rtl_map_next(&index_map, p_memblock);
     }
 
-    core_pm_spnlck_unlock(&lock);
+    core_pm_spnlck_rw_r_unlock(&lock);
     return len;
 }
 

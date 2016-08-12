@@ -81,3 +81,68 @@ u64 hal_rtl_math_mod64(u64 dividend, u32 divisor)
 }
 
 #endif
+
+#if defined(ARM)
+u32	__aeabi_uidiv(u32 dividend, u32 divisor)
+{
+    u32 quotient;
+    int i;
+    u32 remainder;
+
+    quotient = 0;
+    remainder = 0;
+
+    for(i = 0; i < 32; i++) {
+        if(dividend & 0x80000000) {
+            remainder = (remainder << 1) + 1;
+
+        } else {
+            remainder = remainder << 1;
+        }
+
+        if(remainder >= divisor) {
+            remainder -= divisor;
+            quotient = (quotient << 1) + 1;
+
+        } else {
+            quotient = quotient << 1;
+        }
+
+        dividend = dividend << 1;
+    }
+
+    return quotient;
+}
+
+u32	__aeabi_uidivmod(u32 dividend, u32 divisor)
+{
+    u32 quotient;
+    int i;
+    u32 remainder;
+
+    quotient = 0;
+    remainder = 0;
+
+    for(i = 0; i < 32; i++) {
+        if(dividend & 0x80000000) {
+            remainder = (remainder << 1) + 1;
+
+        } else {
+            remainder = remainder << 1;
+        }
+
+        if(remainder >= divisor) {
+            remainder -= divisor;
+            quotient = (quotient << 1) + 1;
+
+        } else {
+            quotient = quotient << 1;
+        }
+
+        dividend = dividend << 1;
+    }
+
+    return remainder;
+}
+
+#endif

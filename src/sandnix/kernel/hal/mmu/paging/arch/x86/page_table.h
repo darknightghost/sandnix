@@ -72,6 +72,6 @@ typedef	struct	_pte_tbl_info {
 
 typedef	struct _pdt_info {
     address_t	physical_addr;
-    list_t		pte_info_list;
+    map_t		pte_info_map;
 } pg_tbl_info_t, *ppg_tbl_info_t;
 

@@ -30,6 +30,9 @@
  * lv2 table has 1KB / 4 bytes = 256 entries.
  * Total memory is 256 * 4096 *4096 bytes = 4GB
  */
+#if	KERNEL_MEM_BASE % (4096 * 256) !=0
+    #error	"KERNEL_MEM_BASE must be 1MB aligned."
+#endif
 
 #define	REQUIRED_INIT_PAGE_NUM	((KERNEL_MAX_SIZE) / 4096 + 1)
 #define	MAX_INIT_PAGE_NUM		(REQUIRED_INIT_PAGE_NUM % 256 > 0 \

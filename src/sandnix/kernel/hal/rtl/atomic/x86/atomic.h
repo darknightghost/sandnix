@@ -17,6 +17,22 @@
 
 #pragma once
 
+#define	hal_rtl_atomic_addl(dest, num) { \
+        __asm__ __volatile__( \
+                              "lock	addl	%1, %0\n" \
+                              ::"m"((dest)), "a"((num)) \
+                              :"memory"); \
+    }
+
+
+#define	hal_rtl_atomic_subl(dest, num) { \
+        __asm__ __volatile__( \
+                              "lock	subl	%1, %0\n" \
+                              ::"m"((dest)), "a"((num)) \
+                              :"memory"); \
+    }
+
+
 #define hal_rtl_atomic_xaddl(dest, src) { \
         do { \
             __asm__ __volatile__( \

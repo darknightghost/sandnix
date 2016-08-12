@@ -21,6 +21,10 @@
 #include "../../../../init/init.h"
 #include "../../../../exception/exception.h"
 
+#if	KERNEL_MEM_BASE % (4096 * 1024) !=0
+    #error	"KERNEL_MEM_BASE must be 4MB aligned."
+#endif
+
 
 #define	REQUIRED_INIT_PAGE_NUM	((1024 * 1024 + KERNEL_MAX_SIZE) / 4096)
 #define	MAX_INIT_PAGE_NUM		(REQUIRED_INIT_PAGE_NUM % 1024 > 0 \
@@ -34,13 +38,16 @@ static u32			used_pte_table;
 static address_t	load_offset;
 
 static array_t		mmu_globl_pg_table;
-static list_t		mmu_krnl_pte_tbl_list;
+static map_t		mmu_krnl_pte_tbl_map;
 static pheap_t		mmu_paging_heap;
 static u8			mmu_paging_heap_block[4096];
 static void*		page_operate_addr;
+static spnlck_rw_t	lock;
 
 static bool		initialized = false;
 
+
+static int			compare_vaddr(address_t p1, address_t p2);
 //static void			krnl_pdt_sync();
 //static void*			map_pg_tbl(void* phy_addr);
 //static void			switch_editing_page(void* phy_addr);
@@ -318,10 +325,20 @@ void init_paging()
                             "Not enough memory for mmu paging managment.");
     }
 
-    core_rtl_list_init(&mmu_krnl_pte_tbl_list);
-
+    core_rtl_map_init(&mmu_krnl_pte_tbl_map, (item_compare_t)(compare_vaddr),
+                      mmu_paging_heap);
     //Create process 0 page table
     create_0();
+
+    //Initialize lock
+    core_pm_spnlck_rw_init(&lock);
+
+    //Switch to page 0
+    __asm__ __volatile__(
+        "movl	%0, %%cr3\n"
+        ::"a"((((ppg_tbl_info_t)core_rtl_array_get(&mmu_globl_pg_table, 0))
+               ->physical_addr & 0xFFFFF000) | 0x00000008):);
+    return;
 }
 
 void hal_mmu_get_krnl_addr_range(void** p_base, size_t* p_size)
@@ -346,7 +363,12 @@ void hal_mmu_pg_tbl_set(void* virt_addr, u32 attribute, void* phy_addr);
 
 bool hal_mmu_pg_tbl_get(void* virt_addr, void** phy_addr);
 
-void hal_mmu_pg_tbl_refresh(void* virt_addr);
+void hal_mmu_pg_tbl_refresh(void* virt_addr)
+{
+    refresh_TLB(virt_addr);
+    return;
+}
+
 void hal_mmu_pg_tbl_switch(u32 id);
 
 address_t get_load_offset()
@@ -373,7 +395,9 @@ void create_0()
                             "Not enough memory for mmu paging managment.");
     }
 
-    core_rtl_list_init(&(p_pdt_info->pte_info_list));
+    core_rtl_map_init(&(p_pdt_info->pte_info_map),
+                      (item_compare_t)compare_vaddr,
+                      mmu_paging_heap);
 
     page_operate_addr = hal_mmu_add_early_paging_addr(
                             (void*)(p_pdt_info->physical_addr));
@@ -444,6 +468,18 @@ void create_0()
             p_pte->global_page = 1;
         }
 
+        if(core_rtl_map_set(&mmu_krnl_pte_tbl_map, (void*)(i * 4096 * 1024),
+                            p_pte_info)) {
+            hal_exception_panic(ENOMEM,
+                                "Not enough memory for mmu paging managment.");
+        }
+
+        if(core_rtl_map_set(&(p_pdt_info->pte_info_map),
+                            (void*)(i * 4096 * 1024),
+                            p_pte_info)) {
+            hal_exception_panic(ENOMEM,
+                                "Not enough memory for mmu paging managment.");
+        }
     }
 
     return;
@@ -465,4 +501,17 @@ void refresh_TLB(void* address)
         "invlpg		(%0)\n"
         ::"a"(address));
     return;
+}
+
+int compare_vaddr(address_t p1, address_t p2)
+{
+    if(p1 > p2) {
+        return 1;
+
+    } else if(p1 == p2) {
+        return 0;
+
+    } else {
+        return -1;
+    }
 }

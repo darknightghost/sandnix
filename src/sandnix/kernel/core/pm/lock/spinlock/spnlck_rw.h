@@ -21,11 +21,8 @@
 #include "spnlck.h"
 
 typedef struct _spnlck_rw_t {
-    volatile spnlck_t	lock;
-    volatile u32		ticket;
-    volatile u32		owner;
-    volatile u32		writer;
-    volatile u32		priority;
+    spnlck_t			lock;
+    volatile u32		reader_count;
 } spnlck_rw_t, *pspnlck_rw_t;
 
 //r/w lock

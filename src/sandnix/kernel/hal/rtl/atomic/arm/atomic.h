@@ -17,6 +17,31 @@
 
 #pragma once
 
+#define	hal_rtl_atomic_addl(dest, num) { \
+        __asm__ __volatile__( \
+                              "1:\n" \
+                              "ldrex	r0, [%0]\n"  \
+                              "add		r0, %1\n" \
+                              "strex	r1, r0, [%0]\n" \
+                              "teq	r1, #0\n" \
+                              "bne	1b\n" \
+                              ::"r"(&(dest)), "r"((num)) \
+                              :"r0", "r1", "memory"); \
+    }
+
+
+#define	hal_rtl_atomic_subl(dest, num) { \
+        __asm__ __volatile__( \
+                              "1:\n" \
+                              "ldrex	r0, [%0]\n"  \
+                              "sub		r0, %1\n" \
+                              "strex	r1, r0, [%0]\n" \
+                              "teq	r1, #0\n" \
+                              "bne	1b\n" \
+                              ::"r"(&(dest)), "r"((num)) \
+                              :"r0", "r1", "memory"); \
+    }
+
 
 #define hal_rtl_atomic_xaddl(dest, src) { \
         do { \
