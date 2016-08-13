@@ -433,20 +433,22 @@ void hal_mmu_get_usr_addr_range(
 
 //创建页表
 kstatus_t hal_mmu_pg_tbl_create(
-	u32* page_id);		//指向新页表id
+	u32* id);		//指向新页表id
 
 //销毁页表
 void hal_mmu_pg_tbl_destroy(
-	u32 page_id);		//页表id
+	u32 id);		//页表id
 
 //设置页表条目
 void hal_mmu_pg_tbl_set(
+	u32 id,
 	void* virt_addr,				//线性地址
     u32 attribute,					//属性
     void* phy_addr);				//物理地址
 
 //获得当前地址映射信息
 bool hal_mmu_pg_tbl_get(
+	u32 id,
 	void* virt_addr,		////线性地址
     void** phy_addr);		//指向返回的物理地址
 

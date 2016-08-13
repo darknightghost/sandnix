@@ -68,6 +68,7 @@ typedef	struct {
 typedef	struct	_pte_tbl_info {
     address_t	physical_addr;
     u32			used_count;
+    bool		freeable;
 } pte_tbl_info_t, *ppte_tbl_info_t;
 
 typedef	struct _pdt_info {

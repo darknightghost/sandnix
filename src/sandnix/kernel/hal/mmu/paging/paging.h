@@ -50,20 +50,22 @@ void		hal_mmu_get_usr_addr_range(
 
 //Create page table
 kstatus_t	hal_mmu_pg_tbl_create(
-    u32* page_id);		//Pointer to new page table id
+    u32* p_id);		//Pointer to new page table id
 
 //Destroy page table
 void		hal_mmu_pg_tbl_destroy(
-    u32 page_id);		//Page table id
+    u32 id);		//Page table id
 
 //Set page table
 void		hal_mmu_pg_tbl_set(
+    u32 id,
     void* virt_addr,				//Virtual address
     u32 attribute,					//Attribute
     void* phy_addr);				//Physical address
 
 //Get mapping info
 bool hal_mmu_pg_tbl_get(
+    u32 id,
     void* virt_addr,		//Virtual address
     void** phy_addr);		//Returning physical address
 
@@ -74,5 +76,5 @@ void hal_mmu_pg_tbl_refresh(void* virt_addr);
 void		hal_mmu_pg_tbl_switch(
     u32 id);			//Page table id
 
-void		init_paging();
+void		paging_init();
 address_t	get_load_offset();

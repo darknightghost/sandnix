@@ -20,6 +20,7 @@
 #include "../../../../../core/pm/pm.h"
 #include "../../../../init/init.h"
 #include "../../../../exception/exception.h"
+#include "../../../../early_print/early_print.h"
 
 #if	KERNEL_MEM_BASE % (4096 * 1024) !=0
     #error	"KERNEL_MEM_BASE must be 4MB aligned."
@@ -50,8 +51,7 @@ static bool		initialized = false;
 static int			compare_vaddr(address_t p1, address_t p2);
 //static void			krnl_pdt_sync();
 //static void*			map_pg_tbl(void* phy_addr);
-//static void			switch_editing_page(void* phy_addr);
-static void			early_switch_editing_page(void* phy_addr);
+static void			switch_editing_page(void* phy_addr);
 static void			create_0();
 static void			refresh_TLB(void* address);
 
@@ -307,8 +307,9 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr)
     return ret;
 }
 
-void init_paging()
+void paging_init()
 {
+    hal_early_print_printf("\nInitializing paging module of mmu...\n");
     mmu_paging_heap = core_mm_heap_create_on_buf(
                           HEAP_MULITHREAD | HEAP_PREALLOC,
                           4096, mmu_paging_heap_block,
@@ -328,16 +329,16 @@ void init_paging()
     core_rtl_map_init(&mmu_krnl_pte_tbl_map, (item_compare_t)(compare_vaddr),
                       mmu_paging_heap);
     //Create process 0 page table
+    hal_early_print_printf("Creating paging table 0...\n");
     create_0();
 
     //Initialize lock
     core_pm_spnlck_rw_init(&lock);
 
     //Switch to page 0
-    __asm__ __volatile__(
-        "movl	%0, %%cr3\n"
-        ::"a"((((ppg_tbl_info_t)core_rtl_array_get(&mmu_globl_pg_table, 0))
-               ->physical_addr & 0xFFFFF000) | 0x00000008):);
+    hal_early_print_printf("Switching to  paging table 0...\n");
+    hal_mmu_pg_tbl_switch(0);
+    initialized = true;
     return;
 }
 
@@ -355,13 +356,60 @@ void hal_mmu_get_usr_addr_range(void** p_base, size_t* p_size)
     return;
 }
 
-kstatus_t hal_mmu_pg_tbl_create(u32* page_id);
+kstatus_t hal_mmu_pg_tbl_create(u32* p_id)
+{
+    kstatus_t status;
 
-void hal_mmu_pg_tbl_destroy(u32 page_id);
+    //Allocate memory
+    ppg_tbl_info_t p_pgtbl_info = core_mm_heap_alloc(sizeof(pg_tbl_info_t),
+                                  mmu_paging_heap);;
 
-void hal_mmu_pg_tbl_set(void* virt_addr, u32 attribute, void* phy_addr);
+    if(p_pgtbl_info == NULL) {
+        status = ENOMEM;
+        goto _FAILED_RET;
 
-bool hal_mmu_pg_tbl_get(void* virt_addr, void** phy_addr);
+    }
+
+    if(hal_mmu_phymem_alloc((void**)(&(p_pgtbl_info->physical_addr)), false, 1)
+       == ESUCCESS) {
+        status = ENOMEM;
+        goto _ALLOC_PDT_FAILED;
+    }
+
+    core_rtl_map_init(&(p_pgtbl_info->pte_info_map),
+                      (item_compare_t)compare_vaddr, mmu_paging_heap);
+
+    //Clear new pdt
+    core_pm_spnlck_rw_w_lock(&lock);
+
+    if(!core_rtl_array_get_free_index(&mmu_globl_pg_table, p_id)) {
+        status = ENOMEM;
+        goto _NO_FREE_ID;
+    }
+
+    if(core_rtl_array_set(&mmu_globl_pg_table, *p_id, p_pgtbl_info) == NULL) {
+        status = ENOMEM;
+        goto _ADD_TABLE_FAILED;
+    }
+
+    core_pm_spnlck_rw_w_unlock(&lock);
+    return ESUCCESS;
+
+    //Exception handler
+_ADD_TABLE_FAILED:
+_NO_FREE_ID:
+    core_pm_spnlck_rw_w_unlock(&lock);
+_ALLOC_PDT_FAILED:
+    core_mm_heap_free(p_pgtbl_info, mmu_paging_heap);
+_FAILED_RET:
+    return status;
+}
+
+void hal_mmu_pg_tbl_destroy(u32 id);
+
+void hal_mmu_pg_tbl_set(u32 id, void* virt_addr, u32 attribute, void* phy_addr);
+
+bool hal_mmu_pg_tbl_get(u32 id, void* virt_addr, void** phy_addr);
 
 void hal_mmu_pg_tbl_refresh(void* virt_addr)
 {
@@ -369,7 +417,26 @@ void hal_mmu_pg_tbl_refresh(void* virt_addr)
     return;
 }
 
-void hal_mmu_pg_tbl_switch(u32 id);
+void hal_mmu_pg_tbl_switch(u32 id)
+{
+    core_pm_spnlck_rw_r_lock(&lock);
+    ppg_tbl_info_t p_pde_info = (ppg_tbl_info_t)core_rtl_array_get(
+                                    &mmu_globl_pg_table,
+                                    id);
+
+    if(p_pde_info == NULL) {
+        hal_exception_panic(EINVAL,
+                            "Illegal page table id.");
+    }
+
+    core_pm_spnlck_rw_r_unlock(&lock);
+
+    __asm__ __volatile__(
+        "movl	%0, %%cr3\n"
+        ::"a"((p_pde_info->physical_addr & 0xFFFFF000) | 0x00000008):);
+
+    return;
+}
 
 address_t get_load_offset()
 {
@@ -421,16 +488,13 @@ void create_0()
                                 "Not enough memory for mmu paging managment.");
         }
 
-        if(hal_mmu_phymem_alloc((void*) & (p_pte_info->physical_addr),
-                                false, 1) != ESUCCESS) {
-            hal_exception_panic(ENOMEM,
-                                "Not enough memory for mmu paging managment.");
-        }
-
+        p_pte_info->physical_addr = (address_t)(&init_pte_tbl[(i - KERNEL_MEM_BASE / 4096 / 1024)
+                                                * 1024]) + load_offset;
         p_pte_info->used_count = 0;
+        p_pte_info->freeable = false;
 
         //Set pde attribute
-        early_switch_editing_page((void*)(p_pdt_info->physical_addr));
+        switch_editing_page((void*)(p_pdt_info->physical_addr));
         ppde_t p_pde = (ppde_t)page_operate_addr + i;
         p_pde->present = PG_P;
         p_pde->read_write = PG_RW;
@@ -442,8 +506,6 @@ void create_0()
         p_pde->page_table_base_addr = (p_pte_info->physical_addr) >> 12;
 
         //Set pte attribute
-        early_switch_editing_page((void*)(p_pte_info->physical_addr));
-        core_rtl_memcpy(page_operate_addr, &init_pte_tbl[i * 1024], 4096);
 
         for(int j = 0; j < 1024; j++) {
             ppte_t p_pte = (ppte_t)page_operate_addr + j;
@@ -469,14 +531,14 @@ void create_0()
         }
 
         if(core_rtl_map_set(&mmu_krnl_pte_tbl_map, (void*)(i * 4096 * 1024),
-                            p_pte_info)) {
+                            p_pte_info) == NULL) {
             hal_exception_panic(ENOMEM,
                                 "Not enough memory for mmu paging managment.");
         }
 
         if(core_rtl_map_set(&(p_pdt_info->pte_info_map),
                             (void*)(i * 4096 * 1024),
-                            p_pte_info)) {
+                            p_pte_info) == NULL) {
             hal_exception_panic(ENOMEM,
                                 "Not enough memory for mmu paging managment.");
         }
@@ -485,7 +547,7 @@ void create_0()
     return;
 }
 
-void early_switch_editing_page(void* phy_addr)
+void switch_editing_page(void* phy_addr)
 {
     init_pte_tbl[
         ((address_t)page_operate_addr - KERNEL_MEM_BASE) / 4096].page_base_addr

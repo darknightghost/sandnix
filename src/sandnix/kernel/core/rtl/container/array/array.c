@@ -63,7 +63,7 @@ void* core_rtl_array_get(parray_t p_array, u32 index)
     }
 
     //Get item
-    return (*p_p_blk)->p_p_items + index % p_array->scale;
+    return *((*p_p_blk)->p_p_items + index % p_array->scale);
 }
 
 void* core_rtl_array_set(parray_t p_array, u32 index, void* value)
