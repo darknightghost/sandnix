@@ -32,6 +32,17 @@
 
 #include "../../../core/mm/mm.h"
 
+#define	MMU_PAGE_AVAIL			0x00000001
+#define	MMU_PAGE_WRITABLE		0x00000002
+#define	MMU_PAGE_EXECUTABLE		0x00000004
+
+#define	MMU_PAGE_UNAVAIL		0x00000000
+#define	MMU_PAGE_RDONLY			(MMU_PAGE_AVAIL)
+#define	MMU_PAGE_RW				(MMU_PAGE_AVAIL | MMU_PAGE_WRITABLE)
+#define	MMU_PAGE_RDONLY_EXEC	(MMU_PAGE_AVAIL | MMU_PAGE_EXECUTABLE)
+#define	MMU_PAGE_RW_EXEC		(MMU_PAGE_AVAIL | MMU_PAGE_WRITABLE \
+                                 | MMU_PAGE_EXECUTABLE)
+
 //Start paging
 void		start_paging();
 

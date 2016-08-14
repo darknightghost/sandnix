@@ -376,6 +376,9 @@ kstatus_t hal_mmu_pg_tbl_create(u32* p_id)
         goto _ALLOC_PDT_FAILED;
     }
 
+    switch_editing_page((void*)p_pgtbl_info->physical_addr);
+    core_rtl_memset(page_operate_addr, 0, 4096);
+
     core_rtl_map_init(&(p_pgtbl_info->pte_info_map),
                       (item_compare_t)compare_vaddr, mmu_paging_heap);
 
@@ -405,7 +408,45 @@ _FAILED_RET:
     return status;
 }
 
-void hal_mmu_pg_tbl_destroy(u32 id);
+void hal_mmu_pg_tbl_destroy(u32 id)
+{
+    //Release page table id
+    core_pm_spnlck_rw_w_lock(&lock);
+    ppg_tbl_info_t p_pdt_info = core_rtl_array_get(
+                                    &mmu_globl_pg_table,
+                                    id);
+
+    if(p_pdt_info == NULL) {
+        hal_exception_panic(EINVAL,
+                            "Illegal page table id.");
+    }
+
+    core_rtl_array_set(&mmu_globl_pg_table, id, NULL);
+
+    core_pm_spnlck_rw_w_unlock(&lock);
+
+    //Free memory
+    hal_mmu_phymem_free((void*)(p_pdt_info->physical_addr));
+
+    for(void* p_key = core_rtl_map_next(&(p_pdt_info->pte_info_map), NULL);
+        p_key != NULL;
+        p_key = core_rtl_map_next(&(p_pdt_info->pte_info_map), p_key)) {
+        ppte_tbl_info_t p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
+                                         &(p_pdt_info->pte_info_map), p_key);
+
+        if(p_pte_info->freeable) {
+            hal_mmu_phymem_free((void*)(p_pte_info->physical_addr));
+        }
+    }
+
+    core_rtl_map_destroy(&(p_pdt_info->pte_info_map),
+                         NULL,
+                         (item_destroyer_t)core_mm_heap_free,
+                         mmu_paging_heap);
+    core_mm_heap_free(p_pdt_info, mmu_paging_heap);
+
+    return;
+}
 
 void hal_mmu_pg_tbl_set(u32 id, void* virt_addr, u32 attribute, void* phy_addr);
 
@@ -420,11 +461,11 @@ void hal_mmu_pg_tbl_refresh(void* virt_addr)
 void hal_mmu_pg_tbl_switch(u32 id)
 {
     core_pm_spnlck_rw_r_lock(&lock);
-    ppg_tbl_info_t p_pde_info = (ppg_tbl_info_t)core_rtl_array_get(
+    ppg_tbl_info_t p_pdt_info = (ppg_tbl_info_t)core_rtl_array_get(
                                     &mmu_globl_pg_table,
                                     id);
 
-    if(p_pde_info == NULL) {
+    if(p_pdt_info == NULL) {
         hal_exception_panic(EINVAL,
                             "Illegal page table id.");
     }
@@ -433,7 +474,7 @@ void hal_mmu_pg_tbl_switch(u32 id)
 
     __asm__ __volatile__(
         "movl	%0, %%cr3\n"
-        ::"a"((p_pde_info->physical_addr & 0xFFFFF000) | 0x00000008):);
+        ::"a"((p_pdt_info->physical_addr & 0xFFFFF000) | 0x00000008):);
 
     return;
 }
