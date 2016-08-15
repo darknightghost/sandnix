@@ -54,6 +54,9 @@ static int			compare_vaddr(address_t p1, address_t p2);
 static void			switch_editing_page(void* phy_addr);
 static void			create_0();
 static void			refresh_TLB(void* address);
+static void			remove_page(ppg_tbl_info_t p_pdt_info, void* virt_addr);
+static kstatus_t	set_page(ppg_tbl_info_t p_pdt_info, void* virt_addr,
+                             u32 attr, void* phy_addr);
 
 void start_paging()
 {
@@ -448,9 +451,73 @@ void hal_mmu_pg_tbl_destroy(u32 id)
     return;
 }
 
-void hal_mmu_pg_tbl_set(u32 id, void* virt_addr, u32 attribute, void* phy_addr);
+kstatus_t hal_mmu_pg_tbl_set(u32 id, void* virt_addr, u32 attribute, void* phy_addr)
+{
+    core_pm_spnlck_rw_w_lock(&lock);
 
-bool hal_mmu_pg_tbl_get(u32 id, void* virt_addr, void** phy_addr);
+    //Get page table
+    ppg_tbl_info_t p_pdt_info = core_rtl_array_get(&mmu_globl_pg_table,
+                                id);
+
+    if(p_pdt_info == NULL) {
+        hal_exception_panic(EINVAL, "Illegal page table id.");
+    }
+
+    if(attribute & MMU_PAGE_AVAIL) {
+        //Set page attribute
+        kstatus_t status = set_page(p_pdt_info, virt_addr, attribute, phy_addr);
+        core_pm_spnlck_rw_w_unlock(&lock);
+        return status;
+
+    } else {
+        //Remove page
+        remove_page(p_pdt_info, virt_addr);
+    }
+
+    core_pm_spnlck_rw_w_unlock(&lock);
+    refresh_TLB(virt_addr);
+    return ESUCCESS;
+}
+
+void hal_mmu_pg_tbl_get(u32 id, void* virt_addr, void** phy_addr, u32* p_attr)
+{
+    core_pm_spnlck_rw_w_lock(&lock);
+    //Get page table
+    ppg_tbl_info_t p_pdt_info = core_rtl_array_get(&mmu_globl_pg_table,
+                                id);
+
+    if(p_pdt_info == NULL) {
+        hal_exception_panic(EINVAL, "Illegal page table id.");
+    }
+
+    *p_attr = 0;
+    ppte_tbl_info_t p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
+                                     &(p_pdt_info->pte_info_map),
+                                     (void*)((address_t)virt_addr | 0xFFC00000));
+
+    if(p_pte_info == NULL) {
+        core_pm_spnlck_rw_w_unlock(&lock);
+        return;
+    }
+
+    switch_editing_page((void*)(p_pte_info->physical_addr));
+    ppte_t p_pte = (ppte_t)page_operate_addr
+                   + (address_t)virt_addr % (4096 * 1024) / 4096;
+
+    if(p_pte->present == PG_P) {
+        (*p_attr) |= MMU_PAGE_AVAIL;
+
+        if(p_pte->read_write == PG_RW) {
+            (*p_attr) |= MMU_PAGE_WRITABLE;
+        }
+
+        (*p_attr) |= MMU_PAGE_EXECUTABLE;
+        *phy_addr = (void*)(p_pte->page_base_addr << 12);
+    }
+
+    core_pm_spnlck_rw_w_unlock(&lock);
+    return;
+}
 
 void hal_mmu_pg_tbl_refresh(void* virt_addr)
 {
@@ -617,4 +684,156 @@ int compare_vaddr(address_t p1, address_t p2)
     } else {
         return -1;
     }
+}
+
+void remove_page(ppg_tbl_info_t p_pdt_info, void* virt_addr)
+{
+    ppte_tbl_info_t p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
+                                     &(p_pdt_info->pte_info_map),
+                                     (void*)((address_t)virt_addr | 0xFFC00000));
+
+    if(p_pte_info == NULL) {
+        return;
+    }
+
+    switch_editing_page((void*)(p_pte_info->physical_addr));
+    ppte_t p_pte = (ppte_t)page_operate_addr;
+    p_pte += (address_t)virt_addr % (4096 * 1024) / 4096;
+
+    if(p_pte->avail == PG_NP) {
+        return;
+    }
+
+    p_pte->avail = PG_NP;
+    (p_pte_info->used_count)--;
+
+    if(p_pte_info->used_count == 0 && p_pte_info->freeable) {
+        core_rtl_map_set(&(p_pdt_info->pte_info_map),
+                         (void*)((address_t)virt_addr | 0xFFC00000),
+                         NULL);
+
+        if((address_t)virt_addr > KERNEL_MEM_BASE) {
+            core_rtl_map_set(&mmu_krnl_pte_tbl_map,
+                             (void*)((address_t)virt_addr | 0xFFC00000),
+                             NULL);
+        }
+
+        hal_mmu_phymem_free((void*)(p_pdt_info->physical_addr));
+        core_mm_heap_free(p_pdt_info, mmu_paging_heap);
+    }
+
+    return;
+}
+
+kstatus_t set_page(ppg_tbl_info_t p_pdt_info, void* virt_addr, u32 attr,
+                   void* phy_addr)
+{
+    ppte_tbl_info_t p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
+                                     &(p_pdt_info->pte_info_map),
+                                     (void*)((address_t)virt_addr | 0xFFC00000));
+
+    if(p_pte_info == NULL) {
+        //Create new pte table
+        ppte_tbl_info_t p_pte_info = core_mm_heap_alloc(sizeof(pte_tbl_info_t),
+                                     mmu_paging_heap);
+
+        if(p_pte_info == NULL) {
+            return ENOMEM;
+        }
+
+        p_pte_info->freeable = true;
+        kstatus_t status = hal_mmu_phymem_alloc((void**) & (p_pte_info->physical_addr),
+                                                false, 1);
+
+        if(status != ESUCCESS) {
+            core_mm_heap_free(p_pte_info, mmu_paging_heap);
+            return status;
+        }
+
+        switch_editing_page((void*)(p_pte_info->physical_addr));
+        core_rtl_memset(page_operate_addr, 0, 4096);
+        p_pte_info->used_count = 0;
+
+        if(core_rtl_map_set(&(p_pdt_info->pte_info_map),
+                            (void*)((address_t)virt_addr | 0xFFC00000),
+                            p_pte_info) == NULL) {
+            hal_mmu_phymem_free((void*)(p_pte_info->physical_addr));
+            core_mm_heap_free(p_pte_info, mmu_paging_heap);
+            return ENOMEM;
+        }
+
+        if((address_t)virt_addr > KERNEL_MEM_BASE) {
+            if(core_rtl_map_set(&mmu_krnl_pte_tbl_map,
+                                (void*)((address_t)virt_addr | 0xFFC00000),
+                                p_pte_info) == NULL) {
+                core_rtl_map_set(&(p_pdt_info->pte_info_map),
+                                 (void*)((address_t)virt_addr | 0xFFC00000),
+                                 NULL);
+                hal_mmu_phymem_free((void*)(p_pte_info->physical_addr));
+                core_mm_heap_free(p_pte_info, mmu_paging_heap);
+                return ENOMEM;
+
+            }
+        }
+
+
+        //Add mapping
+        switch_editing_page((void*)(p_pdt_info->physical_addr));
+        ppde_t p_pde = (ppde_t)page_operate_addr
+                       + (address_t)virt_addr / 4096 / 1024;
+
+        p_pde->present = PG_P;
+        p_pde->read_write = PG_RW;
+
+        if((address_t)virt_addr > KERNEL_MEM_BASE) {
+            p_pde->user_supervisor = PG_SUPERVISOR;
+            p_pde->global_page = 1;
+
+        } else {
+            p_pde->user_supervisor = PG_USER;
+            p_pde->global_page = 0;
+        }
+
+        p_pde->write_through = PG_WRITE_THROUGH;
+        p_pde->cache_disabled = PG_ENCACHE;
+        p_pde->page_size = PG_SIZE_4K;
+        p_pde->page_table_base_addr = (p_pte_info->physical_addr) >> 12;
+
+    }
+
+    switch_editing_page((void*)(p_pdt_info->physical_addr));
+    ppte_t p_pte = (ppte_t)page_operate_addr
+                   + (address_t)virt_addr % (4096 * 1024) / 4096;
+
+    if(p_pte->avail == PG_NP) {
+        (p_pte_info->used_count)++;
+    }
+
+    p_pte->present = PG_P;
+
+    if(attr & MMU_PAGE_WRITABLE) {
+        p_pte->read_write = PG_RW;
+
+    } else {
+        p_pte->read_write = PG_RDONLY;
+    }
+
+    if((address_t)virt_addr > KERNEL_MEM_BASE) {
+        p_pte->user_supervisor = PG_SUPERVISOR;
+        p_pte->global_page = 1;
+
+    } else {
+        p_pte->user_supervisor = PG_USER;
+        p_pte->global_page = 0;
+    }
+
+    p_pte->write_through = PG_WRITE_THROUGH;
+    p_pte->cache_disabled = PG_ENCACHE;
+    p_pte->accessed = 0;
+    p_pte->dirty = 0;
+    p_pte->page_table_attr_index = 0;
+    p_pte->avail = 0;
+    p_pte->page_base_addr = (address_t)phy_addr >> 12;
+
+    return ESUCCESS;
 }

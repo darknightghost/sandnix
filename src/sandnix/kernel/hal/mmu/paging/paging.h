@@ -68,17 +68,18 @@ void		hal_mmu_pg_tbl_destroy(
     u32 id);		//Page table id
 
 //Set page table
-void		hal_mmu_pg_tbl_set(
+kstatus_t	hal_mmu_pg_tbl_set(
     u32 id,
     void* virt_addr,				//Virtual address
     u32 attribute,					//Attribute
     void* phy_addr);				//Physical address
 
 //Get mapping info
-bool hal_mmu_pg_tbl_get(
+void hal_mmu_pg_tbl_get(
     u32 id,
     void* virt_addr,		//Virtual address
-    void** phy_addr);		//Returning physical address
+    void** phy_addr,		//Pointer to returned physical address
+    u32* p_attr);			//Pointer to page attribute
 
 //Refresh TLB
 void hal_mmu_pg_tbl_refresh(void* virt_addr);
