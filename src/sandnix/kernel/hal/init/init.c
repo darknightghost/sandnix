@@ -42,7 +42,15 @@ void kinit(void* p_bootloader_info)
     //Initialize modules
     hal_mmu_init();
 
+    void test();
+    test();
+
     while(1);
 
     return;
+}
+
+void test()
+{
+    hal_mmu_pg_tbl_set(0, (void*)0xc0500000, MMU_PAGE_RDONLY, (void*)0x00101000);
 }

@@ -37,6 +37,7 @@ static pde_t __attribute__((aligned(4096)))	init_pde_tbl[1024];
 static pte_t __attribute__((aligned(4096)))	init_pte_tbl[MAX_INIT_PAGE_NUM];
 static u32			used_pte_table;
 static address_t	load_offset;
+static u32			mapped_init_page;
 
 static array_t		mmu_globl_pg_table;
 static map_t		mmu_krnl_pte_tbl_map;
@@ -49,8 +50,7 @@ static bool		initialized = false;
 
 
 static int			compare_vaddr(address_t p1, address_t p2);
-//static void			krnl_pdt_sync();
-//static void*			map_pg_tbl(void* phy_addr);
+static void			krnl_pdt_sync(ppg_tbl_info_t p_pdt_info);
 static void			switch_editing_page(void* phy_addr);
 static void			create_0();
 static void			refresh_TLB(void* address);
@@ -212,6 +212,7 @@ void start_paging()
 
     used_pte_table = ((total_pg_num + empty_pte_num) >> 10);	//2^10 == 1024
     load_offset = offset;
+    mapped_init_page = total_pg_num;
 
     return;
 }
@@ -220,8 +221,6 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr)
 {
     ppde_t p_pde;
     ppte_t p_pte;
-    u32 i;
-    u32 index;
 
     if(initialized) {
         hal_exception_panic(ENOTSUP,
@@ -229,43 +228,34 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr)
                             "be used when mmu module has not been initialized");
     }
 
-    //Test if the PDE item presents
-    p_pde = init_pde_tbl + (((address_t)phy_addr + KERNEL_MEM_BASE)
-                            >> 22);	//4096 * 1024 == 2^22
+    if((address_t)phy_addr < mapped_init_page * 4096) {
+        return (void*)((address_t)phy_addr + KERNEL_MEM_BASE);
+    }
 
-    if(p_pde->present == PG_P) {
-        //The PDE item exists.
-        p_pte = (ppte_t)(((p_pde->page_table_base_addr) << 12) + KERNEL_MEM_BASE);
-        index = ((address_t)phy_addr) % (4096 * 1024) / 4096;
-        p_pte += index;
-
-        if(p_pte->present == PG_P) {
-            return (void*)((address_t)phy_addr + KERNEL_MEM_BASE);
+    for(p_pte = init_pte_tbl + mapped_init_page;
+        p_pte->present == PG_P;
+        p_pte++) {
+        if((p_pte->page_base_addr << 12) == (address_t)phy_addr) {
+            //The address has been mapped
+            return (void*)((p_pte - init_pte_tbl) * 4096 + KERNEL_MEM_BASE);
         }
+    }
 
-        p_pte->present = PG_P;
-        p_pte->read_write = PG_RW;
-        p_pte->user_supervisor = PG_SUPERVISOR;
-        p_pte->write_through = PG_WRITE_THROUGH;
-        p_pte->cache_disabled = PG_ENCACHE;
-        p_pte->accessed = 0;
-        p_pte->dirty = 0;
-        p_pte->page_table_attr_index = 0;
-        p_pte->global_page = 0;
-        p_pte->avail = 0;
-        p_pte->page_base_addr = ((address_t)phy_addr) >> 12;
+    //Allocate new page
+    p_pte->present = PG_P;
+    p_pte->read_write = PG_RW;
+    p_pte->user_supervisor = PG_SUPERVISOR;
+    p_pte->write_through = PG_WRITE_THROUGH;
+    p_pte->cache_disabled = PG_ENCACHE;
+    p_pte->accessed = 0;
+    p_pte->dirty = 0;
+    p_pte->page_table_attr_index = 0;
+    p_pte->global_page = 0;
+    p_pte->avail = 0;
+    p_pte->page_base_addr = ((address_t)phy_addr) >> 12;
 
-    } else {
-        //The PDE item does not exists.
-        //Get a new PTE table
-        if(used_pte_table >= MAX_INIT_PAGE_NUM) {
-            hal_exception_panic(ENOMEM, "Not enough temporary page table!\n");
-        }
-
-        used_pte_table++;
-        p_pte = init_pte_tbl + 1024 * used_pte_table;
-
-        //Initialize pde node
+    if((p_pte - init_pte_tbl) % 1024 == 0) {
+        p_pde = init_pde_tbl + (p_pte - init_pte_tbl) / 1024;
         p_pde->present = PG_P;
         p_pde->read_write = PG_RW;
         p_pde->user_supervisor = PG_SUPERVISOR;
@@ -277,34 +267,10 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr)
         p_pde->global_page = 0;
         p_pde->avail = 0;
         p_pde->page_table_base_addr = ((address_t)p_pte + load_offset) >> 12;
-
-        //Initialize pte table
-        index = ((address_t)phy_addr) % (4096 * 1024) / 4096;
-
-        for(i = 0; i < 1024; i++) {
-            if(i == index) {
-                p_pte->present = PG_P;
-                p_pte->read_write = PG_RW;
-                p_pte->user_supervisor = PG_SUPERVISOR;
-                p_pte->write_through = PG_WRITE_THROUGH;
-                p_pte->cache_disabled = PG_ENCACHE;
-                p_pte->accessed = 0;
-                p_pte->dirty = 0;
-                p_pte->page_table_attr_index = 0;
-                p_pte->global_page = 0;
-                p_pte->avail = 0;
-                p_pte->page_base_addr = ((address_t)phy_addr) >> 12;
-
-            } else {
-                p_pte->present = PG_NP;
-            }
-
-            p_pte++;
-        }
-
+        used_pte_table++;
     }
 
-    void* ret = (void*)((address_t)phy_addr + KERNEL_MEM_BASE);
+    void* ret = (void*)((p_pte - init_pte_tbl) * 4096 + KERNEL_MEM_BASE);
     refresh_TLB(ret);
 
     return ret;
@@ -339,7 +305,7 @@ void paging_init()
     core_pm_spnlck_rw_init(&lock);
 
     //Switch to page 0
-    hal_early_print_printf("Switching to  paging table 0...\n");
+    hal_early_print_printf("Switching to page table 0...\n");
     hal_mmu_pg_tbl_switch(0);
     initialized = true;
     return;
@@ -467,6 +433,7 @@ kstatus_t hal_mmu_pg_tbl_set(u32 id, void* virt_addr, u32 attribute, void* phy_a
         //Set page attribute
         kstatus_t status = set_page(p_pdt_info, virt_addr, attribute, phy_addr);
         core_pm_spnlck_rw_w_unlock(&lock);
+        refresh_TLB(virt_addr);
         return status;
 
     } else {
@@ -491,18 +458,19 @@ void hal_mmu_pg_tbl_get(u32 id, void* virt_addr, void** phy_addr, u32* p_attr)
     }
 
     *p_attr = 0;
+    ppte_tbl_info_t p_pte_info;
 
     if((address_t)virt_addr < KERNEL_MEM_BASE) {
         //User page
-        ppte_tbl_info_t p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
-                                         &(p_pdt_info->pte_info_map),
-                                         (void*)((address_t)virt_addr & 0xFFC00000));
+        p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
+                         &(p_pdt_info->pte_info_map),
+                         (void*)((address_t)virt_addr & 0xFFC00000));
 
     } else {
         //Kernel page
-        ppte_tbl_info_t p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
-                                         &mmu_krnl_pte_tbl_map,
-                                         (void*)((address_t)virt_addr & 0xFFC00000));
+        p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
+                         &mmu_krnl_pte_tbl_map,
+                         (void*)((address_t)virt_addr & 0xFFC00000));
 
     }
 
@@ -597,7 +565,7 @@ void create_0()
 
     //Copy init_pte_tbl
     for(u32 i = KERNEL_MEM_BASE / 4096 / 1024;
-        i < KERNEL_MEM_BASE / 4096 / 1024 + used_pte_table;
+        i <= KERNEL_MEM_BASE / 4096 / 1024 + used_pte_table;
         i++) {
         ppte_tbl_info_t p_pte_info = core_mm_heap_alloc(sizeof(pte_tbl_info_t),
                                      mmu_paging_heap);
@@ -625,28 +593,35 @@ void create_0()
         p_pde->page_table_base_addr = (p_pte_info->physical_addr) >> 12;
 
         //Set pte attribute
+        switch_editing_page((void*)(p_pte_info->physical_addr));
 
         for(int j = 0; j < 1024; j++) {
             ppte_t p_pte = (ppte_t)page_operate_addr + j;
             address_t vaddr = (i * 1024 + j) * 4096;
 
-            if(p_pte->avail == PG_P) {
+            if(p_pte->present == PG_P) {
                 (p_pte_info->used_count)++;
-            }
 
-            if(vaddr >= (address_t)kernel_header.code_start
-               && vaddr < (address_t)kernel_header.code_start + kernel_header.code_size) {
-                //If the page is in code segment
-                p_pte->read_write = PG_RDONLY;
+                if(vaddr >= (address_t)kernel_header.code_start
+                   && vaddr < (address_t)kernel_header.code_start + kernel_header.code_size) {
+                    //If the page is in code segment
+                    p_pte->read_write = PG_RDONLY;
+
+                } else {
+                    p_pte->read_write = PG_RW;
+                }
+
+                p_pte->user_supervisor = PG_SUPERVISOR;
+                p_pte->write_through = PG_WRITE_THROUGH;
+                p_pte->cache_disabled = PG_ENCACHE;
+                p_pte->global_page = 1;
+                hal_early_print_printf("Virtual address %p -> physical address %p.\n",
+                                       i * 4096 * 1024 + j * 4096,
+                                       p_pte->page_base_addr << 12);
 
             } else {
-                p_pte->read_write = PG_RW;
+                core_rtl_memset(p_pte, 0, sizeof(pte_t));
             }
-
-            p_pte->user_supervisor = PG_SUPERVISOR;
-            p_pte->write_through = PG_WRITE_THROUGH;
-            p_pte->cache_disabled = PG_ENCACHE;
-            p_pte->global_page = 1;
         }
 
         if(core_rtl_map_set(&mmu_krnl_pte_tbl_map, (void*)(i * 4096 * 1024),
@@ -661,9 +636,13 @@ void create_0()
 
 void switch_editing_page(void* phy_addr)
 {
-    init_pte_tbl[
-        ((address_t)page_operate_addr - KERNEL_MEM_BASE) / 4096].page_base_addr
-        = (address_t)phy_addr >> 12;
+    //Get pte
+    ppte_t p_pte = (ppte_t)((init_pde_tbl[(address_t)page_operate_addr / (4096 * 1024)]
+                             .page_table_base_addr << 12) - load_offset);
+    p_pte += (address_t)page_operate_addr % (4096 * 1024) / 4096;
+    p_pte->page_base_addr = (address_t)phy_addr >> 12;
+
+    //Invalidate TLB
     refresh_TLB((void*)page_operate_addr);
 
     return;
@@ -692,15 +671,27 @@ int compare_vaddr(address_t p1, address_t p2)
 
 void remove_page(ppg_tbl_info_t p_pdt_info, void* virt_addr)
 {
-    ppte_tbl_info_t p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
-                                     &(p_pdt_info->pte_info_map),
-                                     (void*)((address_t)virt_addr & 0xFFC00000));
+    ppte_tbl_info_t p_pte_info;
+
+    if((address_t)virt_addr >= KERNEL_MEM_BASE) {
+        //Kernel page
+        p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
+                         &mmu_krnl_pte_tbl_map,
+                         (void*)((address_t)virt_addr & 0xFFC00000));
+
+    } else {
+        //User page
+        p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
+                         &(p_pdt_info->pte_info_map),
+                         (void*)((address_t)virt_addr & 0xFFC00000));
+    }
 
     if(p_pte_info == NULL) {
         return;
     }
 
     switch_editing_page((void*)(p_pte_info->physical_addr));
+    //Set pte attribute
     ppte_t p_pte = (ppte_t)page_operate_addr;
     p_pte += (address_t)virt_addr % (4096 * 1024) / 4096;
 
@@ -712,18 +703,30 @@ void remove_page(ppg_tbl_info_t p_pdt_info, void* virt_addr)
     (p_pte_info->used_count)--;
 
     if(p_pte_info->used_count == 0 && p_pte_info->freeable) {
-        core_rtl_map_set(&(p_pdt_info->pte_info_map),
-                         (void*)((address_t)virt_addr & 0xFFC00000),
-                         NULL);
-
-        if((address_t)virt_addr > KERNEL_MEM_BASE) {
+        //Remove pte table
+        if((address_t)virt_addr >= KERNEL_MEM_BASE) {
             core_rtl_map_set(&mmu_krnl_pte_tbl_map,
                              (void*)((address_t)virt_addr & 0xFFC00000),
                              NULL);
+
+        } else {
+            core_rtl_map_set(&(p_pdt_info->pte_info_map),
+                             (void*)((address_t)virt_addr & 0xFFC00000),
+                             NULL);
+
         }
 
-        hal_mmu_phymem_free((void*)(p_pdt_info->physical_addr));
-        core_mm_heap_free(p_pdt_info, mmu_paging_heap);
+        hal_mmu_phymem_free((void*)(p_pte_info->physical_addr));
+        core_mm_heap_free(p_pte_info, mmu_paging_heap);
+
+        //Unmap pde
+        switch_editing_page((void*)(p_pdt_info->physical_addr));
+        ppde_t p_pde = (ppde_t)page_operate_addr + (address_t)virt_addr / 1024 / 4096;
+        p_pde->present = PG_NP;
+
+        if((address_t)virt_addr >= KERNEL_MEM_BASE) {
+            krnl_pdt_sync(p_pdt_info);
+        }
     }
 
     return;
@@ -732,9 +735,20 @@ void remove_page(ppg_tbl_info_t p_pdt_info, void* virt_addr)
 kstatus_t set_page(ppg_tbl_info_t p_pdt_info, void* virt_addr, u32 attr,
                    void* phy_addr)
 {
-    ppte_tbl_info_t p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
-                                     &(p_pdt_info->pte_info_map),
-                                     (void*)((address_t)virt_addr & 0xFFC00000));
+    ppte_tbl_info_t p_pte_info;
+
+    if((address_t)virt_addr >= KERNEL_MEM_BASE) {
+        //Kernel page
+        p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
+                         &mmu_krnl_pte_tbl_map,
+                         (void*)((address_t)virt_addr & 0xFFC00000));
+
+    } else {
+        //User page
+        p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
+                         &(p_pdt_info->pte_info_map),
+                         (void*)((address_t)virt_addr & 0xFFC00000));
+    }
 
     if(p_pte_info == NULL) {
         //Create new pte table
@@ -758,28 +772,27 @@ kstatus_t set_page(ppg_tbl_info_t p_pdt_info, void* virt_addr, u32 attr,
         core_rtl_memset(page_operate_addr, 0, 4096);
         p_pte_info->used_count = 0;
 
-        if(core_rtl_map_set(&(p_pdt_info->pte_info_map),
-                            (void*)((address_t)virt_addr & 0xFFC00000),
-                            p_pte_info) == NULL) {
-            hal_mmu_phymem_free((void*)(p_pte_info->physical_addr));
-            core_mm_heap_free(p_pte_info, mmu_paging_heap);
-            return ENOMEM;
-        }
-
-        if((address_t)virt_addr > KERNEL_MEM_BASE) {
+        //Add to pte info map
+        if((address_t)virt_addr >= KERNEL_MEM_BASE) {
+            //Kernel page
             if(core_rtl_map_set(&mmu_krnl_pte_tbl_map,
                                 (void*)((address_t)virt_addr & 0xFFC00000),
                                 p_pte_info) == NULL) {
-                core_rtl_map_set(&(p_pdt_info->pte_info_map),
-                                 (void*)((address_t)virt_addr & 0xFFC00000),
-                                 NULL);
                 hal_mmu_phymem_free((void*)(p_pte_info->physical_addr));
                 core_mm_heap_free(p_pte_info, mmu_paging_heap);
                 return ENOMEM;
+            }
 
+        } else {
+            //User page
+            if(core_rtl_map_set(&(p_pdt_info->pte_info_map),
+                                (void*)((address_t)virt_addr & 0xFFC00000),
+                                p_pte_info) == NULL) {
+                hal_mmu_phymem_free((void*)(p_pte_info->physical_addr));
+                core_mm_heap_free(p_pte_info, mmu_paging_heap);
+                return ENOMEM;
             }
         }
-
 
         //Add mapping
         switch_editing_page((void*)(p_pdt_info->physical_addr));
@@ -789,7 +802,7 @@ kstatus_t set_page(ppg_tbl_info_t p_pdt_info, void* virt_addr, u32 attr,
         p_pde->present = PG_P;
         p_pde->read_write = PG_RW;
 
-        if((address_t)virt_addr > KERNEL_MEM_BASE) {
+        if((address_t)virt_addr >= KERNEL_MEM_BASE) {
             p_pde->user_supervisor = PG_SUPERVISOR;
             p_pde->global_page = 1;
 
@@ -803,9 +816,13 @@ kstatus_t set_page(ppg_tbl_info_t p_pdt_info, void* virt_addr, u32 attr,
         p_pde->page_size = PG_SIZE_4K;
         p_pde->page_table_base_addr = (p_pte_info->physical_addr) >> 12;
 
+        if((address_t)virt_addr >= KERNEL_MEM_BASE) {
+            krnl_pdt_sync(p_pdt_info);
+        }
     }
 
-    switch_editing_page((void*)(p_pdt_info->physical_addr));
+    //Set pte attribute
+    switch_editing_page((void*)(p_pte_info->physical_addr));
     ppte_t p_pte = (ppte_t)page_operate_addr
                    + (address_t)virt_addr % (4096 * 1024) / 4096;
 
@@ -840,4 +857,31 @@ kstatus_t set_page(ppg_tbl_info_t p_pdt_info, void* virt_addr, u32 attr,
     p_pte->page_base_addr = (address_t)phy_addr >> 12;
 
     return ESUCCESS;
+}
+
+void krnl_pdt_sync(ppg_tbl_info_t p_pdt_info)
+{
+    static pde_t sync_buf[(0 - KERNEL_MEM_BASE) / (1024 * 4096)];
+    switch_editing_page((void*)(p_pdt_info->physical_addr));
+
+    //Copy page table
+    core_rtl_memcpy(sync_buf,
+                    (ppde_t)page_operate_addr + KERNEL_MEM_BASE / (1024 * 4096),
+                    (0 - KERNEL_MEM_BASE) / (1024 * 4096));
+
+    u32 index;
+
+    while(core_rtl_array_get_used_index(&mmu_globl_pg_table,
+                                        0,
+                                        &index)) {
+        ppg_tbl_info_t p_pdt_info = (ppg_tbl_info_t)core_rtl_array_get(
+                                        &mmu_globl_pg_table,
+                                        index);
+        switch_editing_page((void*)(p_pdt_info->physical_addr));
+        core_rtl_memcpy((ppde_t)page_operate_addr + KERNEL_MEM_BASE / (1024 * 4096),
+                        sync_buf,
+                        (0 - KERNEL_MEM_BASE) / (1024 * 4096));
+    }
+
+    return;
 }
