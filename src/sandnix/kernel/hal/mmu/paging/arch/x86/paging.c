@@ -491,9 +491,20 @@ void hal_mmu_pg_tbl_get(u32 id, void* virt_addr, void** phy_addr, u32* p_attr)
     }
 
     *p_attr = 0;
-    ppte_tbl_info_t p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
-                                     &(p_pdt_info->pte_info_map),
-                                     (void*)((address_t)virt_addr | 0xFFC00000));
+
+    if((address_t)virt_addr < KERNEL_MEM_BASE) {
+        //User page
+        ppte_tbl_info_t p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
+                                         &(p_pdt_info->pte_info_map),
+                                         (void*)((address_t)virt_addr & 0xFFC00000));
+
+    } else {
+        //Kernel page
+        ppte_tbl_info_t p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
+                                         &mmu_krnl_pte_tbl_map,
+                                         (void*)((address_t)virt_addr & 0xFFC00000));
+
+    }
 
     if(p_pte_info == NULL) {
         core_pm_spnlck_rw_w_unlock(&lock);
@@ -643,13 +654,6 @@ void create_0()
             hal_exception_panic(ENOMEM,
                                 "Not enough memory for mmu paging managment.");
         }
-
-        if(core_rtl_map_set(&(p_pdt_info->pte_info_map),
-                            (void*)(i * 4096 * 1024),
-                            p_pte_info) == NULL) {
-            hal_exception_panic(ENOMEM,
-                                "Not enough memory for mmu paging managment.");
-        }
     }
 
     return;
@@ -690,7 +694,7 @@ void remove_page(ppg_tbl_info_t p_pdt_info, void* virt_addr)
 {
     ppte_tbl_info_t p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
                                      &(p_pdt_info->pte_info_map),
-                                     (void*)((address_t)virt_addr | 0xFFC00000));
+                                     (void*)((address_t)virt_addr & 0xFFC00000));
 
     if(p_pte_info == NULL) {
         return;
@@ -709,12 +713,12 @@ void remove_page(ppg_tbl_info_t p_pdt_info, void* virt_addr)
 
     if(p_pte_info->used_count == 0 && p_pte_info->freeable) {
         core_rtl_map_set(&(p_pdt_info->pte_info_map),
-                         (void*)((address_t)virt_addr | 0xFFC00000),
+                         (void*)((address_t)virt_addr & 0xFFC00000),
                          NULL);
 
         if((address_t)virt_addr > KERNEL_MEM_BASE) {
             core_rtl_map_set(&mmu_krnl_pte_tbl_map,
-                             (void*)((address_t)virt_addr | 0xFFC00000),
+                             (void*)((address_t)virt_addr & 0xFFC00000),
                              NULL);
         }
 
@@ -730,7 +734,7 @@ kstatus_t set_page(ppg_tbl_info_t p_pdt_info, void* virt_addr, u32 attr,
 {
     ppte_tbl_info_t p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
                                      &(p_pdt_info->pte_info_map),
-                                     (void*)((address_t)virt_addr | 0xFFC00000));
+                                     (void*)((address_t)virt_addr & 0xFFC00000));
 
     if(p_pte_info == NULL) {
         //Create new pte table
@@ -755,7 +759,7 @@ kstatus_t set_page(ppg_tbl_info_t p_pdt_info, void* virt_addr, u32 attr,
         p_pte_info->used_count = 0;
 
         if(core_rtl_map_set(&(p_pdt_info->pte_info_map),
-                            (void*)((address_t)virt_addr | 0xFFC00000),
+                            (void*)((address_t)virt_addr & 0xFFC00000),
                             p_pte_info) == NULL) {
             hal_mmu_phymem_free((void*)(p_pte_info->physical_addr));
             core_mm_heap_free(p_pte_info, mmu_paging_heap);
@@ -764,10 +768,10 @@ kstatus_t set_page(ppg_tbl_info_t p_pdt_info, void* virt_addr, u32 attr,
 
         if((address_t)virt_addr > KERNEL_MEM_BASE) {
             if(core_rtl_map_set(&mmu_krnl_pte_tbl_map,
-                                (void*)((address_t)virt_addr | 0xFFC00000),
+                                (void*)((address_t)virt_addr & 0xFFC00000),
                                 p_pte_info) == NULL) {
                 core_rtl_map_set(&(p_pdt_info->pte_info_map),
-                                 (void*)((address_t)virt_addr | 0xFFC00000),
+                                 (void*)((address_t)virt_addr & 0xFFC00000),
                                  NULL);
                 hal_mmu_phymem_free((void*)(p_pte_info->physical_addr));
                 core_mm_heap_free(p_pte_info, mmu_paging_heap);
