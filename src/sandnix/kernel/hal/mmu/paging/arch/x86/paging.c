@@ -516,11 +516,11 @@ void hal_mmu_pg_tbl_switch(u32 id)
                             "Illegal page table id.");
     }
 
-    core_pm_spnlck_rw_r_unlock(&lock);
-
     __asm__ __volatile__(
         "movl	%0, %%cr3\n"
         ::"a"((p_pdt_info->physical_addr & 0xFFFFF000) | 0x00000008):);
+
+    core_pm_spnlck_rw_r_unlock(&lock);
 
     return;
 }

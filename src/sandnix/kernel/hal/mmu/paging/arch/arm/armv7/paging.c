@@ -19,6 +19,7 @@
 #include "../../../../mmu.h"
 #include "../../../../../exception/exception.h"
 #include "../../../../../init/init.h"
+#include "../../../../../early_print/early_print.h"
 
 /*
  *   Though ARM supports different size of pages, we only use 4KB pages in order
@@ -35,14 +36,21 @@
 #endif
 
 #define	REQUIRED_INIT_PAGE_NUM	((KERNEL_MAX_SIZE) / 4096 + 1)
-#define	MAX_INIT_PAGE_NUM		(REQUIRED_INIT_PAGE_NUM % 256 > 0 \
-                                 ? (REQUIRED_INIT_PAGE_NUM / 256 + 1) * 256 \
+#define	MAX_INIT_PAGE_NUM		(REQUIRED_INIT_PAGE_NUM % (256 * 4) > 0 \
+                                 ? (REQUIRED_INIT_PAGE_NUM / (256 * 4)+ 1) \
+                                 * (256 * 4)\
                                  : REQUIRED_INIT_PAGE_NUM)
 
 static lv1_pg_desc_t __attribute__((aligned(1024 * 16)))	init_lv1_pg_tbl[4096];
 static lv2_pg_desc_t __attribute__((aligned(1024)))			init_lv2_pg_tbl[MAX_INIT_PAGE_NUM];
 static u32			used_lv2_desc;
 static address_t	load_offset;
+static array_t		mmu_globl_pg_table;
+static map_t		mmu_krnl_lv2_tbl_map;
+static pheap_t		mmu_paging_heap;
+static u8			mmu_paging_heap_block[4096];
+static void*		page_operate_addr;
+static spnlck_rw_t	lock;
 
 static bool		initialized = false;
 
@@ -58,10 +66,16 @@ static inline void	enable_dcache();
 static inline void	enable_icache();
 static inline void	disable_dcache();
 static inline void	disable_icache();
-static inline void	invalidate_TLB();
+static inline void	invalidate_TLBs();
+static inline void	invalidate_TLB(void* virt_addr);
 static inline void	invalidate_icache();
 static inline void	invalidate_dcache();
 static inline void	load_TTBR(address_t phyaddr);
+
+static int			compare_vaddr(address_t p1, address_t p2);
+static void			create_0();
+static void			switch_editing_page(void* phy_addr);
+static void			lv2_create0(u32 used_lv2_tabel);
 
 void start_paging()
 {
@@ -79,6 +93,9 @@ void start_paging()
         "sub	%0, %0, #8\n"
         "ldr	r0, =_ADDR1\n"
         "sub	%0, %0, r0\n"
+        "b		1f\n"
+        ".ltorg\n"
+        "1:\n"
         :"=r"(offset)
         ::"r0");
 
@@ -109,7 +126,7 @@ void start_paging()
 
     //Load page table
     load_TTBR((address_t)init_lv1_pg_tbl + offset);
-    invalidate_TLB();
+    invalidate_TLBs();
 
     //Start paging
     invalidate_icache();
@@ -175,9 +192,103 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr)
                             + load_offset);
     }
 
-    invalidate_TLB();
+    void* ret = (void*)(KERNEL_MEM_BASE + i * 4096 + addr_off);
+    invalidate_TLB(ret);
 
-    return (void*)(KERNEL_MEM_BASE + i * 4096 + addr_off);
+    return ret;
+}
+
+void paging_init()
+{
+    hal_early_print_printf("\nInitializing paging module of mmu...\n");
+    mmu_paging_heap = core_mm_heap_create_on_buf(
+                          HEAP_MULITHREAD | HEAP_PREALLOC,
+                          4096, mmu_paging_heap_block,
+                          sizeof(mmu_paging_heap_block));
+
+    if(mmu_paging_heap == NULL) {
+        hal_exception_panic(ENOMEM,
+                            "Not enough memory for mmu paging managment.");
+    }
+
+    if(core_rtl_array_init(&mmu_globl_pg_table, MAX_PROCESS_NUM,
+                           mmu_paging_heap) != ESUCCESS) {
+        hal_exception_panic(ENOMEM,
+                            "Not enough memory for mmu paging managment.");
+    }
+
+    core_rtl_map_init(&mmu_krnl_lv2_tbl_map, (item_compare_t)(compare_vaddr),
+                      mmu_paging_heap);
+
+    //Create process 0 page table
+    hal_early_print_printf("Creating paging table 0...\n");
+    create_0();
+
+    //Initialize lock
+    core_pm_spnlck_rw_init(&lock);
+
+    //Switch to page 0
+    hal_early_print_printf("Switching to page table 0...\n");
+    hal_mmu_pg_tbl_switch(0);
+    initialized = true;
+    return;
+}
+
+//Get kernel virtual address range
+void		hal_mmu_get_krnl_addr_range(
+    void** p_base,		//Pointer to basic address
+    size_t* p_size);	//Pointer to size
+
+//Get user virtual address range
+void		hal_mmu_get_usr_addr_range(
+    void** p_base,		//Pointer to basic address
+    size_t* p_size);	//Pointer to size
+
+//Create page table
+kstatus_t	hal_mmu_pg_tbl_create(
+    u32* p_id);		//Pointer to new page table id
+
+//Destroy page table
+void		hal_mmu_pg_tbl_destroy(
+    u32 id);		//Page table id
+
+//Set page table
+kstatus_t	hal_mmu_pg_tbl_set(
+    u32 id,
+    void* virt_addr,				//Virtual address
+    u32 attribute,					//Attribute
+    void* phy_addr);				//Physical address
+
+//Get mapping info
+void hal_mmu_pg_tbl_get(
+    u32 id,
+    void* virt_addr,		//Virtual address
+    void** phy_addr,		//Pointer to returned physical address
+    u32* p_attr);			//Pointer to page attribute
+
+void hal_mmu_pg_tbl_refresh(void* virt_addr)
+{
+    invalidate_TLB(virt_addr);
+    return;
+}
+
+void hal_mmu_pg_tbl_switch(u32 id)
+{
+    core_pm_spnlck_rw_r_lock(&lock);
+    plv1_tbl_info_t p_lv1_info = (plv1_tbl_info_t)core_rtl_array_get(
+                                     &mmu_globl_pg_table,
+                                     id);
+
+    if(p_lv1_info == NULL) {
+        hal_exception_panic(EINVAL,
+                            "Illegal page table id.");
+    }
+
+    load_TTBR(p_lv1_info->physical_addr);
+    core_pm_spnlck_rw_r_unlock(&lock);
+
+    invalidate_TLBs();
+    return;
 }
 
 address_t get_load_offset()
@@ -342,13 +453,21 @@ void load_TTBR(address_t phyaddr)
     return;
 }
 
-void invalidate_TLB()
+void invalidate_TLBs()
 {
     __asm__  __volatile__(
         "mov    r0, #0\n"
         "mcr    p15, 0, r0, c8, c7, 0\n"
         :::"r0");
     return;
+}
+
+void invalidate_TLB(void* virt_addr)
+{
+    __asm__ __volatile__(
+        "mcr    p15, 0, %0, c8, c7, 1\n"
+        ::"r"((address_t)virt_addr & 0xFFFFF000)
+        :"memory");
 }
 
 void invalidate_icache()
@@ -407,4 +526,140 @@ void disable_icache()
         "mcr    p15, 0, r0, c1, c0, 0\n"
         ::"r"(~(u32)(0x1000))
         : "r0");
+}
+
+int compare_vaddr(address_t p1, address_t p2)
+{
+    if(p1 > p2) {
+        return 1;
+
+    } else if(p1 == p2) {
+        return 0;
+
+    } else {
+        return -1;
+    }
+}
+
+void create_0()
+{
+    //Allocate memory for lv1 table
+    plv1_tbl_info_t p_lv1_info = core_mm_heap_alloc(sizeof(lv1_tbl_info_t),
+                                 mmu_paging_heap);
+
+    if(p_lv1_info == NULL) {
+        hal_exception_panic(ENOMEM,
+                            "Not enough memory for mmu paging managment.");
+    }
+
+    //Allocate physical memory
+    if(hal_mmu_phymem_alloc((void**) & (p_lv1_info->physical_addr),
+                            false, 4) != ESUCCESS) {
+        hal_exception_panic(ENOMEM,
+                            "Not enough memory for mmu paging managment.");
+    }
+
+    core_rtl_map_init(&(p_lv1_info->lv2_info_map),
+                      (item_compare_t)compare_vaddr,
+                      mmu_paging_heap);
+
+    page_operate_addr = hal_mmu_add_early_paging_addr(
+                            (void*)(p_lv1_info->physical_addr));
+
+    if(core_rtl_array_set(&mmu_globl_pg_table, 0, p_lv1_info) == NULL) {
+        hal_exception_panic(ENOMEM,
+                            "Not enough memory for mmu paging managment.");
+    }
+
+    //Clear new lv1 table
+    for(u32 i = 0;
+        i < 4;
+        i++) {
+        switch_editing_page((void*)(p_lv1_info->physical_addr
+                                    + SANDNIX_KERNEL_PAGE_SIZE * i));
+        core_rtl_memset((void*)page_operate_addr, 0, SANDNIX_KERNEL_PAGE_SIZE);
+    }
+
+    //Set lv1 descriptor
+    u32 used_lv2_table = used_lv2_desc / 256;
+
+    if(used_lv2_desc % 256 != 0) {
+        used_lv2_table++;
+    }
+
+    if(used_lv2_table % 4 > 0) {
+        used_lv2_table += 4 - used_lv2_table % 4;
+    }
+
+    for(u32 i = KERNEL_MEM_BASE / 256 / 4096;
+        i < KERNEL_MEM_BASE / 256 / 4096 + used_lv2_table;
+        i++) {
+        switch_editing_page((void*)((p_lv1_info->physical_addr +
+                                     i * sizeof(lv1_pg_desc_t)) & 0xFFFFF000));
+        plv1_pg_desc_t p_lv1_desc = (plv1_pg_desc_t)page_operate_addr + i;
+        p_lv1_desc->lv2_entry.none_secure = 1;
+        LV1_LV2ENT_SET_ADDR(p_lv1_desc,
+                            (address_t)&init_lv2_pg_tbl[
+                                (i - KERNEL_MEM_BASE / (256 * 4096)) * 256] + load_offset);
+    }
+
+    //Set lv2 descriptor
+    used_lv2_table = used_lv2_table / 4;
+    lv2_create0(used_lv2_table);
+    return;
+}
+
+void switch_editing_page(void* phy_addr)
+{
+    plv2_pg_desc_t p_lv2_desc = &init_lv2_pg_tbl[((address_t)page_operate_addr
+                                - KERNEL_MEM_BASE) / 4096];
+    LV2_4KB_SET_ADDR(p_lv2_desc, (address_t)phy_addr);
+    invalidate_TLB((void*)page_operate_addr);
+    return;
+}
+
+void lv2_create0(u32 used_lv2_table)
+{
+    for(u32 i = 0; i < used_lv2_table; i++) {
+        plv2_tbl_info_t p_lv2_info = core_mm_heap_alloc(sizeof(lv2_tbl_info_t),
+                                     mmu_paging_heap);
+
+        if(p_lv2_info == NULL) {
+            hal_exception_panic(ENOMEM,
+                                "Not enough memory for mmu paging managment.");
+        }
+
+        p_lv2_info->freeable = false;
+        p_lv2_info->ref = 0;
+        p_lv2_info->physical_addr = (address_t)&init_lv1_pg_tbl[i * 256 * 4]
+                                    + load_offset;
+
+        for(u32 j = 0; j < 256 * 4; j++) {
+            plv2_pg_desc_t p_lv2_desc = &init_lv2_pg_tbl[i * 256 * 4 + j];
+
+            if(i * 4 * 256 + j < used_lv2_desc
+               && (p_lv2_desc->value & 0x03) != 0) {
+                //The lv2 descriptor has been used
+                if((i * 4 * 256 + j) * 4096 + KERNEL_MEM_BASE
+                   >= (address_t)(kernel_header.code_start)
+                   && (i * 4 * 256 + j) * 4096 + KERNEL_MEM_BASE
+                   < (address_t)(kernel_header.code_start) + kernel_header.code_size) {
+                    //Code
+                    LV2_SET_AP(p_lv2_desc, PG_AP_RO_NA);
+                    p_lv2_desc->pg_4KB.xn = 0;
+
+                } else {
+                    //Data
+                    LV2_SET_AP(p_lv2_desc, PG_AP_RW_NA);
+                    p_lv2_desc->pg_4KB.xn = 1;
+                }
+
+            } else {
+                //The lv2 descriptor is not been used.
+                p_lv2_desc->value = 0;
+            }
+        }
+    }
+
+    return;
 }

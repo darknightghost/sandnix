@@ -18,6 +18,7 @@
 #pragma once
 
 #include "../../../../../../../../common/common.h"
+#include "../../../../../../core/rtl/rtl.h"
 
 /* MMU page table */
 //LV1 descriptor
@@ -226,3 +227,15 @@ typedef	struct	_tlb_entry {
     u16		none_secure			: 1;
     u16		access_permission	: 3;
 } __attribute__((packed)) tlb_entry_t, *ptlb_entry_t;
+
+typedef	struct	_lv1_tbl_info {
+    address_t	physical_addr;
+    map_t		lv2_info_map;
+} lv1_tbl_info_t, *plv1_tbl_info_t;
+
+//4 lv2 page table used an lv2_tbl_info
+typedef struct	_lv2_tbl_info {
+    address_t	physical_addr;
+    u32			ref;
+    bool		freeable;
+} lv2_tbl_info_t, *plv2_tbl_info_t;
