@@ -19,6 +19,7 @@
 #include "../../../mm/mm.h"
 #include "../../../../hal/exception/exception.h"
 #include "../../string/string.h"
+#include "../../../../hal/early_print/early_print.h"
 
 kstatus_t core_rtl_array_init(parray_t p_array, u32 num, pheap_t heap)
 {
@@ -122,6 +123,7 @@ void* core_rtl_array_set(parray_t p_array, u32 index, void* value)
         }
 
         *p_p_item = value;
+        HEAP_CHECK(p_array->heap);
         return value;
     }
 }

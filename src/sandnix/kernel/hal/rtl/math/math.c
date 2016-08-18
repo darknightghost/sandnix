@@ -80,10 +80,7 @@ u64 hal_rtl_math_mod64(u64 dividend, u32 divisor)
     return remainder;
 }
 
-#endif
-
-#if defined(ARM)
-u32	__aeabi_uidiv(u32 dividend, u32 divisor)
+u32 hal_rtl_math_div32(u32 dividend, u32 divisor)
 {
     u32 quotient;
     int i;
@@ -114,7 +111,7 @@ u32	__aeabi_uidiv(u32 dividend, u32 divisor)
     return quotient;
 }
 
-u32	__aeabi_uidivmod(u32 dividend, u32 divisor)
+u32 hal_rtl_math_mod32(u32 dividend, u32 divisor)
 {
     u32 quotient;
     int i;

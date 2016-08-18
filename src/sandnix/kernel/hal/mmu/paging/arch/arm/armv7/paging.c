@@ -229,7 +229,8 @@ void paging_init()
 
     //Switch to page 0
     hal_early_print_printf("Switching to page table 0...\n");
-    hal_mmu_pg_tbl_switch(0);
+    //hal_mmu_pg_tbl_switch(0);
+    invalidate_TLBs();
     initialized = true;
     return;
 }
@@ -552,6 +553,8 @@ void create_0()
                             "Not enough memory for mmu paging managment.");
     }
 
+    HEAP_CHECK(mmu_paging_heap);
+
     //Allocate physical memory
     if(hal_mmu_phymem_alloc((void**) & (p_lv1_info->physical_addr),
                             false, 4) != ESUCCESS) {
@@ -559,9 +562,12 @@ void create_0()
                             "Not enough memory for mmu paging managment.");
     }
 
+    HEAP_CHECK(mmu_paging_heap);
+
     core_rtl_map_init(&(p_lv1_info->lv2_info_map),
                       (item_compare_t)compare_vaddr,
                       mmu_paging_heap);
+    HEAP_CHECK(mmu_paging_heap);
 
     page_operate_addr = hal_mmu_add_early_paging_addr(
                             (void*)(p_lv1_info->physical_addr));
@@ -570,6 +576,8 @@ void create_0()
         hal_exception_panic(ENOMEM,
                             "Not enough memory for mmu paging managment.");
     }
+
+    HEAP_CHECK(mmu_paging_heap);
 
     //Clear new lv1 table
     for(u32 i = 0;
@@ -591,17 +599,26 @@ void create_0()
         used_lv2_table += 4 - used_lv2_table % 4;
     }
 
+    HEAP_CHECK(mmu_paging_heap);
+
     for(u32 i = KERNEL_MEM_BASE / 256 / 4096;
         i < KERNEL_MEM_BASE / 256 / 4096 + used_lv2_table;
         i++) {
+        /*
+         * lv1_pg_desc_t is 4 bytes, lv1 page table is 16KB. We can only map 4KB
+         * once.
+         */
+        //Map page
         switch_editing_page((void*)((p_lv1_info->physical_addr +
                                      i * sizeof(lv1_pg_desc_t)) & 0xFFFFF000));
-        plv1_pg_desc_t p_lv1_desc = (plv1_pg_desc_t)page_operate_addr + i;
+        plv1_pg_desc_t p_lv1_desc = (plv1_pg_desc_t)page_operate_addr + i % 1024;
         p_lv1_desc->lv2_entry.none_secure = 1;
         LV1_LV2ENT_SET_ADDR(p_lv1_desc,
                             (address_t)&init_lv2_pg_tbl[
                                 (i - KERNEL_MEM_BASE / (256 * 4096)) * 256] + load_offset);
     }
+
+    HEAP_CHECK(mmu_paging_heap);
 
     //Set lv2 descriptor
     used_lv2_table = used_lv2_table / 4;

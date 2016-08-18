@@ -15,17 +15,28 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+.section	.text
 
-#include "../../../../../common/common.h"
+.global	__aeabi_uidiv
+.global __aeabi_uidivmod
 
-#if defined(X86) || defined(ARM)
-u64		hal_rtl_math_div64(u64 dividend, u32 divisor);
-u64		hal_rtl_math_mod64(u64 dividend, u32 divisor);
-u32		hal_rtl_math_div32(u32 dividend, u32 divisor);
-u32		hal_rtl_math_mod32(u32 dividend, u32 divisor);
+//r0 : divident
+//r1 : divisor
+//Return value is in r0
+__aeabi_uidiv:
+	ldr		r2, =hal_rtl_math_div32
+	stmfd	sp!, {lr}
+	blx		r2
+	ldmfd	sp!, {lr}
+	mov		pc, lr
 
-#else
-#define		hal_rtl_math_div64(dividend, divisor)	((dividend) / (divisor))
-#define		hal_rtl_math_mod64(dividend, divisor)	((dividend) % (divisor))
-#endif
+//r0 : divident
+//r1 : divisor
+//Return value is in r1
+__aeabi_uidivmod:
+	ldr		r2, =hal_rtl_math_mod32
+	stmfd	sp!, {lr}
+	blx		r2
+	ldmfd	sp!, {lr}
+	mov		r1, r0
+	mov		pc, lr
