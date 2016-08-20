@@ -48,10 +48,14 @@ static	void			print_mem_list(list_t list);
 static	void			init_map(list_t mem_list);
 static	int				search_addr_func(address_t base_address,
         pphysical_memory_info_t p_key,
-        pphysical_memory_info_t p_value);
+        pphysical_memory_info_t p_value,
+        void* p_arg);
 static	int				search_size_func(size_t size,
         pphysical_memory_info_t p_key,
-        pphysical_memory_info_t p_value);
+        pphysical_memory_info_t p_value,
+        size_t align);
+static	void			collect_fregments(pphysical_memory_info_t p_memblock,
+        pmap_t p_free_map);
 
 void phymem_init()
 {
@@ -181,7 +185,7 @@ void phymem_init()
     return;
 }
 
-kstatus_t hal_mmu_phymem_alloc(void** p_addr, bool is_dma, size_t page_num)
+kstatus_t hal_mmu_phymem_alloc(void** p_addr, address_t align, bool is_dma, size_t page_num)
 {
     if(!initialized) {
         hal_exception_panic(ENOTSUP,
@@ -205,7 +209,8 @@ kstatus_t hal_mmu_phymem_alloc(void** p_addr, bool is_dma, size_t page_num)
     //Search for memory block
     pphysical_memory_info_t p_memblock = core_rtl_map_search(p_free_map,
                                          (void*)(page_num * SANDNIX_KERNEL_PAGE_SIZE),
-                                         (map_search_func_t)search_size_func);
+                                         (map_search_func_t)search_size_func,
+                                         (void*)align);
 
     if(p_memblock == NULL) {
         status = ENOMEM;
@@ -213,6 +218,48 @@ kstatus_t hal_mmu_phymem_alloc(void** p_addr, bool is_dma, size_t page_num)
     }
 
     //Allocate memory
+    size_t prev_size = hal_rtl_math_mod64(p_memblock->begin, align);
+
+    if(prev_size != 0) {
+        prev_size = align -= prev_size;
+    }
+
+    if(prev_size != 0) {
+        //Split memory_block
+        //Allocate memory
+        pphysical_memory_info_t p_new_memblock = core_mm_heap_alloc(
+                    sizeof(physical_memory_info_t), phymem_heap);
+
+        if(p_new_memblock == NULL) {
+            status = ENOMEM;
+            goto _RELEASE_SEARCH;
+        }
+
+        p_new_memblock->begin = p_memblock->begin;
+        p_new_memblock->size = prev_size;
+        p_new_memblock->type = p_memblock->type;
+        p_memblock->begin += prev_size;
+        p_memblock->size -= prev_size;
+
+        //Insert new block
+        if(core_rtl_map_set(p_free_map, p_new_memblock, p_new_memblock) == NULL) {
+            core_mm_heap_free(p_new_memblock, phymem_heap);
+            collect_fregments(p_memblock, p_free_map);
+            status = ENOMEM;
+            goto _RELEASE_SEARCH;
+        }
+
+        if(core_rtl_map_set(&index_map, p_new_memblock, p_new_memblock) == NULL) {
+            core_rtl_map_set(p_free_map, p_new_memblock, NULL);
+            core_mm_heap_free(p_new_memblock, phymem_heap);
+            collect_fregments(p_memblock, p_free_map);
+            status = ENOMEM;
+            goto _RELEASE_SEARCH;
+        }
+
+
+    }
+
     if(p_memblock->size > page_num * SANDNIX_KERNEL_PAGE_SIZE) {
         //Split memory block
         //Allocate memory
@@ -220,6 +267,7 @@ kstatus_t hal_mmu_phymem_alloc(void** p_addr, bool is_dma, size_t page_num)
                     sizeof(physical_memory_info_t), phymem_heap);
 
         if(p_new_memblock == NULL) {
+            collect_fregments(p_memblock, p_free_map);
             status = ENOMEM;
             goto _RELEASE_SEARCH;
         }
@@ -288,7 +336,8 @@ void hal_mmu_phymem_free(void* addr)
     //Search for memory block
     pphysical_memory_info_t p_memblock = core_rtl_map_search(&index_map,
                                          addr,
-                                         (map_search_func_t)search_addr_func);
+                                         (map_search_func_t)search_addr_func,
+                                         NULL);
 
     if(p_memblock->begin != (u64)(address_t)addr
    #if defined	RESERVE_DMA
@@ -320,35 +369,8 @@ void hal_mmu_phymem_free(void* addr)
                             "Failed to insert free memory map into physical memory map.");
     }
 
-    //Merge blocks
-    //Prev block
-    pphysical_memory_info_t p_prev_blk
-        = (pphysical_memory_info_t)core_rtl_map_prev(&index_map,
-                p_memblock);
-
-    if(p_prev_blk != NULL
-       && p_prev_blk->type == p_memblock->type
-       && p_prev_blk->begin + p_prev_blk->size == p_memblock->begin) {
-        p_prev_blk->size += p_memblock->size;
-        core_rtl_map_set(&index_map, p_memblock, NULL);
-        core_rtl_map_set(p_free_map, p_memblock, NULL);
-        core_mm_heap_free(p_memblock, phymem_heap);
-        p_memblock = p_prev_blk;
-    }
-
-    //Next block
-    pphysical_memory_info_t p_next_blk
-        = (pphysical_memory_info_t)core_rtl_map_next(&index_map,
-                p_memblock);
-
-    if(p_next_blk != NULL
-       && p_next_blk->type == p_memblock->type
-       && p_memblock->begin + p_memblock->size == p_next_blk->begin) {
-        p_memblock->size += p_next_blk->size;
-        core_rtl_map_set(&index_map, p_next_blk, NULL);
-        core_rtl_map_set(p_free_map, p_next_blk, NULL);
-        core_mm_heap_free(p_next_blk, phymem_heap);
-    }
+    //Collect fragments
+    collect_fregments(p_memblock, p_free_map);
 
     core_pm_spnlck_rw_w_unlock(&lock);
 
@@ -778,7 +800,7 @@ void init_map(list_t mem_list)
 }
 
 int search_addr_func(address_t base_address, pphysical_memory_info_t p_key,
-                     pphysical_memory_info_t p_value)
+                     pphysical_memory_info_t p_value, void* p_arg)
 {
     if(IN_RANGE(base_address, p_key->begin, p_key->size)) {
         return 0;
@@ -791,11 +813,14 @@ int search_addr_func(address_t base_address, pphysical_memory_info_t p_key,
     }
 
     UNREFERRED_PARAMETER(p_value);
+    UNREFERRED_PARAMETER(p_arg);
 }
 
 int search_size_func(size_t size, pphysical_memory_info_t p_key,
-                     pphysical_memory_info_t p_value)
+                     pphysical_memory_info_t p_value, address_t align)
 {
+    size += (size_t)hal_rtl_math_mod64(p_key->begin, align);
+
     if(size > p_key->size) {
         return 1;
 
@@ -817,4 +842,37 @@ int compare_addr(pphysical_memory_info_t p1, pphysical_memory_info_t p2)
     } else {
         return -1;
     }
+}
+
+void collect_fregments(pphysical_memory_info_t p_memblock, pmap_t p_free_map)
+{
+    //Prev block
+    pphysical_memory_info_t p_prev_blk
+        = (pphysical_memory_info_t)core_rtl_map_prev(&index_map,
+                p_memblock);
+
+    if(p_prev_blk != NULL
+       && p_prev_blk->type == p_memblock->type
+       && p_prev_blk->begin + p_prev_blk->size == p_memblock->begin) {
+        p_prev_blk->size += p_memblock->size;
+        core_rtl_map_set(&index_map, p_memblock, NULL);
+        core_rtl_map_set(p_free_map, p_memblock, NULL);
+        core_mm_heap_free(p_memblock, phymem_heap);
+        p_memblock = p_prev_blk;
+    }
+
+    //Next block
+    pphysical_memory_info_t p_next_blk
+        = (pphysical_memory_info_t)core_rtl_map_next(&index_map,
+                p_memblock);
+
+    if(p_next_blk != NULL
+       && p_next_blk->type == p_memblock->type
+       && p_memblock->begin + p_memblock->size == p_next_blk->begin) {
+        p_memblock->size += p_next_blk->size;
+        core_rtl_map_set(&index_map, p_next_blk, NULL);
+        core_rtl_map_set(p_free_map, p_next_blk, NULL);
+        core_mm_heap_free(p_next_blk, phymem_heap);
+    }
+
 }

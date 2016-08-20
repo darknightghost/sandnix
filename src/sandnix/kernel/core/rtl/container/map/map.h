@@ -70,12 +70,13 @@ void* core_rtl_map_next(
     void* p_key);
 
 //Search key and value
-//int	(*map_search_func_t)(void* p_condition, void* p_key, void* p_value);
-typedef	int	(*map_search_func_t)(void*, void*, void*);
+//int	(*map_search_func_t)(void* p_condition, void* p_key, void* p_value,void* p_arg);
+typedef	int	(*map_search_func_t)(void*, void*, void*, void*);
 void* core_rtl_map_search(
     pmap_t p_map,
     void* p_condition,
-    map_search_func_t search_func);
+    map_search_func_t search_func,
+    void* p_arg);
 
 //Destroy the map
 void core_rtl_map_destroy(

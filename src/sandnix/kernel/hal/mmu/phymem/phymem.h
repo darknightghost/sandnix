@@ -42,6 +42,7 @@ void	phymem_init();
 
 kstatus_t hal_mmu_phymem_alloc(
     void** p_addr,		//Start address
+    address_t align,	//Align
     bool is_dma,		//DMA page
     size_t page_num);	//Num
 

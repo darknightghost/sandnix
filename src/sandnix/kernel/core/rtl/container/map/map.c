@@ -154,7 +154,7 @@ void* core_rtl_map_next(pmap_t p_map, void* p_key)
 }
 
 void* core_rtl_map_search(pmap_t p_map, void* p_condition,
-                          map_search_func_t search_func)
+                          map_search_func_t search_func, void* p_arg)
 {
     prbtree_node_t p_node;
     int compare_result;
@@ -162,7 +162,8 @@ void* core_rtl_map_search(pmap_t p_map, void* p_condition,
     p_node = p_map->p_tree;
 
     while(p_node != NULL) {
-        compare_result = search_func(p_condition, p_node->p_key, p_node->p_value);
+        compare_result = search_func(p_condition, p_node->p_key,
+                                     p_node->p_value, p_arg);
 
         if(compare_result > 0) {
             p_node = p_node->p_rchild;

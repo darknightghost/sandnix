@@ -228,7 +228,7 @@ void paging_init()
 
     //Switch to page 0
     hal_early_print_printf("Switching to page table 0...\n");
-    //hal_mmu_pg_tbl_switch(0);
+    hal_mmu_pg_tbl_switch(0);
     invalidate_TLBs();
     initialized = true;
     return;
@@ -293,6 +293,19 @@ void hal_mmu_pg_tbl_get(u32 id, void* virt_addr, void** phy_addr, u32* p_attr)
         *p_attr = MMU_PAGE_UNAVAIL;
         goto _END;
     }
+
+    //Test
+    switch_editing_page((void*)(p_lv1_info->physical_addr
+                                + (address_t)virt_addr / (4096 * 256 * 1024) * 4096));
+    plv1_pg_desc_t p_lv1_desc = (plv1_pg_desc_t)page_operate_addr
+                                + (address_t)virt_addr % (256 * 4096 * 1024) / (256 * 4096) / 4 * 4;
+    void* addr = (void*)LV1_LV2ENT_GET_ADDR(p_lv1_desc);
+
+    if(addr != (void*)(p_lv2_info->physical_addr)) {
+        hal_exception_panic(EINVAL, "Incorrect page table.");
+    }
+
+    //Test end
 
     switch_editing_page((void*)(p_lv2_info->physical_addr));
     plv2_pg_desc_t p_lv2_desc = (plv2_pg_desc_t)page_operate_addr
@@ -619,7 +632,8 @@ void create_0()
     }
 
     //Allocate physical memory
-    if(hal_mmu_phymem_alloc((void**) & (p_lv1_info->physical_addr),
+    if(hal_mmu_phymem_alloc((void**)(&(p_lv1_info->physical_addr)),
+                            1024 * 16,
                             false, 4) != ESUCCESS) {
         hal_exception_panic(ENOMEM,
                             "Not enough memory for mmu paging managment.");

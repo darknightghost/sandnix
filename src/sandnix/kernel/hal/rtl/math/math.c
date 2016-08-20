@@ -18,7 +18,7 @@
 #include "math.h"
 
 #if defined(X86) || defined(ARM)
-u64 hal_rtl_math_div64(u64 dividend, u32 divisor)
+u64 hal_rtl_math_div64(u64 dividend, u64 divisor)
 {
     u64 quotient;
     int i;
@@ -49,7 +49,7 @@ u64 hal_rtl_math_div64(u64 dividend, u32 divisor)
     return quotient;
 }
 
-u64 hal_rtl_math_mod64(u64 dividend, u32 divisor)
+u64 hal_rtl_math_mod64(u64 dividend, u64 divisor)
 {
     u64 quotient;
     int i;

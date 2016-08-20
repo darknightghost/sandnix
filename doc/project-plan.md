@@ -408,6 +408,7 @@ void hal_mmu_core_release(
 //申请物理内存
 kstatus_t hal_mmu_phymem_alloc(
 	void** p_addr,		//起始地址
+    address_t align,	//对齐
     bool is_dma,		//是否为DMA保留内存
 	size_t page_num);	//页面数
 
@@ -1028,7 +1029,7 @@ void core_mm_pg_tbl_release(u32 index);
 
 //page_obj_t
 //创建页对象
-ppage_obj_t page_obj(u32 attribute, size_t size);
+ppage_obj_t page_obj(u32 attribute, size_t size, address_t align);
 
 //映射页对象
 void* page_obj.map(void* base_addr, bool kernel_mem);
