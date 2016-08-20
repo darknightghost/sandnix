@@ -52,5 +52,21 @@ void kinit(void* p_bootloader_info)
 
 void test()
 {
-    //hal_mmu_pg_tbl_set(0, (void*)0xc0500000, MMU_PAGE_RDONLY, (void*)0x00101000);
+    void* phy_addr;
+    u32 attr;
+
+    hal_early_print_printf("test\n");
+
+    for(u32 i = KERNEL_MEM_BASE / 4096; i < 0x100000; i++) {
+        hal_mmu_pg_tbl_get(0, (void*)(i * 4096), &phy_addr, &attr);
+
+        if(attr != 0) {
+            hal_early_print_printf("%p --> %p,%p\n",
+                                   (void*)(i * 4096),
+                                   phy_addr,
+                                   attr);
+        }
+    }
+
+    return;
 }

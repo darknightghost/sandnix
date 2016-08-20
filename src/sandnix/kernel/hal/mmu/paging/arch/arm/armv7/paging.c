@@ -20,6 +20,7 @@
 #include "../../../../../exception/exception.h"
 #include "../../../../../init/init.h"
 #include "../../../../../early_print/early_print.h"
+#include "../../../../../debug/debug.h"
 
 /*
  *   Though ARM supports different size of pages, we only use 4KB pages in order
@@ -37,7 +38,7 @@
 
 #define	REQUIRED_INIT_PAGE_NUM	((KERNEL_MAX_SIZE) / 4096 + 1)
 #define	MAX_INIT_PAGE_NUM		(REQUIRED_INIT_PAGE_NUM % (256 * 4) > 0 \
-                                 ? (REQUIRED_INIT_PAGE_NUM / (256 * 4)+ 1) \
+                                 ? (REQUIRED_INIT_PAGE_NUM / (256 * 4) + 1) \
                                  * (256 * 4)\
                                  : REQUIRED_INIT_PAGE_NUM)
 
@@ -140,8 +141,6 @@ void start_paging()
 
 void* hal_mmu_add_early_paging_addr(void* phy_addr)
 {
-    u32 desc_type;
-
     if(initialized) {
         hal_exception_panic(ENOTSUP,
                             "Function hal_mmu_add_early_paging_addr() can only "
@@ -156,7 +155,7 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr)
     u32 i;
 
     for(i = 0; i < used_lv2_desc; i++) {
-        if(LV2_DESC_TYPE(&init_lv2_pg_tbl[i], desc_type) == MMU_PG_4KB) {
+        if(LV2_DESC_TYPE(&init_lv2_pg_tbl[i]) == MMU_PG_4KB) {
             if(LV2_4KB_GET_ADDR(&init_lv2_pg_tbl[i]) == pg_addr) {
                 //The address has been mapped
                 return (void*)(KERNEL_MEM_BASE + i * 4096 + addr_off);
@@ -260,12 +259,74 @@ kstatus_t	hal_mmu_pg_tbl_set(
     u32 attribute,					//Attribute
     void* phy_addr);				//Physical address
 
-//Get mapping info
-void hal_mmu_pg_tbl_get(
-    u32 id,
-    void* virt_addr,		//Virtual address
-    void** phy_addr,		//Pointer to returned physical address
-    u32* p_attr);			//Pointer to page attribute
+void hal_mmu_pg_tbl_get(u32 id, void* virt_addr, void** phy_addr, u32* p_attr)
+{
+    plv2_tbl_info_t p_lv2_info;
+
+    core_pm_spnlck_rw_w_lock(&lock);
+    plv1_tbl_info_t p_lv1_info = (plv1_tbl_info_t)core_rtl_array_get(
+                                     &mmu_globl_pg_table,
+                                     id);
+
+    if(p_lv1_info == NULL) {
+        hal_exception_panic(EINVAL,
+                            "Illegal page table id.");
+    }
+
+    if((address_t)virt_addr >= KERNEL_MEM_BASE) {
+        //Kernel page
+        p_lv2_info = (plv2_tbl_info_t)core_rtl_map_get(
+                         &mmu_krnl_lv2_tbl_map,
+                         (void*)((address_t)virt_addr & 0xFFC00000));
+
+    } else {
+        //User page
+        p_lv2_info = (plv2_tbl_info_t)core_rtl_map_get(
+                         &(p_lv1_info->lv2_info_map),
+                         (void*)((address_t)virt_addr & 0xFFC00000));
+
+    }
+
+    if(p_lv2_info == NULL) {
+        //The page did not be mapped.
+        *phy_addr = NULL;
+        *p_attr = MMU_PAGE_UNAVAIL;
+        goto _END;
+    }
+
+    switch_editing_page((void*)(p_lv2_info->physical_addr));
+    plv2_pg_desc_t p_lv2_desc = (plv2_pg_desc_t)page_operate_addr
+                                + (address_t)virt_addr % (256 * 4 * 4096) / 4096;
+
+    *p_attr = 0;
+
+    if(LV2_DESC_TYPE(p_lv2_desc) == LV2_PG_TYPE_FAULT) {
+        //The page did not be mapped.
+        *phy_addr = NULL;
+        goto _END;
+
+    }
+
+    *p_attr |= MMU_PAGE_AVAIL;
+
+    if(p_lv2_desc->pg_4KB.xn == 0) {
+        *p_attr |= MMU_PAGE_EXECUTABLE;
+    }
+
+    switch(LV2_GET_AP(p_lv2_desc)) {
+        case PG_AP_RW_NA:
+        case PG_AP_RW_RO:
+        case PG_AP_RW_RW:
+            *p_attr |= MMU_PAGE_WRITABLE;
+    }
+
+    *phy_addr = (void*)LV2_4KB_GET_ADDR(p_lv2_desc);
+
+_END:
+    core_pm_spnlck_rw_w_unlock(&lock);
+
+    return;
+}
 
 void hal_mmu_pg_tbl_refresh(void* virt_addr)
 {
@@ -287,8 +348,8 @@ void hal_mmu_pg_tbl_switch(u32 id)
 
     load_TTBR(p_lv1_info->physical_addr);
     core_pm_spnlck_rw_r_unlock(&lock);
-
     invalidate_TLBs();
+
     return;
 }
 
@@ -311,6 +372,10 @@ void lv1_prepare(address_t kernel_base, size_t kernel_size, size_t offset)
     plv1_pg_desc_t p_lv1_desc = (plv1_pg_desc_t)((address_t)init_lv1_pg_tbl
                                 + offset);
     address_t kernel_phy_base = kernel_base + offset;
+
+    if(kernel_size % (256 * 4096) > 0) {
+        kernel_size = (kernel_size / (256 * 4096) + 1) * 256 * 4096;
+    }
 
     for(u32 i = 0;
         i < 4096;
@@ -352,8 +417,8 @@ void lv2_prepare(address_t kernel_base, size_t kernel_size, size_t offset)
     u32 pg_num = kernel_size / 4096;
     u32 fill_num = pg_num;
 
-    if(fill_num % 256 != 0) {
-        fill_num = fill_num + (256 - fill_num % 256);
+    if(fill_num % (256 * 4) != 0) {
+        fill_num = fill_num + (256 * 4 - fill_num % (256 * 4));
     }
 
     //Prepare lv2 page table
@@ -553,8 +618,6 @@ void create_0()
                             "Not enough memory for mmu paging managment.");
     }
 
-    HEAP_CHECK(mmu_paging_heap);
-
     //Allocate physical memory
     if(hal_mmu_phymem_alloc((void**) & (p_lv1_info->physical_addr),
                             false, 4) != ESUCCESS) {
@@ -562,13 +625,9 @@ void create_0()
                             "Not enough memory for mmu paging managment.");
     }
 
-    HEAP_CHECK(mmu_paging_heap);
-
     core_rtl_map_init(&(p_lv1_info->lv2_info_map),
                       (item_compare_t)compare_vaddr,
                       mmu_paging_heap);
-    HEAP_CHECK(mmu_paging_heap);
-
     page_operate_addr = hal_mmu_add_early_paging_addr(
                             (void*)(p_lv1_info->physical_addr));
 
@@ -576,8 +635,6 @@ void create_0()
         hal_exception_panic(ENOMEM,
                             "Not enough memory for mmu paging managment.");
     }
-
-    HEAP_CHECK(mmu_paging_heap);
 
     //Clear new lv1 table
     for(u32 i = 0;
@@ -599,26 +656,23 @@ void create_0()
         used_lv2_table += 4 - used_lv2_table % 4;
     }
 
-    HEAP_CHECK(mmu_paging_heap);
-
     for(u32 i = KERNEL_MEM_BASE / 256 / 4096;
         i < KERNEL_MEM_BASE / 256 / 4096 + used_lv2_table;
         i++) {
         /*
          * lv1_pg_desc_t is 4 bytes, lv1 page table is 16KB. We can only map 4KB
-         * once.
+         * once. So each lv2_tbl_info_t has 4 lv2 tables and use 4 lv1 descriptor.
          */
         //Map page
         switch_editing_page((void*)((p_lv1_info->physical_addr +
                                      i * sizeof(lv1_pg_desc_t)) & 0xFFFFF000));
         plv1_pg_desc_t p_lv1_desc = (plv1_pg_desc_t)page_operate_addr + i % 1024;
+        LV1_DESC_TYPE_SET(p_lv1_desc, MMU_PG_LV2ENT);
         p_lv1_desc->lv2_entry.none_secure = 1;
         LV1_LV2ENT_SET_ADDR(p_lv1_desc,
                             (address_t)&init_lv2_pg_tbl[
                                 (i - KERNEL_MEM_BASE / (256 * 4096)) * 256] + load_offset);
     }
-
-    HEAP_CHECK(mmu_paging_heap);
 
     //Set lv2 descriptor
     used_lv2_table = used_lv2_table / 4;
@@ -631,7 +685,7 @@ void switch_editing_page(void* phy_addr)
     plv2_pg_desc_t p_lv2_desc = &init_lv2_pg_tbl[((address_t)page_operate_addr
                                 - KERNEL_MEM_BASE) / 4096];
     LV2_4KB_SET_ADDR(p_lv2_desc, (address_t)phy_addr);
-    invalidate_TLB((void*)page_operate_addr);
+    invalidate_TLB(page_operate_addr);
     return;
 }
 
@@ -648,7 +702,7 @@ void lv2_create0(u32 used_lv2_table)
 
         p_lv2_info->freeable = false;
         p_lv2_info->ref = 0;
-        p_lv2_info->physical_addr = (address_t)&init_lv1_pg_tbl[i * 256 * 4]
+        p_lv2_info->physical_addr = (address_t)&init_lv2_pg_tbl[i * 256 * 4]
                                     + load_offset;
 
         for(u32 j = 0; j < 256 * 4; j++) {
@@ -671,10 +725,21 @@ void lv2_create0(u32 used_lv2_table)
                     p_lv2_desc->pg_4KB.xn = 1;
                 }
 
+                hal_early_print_printf("%p --> %p.\n",
+                                       (i * 4 * 256 + j) * 4096 + KERNEL_MEM_BASE,
+                                       LV2_4KB_GET_ADDR(p_lv2_desc));
+
             } else {
                 //The lv2 descriptor is not been used.
                 p_lv2_desc->value = 0;
             }
+        }
+
+        if(core_rtl_map_set(&mmu_krnl_lv2_tbl_map,
+                            (void*)(i * 4096 * 256 * 4 + KERNEL_MEM_BASE),
+                            p_lv2_info) == NULL) {
+            hal_exception_panic(ENOMEM,
+                                "Not enough memory for mmu paging managment.");
         }
     }
 
