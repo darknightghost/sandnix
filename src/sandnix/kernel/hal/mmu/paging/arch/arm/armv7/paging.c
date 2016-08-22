@@ -77,6 +77,10 @@ static int			compare_vaddr(address_t p1, address_t p2);
 static void			create_0();
 static void			switch_editing_page(void* phy_addr);
 static void			lv2_create0(u32 used_lv2_tabel);
+static void			remove_page(plv1_tbl_info_t p_lv1_info, void* virt_addr);
+static kstatus_t	set_page(plv1_tbl_info_t p_lv1_info, void* virt_addr,
+                             u32 attr, void* phy_addr);
+static void			krnl_pdt_sync(plv1_tbl_info_t p_lv1_info);
 
 void start_paging()
 {
@@ -234,30 +238,94 @@ void paging_init()
     return;
 }
 
-//Get kernel virtual address range
-void		hal_mmu_get_krnl_addr_range(
-    void** p_base,		//Pointer to basic address
-    size_t* p_size);	//Pointer to size
+void hal_mmu_get_krnl_addr_range(void** p_base, size_t* p_size)
+{
+    *p_base = (void*)KERNEL_MEM_BASE;
+    *p_size = KERNEL_MEM_SIZE;
+    return;
+}
 
-//Get user virtual address range
-void		hal_mmu_get_usr_addr_range(
-    void** p_base,		//Pointer to basic address
-    size_t* p_size);	//Pointer to size
+void hal_mmu_get_usr_addr_range(void** p_base, size_t* p_size)
+{
+    *p_base = (void*)SANDNIX_KERNEL_PAGE_SIZE;
+    *p_size = (address_t)KERNEL_MEM_BASE - (address_t)(*p_base);
+    return;
+}
 
-//Create page table
-kstatus_t	hal_mmu_pg_tbl_create(
-    u32* p_id);		//Pointer to new page table id
+kstatus_t hal_mmu_pg_tbl_create(u32* p_id)
+{
+    kstatus_t status;
 
-//Destroy page table
-void		hal_mmu_pg_tbl_destroy(
-    u32 id);		//Page table id
+    //Allocate lv1 table
+    plv1_tbl_info_t p_lv1_info = core_mm_heap_alloc(sizeof(lv1_tbl_info_t),
+                                 mmu_paging_heap);
 
-//Set page table
-kstatus_t	hal_mmu_pg_tbl_set(
-    u32 id,
-    void* virt_addr,				//Virtual address
-    u32 attribute,					//Attribute
-    void* phy_addr);				//Physical address
+    if(p_lv1_info == NULL) {
+        status = ENOMEM;
+        goto _ALLOC_FAILED;
+    }
+
+    if(hal_mmu_phymem_alloc((void**)(&(p_lv1_info->physical_addr)),
+                            16 * 1024, false, 4) != ESUCCESS) {
+        status = ENOMEM;
+        goto _ALLOC_PHYMEM_FAILED;
+    }
+
+    //Clear new lv1 table
+    core_pm_spnlck_rw_w_lock(&lock);
+    switch_editing_page((void*)(p_lv1_info->physical_addr));
+    core_rtl_memset((void*)page_operate_addr, 0, 4096);
+    core_rtl_map_init(&(p_lv1_info->lv2_info_map),
+                      (item_compare_t)compare_vaddr, mmu_paging_heap);
+
+    //Copy kernel lv1 table
+    //Get index
+
+    core_pm_spnlck_rw_w_unlock(&lock);
+    return ESUCCESS;
+
+    //Exception handler
+    core_pm_spnlck_rw_w_unlock(&lock);
+_ALLOC_PHYMEM_FAILED:
+    core_mm_heap_free(p_lv1_info, mmu_paging_heap);
+_ALLOC_FAILED:
+    return status;
+
+}
+
+void hal_mmu_pg_tbl_destroy(u32 id)
+{
+}
+
+kstatus_t hal_mmu_pg_tbl_set(u32 id, void* virt_addr, u32 attribute,
+                             void* phy_addr)
+{
+    core_pm_spnlck_rw_w_lock(&lock);
+
+    //Get page table
+    plv1_tbl_info_t p_lv1_info = core_rtl_array_get(&mmu_globl_pg_table,
+                                 id);
+
+    if(p_lv1_info == NULL) {
+        hal_exception_panic(EINVAL, "Illegal page table id.");
+    }
+
+    if(attribute & MMU_PAGE_AVAIL) {
+        //Set page attribute
+        kstatus_t status = set_page(p_lv1_info, virt_addr, attribute, phy_addr);
+        core_pm_spnlck_rw_w_unlock(&lock);
+        invalidate_TLB(virt_addr);
+        return status;
+
+    } else {
+        //Remove page
+        remove_page(p_lv1_info, virt_addr);
+    }
+
+    core_pm_spnlck_rw_w_unlock(&lock);
+    invalidate_TLB(virt_addr);
+    return ESUCCESS;
+}
 
 void hal_mmu_pg_tbl_get(u32 id, void* virt_addr, void** phy_addr, u32* p_attr)
 {
@@ -294,26 +362,13 @@ void hal_mmu_pg_tbl_get(u32 id, void* virt_addr, void** phy_addr, u32* p_attr)
         goto _END;
     }
 
-    //Test
-    switch_editing_page((void*)(p_lv1_info->physical_addr
-                                + (address_t)virt_addr / (4096 * 256 * 1024) * 4096));
-    plv1_pg_desc_t p_lv1_desc = (plv1_pg_desc_t)page_operate_addr
-                                + (address_t)virt_addr % (256 * 4096 * 1024) / (256 * 4096) / 4 * 4;
-    void* addr = (void*)LV1_LV2ENT_GET_ADDR(p_lv1_desc);
-
-    if(addr != (void*)(p_lv2_info->physical_addr)) {
-        hal_exception_panic(EINVAL, "Incorrect page table.");
-    }
-
-    //Test end
-
     switch_editing_page((void*)(p_lv2_info->physical_addr));
     plv2_pg_desc_t p_lv2_desc = (plv2_pg_desc_t)page_operate_addr
                                 + (address_t)virt_addr % (256 * 4 * 4096) / 4096;
 
     *p_attr = 0;
 
-    if(LV2_DESC_TYPE(p_lv2_desc) == LV2_PG_TYPE_FAULT) {
+    if(LV2_DESC_TYPE(p_lv2_desc) == MMU_PG_FAULT) {
         //The page did not be mapped.
         *phy_addr = NULL;
         goto _END;
@@ -758,4 +813,204 @@ void lv2_create0(u32 used_lv2_table)
     }
 
     return;
+}
+
+void remove_page(plv1_tbl_info_t p_lv1_info, void* virt_addr)
+{
+    plv2_tbl_info_t p_lv2_info;
+
+    if((address_t)virt_addr >= KERNEL_MEM_BASE) {
+        //Kernel page
+        p_lv2_info = (plv2_tbl_info_t)core_rtl_map_get(
+                         &mmu_krnl_lv2_tbl_map,
+                         (void*)((address_t)virt_addr & 0xFFC00000));
+
+    } else {
+        //User page
+        p_lv2_info = (plv2_tbl_info_t)core_rtl_map_get(
+                         &(p_lv1_info->lv2_info_map),
+                         (void*)((address_t)virt_addr & 0xFFC00000));
+    }
+
+    if(p_lv2_info == NULL) {
+        return;
+    }
+
+    //Get lv2 descriptor
+    switch_editing_page((void*)(p_lv2_info->physical_addr));
+    plv2_pg_desc_t p_lv2_desc = (plv2_pg_desc_t)page_operate_addr
+                                + (address_t)virt_addr % (4096 * 256 * 4) / 4096;
+
+    if(LV2_DESC_TYPE(p_lv2_desc) == MMU_PG_FAULT) {
+        return;
+    }
+
+    p_lv2_desc->value = 0;
+
+    if(p_lv2_info->freeable) {
+        (p_lv2_info->ref)--;
+
+        if(p_lv2_info->ref == 0) {
+            //Remove lv2 table
+            if((address_t)virt_addr >= KERNEL_MEM_BASE) {
+                core_rtl_map_set(&mmu_krnl_lv2_tbl_map,
+                                 (void*)((address_t)virt_addr & 0xFFC00000),
+                                 NULL);
+
+            } else {
+                core_rtl_map_set(&(p_lv1_info->lv2_info_map),
+                                 (void*)((address_t)virt_addr & 0xFFC00000),
+                                 NULL);
+
+            }
+
+            //Free lv2 table
+            hal_mmu_phymem_free((void*)(p_lv2_info->physical_addr));
+            core_mm_heap_free(p_lv2_info, mmu_paging_heap);
+
+            //Unmap lv2 table in lv1 table
+            switch_editing_page((void*)((address_t)(p_lv1_info->physical_addr)
+                                        + (address_t)virt_addr / (4096 * 256)
+                                        * sizeof(lv1_pg_desc_t)));
+
+            for(u32 i = 0; i < 4; i++) {
+                plv1_pg_desc_t p_lv1_desc = (plv1_pg_desc_t)(page_operate_addr)
+                                            + (address_t)virt_addr % (4096 * 256) / 4 * 4 + i;
+                p_lv1_desc->value = 0;
+            }
+
+            if((address_t)virt_addr >= KERNEL_MEM_BASE) {
+                krnl_pdt_sync(p_pdt_info);
+            }
+        }
+    }
+
+    return;
+}
+
+kstatus_t set_page(plv1_tbl_info_t p_lv1_info, void* virt_addr, u32 attr,
+                   void* phy_addr)
+{
+    plv2_tbl_info_t p_lv2_info;
+
+    if((address_t)virt_addr >= KERNEL_MEM_BASE) {
+        //Kernel page
+        p_lv2_info = (plv2_tbl_info_t)core_rtl_map_get(
+                         &mmu_krnl_lv2_tbl_map,
+                         (void*)((address_t)virt_addr & 0xFFC00000));
+
+    } else {
+        //User page
+        p_lv2_info = (plv2_tbl_info_t)core_rtl_map_get(
+                         &(p_lv1_info->lv2_info_map),
+                         (void*)((address_t)virt_addr & 0xFFC00000));
+    }
+
+    if(p_lv2_info == NULL) {
+        //Create new lv2 table
+        p_lv2_info = (plv2_tbl_info_t)core_mm_heap_alloc(sizeof(lv2_tbl_info_t),
+                     mmu_paging_heap);
+
+        if(p_lv2_info == NULL) {
+            return ENOMEM;
+        }
+
+        p_lv2_info->freeable = true;
+        p_lv2_info->ref = 0;
+
+        if(hal_mmu_phymem_alloc((void**)(&(p_lv2_info->physical_addr)), 1,
+                                false, 1) != ESUCCESS) {
+            core_mm_heap_free(p_lv2_info, mmu_paging_heap);
+            return ENOMEM;
+        }
+
+        switch_editing_page((void*)(p_lv2_info->physical_addr));
+        core_rtl_memset((void*)page_operate_addr, 0, 4096);
+
+        //Add new lv2 table
+        if((address_t)virt_addr >= KERNEL_MEM_BASE) {
+            //Kernel page
+            if(core_rtl_map_set(&mmu_krnl_lv2_tbl_map,
+                                (void*)((address_t)virt_addr & 0xFFC00000),
+                                p_lv2_info) == NULL) {
+                hal_mmu_phymem_free((void*)(p_lv2_info->physical_addr));
+                core_mm_heap_free(p_lv2_info, mmu_paging_heap);
+                return ENOMEM;
+            }
+
+        } else {
+            //User page
+            if(core_rtl_map_set(&(p_lv1_info->lv2_info_map),
+                                (void*)((address_t)virt_addr & 0xFFC00000),
+                                p_lv2_info) == NULL) {
+                hal_mmu_phymem_free((void*)(p_lv2_info->physical_addr));
+                core_mm_heap_free(p_lv2_info, mmu_paging_heap);
+                return ENOMEM;
+            }
+        }
+
+        //Add mapping
+        switch_editing_page((void*)((address_t)(p_lv1_info->physical_addr)
+                                    + (address_t)virt_addr / (4096 * 256)
+                                    * sizeof(lv1_pg_desc_t)));
+
+        for(u32 i = 0; i < 4; i++) {
+            plv1_pg_desc_t p_lv1_desc = (plv1_pg_desc_t)(page_operate_addr)
+                                        + (address_t)virt_addr / (4096 * 256) % 1024 + i;
+            p_lv1_desc->value = 0;
+            LV1_DESC_TYPE_SET(p_lv1_desc, MMU_PG_LV2ENT);
+            p_lv1_desc->lv2_entry.none_secure = 1;
+            LV1_LV2ENT_SET_ADDR(p_lv1_desc,
+                                p_lv2_info->physical_addr + i * 256 * sizeof(lv2_pg_desc_t));
+        }
+
+        if((address_t)virt_addr >= KERNEL_MEM_BASE) {
+            krnl_pdt_sync(p_pdt_info);
+        }
+
+    }
+
+    //Set lv2 descriptor
+    switch_editing_page((void*)(p_lv2_info->physical_addr));
+    plv2_pg_desc_t p_lv2_desc = (plv2_pg_desc_t)page_operate_addr
+                                + (address_t)virt_addr % (4096 * 256 * 4) / 4096;
+
+    if(LV2_DESC_TYPE(p_lv2_desc) == MMU_PG_FAULT) {
+        (p_lv2_info->ref)++;
+    }
+
+    LV2_DESC_TYPE_SET(p_lv2_desc, MMU_PG_LV2ENT);
+
+    if((address_t)virt_addr >= KERNEL_MEM_BASE) {
+        if(attr & MMU_PAGE_WRITABLE) {
+            LV2_SET_AP(p_lv2_desc, PG_AP_RW_NA);
+
+        } else {
+            LV2_SET_AP(p_lv2_desc, PG_AP_RO_NA);
+        }
+
+    } else {
+        if(attr & MMU_PAGE_WRITABLE) {
+            LV2_SET_AP(p_lv2_desc, PG_AP_RW_RW);
+
+        } else {
+            LV2_SET_AP(p_lv2_desc, PG_AP_RO_RO);
+        }
+
+    }
+
+    if(attr & MMU_PAGE_EXECUTABLE) {
+        p_lv2_desc->pg_4KB.xn = 0;
+
+    } else {
+        p_lv2_desc->pg_4KB.xn = 1;
+    }
+
+    LV2_4KB_SET_ADDR(p_lv2_desc, (address_t)phy_addr);
+
+    return ESUCCESS;
+}
+
+void krnl_pdt_sync(plv1_tbl_info_t p_lv1_info)
+{
 }

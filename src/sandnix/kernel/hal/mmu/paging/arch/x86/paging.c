@@ -345,15 +345,30 @@ kstatus_t hal_mmu_pg_tbl_create(u32* p_id)
         goto _ALLOC_PDT_FAILED;
     }
 
+    core_pm_spnlck_rw_w_lock(&lock);
+
+    //Clear new pdt
     switch_editing_page((void*)p_pgtbl_info->physical_addr);
     core_rtl_memset(page_operate_addr, 0, 4096);
 
     core_rtl_map_init(&(p_pgtbl_info->pte_info_map),
                       (item_compare_t)compare_vaddr, mmu_paging_heap);
 
-    //Clear new pdt
-    core_pm_spnlck_rw_w_lock(&lock);
+    //Copy pdt
+    ppg_tbl_info_t p_pdt0_info = (ppg_tbl_info_t)core_rtl_array_get(
+                                     &mmu_globl_pg_table,
+                                     0);
+    switch_editing_page((void*)p_pdt0_info->physical_addr);
+    static copy_buf[1024 - KERNEL_MEM_BASE / 4096 / 1024];
+    core_rtl_memcpy(copy_buf,
+                    (ppde_t)page_operate_addr + KERNEL_MEM_BASE / 4096 / 1024,
+                    sizeof(copy_buf));
+    switch_editing_page((void*)p_pgtbl_info->physical_addr);
+    core_rtl_memcpy((ppde_t)page_operate_addr + KERNEL_MEM_BASE / 4096 / 1024,
+                    copy_buf,
+                    sizeof(copy_buf));
 
+    //Get index
     if(!core_rtl_array_get_free_index(&mmu_globl_pg_table, p_id)) {
         status = ENOMEM;
         goto _NO_FREE_ID;

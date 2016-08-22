@@ -56,17 +56,19 @@ void test()
     u32 attr;
 
     hal_early_print_printf("test\n");
+    kstatus_t status = hal_mmu_pg_tbl_set(0, (void*)0xD0000000,
+                                          MMU_PAGE_RW_EXEC, (void*)0x50000000);
 
-    for(u32 i = KERNEL_MEM_BASE / 4096; i < 0x100000; i++) {
-        hal_mmu_pg_tbl_get(0, (void*)(i * 4096), &phy_addr, &attr);
+    hal_mmu_pg_tbl_get(0, (void*)(0xD0000000), &phy_addr, &attr);
 
-        if(attr != 0) {
-            hal_early_print_printf("%p --> %p,%p\n",
-                                   (void*)(i * 4096),
-                                   phy_addr,
-                                   attr);
-        }
+    if(attr != 0) {
+        hal_early_print_printf("%p --> %p,%p\n",
+                               (void*)(0xD0000000),
+                               phy_addr,
+                               attr);
     }
+
+    UNREFERRED_PARAMETER(status);
 
     return;
 }
