@@ -857,7 +857,7 @@ void lv2_create0(u32 used_lv2_table)
                     p_lv2_desc->pg_4KB.xn = 1;
                 }
 
-                hal_early_print_printf("%p --> %p.\n",
+                hal_early_print_printf("Virtual address %p -> physical address %p.\n",
                                        (i * 4 * 256 + j) * 4096 + KERNEL_MEM_BASE,
                                        LV2_4KB_GET_ADDR(p_lv2_desc));
 
