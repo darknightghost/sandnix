@@ -158,16 +158,29 @@ bool core_rtl_array_get_used_index(parray_t p_array, u32 begin, u32* ret)
     for(u32 i = begin / p_array->scale;
         i < p_array->size / p_array->scale;
         i++) {
-        parray_blk_t* p_p_blk = p_array->p_p_blks + i / p_array->scale;
+        parray_blk_t* p_p_blk = p_array->p_p_blks + i;
 
         if(*p_p_blk != NULL) {
-            for(u32 j = 0; j < p_array->scale; j++) {
-                void** p_p_item = (*p_p_blk)->p_p_items + j;
+            if(i > begin / p_array->scale) {
+                for(u32 j = 0; j < p_array->scale; j++) {
+                    void** p_p_item = (*p_p_blk)->p_p_items + j;
 
-                if(*p_p_item != NULL) {
-                    *ret = i * p_array->scale + j;
-                    return true;
+                    if(*p_p_item != NULL) {
+                        *ret = i * p_array->scale + j;
+                        return true;
+                    }
                 }
+
+            } else {
+                for(u32 j = begin % p_array->scale; j < p_array->scale; j++) {
+                    void** p_p_item = (*p_p_blk)->p_p_items + j;
+
+                    if(*p_p_item != NULL) {
+                        *ret = i * p_array->scale + j;
+                        return true;
+                    }
+                }
+
             }
         }
 

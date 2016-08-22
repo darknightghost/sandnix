@@ -57,6 +57,7 @@ static void			refresh_TLB(void* address);
 static void			remove_page(ppg_tbl_info_t p_pdt_info, void* virt_addr);
 static kstatus_t	set_page(ppg_tbl_info_t p_pdt_info, void* virt_addr,
                              u32 attr, void* phy_addr);
+static void			pte_info_destroy(ppte_tbl_info_t p_pte_info, void* p_null);
 
 void start_paging()
 {
@@ -339,7 +340,8 @@ kstatus_t hal_mmu_pg_tbl_create(u32* p_id)
 
     }
 
-    if(hal_mmu_phymem_alloc((void**)(&(p_pgtbl_info->physical_addr)), false, 1)
+    if(hal_mmu_phymem_alloc((void**)(&(p_pgtbl_info->physical_addr)), 4096,
+                            false, 1)
        == ESUCCESS) {
         status = ENOMEM;
         goto _ALLOC_PDT_FAILED;
@@ -359,7 +361,7 @@ kstatus_t hal_mmu_pg_tbl_create(u32* p_id)
                                      &mmu_globl_pg_table,
                                      0);
     switch_editing_page((void*)p_pdt0_info->physical_addr);
-    static copy_buf[1024 - KERNEL_MEM_BASE / 4096 / 1024];
+    static pde_t copy_buf[1024 - KERNEL_MEM_BASE / 4096 / 1024];
     core_rtl_memcpy(copy_buf,
                     (ppde_t)page_operate_addr + KERNEL_MEM_BASE / 4096 / 1024,
                     sizeof(copy_buf));
@@ -412,21 +414,10 @@ void hal_mmu_pg_tbl_destroy(u32 id)
     //Free memory
     hal_mmu_phymem_free((void*)(p_pdt_info->physical_addr));
 
-    for(void* p_key = core_rtl_map_next(&(p_pdt_info->pte_info_map), NULL);
-        p_key != NULL;
-        p_key = core_rtl_map_next(&(p_pdt_info->pte_info_map), p_key)) {
-        ppte_tbl_info_t p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
-                                         &(p_pdt_info->pte_info_map), p_key);
-
-        if(p_pte_info->freeable) {
-            hal_mmu_phymem_free((void*)(p_pte_info->physical_addr));
-        }
-    }
-
     core_rtl_map_destroy(&(p_pdt_info->pte_info_map),
                          NULL,
-                         (item_destroyer_t)core_mm_heap_free,
-                         mmu_paging_heap);
+                         (item_destroyer_t)pte_info_destroy,
+                         NULL);
     core_mm_heap_free(p_pdt_info, mmu_paging_heap);
 
     return;
@@ -558,7 +549,7 @@ void create_0()
     }
 
     //Allocate physical memory
-    if(hal_mmu_phymem_alloc((void**) & (p_pdt_info->physical_addr),
+    if(hal_mmu_phymem_alloc((void**)(&(p_pdt_info->physical_addr)), 4096,
                             false, 1) != ESUCCESS) {
         hal_exception_panic(ENOMEM,
                             "Not enough memory for mmu paging managment.");
@@ -767,15 +758,16 @@ kstatus_t set_page(ppg_tbl_info_t p_pdt_info, void* virt_addr, u32 attr,
 
     if(p_pte_info == NULL) {
         //Create new pte table
-        ppte_tbl_info_t p_pte_info = core_mm_heap_alloc(sizeof(pte_tbl_info_t),
-                                     mmu_paging_heap);
+        p_pte_info = core_mm_heap_alloc(sizeof(pte_tbl_info_t),
+                                        mmu_paging_heap);
 
         if(p_pte_info == NULL) {
             return ENOMEM;
         }
 
         p_pte_info->freeable = true;
-        kstatus_t status = hal_mmu_phymem_alloc((void**) & (p_pte_info->physical_addr),
+        kstatus_t status = hal_mmu_phymem_alloc((void**)(&(p_pte_info->physical_addr)),
+                                                4096,
                                                 false, 1);
 
         if(status != ESUCCESS) {
@@ -884,10 +876,10 @@ void krnl_pdt_sync(ppg_tbl_info_t p_pdt_info)
                     (ppde_t)page_operate_addr + KERNEL_MEM_BASE / (1024 * 4096),
                     (0 - KERNEL_MEM_BASE) / (1024 * 4096));
 
-    u32 index;
+    u32 index = 0;
 
     while(core_rtl_array_get_used_index(&mmu_globl_pg_table,
-                                        0,
+                                        index,
                                         &index)) {
         ppg_tbl_info_t p_pdt_info = (ppg_tbl_info_t)core_rtl_array_get(
                                         &mmu_globl_pg_table,
@@ -896,7 +888,19 @@ void krnl_pdt_sync(ppg_tbl_info_t p_pdt_info)
         core_rtl_memcpy((ppde_t)page_operate_addr + KERNEL_MEM_BASE / (1024 * 4096),
                         sync_buf,
                         (0 - KERNEL_MEM_BASE) / (1024 * 4096));
+        index++;
     }
 
+    return;
+}
+
+void pte_info_destroy(ppte_tbl_info_t p_pte_info, void* p_null)
+{
+    if(p_pte_info->freeable) {
+        hal_mmu_phymem_free((void*)(p_pte_info->physical_addr));
+    }
+
+    core_mm_heap_free(p_pte_info, mmu_paging_heap);
+    UNREFERRED_PARAMETER(p_null);
     return;
 }

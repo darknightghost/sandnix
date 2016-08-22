@@ -81,6 +81,7 @@ static void			remove_page(plv1_tbl_info_t p_lv1_info, void* virt_addr);
 static kstatus_t	set_page(plv1_tbl_info_t p_lv1_info, void* virt_addr,
                              u32 attr, void* phy_addr);
 static void			krnl_pdt_sync(plv1_tbl_info_t p_lv1_info);
+static void			lv2_info_destroy(plv2_tbl_info_t p_lv2_info, void* p_null);
 
 void start_paging()
 {
@@ -279,12 +280,49 @@ kstatus_t hal_mmu_pg_tbl_create(u32* p_id)
                       (item_compare_t)compare_vaddr, mmu_paging_heap);
 
     //Copy kernel lv1 table
+    static lv1_pg_desc_t copy_buf[1024];
+    plv1_tbl_info_t p_lv1_0 = core_rtl_array_get(&mmu_globl_pg_table, 0);
+
+    for(u32 i = 0; i < 4; i++) {
+        if(i >= KERNEL_MEM_BASE / 4096 / 256 / 1024) {
+            switch_editing_page((void*)(p_lv1_0->physical_addr + i * 4096));
+
+            if(i * 1024 < KERNEL_MEM_BASE / 4096 / 256) {
+                void* base_addr = (void*)((KERNEL_MEM_BASE / 4096 / 256 - i * 1024)
+                                          * sizeof(lv1_pg_desc_t) + (address_t)page_operate_addr);
+                size_t sz = (address_t)page_operate_addr + 4096
+                            - (address_t)base_addr;
+                core_rtl_memcpy(copy_buf, base_addr, sz);
+                switch_editing_page((void*)(p_lv1_info->physical_addr + i * 4096));
+                core_rtl_memcpy(base_addr, copy_buf, sz);
+
+            } else {
+                core_rtl_memcpy(copy_buf, (void*)page_operate_addr,
+                                sizeof(copy_buf));
+                switch_editing_page((void*)(p_lv1_info->physical_addr + i * 4096));
+                core_rtl_memcpy((void*)page_operate_addr, copy_buf,
+                                sizeof(copy_buf));
+            }
+        }
+    }
+
     //Get index
+    if(!core_rtl_array_get_free_index(&mmu_globl_pg_table, p_id)) {
+        status = ENOMEM;
+        goto _NO_FREE_ID;
+    }
+
+    if(core_rtl_array_set(&mmu_globl_pg_table, *p_id, p_lv1_info) == NULL) {
+        status = ENOMEM;
+        goto _ADD_TABLE_FAILED;
+    }
 
     core_pm_spnlck_rw_w_unlock(&lock);
     return ESUCCESS;
 
     //Exception handler
+_ADD_TABLE_FAILED:
+_NO_FREE_ID:
     core_pm_spnlck_rw_w_unlock(&lock);
 _ALLOC_PHYMEM_FAILED:
     core_mm_heap_free(p_lv1_info, mmu_paging_heap);
@@ -295,6 +333,31 @@ _ALLOC_FAILED:
 
 void hal_mmu_pg_tbl_destroy(u32 id)
 {
+    //Release page table id
+    core_pm_spnlck_rw_w_lock(&lock);
+    plv1_tbl_info_t p_lv1_info = core_rtl_array_get(
+                                     &mmu_globl_pg_table,
+                                     id);
+
+    if(p_lv1_info == NULL) {
+        hal_exception_panic(EINVAL,
+                            "Illegal page table id.");
+    }
+
+    core_rtl_array_set(&mmu_globl_pg_table, id, NULL);
+
+    core_pm_spnlck_rw_w_unlock(&lock);
+
+    //Free memory
+    hal_mmu_phymem_free((void*)(p_lv1_info->physical_addr));
+
+    core_rtl_map_destroy(&(p_lv1_info->lv2_info_map),
+                         NULL,
+                         (item_destroyer_t)lv2_info_destroy,
+                         NULL);
+    core_mm_heap_free(p_lv1_info, mmu_paging_heap);
+
+    return;
 }
 
 kstatus_t hal_mmu_pg_tbl_set(u32 id, void* virt_addr, u32 attribute,
@@ -880,7 +943,7 @@ void remove_page(plv1_tbl_info_t p_lv1_info, void* virt_addr)
             }
 
             if((address_t)virt_addr >= KERNEL_MEM_BASE) {
-                krnl_pdt_sync(p_pdt_info);
+                krnl_pdt_sync(p_lv1_info);
             }
         }
     }
@@ -965,7 +1028,7 @@ kstatus_t set_page(plv1_tbl_info_t p_lv1_info, void* virt_addr, u32 attr,
         }
 
         if((address_t)virt_addr >= KERNEL_MEM_BASE) {
-            krnl_pdt_sync(p_pdt_info);
+            krnl_pdt_sync(p_lv1_info);
         }
 
     }
@@ -1013,4 +1076,63 @@ kstatus_t set_page(plv1_tbl_info_t p_lv1_info, void* virt_addr, u32 attr,
 
 void krnl_pdt_sync(plv1_tbl_info_t p_lv1_info)
 {
+#define BEGIN_INDEX	(KERNEL_MEM_BASE / 4096 / 256)
+    static plv1_pg_desc_t sync_buf[4096 - BEGIN_INDEX];
+
+    //Copy to buffer
+    for(u32 i = BEGIN_INDEX / 1024; i < 4; i++) {
+        switch_editing_page((void*)(p_lv1_info->physical_addr + i * 4096));
+
+        if(BEGIN_INDEX > i * 1024) {
+            core_rtl_memcpy(sync_buf,
+                            (plv1_pg_desc_t)page_operate_addr + BEGIN_INDEX - i * 1024,
+                            (i + 1) * 1024 - BEGIN_INDEX);
+
+        } else {
+            core_rtl_memcpy(&sync_buf[i * 1024 - BEGIN_INDEX],
+                            page_operate_addr,
+                            4096);
+        }
+    }
+
+    u32 index = 0;
+
+    while(core_rtl_array_get_used_index(&mmu_globl_pg_table,
+                                        index,
+                                        &index)) {
+        plv1_tbl_info_t p_lv1_info = (plv1_tbl_info_t)core_rtl_array_get(
+                                         &mmu_globl_pg_table,
+                                         index);
+
+        for(u32 i = BEGIN_INDEX / 1024; i < 4; i++) {
+            switch_editing_page((void*)(p_lv1_info->physical_addr + i * 4096));
+
+            if(BEGIN_INDEX > i * 1024) {
+                core_rtl_memcpy((plv1_pg_desc_t)page_operate_addr + BEGIN_INDEX - i * 1024,
+                                sync_buf,
+                                (i + 1) * 1024 - BEGIN_INDEX);
+
+            } else {
+                core_rtl_memcpy(page_operate_addr,
+                                &sync_buf[i * 1024 - BEGIN_INDEX],
+                                4096);
+            }
+        }
+
+        index++;
+    }
+
+    return;
+#undef BEGIN_INDEX
+}
+
+void lv2_info_destroy(plv2_tbl_info_t p_lv2_info, void* p_null)
+{
+    if(p_lv2_info->freeable) {
+        hal_mmu_phymem_free((void*)(p_lv2_info->physical_addr));
+    }
+
+    core_mm_heap_free(p_lv2_info, mmu_paging_heap);
+    UNREFERRED_PARAMETER(p_null);
+    return;
 }
