@@ -17,7 +17,11 @@
 
 #pragma once
 
-#include "../../../../../../common/common.h"
+#include "../../../../../common/common.h"
+#include "../../cpu/cpu.h"
+
+//void	int_callback(pcontext_t p_context, u32 err_code);
+typedef void	(*int_callback_t)(pcontext_t, u32);
 
 //Initialize
 void interrupt_init();
@@ -60,6 +64,7 @@ void* hal_io_int_callback_reg(
 
 //Regist clock call back
 void* hal_io_clock_callback_reg(
+    u32 microsecond,
     int_callback_t callback);	//Callback
 
 //Get system tick

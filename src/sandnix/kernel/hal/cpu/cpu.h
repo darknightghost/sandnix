@@ -19,3 +19,5 @@
 
 #include "../../../../common/common.h"
 #include "./context/context.h"
+
+u32	hal_cpu_get_cpuid();

@@ -17,4 +17,25 @@
 
 #pragma once
 
+#include "../../interrupt.h"
 
+typedef struct {
+    u16		limit;
+    u32		base;
+} __attribute__((packed)) idt_reg_t, *pidt_reg_t;
+
+typedef	struct	_idt {
+    u16		offset1;			//0-15 bits of offset
+    u16		selector;			//CS selector
+    struct {
+        u16		reserved: 5;	//Zero
+        u16		zero: 3;		//Zero
+        u16		type: 4;		//Interrupt or trap
+        u16		s: 1;			//Zero
+        u16		dpl: 2;			//DPL
+        u16		p: 1;			//Segment present flag
+    } __attribute__((packed)) attr;
+    u16		offset2;			//16-32 bits of offset
+} __attribute__((packed)) idt_t, *pidt_t;
+
+void	idt_init();

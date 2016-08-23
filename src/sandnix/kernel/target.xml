@@ -51,5 +51,6 @@
             <item name="uboot" value="-DBOOTLOADER=UBOOT"/>
             </option>
         </option>
+        <option marco="-DMAX_CPU_NUM" name="Maxium number of cpu" type="input" value="64"/>
     </options>
 </target>

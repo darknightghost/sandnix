@@ -16,3 +16,10 @@
 */
 
 #include "io.h"
+#include "../early_print/early_print.h"
+
+
+void hal_io_init()
+{
+    hal_early_print_printf("\nInitializing io...\n");
+}

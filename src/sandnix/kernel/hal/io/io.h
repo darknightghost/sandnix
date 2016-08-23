@@ -19,6 +19,7 @@
 
 #include "../../../../common/common.h"
 #include "io/io.h"
+#include "interrupt/interrupt.h"
 
 //Initialize module
 void hal_io_init();
