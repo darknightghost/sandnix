@@ -581,6 +581,7 @@ void* hal_io_clock_callback_reg(
 u64 hal_io_get_ticks();
 
 //IO管理
+//只有部分平台可用
 //IN
 u8 hal_io_in_8(address_t port);
 u16 hal_io_in_16(address_t port);
@@ -605,8 +606,6 @@ void hal_io_outs_16(address_t port, size_t count, void* src);
 void hal_io_outs_32(address_t port, size_t count, void* src);
 void hal_io_outs_64(address_t port, size_t count, void* src);
 
-//获得端口列表
-size_t hal_io_get_port_list(address_t* ret, size_t size);
 ```
 ######文件列表
 ```c

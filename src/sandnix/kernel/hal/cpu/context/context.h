@@ -17,5 +17,10 @@
 
 #pragma once
 
-#include "../../../../common/common.h"
-#include "./context/context.h"
+#include "../../../../../common/common.h"
+
+#if defined X86
+#include "./arch/x86/context.h"
+#elif defined ARM
+#include "./arch/arm/context.h"
+#endif

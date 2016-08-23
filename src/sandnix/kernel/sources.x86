@@ -9,3 +9,6 @@ hal/early_print/arch/x86/early_print.c
 ##mmu
 hal/mmu/paging/arch/x86/paging.c
 hal/mmu/phymem/arch/x86/phymem.c
+
+##io
+hal/io/io/arch/x86/io.c
