@@ -15,16 +15,4 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
-
-#include "../../../../common/common.h"
-#include "io/io.h"
-
-//Initialize module
-void hal_io_init();
-
-//Initialize cpu core
-void hal_io_core_init(u32 cpuid);
-
-//Release cpu core
-void hal_io_core_release(u32 cpuid);
+#include "io.h"

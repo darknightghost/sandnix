@@ -19,4 +19,55 @@
 
 #include "../../../../../../common/common.h"
 
+//Initialize
+void interrupt_init();
 
+//Initialize cpu core
+void interrupt_cpu_core_init(u32 cpuid);
+
+//Release cpu core
+void interrupt_cpu_core_release(u32 cpuid);
+
+//Disable interrupt on current cpu
+void hal_io_int_disable();
+
+//Enable interrupt on current cpu
+void hal_io_int_enable();
+
+//Enable all IRQ
+void hal_io_irq_enable_all();
+
+//Disbale all IRQ
+void hal_io_irq_disable_all();
+
+//Enable IRQ
+void hal_io_irq_enable(
+    u32 num);		//Interrupt number of IRQ
+
+//Disbale IRQ
+void hal_io_irq_disable(
+    u32 num);		//Interrupt number of IRQ
+
+//Get IRQ range
+void hal_io_get_irq_range(
+    u32* p_begin,	//Begining IRQ
+    u32 num);		//Number of IRQ
+
+//Regist/unregist interrupt callback
+void* hal_io_int_callback_reg(
+    u32 num,					//Interrupt number
+    int_callback_t callback);	//Callback
+
+//Regist clock call back
+void* hal_io_clock_callback_reg(
+    int_callback_t callback);	//Callback
+
+//Get system tick
+u64 hal_io_get_ticks();
+
+//Set system clock frequency
+void hal_io_set_clock_freq(
+    u32 freq);		//Frequency (Hz)
+
+//Get system clock frequency
+u32 hal_io_get_clock_freq();

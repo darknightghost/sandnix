@@ -21,6 +21,9 @@ hal/exception/panic.c
 ##rtl
 hal/rtl/math/math.c
 
+##io
+hal/io/io.c
+
 #core
 ##pm
 core/pm/thread/thread.c

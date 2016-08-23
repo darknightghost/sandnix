@@ -557,11 +557,11 @@ void hal_io_irq_disable_all();
 
 //允许IRQ
 void hal_io_irq_enable(
-	u32 num);		//中断号
+	u32 num);		//IRQ中断号
 
 //禁止IRQ
 void hal_io_irq_disable(
-	u32 num);		//中断号
+	u32 num);		//IRQ中断号
     
 //获得IRQ范围
 void hal_io_get_irq_range(
@@ -579,6 +579,13 @@ void* hal_io_clock_callback_reg(
     
 //获得系统tick数
 u64 hal_io_get_ticks();
+
+//设置时钟中断频率
+void hal_io_set_clock_freq(
+	u32 freq);		//频率(Hz)
+
+//获得时钟中断频率
+u32 hal_io_get_clock_freq();
 
 //IO管理
 //只有部分平台可用
