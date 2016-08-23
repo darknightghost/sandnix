@@ -12,3 +12,5 @@ hal/mmu/phymem/arch/x86/phymem.c
 
 ##io
 hal/io/io/arch/x86/io.c
+hal/io/interrupt/arch/x86/interrupt.c
+hal/io/interrupt/arch/x86/apic.c
