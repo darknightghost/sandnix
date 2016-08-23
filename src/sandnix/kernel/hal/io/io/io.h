@@ -25,24 +25,20 @@
 u8		hal_io_in_8(address_t port);
 u16		hal_io_in_16(address_t port);
 u32		hal_io_in_32(address_t port);
-u64		hal_io_in_64(address_t port);
 
 //INS
 void	hal_io_ins_8(void* dest, size_t count, address_t port);
 void	hal_io_ins_16(void* dest, size_t count, address_t port);
 void	hal_io_ins_32(void* dest, size_t count, address_t port);
-void	hal_io_ins_64(void* dest, size_t count, address_t port);
 
 //OUT
 void	hal_io_out_8(address_t port, u8 data);
-void	hal_io_out_16(address_t port, u8 data);
-void	hal_io_out_32(address_t port, u8 data);
-void	hal_io_out_64(address_t port, u8 data);
+void	hal_io_out_16(address_t port, u16 data);
+void	hal_io_out_32(address_t port, u32 data);
 
 //OUTS
 void	hal_io_outs_8(address_t port, size_t count, void* src);
 void	hal_io_outs_16(address_t port, size_t count, void* src);
 void	hal_io_outs_32(address_t port, size_t count, void* src);
-void	hal_io_outs_64(address_t port, size_t count, void* src);
 
 #endif
