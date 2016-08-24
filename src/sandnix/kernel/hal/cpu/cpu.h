@@ -18,6 +18,6 @@
 #pragma once
 
 #include "../../../../common/common.h"
+#include "./arch/x86/cpu.h"
 #include "./context/context.h"
 
-u32	hal_cpu_get_cpuid();

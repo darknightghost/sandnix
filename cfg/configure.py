@@ -156,7 +156,7 @@ def create_makefile(build_tree):
         makefile.write("$(LINKED) : %s\n"%(link_deps))
         makefile.write("\t$(LDRULE)\n")
         makefile.write("\n")
-        
+
         #sources
         for f in filelist:
             makefile.write("include %s\n"%(f[2]))

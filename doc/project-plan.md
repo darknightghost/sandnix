@@ -706,9 +706,6 @@ cpuinfo_t
 void hal_cpu_init();
 
 //线程上下文管理
-//保存线程上下文
-#define hal_cpu_context_save(p_context)
-
 //加载线程上下文
 #define hal_cpu_context_load(p_context)
 

@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../../cpu.h"
+#include "cpu.h"
 
 u32	hal_cpu_get_cpuid()
 {

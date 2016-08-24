@@ -15,6 +15,7 @@ hal/io/io/arch/x86/io.c
 hal/io/interrupt/arch/x86/idt.c
 hal/io/interrupt/arch/x86/apic.c
 hal/io/interrupt/arch/x86/interrupt.c
+hal/io/interrupt/arch/x86/int_hndlr.S
 
 ##cpu
 hal/cpu/arch/x86/cpu.c

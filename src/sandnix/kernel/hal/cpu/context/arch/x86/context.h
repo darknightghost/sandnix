@@ -46,7 +46,7 @@ typedef	struct {
         u32		operand;
         u16		operand_selector;
         u16		undefined3;
-    } environment;
+    } __attribute__((packed)) environment;
     fpu_data_reg_t		st0;
     fpu_data_reg_t		st1;
     fpu_data_reg_t		st2;
@@ -58,21 +58,32 @@ typedef	struct {
 } __attribute__((packed)) fpu_env_t, *pfpu_env_t;
 
 typedef	struct	_context {
+    //fnsave
+    fpu_env_t	fpu_env;
+
+    //mov
+    u16			es;
+    u16			es_h;
+    u16			ds;
+    u16			ds_h;
+    u16			fs;
+    u16			fs_h;
+    u16			gs;
+    u16			gs_h;
+    u16			ss;
+    u16			ss_h;
+    u32			eflags;
+
+    //pushal
+    u16			cs;
+    u16			cs_h;
+    u32			eip;
     u32			edi;
     u32			esi;
+    u32			ebp;
+    u32			esp;
     u32			ebx;
     u32			edx;
     u32			ecx;
     u32			eax;
-    u32			esp;
-    u32			ebp;
-    u32			eflags;
-    u32			eip;
-    u16			es;
-    u16			cs;
-    u16			ss;
-    u16			ds;
-    u16			fs;
-    u16			gs;
-    fpu_env_t	fpu_env;
 } __attribute__((packed)) context_t, *pcontext_t;
