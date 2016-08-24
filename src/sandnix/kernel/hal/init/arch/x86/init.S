@@ -66,6 +66,7 @@ _kernel_header_end:
 #if BOOTLOADER == MULTIBOOT2
 	//EAX == Magic.EBX = Kernel parameters
 _start:
+	cli
 	//Check bootloader
 	cmpl	$0x36D76289, %eax
 	je		_BOOTLOADER_CHECKED

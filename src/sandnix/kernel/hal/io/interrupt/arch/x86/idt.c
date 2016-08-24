@@ -27,7 +27,27 @@ void idt_init()
 {
     hal_early_print_printf("Initializing IDT...\n");
     fill_idt();
-    UNREFERRED_PARAMETER(idt_table);
+
+    //Load idt
+    idt_reg_t idt_reg = {
+        .base = (u32)idt_table,
+        .limit = 256 * sizeof(idt_t) - 1
+    };
+
+    __asm__ __volatile__(
+        "lidt		%0\n\t"
+        ::"m"(idt_reg));
+
+    //Set IOPL
+    __asm__ __volatile__(
+        "pushfl\n\t"
+        "movl	(%%esp),%%eax\n\t"
+        "andl	$0xFFFFCFFF,%%eax\n\t"
+        "movl	%%eax,(%%esp)\n\t"
+        "popfl\n\t"
+        ::);
+
+    return;
 }
 
 void fill_idt()

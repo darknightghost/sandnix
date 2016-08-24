@@ -120,6 +120,7 @@
 .macro		NORMAL_IDT num
 	.global	int_\num
 	int_\num:
+		jmp		int_\num
 		//Save Registers
 		PUSH_CONTEXT
 
@@ -134,6 +135,7 @@
 .macro		NORMAL_EXCEPT_IDT num
 	.global	int_\num
 	int_\num:
+		jmp		int_\num
 		//Save Registers
 		PUSH_CONTEXT
 
@@ -148,6 +150,7 @@
 .macro		EXCEPT_IDT_WITH_ERRCODE num
 	.global	int_\num
 	int_\num:
+		jmp		int_\num
 		//Save Registers
 		PUSH_CONTEXT_WITH_ERRCODE
 
@@ -162,6 +165,7 @@
 .macro		RESERVED_IDT num
 	.global	int_\num
 	int_\num:
+		jmp		int_\num
 		iret
 .endm
 

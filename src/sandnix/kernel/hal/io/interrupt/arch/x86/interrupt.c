@@ -17,6 +17,7 @@
 
 #include "idt.h"
 #include "interrupt.h"
+#include "../../../../exception/exception.h"
 #include "../../../../early_print/early_print.h"
 
 void interrupt_init()
@@ -32,6 +33,7 @@ void int_except_dispatcher(u32 int_num, pcontext_t p_context, u32 err_code)
     UNREFERRED_PARAMETER(int_num);
     UNREFERRED_PARAMETER(p_context);
     UNREFERRED_PARAMETER(err_code);
+    hal_exception_panic(ENOTSUP, "Unhandled exception.\n");
     hal_cpu_context_load(p_context);
     return;
 }
@@ -40,6 +42,7 @@ void int_dispatcher(u32 int_num, pcontext_t p_context)
 {
     UNREFERRED_PARAMETER(int_num);
     UNREFERRED_PARAMETER(p_context);
+    hal_exception_panic(ENOTSUP, "Unhandled exception.\n");
     hal_cpu_context_load(p_context);
     return;
 }

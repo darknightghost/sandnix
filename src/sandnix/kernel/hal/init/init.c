@@ -18,10 +18,11 @@
 #include "init.h"
 #include "../early_print/early_print.h"
 #include "../mmu/mmu.h"
+#include "../exception/exception.h"
+#include "../kparam/kparam.h"
+#include "../io/io.h"
 #include "../../core/rtl/rtl.h"
-#include "../../hal/exception/exception.h"
 #include "../../core/mm/mm.h"
-#include "../../hal/kparam/kparam.h"
 
 #if defined(X86)
     #include "./arch/x86/header.h"
@@ -42,6 +43,9 @@ void kinit(void* p_bootloader_info)
     //Initialize modules
     hal_mmu_init();
 
+    //Initialize io
+    hal_io_init();
+
     void test();
     test();
 
@@ -52,23 +56,10 @@ void kinit(void* p_bootloader_info)
 
 void test()
 {
-    void* phy_addr;
-    u32 attr;
-
-    hal_early_print_printf("test\n");
-    kstatus_t status = hal_mmu_pg_tbl_set(0, (void*)0xD0000000,
-                                          MMU_PAGE_RW_EXEC, (void*)0x50000000);
-
-    hal_mmu_pg_tbl_get(0, (void*)(0xD0000000), &phy_addr, &attr);
-
-    if(attr != 0) {
-        hal_early_print_printf("%p --> %p,%p\n",
-                               (void*)(0xD0000000),
-                               phy_addr,
-                               attr);
-    }
-
-    UNREFERRED_PARAMETER(status);
+    __asm__ __volatile__(
+        "sti\n"
+        "int	$4\n"
+        :::);
 
     return;
 }
