@@ -58,7 +58,9 @@ void test()
 {
     __asm__ __volatile__(
         "sti\n"
-        "int	$4\n"
+        "ud2\n"
+        "nop\n"
+        "nop\n"
         :::);
 
     return;

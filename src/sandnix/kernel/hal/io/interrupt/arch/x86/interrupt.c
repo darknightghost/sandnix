@@ -33,7 +33,33 @@ void int_except_dispatcher(u32 int_num, pcontext_t p_context, u32 err_code)
     UNREFERRED_PARAMETER(int_num);
     UNREFERRED_PARAMETER(p_context);
     UNREFERRED_PARAMETER(err_code);
-    hal_exception_panic(ENOTSUP, "Unhandled exception.\n");
+    /*
+    hal_exception_panic(ENOTSUP, "Unhandled exception.\n"
+                        "Interrupt number = 0x%.4X. Error code = %p.\n"
+                        "Context:\n"
+                        "EAX = %p.\n"
+                        "EBX = %p.\n"
+                        "ECX = %p.\n"
+                        "EDX = %p.\n"
+                        "ESI = %p.\n"
+                        "EDI = %p.\n"
+                        "ESP = %p.\n"
+                        "EBP = %p.\n"
+                        "EIP = %p.\n"
+                        "EFLAGS = %p.\n"
+                        "CS = 0x%.4X.\n"
+                        "SS = 0x%.4X.\n"
+                        "DS = 0x%.4X.\n"
+                        "ES = 0x%.4X.\n"
+                        "FS = 0x%.4X.\n"
+                        "GS = 0x%.4X.\n",
+                        int_num, err_code, p_context->eax, p_context->ebx,
+                        p_context->ecx, p_context->edx, p_context->esi,
+                        p_context->edi, p_context->esp, p_context->ebp,
+                        p_context->eip, p_context->eflags, p_context->cs,
+                        p_context->ss, p_context->ds, p_context->es,
+                        p_context->fs, p_context->gs);
+    					*/
     hal_cpu_context_load(p_context);
     return;
 }

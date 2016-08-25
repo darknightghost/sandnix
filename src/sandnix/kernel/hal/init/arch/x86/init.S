@@ -123,6 +123,14 @@ _KERNEL_MEM:
 	movl	%ebx, %esp
 	push	%edi
 
+	//Reload GDT
+	//Write gdt address
+	movl	$gdt, gdt_addr
+	
+	//Load GDT
+	movl	$gdtr_value, %eax
+	lgdt	(%eax)
+
 	//Load TSS
 	movw	$SELECTOR_TSS, %ax
 	ltr		%ax

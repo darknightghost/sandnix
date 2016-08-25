@@ -19,7 +19,7 @@
 #include "../../../../early_print/early_print.h"
 #include "int_hndlr.h"
 
-static idt_t		idt_table[256];
+static idt_t __attribute__((aligned(4096)))		idt_table[256];
 
 static void			fill_idt();
 
