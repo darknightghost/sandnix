@@ -23,7 +23,7 @@ static	tss_t		tss_table[MAX_CPU_NUM];
 
 void tss_init()
 {
-    hal_early_print_printf("Initializing tss...\n");
+    hal_early_print_printf("Initializing TSS...\n");
     core_rtl_memset(tss_table, 0, sizeof(tss_table));
 
     for(u32 i = 0; i < MAX_CPU_NUM; i++) {

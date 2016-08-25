@@ -1122,12 +1122,12 @@ s32 core_rtl_atoi(char* str, int num_sys)
         if(*p >= '0' && *p <= '9') {
             ret = ret * num_sys + (*p - '0');
 
-        } else if(num_sys == 16) {
-            if(*p >= 'a' && *p <= 'f') {
-                ret = ret * 0x10 + (*p - 'a' + 0x0A);
+        } else if(num_sys >= 16) {
+            if(*p >= 'a' && *p <= 'a' + num_sys) {
+                ret = ret * num_sys + (*p - 'a' + 0x0A);
 
-            } else if(*p >= 'A' && *p <= 'F') {
-                ret = ret * 0x10 + (*p - 'A' + 0x0A);
+            } else if(*p >= 'A' && *p <= 'A' + num_sys) {
+                ret = ret * num_sys + (*p - 'A' + 0x0A);
 
             } else {
                 return ret;
