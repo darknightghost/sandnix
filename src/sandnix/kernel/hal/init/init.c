@@ -56,12 +56,5 @@ void kinit(void* p_bootloader_info)
 
 void test()
 {
-    __asm__ __volatile__(
-        "sti\n"
-        "movl	$1, (0)\n"
-        "nop\n"
-        "nop\n"
-        :::);
-
     return;
 }

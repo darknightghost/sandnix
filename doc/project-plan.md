@@ -569,7 +569,7 @@ void hal_io_get_irq_range(
     u32 num);		//IRQ个数
 
 //注册/取消中断回调
-void* hal_io_int_callback_reg(
+void* hal_io_int_callback_set(
 	u32 num,					//中断号
     int_callback_t callback);	//回调函数
 

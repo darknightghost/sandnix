@@ -19,16 +19,27 @@
 #include "interrupt.h"
 #include "../../../../exception/exception.h"
 #include "../../../../early_print/early_print.h"
+#include "../../../../../core/pm/pm.h"
 
+static	spnlck_t			lock;
 static	int_callback_t		int_hndlr_table[256] = {NULL};
 
 void interrupt_init()
 {
     hal_early_print_printf("Initializing interrupt...\n");
+    core_pm_spnlck_init(&lock);
     idt_init();
     return;
 }
 
+void* hal_io_int_callback_set(u32 num, int_callback_t callback)
+{
+    core_pm_spnlck_lock(&lock);
+    int_callback_t old_hndlr = int_hndlr_table[num];;
+    int_hndlr_table[num] = callback;
+    core_pm_spnlck_unlock(&lock);
+    return old_hndlr;
+}
 
 void int_except_dispatcher(u32 int_num, pcontext_t p_context, u32 err_code)
 {
@@ -63,15 +74,17 @@ void int_except_dispatcher(u32 int_num, pcontext_t p_context, u32 err_code)
                         p_context->eip, p_context->eflags, p_context->cs,
                         p_context->ss, p_context->ds, p_context->es,
                         p_context->fs, p_context->gs);
-    hal_cpu_context_load(p_context);
     return;
 }
 
 void int_dispatcher(u32 int_num, pcontext_t p_context)
 {
-    UNREFERRED_PARAMETER(int_num);
-    UNREFERRED_PARAMETER(p_context);
-    hal_exception_panic(ENOTSUP, "Unhandled exception.\n");
+    int_callback_t hndlr = int_hndlr_table[int_num];
+
+    if(hndlr != NULL) {
+        hndlr(int_num, p_context, 0);
+    }
+
     hal_cpu_context_load(p_context);
     return;
 }

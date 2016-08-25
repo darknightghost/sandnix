@@ -49,6 +49,18 @@ void idt_init()
     return;
 }
 
+void hal_io_int_disable()
+{
+    __asm__ __volatile__("cli\n");
+    return;
+}
+
+void hal_io_int_enable()
+{
+    __asm__ __volatile__("sti\n");
+    return;
+}
+
 void fill_idt()
 {
     SET_NORMAL_IDT(idt_table, 0x00);

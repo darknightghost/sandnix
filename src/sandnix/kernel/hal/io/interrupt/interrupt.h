@@ -58,7 +58,7 @@ void hal_io_get_irq_range(
     u32 num);		//Number of IRQ
 
 //Regist/unregist interrupt callback
-void* hal_io_int_callback_reg(
+void* hal_io_int_callback_set(
     u32 num,					//Interrupt number
     int_callback_t callback);	//Callback
 
