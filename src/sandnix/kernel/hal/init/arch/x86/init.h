@@ -48,7 +48,7 @@
 #define	SELECTOR_K_CODE			(2 * DESCRIPTOR_SIZE)
 #define	SELECTOR_U_DATA			(3 * DESCRIPTOR_SIZE | 3)
 #define	SELECTOR_U_CODE			(4 * DESCRIPTOR_SIZE | 3)
-#define	SELECTOR_TSS			(5 * DESCRIPTOR_SIZE)
+#define	SELECTOR_TSS(n)			((5 + (n)) * DESCRIPTOR_SIZE)
 
 #ifdef	_ASM
     .macro		SEGMENT_DESCRIPTOR base, limit, property
@@ -68,6 +68,11 @@
 #ifndef	_ASM
 #pragma pack(push)
 #pragma pack(1)
+#define	TSS_DESC_ADDR_SET(n, addr)	(tss_desc_table[(n)] = \
+                                     (tss_desc_table[(n)] & 0xFFFF000000FFFF) \
+                                     | (((u64)(address_t)(addr) & 0xFFFFFF) << 16) \
+                                     | (((u64)(address_t)(addr) & 0xFF000000) << 32))
+extern	u64		tss_desc_table[];
 
 typedef	struct	_gdt_t {
     u16		limit;

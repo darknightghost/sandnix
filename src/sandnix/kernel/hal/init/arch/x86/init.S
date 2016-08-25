@@ -20,6 +20,7 @@
 .global		_start
 .global		gdt
 .global		kernel_header
+.global		tss_desc_table
 
 .section	.data
 gdt:
@@ -32,8 +33,10 @@ descriptor_user_data:
 	SEGMENT_DESCRIPTOR	0,				0xFFFFF,			DA_DRW | DA_DPL3 | DA_32
 descriptor_user_code:
 	SEGMENT_DESCRIPTOR	0,				0xFFFFF,			DA_CR | DA_DPL3 | DA_32
-descriptor_tss:
+tss_desc_table:
+.rept		MAX_CPU_NUM
 	SEGMENT_DESCRIPTOR	0,				0x67,				DA_386TSS | DA_DPL0
+.endr
 gdt_end:
 
 gdtr_value:
@@ -130,10 +133,6 @@ _KERNEL_MEM:
 	//Load GDT
 	movl	$gdtr_value, %eax
 	lgdt	(%eax)
-
-	//Load TSS
-	movw	$SELECTOR_TSS, %ax
-	ltr		%ax
 
 	//FPU
 	fninit

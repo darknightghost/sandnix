@@ -213,7 +213,7 @@ class opt_input(options):
         for k in self.targets:
             if dict[k] != "":
                 dict[k] = dict[k] + " "
-            dict[k] = dict[k] + self.marco + "=" + self.value
+            dict[k] = dict[k] + self.macro + "=" + self.value
             
         return dict
 

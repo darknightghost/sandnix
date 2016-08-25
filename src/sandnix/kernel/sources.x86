@@ -13,6 +13,7 @@ hal/mmu/phymem/arch/x86/phymem.c
 ##io
 hal/io/io/arch/x86/io.c
 hal/io/interrupt/arch/x86/idt.c
+hal/io/interrupt/arch/x86/tss.c
 hal/io/interrupt/arch/x86/apic.c
 hal/io/interrupt/arch/x86/interrupt.c
 hal/io/interrupt/arch/x86/int_hndlr.S

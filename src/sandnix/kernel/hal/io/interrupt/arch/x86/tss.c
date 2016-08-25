@@ -15,12 +15,28 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
-#include "../../../../../../../common/common.h"
-#include "../../interrupt.h"
-#include "../../../../cpu/cpu.h"
-#include "apic.h"
 #include "tss.h"
+#include "../../../../early_print/early_print.h"
+#include "../../../../../core/rtl/rtl.h"
 
-u32		hal_io_apic_read32(address_t off);
-void	hal_io_apic_write32(address_t off, u32 data);
+static	tss_t		tss_table[MAX_CPU_NUM];
+
+void tss_init()
+{
+    hal_early_print_printf("Initializing tss...\n");
+    core_rtl_memset(tss_table, 0, sizeof(tss_table));
+
+    for(u32 i = 0; i < MAX_CPU_NUM; i++) {
+        tss_table[i].io_map_base_addr = sizeof(tss_t);
+
+        //Fill descriptor
+        TSS_DESC_ADDR_SET(i, &tss_table[i]);
+    }
+
+    //Load cpu0 TSS
+    __asm__ __volatile__(
+        "ltr	%0\n"
+        ::"r"((u16)SELECTOR_TSS(0)));
+
+    return;
+}

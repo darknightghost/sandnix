@@ -34,6 +34,14 @@
 
 #define	DEFAULT_STACK_SIZE		(12 * 4096)
 
+#ifndef	MAX_CPU_NUM
+    #pragma	error("Missing macro MAX_CPU_NUM.");
+#endif
+
+#ifndef	BOOTLOADER
+    #pragma	error("Missing macro BOOTLOADER.");
+#endif
+
 typedef struct _krnl_hdr_t {
     address_t	magic;
     void*		code_start;

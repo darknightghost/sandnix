@@ -20,6 +20,10 @@
 #include "../../../../../common/common.h"
 #include "../../cpu/cpu.h"
 
+#if defined X86
+    #include "arch/x86/interrupt.h"
+#endif
+
 //void	int_callback(u32 int_num, pcontext_t p_context, u32 err_code);
 typedef void	(*int_callback_t)(u32, pcontext_t, u32);
 
@@ -31,6 +35,9 @@ void interrupt_cpu_core_init(u32 cpuid);
 
 //Release cpu core
 void interrupt_cpu_core_release(u32 cpuid);
+
+//Set kernel stack
+void hal_io_set_krnl_stack(address_t addr);
 
 //Disable interrupt on current cpu
 void hal_io_int_disable();

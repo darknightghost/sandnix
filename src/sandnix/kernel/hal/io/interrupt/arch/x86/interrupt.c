@@ -17,6 +17,7 @@
 
 #include "idt.h"
 #include "interrupt.h"
+#include "apic.h"
 #include "../../../../exception/exception.h"
 #include "../../../../early_print/early_print.h"
 #include "../../../../../core/pm/pm.h"
@@ -29,6 +30,8 @@ void interrupt_init()
     hal_early_print_printf("Initializing interrupt...\n");
     core_pm_spnlck_init(&lock);
     idt_init();
+    tss_init();
+    apic_init();
     return;
 }
 

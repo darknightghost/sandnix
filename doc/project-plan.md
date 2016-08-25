@@ -209,7 +209,7 @@ target.xml文件结构如下:
             <item name="uboot" value="-DUBOOT" />
         </option>
         <!--单行文本框-->
-        <option type="input" name="Comment" marco="-DCOMMENT" value="" target="CFLAGS|ASFLAGS|LDFLAGS" />
+        <option type="input" name="Comment" macro="-DCOMMENT" value="" target="CFLAGS|ASFLAGS|LDFLAGS" />
         <!--菜单-->
         <option type="menu" name="Early print options">
             <!--这里是在该子菜单中的选项-->
@@ -543,6 +543,9 @@ void hal_io_core_release(
 	u32 cpuid);		//当前cpu的id
 
 //中断管理
+//设置内核栈
+void hal_io_set_krnl_stack(address_t addr);
+
 //禁止当前核心中断
 void hal_io_int_disable();
 
