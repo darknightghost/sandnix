@@ -20,6 +20,8 @@
 #include "../../../../exception/exception.h"
 #include "../../../../early_print/early_print.h"
 
+static	int_callback_t		int_hndlr_table[256] = {NULL};
+
 void interrupt_init()
 {
     hal_early_print_printf("Initializing interrupt...\n");
@@ -30,10 +32,12 @@ void interrupt_init()
 
 void int_except_dispatcher(u32 int_num, pcontext_t p_context, u32 err_code)
 {
-    UNREFERRED_PARAMETER(int_num);
-    UNREFERRED_PARAMETER(p_context);
-    UNREFERRED_PARAMETER(err_code);
-    /*
+    int_callback_t hndlr = int_hndlr_table[int_num];
+
+    if(hndlr != NULL) {
+        hndlr(int_num, p_context, err_code);
+    }
+
     hal_exception_panic(ENOTSUP, "Unhandled exception.\n"
                         "Interrupt number = 0x%.4X. Error code = %p.\n"
                         "Context:\n"
@@ -59,7 +63,6 @@ void int_except_dispatcher(u32 int_num, pcontext_t p_context, u32 err_code)
                         p_context->eip, p_context->eflags, p_context->cs,
                         p_context->ss, p_context->ds, p_context->es,
                         p_context->fs, p_context->gs);
-    					*/
     hal_cpu_context_load(p_context);
     return;
 }

@@ -70,7 +70,7 @@
 		pushal
 		mov		%esp, %ebx
 
-		//Get	error code
+		//Get error code
 		addl	$32, %ebx
 		movl	(%ebx), %edx
 
@@ -175,7 +175,7 @@ NORMAL_EXCEPT_IDT			0x04
 NORMAL_EXCEPT_IDT			0x05
 NORMAL_EXCEPT_IDT			0x06
 NORMAL_EXCEPT_IDT			0x07
-EXCEPT_IDT_WITH_ERRCODE		0x08
+NORMAL_EXCEPT_IDT			0x08
 RESERVED_IDT				0x09
 EXCEPT_IDT_WITH_ERRCODE		0x0A
 EXCEPT_IDT_WITH_ERRCODE		0x0B

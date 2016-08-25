@@ -20,8 +20,8 @@
 #include "../../../../../common/common.h"
 #include "../../cpu/cpu.h"
 
-//void	int_callback(pcontext_t p_context, u32 err_code);
-typedef void	(*int_callback_t)(pcontext_t, u32);
+//void	int_callback(u32 int_num, pcontext_t p_context, u32 err_code);
+typedef void	(*int_callback_t)(u32, pcontext_t, u32);
 
 //Initialize
 void interrupt_init();

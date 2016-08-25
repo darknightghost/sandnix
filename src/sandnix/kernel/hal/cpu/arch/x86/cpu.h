@@ -24,13 +24,11 @@
         if((p_context)->ss == SELECTOR_K_DATA) { \
             /* Return to kernel memory*/ \
             /* EIP */ \
-            *((u32*)((p_context)->esp) - 3) = (p_context)->eip; \
-            /* CS */ \
-            *((u32*)((p_context)->esp) - 2) = (p_context)->cs; \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 1) = (p_context)->eip; \
             /* EFLAGS */ \
-            *((u32*)((p_context)->esp) - 1) = (p_context)->eflags; \
-            (p_context)->esp = (p_context)->esp - 12; \
-        } else{ \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 3) = (p_context)->eflags; \
+            \
+        } else { \
             /* Return to user memory */ \
             /* EIP */ \
             *((u32*)(p_context) + sizeof(context_t) / 4 + 1) = (p_context)->eip; \
@@ -40,11 +38,14 @@
             *((u32*)(p_context) + sizeof(context_t) / 4 + 4) = (p_context)->esp; \
             (p_context)->esp = (u32)((u32*)(p_context) + sizeof(context_t) / 4 + 1); \
         } \
+        \
         __asm__ __volatile__( \
                               "movl		%0, %%esp\n" \
                               "frstor	(%%esp)\n" \
                               "addl		%1, %%esp\n" \
                               "addl		$32, %%esp\n" \
+                              "popal\n" \
+                              "addl		$4, %%esp\n" \
                               "iret\n" \
                               ::"r"(p_context), \
                               "i"(sizeof(fpu_env_t))); \
