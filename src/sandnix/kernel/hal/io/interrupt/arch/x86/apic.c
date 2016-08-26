@@ -76,7 +76,7 @@ void apic_init()
 
     //Initialize io APIC
     io_apic_init();
-    //enable_apic();
+    enable_apic();
 
     return;
 }
@@ -145,6 +145,11 @@ void local_apic_init()
 
 void io_apic_init()
 {
+    //Get OIC address
+    hal_io_out_32(PCI_CONFIG_ADDRESS,
+                  (0x80000000 | (0 << 16) | (31 << 11) | (0 << 8) | (0xF0 & 0xfc)));
+    address_t oic_phy_addr = (hal_io_in_32(PCI_CONFIG_DATA) & 0x0FFFFC000) + 0x31FE ;
+    hal_early_print_printf("OIC physical address = %p.\n", oic_phy_addr);
 }
 
 void disable_apic()
