@@ -20,8 +20,10 @@
 #include "interrupt.h"
 #include "../../../../early_print/early_print.h"
 #include "../../../../exception/exception.h"
+#include "../../../../mmu/mmu.h"
 
 #define	IA32_APIC_BASE	0x1B
+#define	APIC_BASE_ADDR	0xFEE00000
 
 static	inline	bool		is_apic_supported();
 static	inline	address_t	get_apic_phy_base();
@@ -39,6 +41,33 @@ void apic_init()
     //Map apic memory
     address_t apic_phy_base = get_apic_phy_base();
     hal_early_print_printf("APIC pysical base address = %p\n", apic_phy_base);
+    hal_early_print_printf("Mapping pysical base address %p --> %p\n",
+                           apic_phy_base,
+                           APIC_BASE_ADDR);
+    void* phy_addr;
+    u32 attr;
+    hal_mmu_pg_tbl_get(0, (void*)APIC_BASE_ADDR, &phy_addr, &attr);
+
+    if(attr != MMU_PAGE_UNAVAIL) {
+        hal_exception_panic(ENOMEM,
+                            "Failed to map APIC memory.\n");
+    }
+
+    kstatus_t status = hal_mmu_pg_tbl_set(0, (void*)APIC_BASE_ADDR, MMU_PAGE_RW_NC,
+                                          (void*)apic_phy_base);
+
+    if(status != ESUCCESS) {
+        hal_exception_panic(status, "Failed to map APIC memory.\n");
+    }
+
+}
+
+u32 hal_io_apic_read32(address_t off)
+{
+}
+
+void hal_io_apic_write32(address_t off, u32 data)
+{
 }
 
 bool is_apic_supported()

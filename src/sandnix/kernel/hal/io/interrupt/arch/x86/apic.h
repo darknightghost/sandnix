@@ -73,3 +73,9 @@
 #define	LOCAL_APIC_TIMER_DIVIDE_CONF_REG		0x000003E0
 
 void	apic_init();
+
+//Read local APIC register
+u32		hal_io_apic_read32(address_t off);
+
+//Write local APIC register
+void	hal_io_apic_write32(address_t off, u32 data);
