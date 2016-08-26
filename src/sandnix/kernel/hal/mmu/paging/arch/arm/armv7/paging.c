@@ -144,12 +144,17 @@ void start_paging()
     return;
 }
 
-void* hal_mmu_add_early_paging_addr(void* phy_addr)
+void* hal_mmu_add_early_paging_addr(void* phy_addr, u32 attr)
 {
     if(initialized) {
         hal_exception_panic(ENOTSUP,
                             "Function hal_mmu_add_early_paging_addr() can only "
                             "be used when mmu module has not been initialized");
+    }
+
+    if(!(attr & MMU_PAGE_AVAIL)) {
+        hal_exception_panic(EINVAL,
+                            "Cannot add an unavailable page.");
     }
 
     address_t pg_addr = (address_t)phy_addr;
@@ -177,11 +182,25 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr)
 
     //Fill the page descriptor
     LV2_DESC_TYPE_SET(&init_lv2_pg_tbl[i], MMU_PG_4KB);
-    init_lv2_pg_tbl[i].pg_4KB.xn = 0;
+
+    if(attr & MMU_PAGE_EXECUTABLE) {
+        init_lv2_pg_tbl[i].pg_4KB.xn = 0;
+
+    } else {
+        init_lv2_pg_tbl[i].pg_4KB.xn = 1;
+    }
+
     init_lv2_pg_tbl[i].pg_4KB.reserv1 = 0;
     init_lv2_pg_tbl[i].pg_4KB.reserv2 = 0;
     init_lv2_pg_tbl[i].pg_4KB.reserv3 = 0;
-    LV2_SET_AP(&init_lv2_pg_tbl[i], PG_AP_RW_NA);
+
+    if(attr & MMU_PAGE_WRITABLE) {
+        LV2_SET_AP(&init_lv2_pg_tbl[i], PG_AP_RW_NA);
+
+    } else {
+        LV2_SET_AP(&init_lv2_pg_tbl[i], PG_AP_RO_NA);
+    }
+
     LV2_4KB_SET_ADDR(&init_lv2_pg_tbl[i], pg_addr);
 
     if(i % 256 == 0) {
@@ -761,7 +780,7 @@ void create_0()
                       (item_compare_t)compare_vaddr,
                       mmu_paging_heap);
     page_operate_addr = hal_mmu_add_early_paging_addr(
-                            (void*)(p_lv1_info->physical_addr));
+                            (void*)(p_lv1_info->physical_addr), MMU_PAGE_RW);
 
     if(core_rtl_array_set(&mmu_globl_pg_table, 0, p_lv1_info) == NULL) {
         hal_exception_panic(ENOMEM,

@@ -40,7 +40,8 @@ void analyse_bootloader_info(void* p_info)
     hal_early_print_puts("Booting protocol : u-boot\n");
 
     //Check first tag
-    p_begin_tag = (puboot_tag_t)hal_mmu_add_early_paging_addr(p_info);
+    p_begin_tag = (puboot_tag_t)hal_mmu_add_early_paging_addr(p_info,
+                  MMU_PAGE_RW);
     p_tag = p_begin_tag;
 
     if(p_tag->tag_header.tag != ATAG_CORE) {

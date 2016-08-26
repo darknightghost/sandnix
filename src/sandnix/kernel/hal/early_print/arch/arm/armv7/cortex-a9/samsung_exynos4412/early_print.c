@@ -132,12 +132,13 @@ void init_UART2()
 {
     //Map register memories.
     if(uart2_base == (address_t)NULL) {
-        uart2_base = (address_t)hal_mmu_add_early_paging_addr(UART2_PHYBASE);
+        uart2_base = (address_t)hal_mmu_add_early_paging_addr(UART2_PHYBASE,
+                     MMU_PAGE_RW_NC);
     }
 
     if(clk_src_peril0 == (address_t)NULL) {
         clk_src_peril0 = (address_t)hal_mmu_add_early_paging_addr(
-                             CLK_SRC_PERIL0_PHYADDR);
+                             CLK_SRC_PERIL0_PHYADDR, MMU_PAGE_RW_NC);
     }
 
     /*
