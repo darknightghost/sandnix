@@ -18,6 +18,7 @@
 #include "tss.h"
 #include "../../../../early_print/early_print.h"
 #include "../../../../../core/rtl/rtl.h"
+#include "../../../../cpu/cpu.h"
 
 static	tss_t		tss_table[MAX_CPU_NUM];
 
@@ -28,15 +29,24 @@ void tss_init()
 
     for(u32 i = 0; i < MAX_CPU_NUM; i++) {
         tss_table[i].io_map_base_addr = sizeof(tss_t);
+        tss_table[i].ss0 = SELECTOR_K_DATA;
 
         //Fill descriptor
         TSS_DESC_ADDR_SET(i, &tss_table[i]);
     }
 
     //Load cpu0 TSS
+    tss_table[0].esp0 = (u32)hal_cpu_get_stack_base(init_stack,
+                        DEFAULT_STACK_SIZE);
     __asm__ __volatile__(
         "ltr	%0\n"
         ::"r"((u16)SELECTOR_TSS(0)));
 
+    return;
+}
+
+void hal_io_set_krnl_stack(address_t addr)
+{
+    tss_table[hal_cpu_get_cpuid()].esp0 = addr;
     return;
 }

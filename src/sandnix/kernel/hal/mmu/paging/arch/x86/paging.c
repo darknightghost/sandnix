@@ -496,6 +496,10 @@ void hal_mmu_pg_tbl_get(u32 id, void* virt_addr, void** phy_addr, u32* p_attr)
             (*p_attr) |= MMU_PAGE_WRITABLE;
         }
 
+        if(p_pte->cache_disabled == PG_ENCACHE) {
+            (*p_attr) |= MMU_PAGE_CACHEABLE;
+        }
+
         (*p_attr) |= MMU_PAGE_EXECUTABLE;
         *phy_addr = (void*)(p_pte->page_base_addr << 12);
     }
@@ -846,6 +850,13 @@ kstatus_t set_page(ppg_tbl_info_t p_pdt_info, void* virt_addr, u32 attr,
         p_pte->read_write = PG_RDONLY;
     }
 
+    if(attr & MMU_PAGE_CACHEABLE) {
+        p_pte->cache_disabled = PG_ENCACHE;
+
+    } else {
+        p_pte->cache_disabled = PG_DISCACHE;
+    }
+
     if((address_t)virt_addr > KERNEL_MEM_BASE) {
         p_pte->user_supervisor = PG_SUPERVISOR;
         p_pte->global_page = 1;
@@ -856,7 +867,6 @@ kstatus_t set_page(ppg_tbl_info_t p_pdt_info, void* virt_addr, u32 attr,
     }
 
     p_pte->write_through = PG_WRITE_THROUGH;
-    p_pte->cache_disabled = PG_ENCACHE;
     p_pte->accessed = 0;
     p_pte->dirty = 0;
     p_pte->page_table_attr_index = 0;

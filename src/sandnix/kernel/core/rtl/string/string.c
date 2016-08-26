@@ -1108,10 +1108,7 @@ s32 core_rtl_atoi(char* str, int num_sys)
     len = core_rtl_strlen(str);
 
     //Check arguments
-    if(num_sys != 2
-       && num_sys != 8
-       && num_sys != 10
-       && num_sys != 16) {
+    if(num_sys > 36) {
         return 0;
     }
 
@@ -1119,15 +1116,17 @@ s32 core_rtl_atoi(char* str, int num_sys)
     ret = 0;
 
     for(p = str; p < str + len; p++) {
-        if(*p >= '0' && *p <= '9') {
-            ret = ret * num_sys + (*p - '0');
+        u32 num;
+
+        if(*p >= '0' && *p <= '9' && *p <= '0' + num_sys) {
+            num = *p - '0';
 
         } else if(num_sys >= 16) {
-            if(*p >= 'a' && *p <= 'a' + num_sys) {
-                ret = ret * num_sys + (*p - 'a' + 0x0A);
+            if(*p >= 'a' && *p <= 'a' + num_sys - 0x0A) {
+                num = *p - 'a' + 0x0A;
 
-            } else if(*p >= 'A' && *p <= 'A' + num_sys) {
-                ret = ret * num_sys + (*p - 'A' + 0x0A);
+            } else if(*p >= 'A' && *p <= 'A' + num_sys - 0x0A) {
+                num = *p - 'A' + 0x0A;
 
             } else {
                 return ret;
@@ -1136,6 +1135,8 @@ s32 core_rtl_atoi(char* str, int num_sys)
         } else {
             return ret;
         }
+
+        ret = ret * num_sys + num;
     }
 
     return ret;

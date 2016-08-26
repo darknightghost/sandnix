@@ -731,6 +731,9 @@ u32 hal_cpu_get_frequency();
 
 //设置cpu频率
 u32 hal_cpu_set_frequency();
+
+//计算栈底
+#define	hal_cpu_get_stack_base(buff, size)
 ```
 ######文件列表
 ```c

@@ -51,4 +51,4 @@
                               "i"(sizeof(fpu_env_t))); \
     }
 
-u32		hal_cpu_get_cpuid();
+#define	hal_cpu_get_stack_base(buff, size)	((void*)((address_t)(buff) + (size)))
