@@ -391,7 +391,7 @@ physical_memory_info_t
 void start_paging();
 
 //添加临时页表映射页
-void* hal_mmu_add_early_paging_addr(void* phy_addr);
+void* hal_mmu_add_early_paging_addr(void* phy_addr, u32 attr);
 
 //初始化mmu模块
 void hal_mmu_init();

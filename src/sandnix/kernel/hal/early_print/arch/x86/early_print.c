@@ -55,7 +55,8 @@ void hal_early_print_init()
 
     //Map memory
     if(basic_video_addr == NULL) {
-        basic_video_addr = hal_mmu_add_early_paging_addr(BASIC_VIDEO_ADDR);
+        basic_video_addr = hal_mmu_add_early_paging_addr(BASIC_VIDEO_ADDR,
+                           MMU_PAGE_RW);
     }
 
     //Set video card to VGA text mode.

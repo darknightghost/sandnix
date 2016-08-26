@@ -218,7 +218,7 @@ void start_paging()
     return;
 }
 
-void* hal_mmu_add_early_paging_addr(void* phy_addr)
+void* hal_mmu_add_early_paging_addr(void* phy_addr, u32 attr)
 {
     ppde_t p_pde;
     ppte_t p_pte;
@@ -227,6 +227,11 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr)
         hal_exception_panic(ENOTSUP,
                             "Function hal_mmu_add_early_paging_addr() can only "
                             "be used when mmu module has not been initialized");
+    }
+
+    if(!(attr & MMU_PAGE_AVAIL)) {
+        hal_exception_panic(EINVAL,
+                            "Cannot add an unavailable page!\n");
     }
 
     if((address_t)phy_addr < mapped_init_page * 4096) {
@@ -244,10 +249,24 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr)
 
     //Allocate new page
     p_pte->present = PG_P;
-    p_pte->read_write = PG_RW;
+
+    if(attr & MMU_PAGE_WRITABLE) {
+        p_pte->read_write = PG_RW;
+
+    } else {
+        p_pte->read_write = PG_RDONLY;
+    }
+
     p_pte->user_supervisor = PG_SUPERVISOR;
     p_pte->write_through = PG_WRITE_THROUGH;
-    p_pte->cache_disabled = PG_ENCACHE;
+
+    if(attr & MMU_PAGE_CACHEABLE) {
+        p_pte->cache_disabled = PG_ENCACHE;
+
+    } else {
+        p_pte->cache_disabled =  PG_DISCACHE;
+    }
+
     p_pte->accessed = 0;
     p_pte->dirty = 0;
     p_pte->page_table_attr_index = 0;
@@ -564,7 +583,7 @@ void create_0()
                       mmu_paging_heap);
 
     page_operate_addr = hal_mmu_add_early_paging_addr(
-                            (void*)(p_pdt_info->physical_addr));
+                            (void*)(p_pdt_info->physical_addr), MMU_PAGE_RW);
 
     if(core_rtl_array_set(&mmu_globl_pg_table, 0, p_pdt_info) == NULL) {
         hal_exception_panic(ENOMEM,

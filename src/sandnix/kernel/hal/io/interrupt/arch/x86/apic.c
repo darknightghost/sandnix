@@ -23,9 +23,9 @@
 #include "../../../../mmu/mmu.h"
 
 #define	IA32_APIC_BASE	0x1B
-#define	APIC_BASE_ADDR	0xFEE00000
 
 static	u32					lvt_entry_num;
+static	address_t			local_apic_base;
 
 static	inline	bool		is_apic_supported();
 static	inline	address_t	get_apic_phy_base();
@@ -51,22 +51,10 @@ void apic_init()
     hal_early_print_printf("APIC pysical base address = %p\n", apic_phy_base);
     hal_early_print_printf("Mapping pysical base address %p --> %p\n",
                            apic_phy_base,
-                           APIC_BASE_ADDR);
-    void* phy_addr;
-    u32 attr;
-    hal_mmu_pg_tbl_get(0, (void*)APIC_BASE_ADDR, &phy_addr, &attr);
+                           local_apic_base);
 
-    if(attr != MMU_PAGE_UNAVAIL) {
-        hal_exception_panic(ENOMEM,
-                            "Failed to map APIC memory.\n");
-    }
-
-    kstatus_t status = hal_mmu_pg_tbl_set(0, (void*)APIC_BASE_ADDR, MMU_PAGE_RW_NC,
-                                          (void*)apic_phy_base);
-
-    if(status != ESUCCESS) {
-        hal_exception_panic(status, "Failed to map APIC memory.\n");
-    }
+    local_apic_base = (address_t)hal_mmu_add_early_paging_addr((void*)(apic_phy_base),
+                      MMU_PAGE_RW_NC);
 
     //Disable 8258A
     disbale_8259A();
@@ -83,12 +71,12 @@ void apic_init()
 
 u32 hal_io_apic_read32(address_t off)
 {
-    return *((volatile u32*)(APIC_BASE_ADDR + off));
+    return *((volatile u32*)(local_apic_base + off));
 }
 
 void hal_io_apic_write32(address_t off, u32 data)
 {
-    *((volatile u32*)(APIC_BASE_ADDR + off)) = data;
+    *((volatile u32*)(local_apic_base + off)) = data;
     return;
 }
 

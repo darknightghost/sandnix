@@ -56,7 +56,7 @@
 void		start_paging();
 
 //Add more pages to initialize page table
-void*		hal_mmu_add_early_paging_addr(void* phy_addr);
+void*		hal_mmu_add_early_paging_addr(void* phy_addr, u32 attr);
 
 //Get kernel virtual address range
 void		hal_mmu_get_krnl_addr_range(

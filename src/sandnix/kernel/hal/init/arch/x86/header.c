@@ -39,7 +39,7 @@ void analyse_bootloader_info(void* p_info)
     pmultiboot_tag_string_t p_cmdline_info;
     pmultiboot_tag_mmap_t p_mmap_info;
 
-    p_info = hal_mmu_add_early_paging_addr(p_info);
+    p_info = hal_mmu_add_early_paging_addr(p_info, MMU_PAGE_RW);
 
     //Initialize variables
     core_rtl_list_init(&boot_mem_map);

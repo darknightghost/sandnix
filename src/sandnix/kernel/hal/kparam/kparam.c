@@ -36,7 +36,8 @@ void hal_kparam_init()
 
     hal_early_print_printf("\nAnalysing kernel parameters...\n");
 
-    p_cmdline = hal_mmu_add_early_paging_addr(hal_init_get_kernel_cmdline());
+    p_cmdline = hal_mmu_add_early_paging_addr(hal_init_get_kernel_cmdline(),
+                MMU_PAGE_RW);
     core_rtl_map_init(&krnl_param_map, (item_compare_t)core_rtl_strcmp, NULL);
 
     //Analyse parameters
