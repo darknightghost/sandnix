@@ -19,26 +19,30 @@
 
 #include "../../../../../common/common.h"
 
-#if defined x86
+#if defined X86
+    #include "arch/x86/io.h"
+#endif
 
-//IN
-u8		hal_io_in_8(address_t port);
-u16		hal_io_in_16(address_t port);
-u32		hal_io_in_32(address_t port);
+#if defined X86
 
-//INS
-void	hal_io_ins_8(void* dest, size_t count, address_t port);
-void	hal_io_ins_16(void* dest, size_t count, address_t port);
-void	hal_io_ins_32(void* dest, size_t count, address_t port);
+    //IN
+    u8		hal_io_in_8(address_t port);
+    u16		hal_io_in_16(address_t port);
+    u32		hal_io_in_32(address_t port);
 
-//OUT
-void	hal_io_out_8(address_t port, u8 data);
-void	hal_io_out_16(address_t port, u16 data);
-void	hal_io_out_32(address_t port, u32 data);
+    //INS
+    void	hal_io_ins_8(void* dest, size_t count, address_t port);
+    void	hal_io_ins_16(void* dest, size_t count, address_t port);
+    void	hal_io_ins_32(void* dest, size_t count, address_t port);
 
-//OUTS
-void	hal_io_outs_8(address_t port, size_t count, void* src);
-void	hal_io_outs_16(address_t port, size_t count, void* src);
-void	hal_io_outs_32(address_t port, size_t count, void* src);
+    //OUT
+    void	hal_io_out_8(address_t port, u8 data);
+    void	hal_io_out_16(address_t port, u16 data);
+    void	hal_io_out_32(address_t port, u32 data);
+
+    //OUTS
+    void	hal_io_outs_8(address_t port, size_t count, void* src);
+    void	hal_io_outs_16(address_t port, size_t count, void* src);
+    void	hal_io_outs_32(address_t port, size_t count, void* src);
 
 #endif

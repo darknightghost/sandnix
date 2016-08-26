@@ -24,16 +24,6 @@
     #include "arch/x86/interrupt.h"
 #endif
 
-#define	IRQ_BASE		0x20
-#define	IRQ0			(IRQ_BASE)
-#define	IRQ1			(IRQ_BASE + 1)
-#define	IRQ2			(IRQ_BASE + 2)
-#define	IRQ3			(IRQ_BASE + 3)
-#define	IRQ4			(IRQ_BASE + 4)
-#define	IRQ5			(IRQ_BASE + 5)
-#define	IRQ6			(IRQ_BASE + 6)
-#define	IRQ7			(IRQ_BASE + 7)
-
 //void	int_callback(u32 int_num, pcontext_t p_context, u32 err_code);
 typedef void	(*int_callback_t)(u32, pcontext_t, u32);
 
@@ -93,3 +83,6 @@ void hal_io_set_clock_freq(
 
 //Get system clock frequency
 u32 hal_io_get_clock_freq();
+
+//Send IPI
+void hal_io_send_IPI();

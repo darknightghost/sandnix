@@ -22,5 +22,17 @@
 #include "apic.h"
 #include "tss.h"
 
+#define	INT_IPI			0x20
+
+#define	IRQ_BASE		0x21
+#define	IRQ0			(IRQ_BASE)
+#define	IRQ1			(IRQ_BASE + 1)
+#define	IRQ2			(IRQ_BASE + 2)
+#define	IRQ3			(IRQ_BASE + 3)
+#define	IRQ4			(IRQ_BASE + 4)
+#define	IRQ5			(IRQ_BASE + 5)
+#define	IRQ6			(IRQ_BASE + 6)
+#define	IRQ7			(IRQ_BASE + 7)
+
 u32		hal_io_apic_read32(address_t off);
 void	hal_io_apic_write32(address_t off, u32 data);

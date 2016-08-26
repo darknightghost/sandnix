@@ -49,6 +49,8 @@ void kinit(void* p_bootloader_info)
     void test();
     test();
 
+    hal_io_int_enable();
+
     while(1);
 
     return;

@@ -530,6 +530,8 @@ int_callback_t
 ```
 ######接口函数及宏
 ```c
+#define	INT_IPI		//IPI中断号
+
 //初始化
 //初始化模块
 void hal_io_init()
@@ -589,6 +591,9 @@ void hal_io_set_clock_freq(
 
 //获得时钟中断频率
 u32 hal_io_get_clock_freq();
+
+//广播IPI
+void hal_io_send_IPI();
 
 //IO管理
 //只有部分平台可用

@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
+#include "../../../io/io.h"
 #include "apic.h"
 #include "interrupt.h"
 #include "../../../../early_print/early_print.h"
@@ -25,8 +25,16 @@
 #define	IA32_APIC_BASE	0x1B
 #define	APIC_BASE_ADDR	0xFEE00000
 
+static	u32					lvt_entry_num;
+
 static	inline	bool		is_apic_supported();
 static	inline	address_t	get_apic_phy_base();
+static	inline	void		local_apic_init();
+static	inline	void		io_apic_init();
+static	inline	void		disable_apic();
+static	inline	void		enable_apic();
+static	inline	void		disbale_8259A();
+static	inline	void		delay();
 
 void apic_init()
 {
@@ -60,14 +68,28 @@ void apic_init()
         hal_exception_panic(status, "Failed to map APIC memory.\n");
     }
 
+    //Disable 8258A
+    disbale_8259A();
+    disable_apic();
+    //Initialize local APIC
+    local_apic_init();
+
+    //Initialize io APIC
+    io_apic_init();
+    //enable_apic();
+
+    return;
 }
 
 u32 hal_io_apic_read32(address_t off)
 {
+    return *((volatile u32*)(APIC_BASE_ADDR + off));
 }
 
 void hal_io_apic_write32(address_t off, u32 data)
 {
+    *((volatile u32*)(APIC_BASE_ADDR + off)) = data;
+    return;
 }
 
 bool is_apic_supported()
@@ -101,4 +123,96 @@ address_t get_apic_phy_base()
         :"dx");
 
     return ret;
+}
+
+
+void local_apic_init()
+{
+    //Get local apic information
+    //Number of LVT Entery
+    u32 ver_reg = hal_io_apic_read32(LOCAL_APIC_VERSION_REG);
+    lvt_entry_num = ((ver_reg & 0xFF0000) >> 16) + 1;
+    hal_early_print_printf("Number of LVT entery : %d.\n", lvt_entry_num);
+
+    //Allow all interrupt
+    hal_io_apic_write32(LOCAL_APIC_TPR_REG,
+                        hal_io_apic_read32(LOCAL_APIC_TPR_REG) & 0xFFFFFF0F);
+
+    //Disable LVT0
+    hal_io_apic_write32(LOCAL_APIC_LVT_LINT0_REG,
+                        hal_io_apic_read32(LOCAL_APIC_LVT_LINT0_REG) | 0x10000);
+}
+
+void io_apic_init()
+{
+}
+
+void disable_apic()
+{
+    hal_io_apic_write32(LOCAL_APIC_SVR_REG,
+                        hal_io_apic_read32(LOCAL_APIC_SVR_REG) & (~0x100));
+    return;
+}
+
+void enable_apic()
+{
+    hal_io_apic_write32(LOCAL_APIC_SVR_REG,
+                        hal_io_apic_read32(LOCAL_APIC_SVR_REG) | 0x100);
+    return;
+}
+
+void disbale_8259A()
+{
+    hal_early_print_printf("Disabling 8259A...\n");
+    //Master ICW1
+    hal_io_out_8(0x20, 0x11);
+    delay();
+
+    //Slave	ICW1
+    hal_io_out_8(0xA0, 0x11);
+    delay();
+
+    //Master ICW2
+    hal_io_out_8(0x21, 0x20);
+    delay();
+
+    //Slave ICW2
+    hal_io_out_8(0xA1, 0x28);
+    delay();
+
+    //Master ICW3
+    hal_io_out_8(0x21, 0x04);
+    delay();
+
+    //Slave ICW3
+    hal_io_out_8(0xA1, 0x02);
+    delay();
+
+    //Master ICW4
+    hal_io_out_8(0x21, 0x01);
+    delay();
+
+    //Slave ICW4
+    hal_io_out_8(0xA1, 0x01);
+    delay();
+
+    //Master OCW1
+    hal_io_out_8(0x21, 0xFF);
+    delay();
+
+    //Slave OCW1
+    hal_io_out_8(0xA1, 0xFF);
+    delay();
+    return;
+}
+
+void delay()
+{
+    __asm__ __volatile__(
+        "nop\n"
+        "nop\n"
+        "nop\n"
+        "nop\n"
+        :::);
+    return;
 }
