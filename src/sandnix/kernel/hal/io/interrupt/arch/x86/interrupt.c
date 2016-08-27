@@ -88,6 +88,13 @@ void int_dispatcher(u32 int_num, pcontext_t p_context)
         hndlr(int_num, p_context, 0);
     }
 
+    if(int_num == INT_IPI) {
+        //hal_io_IPI_send_eoi();
+
+    } else if(int_num >= IRQ_BASE && int_num <= IRQ_MAX) {
+        hal_io_irq_send_eoi();
+    }
+
     hal_cpu_context_load(p_context);
     return;
 }

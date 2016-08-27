@@ -1015,6 +1015,12 @@ char* core_rtl_itoa(char* buf, u64 num)
     char* p2;
     char t;
 
+    if(num == 0) {
+        buf[0] = '0';
+        buf[1] = '\0';
+        return buf;
+    }
+
     for(n = num, p = buf;
         n != 0;
         n = hal_rtl_math_div64(n, 10), p++) {
@@ -1041,6 +1047,12 @@ char* core_rtl_htoa(char* buf, u64 num, bool capital_flag)
     u8 t;
     char* p1;
     char* p2;
+
+    if(num == 0) {
+        buf[0] = '0';
+        buf[1] = '\0';
+        return buf;
+    }
 
     for(n = num, p = buf;
         n != 0;
@@ -1080,6 +1092,12 @@ char* core_rtl_otoa(char* buf, u64 num)
     char* p2;
     char t;
     u64 n;
+
+    if(num == 0) {
+        buf[0] = '0';
+        buf[1] = '\0';
+        return buf;
+    }
 
     for(n = num, p = buf;
         n != 0;

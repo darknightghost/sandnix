@@ -72,6 +72,23 @@
 #define	LOCAL_APIC_TIMER_CURRENT_COUNT_REG		0x00000390
 #define	LOCAL_APIC_TIMER_DIVIDE_CONF_REG		0x000003E0
 
+typedef	union	_ioapic_redirect_entry_t {
+    u64		value;
+    struct {
+        u64		vector				: 8;
+        u64		delivery_mode		: 3;
+        u64		dest_mode			: 1;
+        u64		delivery_status		: 1;
+        u64		pin_polarity		: 1;
+        u64		remote_IRR			: 1;
+        u64		trigger_mode		: 1;
+        u64		mask				: 1;
+        u64		reserved			: 31;
+        u64		ext_dest			: 8;
+        u64		dest				: 8;
+    } __attribute__((packed)) data;
+} __attribute__((packed)) ioapic_redirect_entry_t, *pioapic_redirect_entry_t;
+
 void	apic_init();
 
 //Read local APIC register

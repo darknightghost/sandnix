@@ -48,13 +48,29 @@ void kinit(void* p_bootloader_info)
     test();
 
     hal_io_int_enable();
+    hal_io_irq_send_eoi();
 
     while(1);
 
     return;
 }
 
+void keyboard_int(u32 int_num, pcontext_t p_context, u32 err_code)
+{
+    __asm__ __volatile__(
+        "nop\n"
+        "nop\n"
+        "nop\n"
+        "nop\n"
+        "nop\n"
+        :::);
+    UNREFERRED_PARAMETER(int_num);
+    UNREFERRED_PARAMETER(p_context);
+    UNREFERRED_PARAMETER(err_code);
+}
+
 void test()
 {
+    hal_io_int_callback_set(IRQ1, keyboard_int);
     return;
 }

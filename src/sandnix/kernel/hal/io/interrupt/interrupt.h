@@ -64,6 +64,9 @@ void hal_io_get_irq_range(
     u32* p_begin,	//Begining IRQ
     u32 num);		//Number of IRQ
 
+//Send EOI
+void hal_io_irq_send_eoi();
+
 //Regist/unregist interrupt callback
 void* hal_io_int_callback_set(
     u32 num,					//Interrupt number
@@ -86,3 +89,6 @@ u32 hal_io_get_clock_freq();
 
 //Send IPI
 void hal_io_send_IPI();
+
+//Send EOI
+void hal_io_IPI_send_eoi();

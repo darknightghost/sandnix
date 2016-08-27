@@ -573,6 +573,9 @@ void hal_io_get_irq_range(
 	u32* p_begin,	//起始IRQ
     u32 num);		//IRQ个数
 
+//针对IRQ发送EOI
+void hal_io_irq_send_eoi();
+
 //注册/取消中断回调
 void* hal_io_int_callback_set(
 	u32 num,					//中断号
@@ -594,6 +597,9 @@ u32 hal_io_get_clock_freq();
 
 //广播IPI
 void hal_io_send_IPI();
+
+//针对IPI发送EOI
+void hal_io_IPI_send_eoi();
 
 //IO管理
 //只有部分平台可用
