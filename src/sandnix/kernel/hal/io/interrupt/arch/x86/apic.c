@@ -26,6 +26,10 @@
 
 static	u32					lvt_entry_num;
 static	address_t			local_apic_base;
+static	volatile u16*		oic_addr;
+static	volatile u8*		ioapic_index_reg;
+static	volatile u32*		ioapic_data_reg;
+static	volatile u32*		ioapic_EOI_reg;
 
 static	inline	bool		is_apic_supported();
 static	inline	address_t	get_apic_phy_base();
@@ -49,7 +53,7 @@ void apic_init()
     //Map apic memory
     address_t apic_phy_base = get_apic_phy_base();
     hal_early_print_printf("APIC pysical base address = %p\n", apic_phy_base);
-    hal_early_print_printf("Mapping pysical base address %p --> %p\n",
+    hal_early_print_printf("Mapping pysical address %p --> %p\n",
                            apic_phy_base,
                            local_apic_base);
 
@@ -138,6 +142,27 @@ void io_apic_init()
                   (0x80000000 | (0 << 16) | (31 << 11) | (0 << 8) | (0xF0 & 0xfc)));
     address_t oic_phy_addr = (hal_io_in_32(PCI_CONFIG_DATA) & 0x0FFFFC000) + 0x31FE ;
     hal_early_print_printf("OIC physical address = %p.\n", oic_phy_addr);
+    oic_addr = (volatile u16*)hal_mmu_add_early_paging_addr((void*)oic_phy_addr,
+               MMU_PAGE_RW_NC);
+    hal_early_print_printf("Mapping pysical address %p --> %p\n",
+                           oic_phy_addr,
+                           oic_addr);
+    hal_early_print_printf("OIC value = %#.4X.\n", *oic_addr);
+
+    //Get IOAPIC base address
+    address_t ioapic_phy_base = (((*oic_addr) & 0xFF) << 12) | 0xFEC00000;
+    address_t ioapic_base = (address_t)hal_mmu_add_early_paging_addr(
+                                (void*)ioapic_phy_base,
+                                MMU_PAGE_RW_NC);
+    hal_early_print_printf("Mapping pysical address %p --> %p\n",
+                           ioapic_phy_base,
+                           ioapic_base);
+    ioapic_index_reg = (volatile u8*)ioapic_base;
+    ioapic_data_reg = (volatile u32*)(ioapic_base + 0x10);
+    ioapic_EOI_reg = (volatile u32*)(ioapic_base + 0x40);
+
+    //Enable IOAPIC
+    *oic_addr = *oic_addr | 0x100;
 }
 
 void disable_apic()

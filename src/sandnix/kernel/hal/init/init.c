@@ -40,10 +40,8 @@ void kinit(void* p_bootloader_info)
     analyse_bootloader_info(p_bootloader_info);
     hal_kparam_init();
 
-    //Initialize io
-    hal_io_init();
-
     //Initialize modules
+    hal_io_init();
     hal_mmu_init();
 
     void test();
