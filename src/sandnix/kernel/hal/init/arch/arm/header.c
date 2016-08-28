@@ -45,8 +45,8 @@ void analyse_bootloader_info(void* p_info)
     p_tag = p_begin_tag;
 
     if(p_tag->tag_header.tag != ATAG_CORE) {
-        hal_exception_panic(EKERNELARG,
-                            "Illegal type of first u-boot argument tag.\n");
+        PANIC(EKERNELARG,
+              "Illegal type of first u-boot argument tag.\n");
     }
 
     p_tag = (puboot_tag_t)(
@@ -66,8 +66,8 @@ void analyse_bootloader_info(void* p_info)
                                               NULL);
 
                 if(p_phymem == NULL) {
-                    hal_exception_panic(ENOMEM, "Failed to allocate memory for "
-                                        "physical memory information.");
+                    PANIC(ENOMEM, "Failed to allocate memory for "
+                          "physical memory information.");
                 }
 
                 p_phymem->begin = p_tag->data.tag_mem.start;
@@ -76,8 +76,8 @@ void analyse_bootloader_info(void* p_info)
 
                 if(core_rtl_list_insert_after(NULL, &boot_mem_map,
                                               p_phymem, NULL) == NULL) {
-                    hal_exception_panic(ENOMEM, "Failed to allocate memory for "
-                                        "physical memory information.");
+                    PANIC(ENOMEM, "Failed to allocate memory for "
+                          "physical memory information.");
                 }
 
                 break;

@@ -52,8 +52,8 @@ void apic_init()
 
     //Check if APIC is supported.
     if(!is_apic_supported()) {
-        hal_exception_panic(ENOTSUP,
-                            "APIC is not supported. Sandnix requires APIC to handle IRQ.");
+        PANIC(ENOTSUP,
+              "APIC is not supported. Sandnix requires APIC to handle IRQ.");
     }
 
     //Map apic memory
@@ -160,12 +160,10 @@ void io_apic_init()
 
     if(rcba_address == 0xFFFFFFFF) {
         //Bus 0, device 31, offset 0xF0 does not exists.
-        hal_early_print_printf("PCI bus 0, device 31, offset 0xF0 does not exists.\n");
+        hal_early_print_printf("PCI bus 0, device 31, function 0, offset 0xF0 does not exists.\n");
         ioapic_phy_base = 0xFEC00000;
 
     } else {
-        //Enable IOAPIC
-        *oic_addr = *oic_addr | 0x100;
         rcba_address = rcba_address & 0xFFFFC000;
         address_t oic_phy_addr = (rcba_address) + 0x31FE ;
         hal_early_print_printf("OIC physical address = %p.\n", oic_phy_addr);
@@ -176,6 +174,9 @@ void io_apic_init()
                                oic_addr);
         hal_early_print_printf("OIC value = %#.4X.\n", *oic_addr);
         ioapic_phy_base = (((*oic_addr) & 0xFF) << 12) | 0xFEC00000;
+        //Enable IOAPIC
+        *oic_addr = *oic_addr | 0x100;
+
     }
 
     //Get IOAPIC base address

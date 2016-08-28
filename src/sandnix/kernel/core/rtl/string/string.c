@@ -550,7 +550,7 @@ char* core_rtl_strchr(const char* str, char c)
             break;
 
         default:
-            hal_exception_panic(ENOTSUP, "Unsupported Architecture.");
+            PANIC(ENOTSUP, "Unsupported Architecture.");
 
     }
 
@@ -568,7 +568,7 @@ char* core_rtl_strchr(const char* str, char c)
     }
 
     if(sizeof(longword) > 8) {
-        hal_exception_panic(ENOTSUP, "Unsupported architecture.");
+        PANIC(ENOTSUP, "Unsupported architecture.");
     }
 
     /*
@@ -775,7 +775,7 @@ size_t core_rtl_strlen(const char* str)
     }
 
     if(sizeof(longword) > 8) {
-        hal_exception_panic(ENOTSUP, "Unsupported architecture.");
+        PANIC(ENOTSUP, "Unsupported architecture.");
     }
 
     /*

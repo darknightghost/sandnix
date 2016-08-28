@@ -29,8 +29,8 @@ void archecture_phyaddr_edit(plist_t p_phy_addr_list)
         p_mem_info = core_mm_heap_alloc(sizeof(physical_memory_info_t), \
                                         NULL); \
         if(p_mem_info == NULL) { \
-            hal_exception_panic(ENOMEM, \
-                                "Failed to allocate memory for physical memory information."); \
+            PANIC(ENOMEM, \
+                  "Failed to allocate memory for physical memory information."); \
         } \
         p_mem_info->begin = (_begin); \
         p_mem_info->size = (_size); \

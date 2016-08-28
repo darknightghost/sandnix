@@ -104,8 +104,8 @@ void phymem_init()
     p_system_info = core_mm_heap_alloc(sizeof(physical_memory_info_t), NULL);
 
     if(p_system_info == NULL) {
-        hal_exception_panic(ENOMEM,
-                            "Failed to allocate memory for physical memory information.");
+        PANIC(ENOMEM,
+              "Failed to allocate memory for physical memory information.");
     }
 
     p_system_info->begin = (u64)(address_t)(MIN(kernel_header.code_start,
@@ -123,8 +123,8 @@ void phymem_init()
     p_system_info = core_mm_heap_alloc(sizeof(physical_memory_info_t), NULL);
 
     if(p_system_info == NULL) {
-        hal_exception_panic(ENOMEM,
-                            "Failed to allocate memory for physical memory information.");
+        PANIC(ENOMEM,
+              "Failed to allocate memory for physical memory information.");
     }
 
     p_system_info->begin = (u64)((address_t)initrd_addr / 4096 * 4096);
@@ -171,8 +171,8 @@ void phymem_init()
                       4096, phymem_heap_block, sizeof(phymem_heap_block));
 
     if(phymem_heap == NULL) {
-        hal_exception_panic(ENOMEM,
-                            "Not enough memory for physical memory managment.");
+        PANIC(ENOMEM,
+              "Not enough memory for physical memory managment.");
     }
 
     //Create maps
@@ -188,8 +188,8 @@ void phymem_init()
 kstatus_t hal_mmu_phymem_alloc(void** p_addr, address_t align, bool is_dma, size_t page_num)
 {
     if(!initialized) {
-        hal_exception_panic(ENOTSUP,
-                            "Module has not been initialized.\n");
+        PANIC(ENOTSUP,
+              "Module has not been initialized.\n");
     }
 
     kstatus_t status = ESUCCESS;
@@ -307,8 +307,8 @@ kstatus_t hal_mmu_phymem_alloc(void** p_addr, address_t align, bool is_dma, size
         #endif
 
     } else {
-        hal_exception_panic(EOVERFLOW,
-                            "Physical memory map has been corrupted.");
+        PANIC(EOVERFLOW,
+              "Physical memory map has been corrupted.");
     }
 
     core_rtl_map_set(p_free_map, p_memblock, NULL);
@@ -327,8 +327,8 @@ _RELEASE_SEARCH:
 void hal_mmu_phymem_free(void* addr)
 {
     if(!initialized) {
-        hal_exception_panic(ENOTSUP,
-                            "Module has not been initialized.\n");
+        PANIC(ENOTSUP,
+              "Module has not been initialized.\n");
     }
 
     core_pm_spnlck_rw_w_lock(&lock);
@@ -347,8 +347,8 @@ void hal_mmu_phymem_free(void* addr)
        || p_memblock->type != PHYMEM_USED
    #endif
       ) {
-        hal_exception_panic(EINVAL, "Illegal physical address %p for free.",
-                            addr);
+        PANIC(EINVAL, "Illegal physical address %p for free.",
+              addr);
     }
 
     pmap_t p_free_map;
@@ -365,8 +365,8 @@ void hal_mmu_phymem_free(void* addr)
     }
 
     if(core_rtl_map_set(&free_map, p_memblock, p_memblock) == NULL) {
-        hal_exception_panic(ENOMEM,
-                            "Failed to insert free memory map into physical memory map.");
+        PANIC(ENOMEM,
+              "Failed to insert free memory map into physical memory map.");
     }
 
     //Collect fragments
@@ -380,8 +380,8 @@ void hal_mmu_phymem_free(void* addr)
 size_t hal_mmu_get_phymem_info(pphysical_memory_info_t p_buf, size_t size)
 {
     if(!initialized) {
-        hal_exception_panic(ENOTSUP,
-                            "Module has not been initialized.\n");
+        PANIC(ENOTSUP,
+              "Module has not been initialized.\n");
     }
 
     size_t len;
@@ -491,8 +491,8 @@ void merge_mem(plist_node_t* p_p_pos1, plist_node_t* p_p_pos2, plist_t p_list)
             p_new = core_mm_heap_alloc(sizeof(physical_memory_info_t), NULL);
 
             if(p_new == NULL) {
-                hal_exception_panic(ENOMEM,
-                                    "Failed to allocate memory for physical memory information.");
+                PANIC(ENOMEM,
+                      "Failed to allocate memory for physical memory information.");
             }
 
             p_new->type = p_2->type;
@@ -582,8 +582,8 @@ void merge_mem(plist_node_t* p_p_pos1, plist_node_t* p_p_pos2, plist_t p_list)
             p_new = core_mm_heap_alloc(sizeof(physical_memory_info_t), NULL);
 
             if(p_new == NULL) {
-                hal_exception_panic(ENOMEM,
-                                    "Failed to allocate memory for physical memory information.");
+                PANIC(ENOMEM,
+                      "Failed to allocate memory for physical memory information.");
             }
 
             p_new->type = p_1->type;
@@ -737,9 +737,9 @@ void init_map(list_t mem_list)
                                           phymem_heap);
 
         if(p_new_phymem == NULL) {
-            hal_exception_panic(ENOMEM,
-                                "Failed to allocate memory for physical memory "
-                                "managment module.");
+            PANIC(ENOMEM,
+                  "Failed to allocate memory for physical memory "
+                  "managment module.");
         }
 
         core_rtl_memcpy(p_new_phymem, p_phymem, sizeof(physical_memory_info_t));
@@ -748,9 +748,9 @@ void init_map(list_t mem_list)
             case PHYMEM_AVAILABLE:
                 if(core_rtl_map_set(&free_map, p_new_phymem, p_new_phymem)
                    == NULL) {
-                    hal_exception_panic(ENOMEM,
-                                        "Failed to allocate memory for physical memory "
-                                        "managment module.");
+                    PANIC(ENOMEM,
+                          "Failed to allocate memory for physical memory "
+                          "managment module.");
                 }
 
                 break;
@@ -760,9 +760,9 @@ void init_map(list_t mem_list)
             case PHYMEM_DMA:
                 if(core_rtl_map_set(&dma_map, p_new_phymem, p_new_phymem)
                    == NULL) {
-                    hal_exception_panic(ENOMEM,
-                                        "Failed to allocate memory for physical memory "
-                                        "managment module.");
+                    PANIC(ENOMEM,
+                          "Failed to allocate memory for physical memory "
+                          "managment module.");
                 }
 
                 break;
@@ -780,17 +780,17 @@ void init_map(list_t mem_list)
                 break;
 
             default:
-                hal_exception_panic(EINVAL,
-                                    "Illegal physical memory type :\"%u\"."
-                                    , p_new_phymem->type);
+                PANIC(EINVAL,
+                      "Illegal physical memory type :\"%u\"."
+                      , p_new_phymem->type);
 
         }
 
         if(core_rtl_map_set(&index_map, p_new_phymem, p_new_phymem)
            == NULL) {
-            hal_exception_panic(ENOMEM,
-                                "Failed to allocate memory for physical memory "
-                                "managment module.");
+            PANIC(ENOMEM,
+                  "Failed to allocate memory for physical memory "
+                  "managment module.");
         }
 
         p_node = core_rtl_list_next(p_node, &mem_list);

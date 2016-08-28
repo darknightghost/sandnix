@@ -42,6 +42,7 @@ void kinit(void* p_bootloader_info)
 
     //Initialize modules
     hal_io_init();
+
     hal_mmu_init();
 
     void test();
@@ -57,13 +58,9 @@ void kinit(void* p_bootloader_info)
 
 void keyboard_int(u32 int_num, pcontext_t p_context, u32 err_code)
 {
-    __asm__ __volatile__(
-        "nop\n"
-        "nop\n"
-        "nop\n"
-        "nop\n"
-        "nop\n"
-        :::);
+    static u32 i = 0;
+    hal_early_print_printf("%u\n", i);
+    i++;
     UNREFERRED_PARAMETER(int_num);
     UNREFERRED_PARAMETER(p_context);
     UNREFERRED_PARAMETER(err_code);

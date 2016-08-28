@@ -20,9 +20,14 @@
 
 #include "errno.h"
 
-#define	NOT_SUPPORT		hal_exception_panic(ENOTSUP,"Function not completed!.")
-
 void	hal_exception_panic(
+    char* file,
+    u32 line,
     u32 error_code,		//errno
     char* fmt,			//format
     ...);
+
+#define	PANIC(error_code, fmt, ...)	hal_exception_panic(__FILE__, __LINE__, \
+        (error_code), (fmt), ##__VA_ARGS__);
+
+#define	NOT_SUPPORT		PANIC(ENOTSUP,"Function not completed!.")

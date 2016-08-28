@@ -792,9 +792,13 @@ void hal_exception_core_release(
 
 //报错并终止整个系统
 void hal_exception_panic(
+	char* file,			//文件名
+    u32 line,			//行号
 	u32 error_code,		//错误码
     char* fmt,			//格式化字符串
     ...);
+    
+#define	PANIC(error_code, fmt, ...)		hal_exception_panic(__FILE__, __LINE__,  error_code, fmt,##__VA_ARGS__)
 
 //添加错误处理程序
 //内存错误

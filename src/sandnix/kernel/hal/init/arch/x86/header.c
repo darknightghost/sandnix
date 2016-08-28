@@ -89,15 +89,15 @@ void analyse_bootloader_info(void* p_info)
     }
 
     if(core_rtl_list_empty(&boot_mem_map)) {
-        hal_exception_panic(EKERNELARG, "Memory map is missing.\n");
+        PANIC(EKERNELARG, "Memory map is missing.\n");
     }
 
     if(initrd_addr == NULL) {
-        hal_exception_panic(EKERNELARG, "Initialize ramdisk is missing.\n");
+        PANIC(EKERNELARG, "Initialize ramdisk is missing.\n");
     }
 
     if(kernel_cmdline == NULL) {
-        hal_exception_panic(EKERNELARG, "Kernel command line is missing.\n");
+        PANIC(EKERNELARG, "Kernel command line is missing.\n");
     }
 
     hal_early_print_printf("Initrd address : %p.\n", initrd_addr);

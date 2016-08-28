@@ -72,12 +72,6 @@ void start_paging()
     u32 pde_num;
     u32 empty_pte_num;
 
-    if(initialized) {
-        hal_exception_panic(ENOTSUP,
-                            "Function start_paging() can only be used when mmu module "
-                            "has not been initialized");
-    }
-
     /*
      * When this function is called, the paging has not been started.We need to
      * compute the offset in order to get the physical address of global
@@ -92,6 +86,13 @@ void start_paging()
         "movl	%%eax, %0\n"
         ::"m"(offset)
         :"eax", "memory");
+
+    if(offset == 0) {
+        PANIC(ENOTSUP,
+              "Function start_paging() can only be used when mmu module "
+              "has not been initialized");
+    }
+
 
     //Compute real address
     p_init_pde_tbl = (ppde_t)((address_t)(&init_pde_tbl) + offset);
@@ -224,14 +225,14 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr, u32 attr)
     ppte_t p_pte;
 
     if(initialized) {
-        hal_exception_panic(ENOTSUP,
-                            "Function hal_mmu_add_early_paging_addr() can only "
-                            "be used when mmu module has not been initialized");
+        PANIC(ENOTSUP,
+              "Function hal_mmu_add_early_paging_addr() can only "
+              "be used when mmu module has not been initialized");
     }
 
     if(!(attr & MMU_PAGE_AVAIL)) {
-        hal_exception_panic(EINVAL,
-                            "Cannot add an unavailable page!\n");
+        PANIC(EINVAL,
+              "Cannot add an unavailable page!\n");
     }
 
     if((address_t)phy_addr < mapped_init_page * 4096) {
@@ -305,14 +306,14 @@ void paging_init()
                           sizeof(mmu_paging_heap_block));
 
     if(mmu_paging_heap == NULL) {
-        hal_exception_panic(ENOMEM,
-                            "Not enough memory for mmu paging managment.");
+        PANIC(ENOMEM,
+              "Not enough memory for mmu paging managment.");
     }
 
     if(core_rtl_array_init(&mmu_globl_pg_table, MAX_PROCESS_NUM,
                            mmu_paging_heap) != ESUCCESS) {
-        hal_exception_panic(ENOMEM,
-                            "Not enough memory for mmu paging managment.");
+        PANIC(ENOMEM,
+              "Not enough memory for mmu paging managment.");
     }
 
     core_rtl_map_init(&mmu_krnl_pte_tbl_map, (item_compare_t)(compare_vaddr),
@@ -422,8 +423,8 @@ void hal_mmu_pg_tbl_destroy(u32 id)
                                     id);
 
     if(p_pdt_info == NULL) {
-        hal_exception_panic(EINVAL,
-                            "Illegal page table id.");
+        PANIC(EINVAL,
+              "Illegal page table id.");
     }
 
     core_rtl_array_set(&mmu_globl_pg_table, id, NULL);
@@ -451,7 +452,7 @@ kstatus_t hal_mmu_pg_tbl_set(u32 id, void* virt_addr, u32 attribute, void* phy_a
                                 id);
 
     if(p_pdt_info == NULL) {
-        hal_exception_panic(EINVAL, "Illegal page table id.");
+        PANIC(EINVAL, "Illegal page table id.");
     }
 
     if(attribute & MMU_PAGE_AVAIL) {
@@ -479,7 +480,7 @@ void hal_mmu_pg_tbl_get(u32 id, void* virt_addr, void** phy_addr, u32* p_attr)
                                 id);
 
     if(p_pdt_info == NULL) {
-        hal_exception_panic(EINVAL, "Illegal page table id.");
+        PANIC(EINVAL, "Illegal page table id.");
     }
 
     *p_attr = 0;
@@ -541,8 +542,8 @@ void hal_mmu_pg_tbl_switch(u32 id)
                                     id);
 
     if(p_pdt_info == NULL) {
-        hal_exception_panic(EINVAL,
-                            "Illegal page table id.");
+        PANIC(EINVAL,
+              "Illegal page table id.");
     }
 
     __asm__ __volatile__(
@@ -567,15 +568,15 @@ void create_0()
     p_pdt_info = core_mm_heap_alloc(sizeof(pg_tbl_info_t), mmu_paging_heap);
 
     if(p_pdt_info == NULL) {
-        hal_exception_panic(ENOMEM,
-                            "Not enough memory for mmu paging managment.");
+        PANIC(ENOMEM,
+              "Not enough memory for mmu paging managment.");
     }
 
     //Allocate physical memory
     if(hal_mmu_phymem_alloc((void**)(&(p_pdt_info->physical_addr)), 4096,
                             false, 1) != ESUCCESS) {
-        hal_exception_panic(ENOMEM,
-                            "Not enough memory for mmu paging managment.");
+        PANIC(ENOMEM,
+              "Not enough memory for mmu paging managment.");
     }
 
     core_rtl_map_init(&(p_pdt_info->pte_info_map),
@@ -586,8 +587,8 @@ void create_0()
                             (void*)(p_pdt_info->physical_addr), MMU_PAGE_RW);
 
     if(core_rtl_array_set(&mmu_globl_pg_table, 0, p_pdt_info) == NULL) {
-        hal_exception_panic(ENOMEM,
-                            "Not enough memory for mmu paging managment.");
+        PANIC(ENOMEM,
+              "Not enough memory for mmu paging managment.");
     }
 
     core_rtl_memset(page_operate_addr, 0 , 4096);
@@ -600,8 +601,8 @@ void create_0()
                                      mmu_paging_heap);
 
         if(p_pte_info == NULL) {
-            hal_exception_panic(ENOMEM,
-                                "Not enough memory for mmu paging managment.");
+            PANIC(ENOMEM,
+                  "Not enough memory for mmu paging managment.");
         }
 
         p_pte_info->physical_addr = (address_t)(&init_pte_tbl[(i - KERNEL_MEM_BASE / 4096 / 1024)
@@ -655,8 +656,8 @@ void create_0()
 
         if(core_rtl_map_set(&mmu_krnl_pte_tbl_map, (void*)(i * 4096 * 1024),
                             p_pte_info) == NULL) {
-            hal_exception_panic(ENOMEM,
-                                "Not enough memory for mmu paging managment.");
+            PANIC(ENOMEM,
+                  "Not enough memory for mmu paging managment.");
         }
     }
 
