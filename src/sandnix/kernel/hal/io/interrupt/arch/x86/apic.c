@@ -35,6 +35,7 @@ static	inline	bool		is_apic_supported();
 static	inline	address_t	get_apic_phy_base();
 static	inline	void		local_apic_init();
 static	inline	void		io_apic_init();
+static	inline	void		clock_init();
 static	inline	void		disable_apic();
 static	inline	void		enable_apic();
 static	inline	void		disbale_8259A();
@@ -74,6 +75,10 @@ void apic_init()
 
     //Initialize io APIC
     io_apic_init();
+
+    //Initialize clock
+    clock_init();
+
     enable_apic();
 
     return;
@@ -153,31 +158,30 @@ void io_apic_init()
     hal_io_out_32(PCI_CONFIG_ADDRESS,
                   ((u32)0x80000000 | (u32)(0 << 16) | (u32)(31 << 11)
                    | (u32)(0 << 8) | (u32)(0xF0 & 0xfc)));
-    delay();
     address_t rcba_address = hal_io_in_32(PCI_CONFIG_DATA);
 
-    address_t ioapic_phy_base;
 
     if(rcba_address == 0xFFFFFFFF) {
         //Bus 0, device 31, offset 0xF0 does not exists.
-        hal_early_print_printf("PCI bus 0, device 31, function 0, offset 0xF0 does not exists.\n");
-        ioapic_phy_base = 0xFEC00000;
-
-    } else {
-        rcba_address = rcba_address & 0xFFFFC000;
-        address_t oic_phy_addr = (rcba_address) + 0x31FE ;
-        hal_early_print_printf("OIC physical address = %p.\n", oic_phy_addr);
-        oic_addr = (volatile u16*)hal_mmu_add_early_paging_addr((void*)oic_phy_addr,
-                   MMU_PAGE_RW_NC);
-        hal_early_print_printf("Mapping pysical address %p --> %p\n",
-                               oic_phy_addr,
-                               oic_addr);
-        hal_early_print_printf("OIC value = %#.4X.\n", *oic_addr);
-        ioapic_phy_base = (((*oic_addr) & 0xFF) << 12) | 0xFEC00000;
-        //Enable IOAPIC
-        *oic_addr = *oic_addr | 0x100;
+        PANIC(ENOTSUP,
+              "PCI bus 0, device 31, function 0, offset 0xF0 does not exists. "
+              "Sandnix requires ICH9 support.\n");
 
     }
+
+    rcba_address = rcba_address & 0xFFFFC000;
+    address_t oic_phy_addr = (rcba_address) + 0x31FE ;
+    hal_early_print_printf("OIC physical address = %p.\n", oic_phy_addr);
+    oic_addr = (volatile u16*)hal_mmu_add_early_paging_addr((void*)oic_phy_addr,
+               MMU_PAGE_RW_NC);
+    hal_early_print_printf("Mapping pysical address %p --> %p\n",
+                           oic_phy_addr,
+                           oic_addr);
+    hal_early_print_printf("OIC value = %#.4X.\n", *oic_addr);
+    address_t ioapic_phy_base = (((*oic_addr) & 0xFF) << 12) | 0xFEC00000;
+
+    //Enable IOAPIC
+    *oic_addr = *oic_addr | 0x100;
 
     //Get IOAPIC base address
     address_t ioapic_base = (address_t)hal_mmu_add_early_paging_addr(
@@ -210,6 +214,8 @@ void io_apic_init()
         ioapic_redirct_tbl_write(i, redict_entry_value.value);
         hal_early_print_printf("IRQ%u --> INT %#.2X.\n", i, IRQ0 + i);
     }
+
+    return;
 }
 
 void disable_apic()
@@ -322,4 +328,8 @@ void ioapic_redirct_tbl_write(u8 index, u64 data)
     *ioapic_data_reg = (u32)(data >> 32);
 
     return;
+}
+
+void clock_init()
+{
 }

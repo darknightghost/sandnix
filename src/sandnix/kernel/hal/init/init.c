@@ -56,14 +56,27 @@ void kinit(void* p_bootloader_info)
     return;
 }
 
+u32 tm = 3000;
 void keyboard_int(u32 int_num, pcontext_t p_context, u32 err_code)
 {
-    static u32 i = 0;
-    hal_early_print_printf("%u\n", i);
+    tm = 3000;
     hal_io_in_8(I8408_DATA_PORT);
     hal_io_in_8(I8408_DATA_PORT);
     hal_io_in_8(I8408_DATA_PORT);
-    i++;
+    UNREFERRED_PARAMETER(int_num);
+    UNREFERRED_PARAMETER(p_context);
+    UNREFERRED_PARAMETER(err_code);
+}
+
+void clock_int(u32 int_num, pcontext_t p_context, u32 err_code)
+{
+    hal_early_print_printf("\r%.4u", tm);
+    tm--;
+
+    if(tm == 0) {
+        tm = 3000;
+    }
+
     UNREFERRED_PARAMETER(int_num);
     UNREFERRED_PARAMETER(p_context);
     UNREFERRED_PARAMETER(err_code);
@@ -72,5 +85,6 @@ void keyboard_int(u32 int_num, pcontext_t p_context, u32 err_code)
 void test()
 {
     hal_io_int_callback_set(IRQ1, keyboard_int);
+    hal_io_int_callback_set(IRQ2, clock_int);
     return;
 }

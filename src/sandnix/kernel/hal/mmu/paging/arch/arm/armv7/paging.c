@@ -85,12 +85,6 @@ static void			lv2_info_destroy(plv2_tbl_info_t p_lv2_info, void* p_null);
 
 void start_paging()
 {
-    if(initialized) {
-        PANIC(ENOTSUP,
-              "Function start_paging() can only "
-              "be used when mmu module has not been initialized");
-    }
-
     //Compute offset
     address_t offset;
     __asm__ __volatile__(
@@ -104,6 +98,12 @@ void start_paging()
         "1:\n"
         :"=r"(offset)
         ::"r0");
+
+    if(offset != 0) {
+        PANIC(ENOTSUP,
+              "Function start_paging() can only "
+              "be used when mmu module has not been initialized");
+    }
 
     //Get kernel base and kernel address
     pkrnl_hdr_t p_kkeader = (pkrnl_hdr_t)((address_t)(&kernel_header) + offset);
