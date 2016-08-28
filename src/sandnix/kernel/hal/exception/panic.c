@@ -187,9 +187,10 @@ void hal_exception_panic(char* file, u32 line, u32 error_code, char* fmt, ...)
                          "sandnix cannot continue running.The reason of the "
                          "crash is:\n");
     hal_early_print_puts(errno_tbl[error_code]);
+    hal_early_print_puts("\n");
     core_rtl_snprintf(panic_buf, PANIC_BUF_SIZE, "File : \"%s\".\nLine : %u.\n",
                       file, line);
-    hal_early_print_puts("\n");
+    hal_early_print_puts(panic_buf);
     hal_early_print_puts("If you are a developer,it\'s very kind of you to fix "
                          "this problem and push your code to our git repository. "
                          "If you are just a user, you can reboot your computer now.\n");

@@ -31,7 +31,7 @@ static	map_t			index_map;
 #endif
 static	bool			initialized = false;
 static	pheap_t			phymem_heap;
-static	u8				phymem_heap_block[4096];
+static	u8				phymem_heap_block[4096 * 2];
 
 static	spnlck_rw_t		lock;
 

@@ -60,6 +60,9 @@ void keyboard_int(u32 int_num, pcontext_t p_context, u32 err_code)
 {
     static u32 i = 0;
     hal_early_print_printf("%u\n", i);
+    hal_io_in_8(I8408_DATA_PORT);
+    hal_io_in_8(I8408_DATA_PORT);
+    hal_io_in_8(I8408_DATA_PORT);
     i++;
     UNREFERRED_PARAMETER(int_num);
     UNREFERRED_PARAMETER(p_context);
