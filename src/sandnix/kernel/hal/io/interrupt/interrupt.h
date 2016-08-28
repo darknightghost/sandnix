@@ -72,20 +72,15 @@ void* hal_io_int_callback_set(
     u32 num,					//Interrupt number
     int_callback_t callback);	//Callback
 
-//Regist clock call back
-void* hal_io_clock_callback_reg(
-    u32 microsecond,
-    int_callback_t callback);	//Callback
-
 //Get system tick
 u64 hal_io_get_ticks();
 
-//Set system clock frequency
-void hal_io_set_clock_freq(
-    u32 freq);		//Frequency (Hz)
+//Set system clock period
+void hal_io_set_clock_period(
+    u32 microsecond);
 
-//Get system clock frequency
-u32 hal_io_get_clock_freq();
+//Get system clock period
+u32 hal_io_get_clock_period();
 
 //Send IPI
 void hal_io_send_IPI();

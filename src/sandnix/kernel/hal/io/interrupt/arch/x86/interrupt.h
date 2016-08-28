@@ -51,6 +51,7 @@
 #define	IRQ23			(IRQ_BASE + 23)
 
 #define	IRQ_MAX			IRQ23
+#define	IRQ_CLOCK		IRQ2
 
 u32		hal_io_apic_read32(address_t off);
 void	hal_io_apic_write32(address_t off, u32 data);

@@ -86,5 +86,6 @@ void test()
 {
     hal_io_int_callback_set(IRQ1, keyboard_int);
     hal_io_int_callback_set(IRQ2, clock_int);
+    hal_io_set_clock_period(1000000);
     return;
 }

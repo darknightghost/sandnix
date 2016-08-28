@@ -581,19 +581,12 @@ void* hal_io_int_callback_set(
 	u32 num,					//中断号
     int_callback_t callback);	//回调函数
 
-//注册时钟回调
-void* hal_io_clock_callback_reg(
-	int_callback_t callback);	//回调函数
-    
-//获得系统tick数
-u64 hal_io_get_ticks();
+//设置时钟中断周期
+void hal_io_set_clock_period(
+	u32 microsend);		//多少微秒一次
 
-//设置时钟中断频率
-void hal_io_set_clock_freq(
-	u32 freq);		//频率(Hz)
-
-//获得时钟中断频率
-u32 hal_io_get_clock_freq();
+//获得时钟中断周期
+u32 hal_io_get_clock_period();
 
 //广播IPI
 void hal_io_send_IPI();

@@ -21,15 +21,39 @@
 #include "../../../../early_print/early_print.h"
 #include "../../../../exception/exception.h"
 #include "../../../../mmu/mmu.h"
+#include "../../../../rtl/rtl.h"
 
 #define	IA32_APIC_BASE	0x1B
 
 static	u32					lvt_entry_num;
 static	address_t			local_apic_base;
+
+//IO APIC registers
+static	address_t			ioapic_base;
+#define	ioapic_index_reg	((volatile u8*)(ioapic_base))
+#define	ioapic_data_reg		((volatile u32*)(ioapic_base + 0x10))
+#define	ioapic_EOI_reg		((volatile u32*)(ioapic_base + 0x40))
+
+//HPET registers
+static	address_t			hpet_base_address;
+#define	hpet_id_reg			((volatile u64*)(hpet_base_address + 0x00))
+#define	hpet_configure_reg	((volatile u64*)(hpet_base_address + 0x10))
+#define	hpet_status_reg		((volatile u64*)(hpet_base_address + 0x20))
+#define	hpet_counter_reg	((volatile u64*)(hpet_base_address + 0xF0))
+
+//Timer
+#define	hpet_timer_cfg_reg(n)	((volatile u64*)(hpet_base_address + 0x100 \
+                                 + 0x20 * (n)))
+#define	hpet_timer_comp_reg(n)	((volatile u64*)(hpet_base_address + 0x108 \
+                                 + 0x20 * (n)))
+
+#define	HPET_COUNT_FS			((*hpet_id_reg) >> 32)
+static	u32					timer_period;
+
+//RCBA registers
+static	address_t			rcba_address;
 static	volatile u16*		oic_addr;
-static	volatile u8*		ioapic_index_reg;
-static	volatile u32*		ioapic_data_reg;
-static	volatile u32*		ioapic_EOI_reg;
+static	volatile u32*		rcba_hpet_cfg_reg;;
 
 static	inline	bool		is_apic_supported();
 static	inline	address_t	get_apic_phy_base();
@@ -101,6 +125,22 @@ void hal_io_irq_send_eoi()
     return;
 }
 
+void hal_io_set_clock_period(u32 microsecond)
+{
+    timer_period = microsecond;
+    *hpet_configure_reg &= ~(u64)0x01;
+    *hpet_counter_reg = 0;
+    *hpet_timer_comp_reg(0) = hal_rtl_math_div64((u64)microsecond * 1000
+                              * 1000 * 1000,
+                              HPET_COUNT_FS);
+    *hpet_configure_reg |= 0x01;
+}
+
+u32 hal_io_get_clock_period()
+{
+    return timer_period;
+}
+
 bool is_apic_supported()
 {
     bool ret;
@@ -158,7 +198,7 @@ void io_apic_init()
     hal_io_out_32(PCI_CONFIG_ADDRESS,
                   ((u32)0x80000000 | (u32)(0 << 16) | (u32)(31 << 11)
                    | (u32)(0 << 8) | (u32)(0xF0 & 0xfc)));
-    address_t rcba_address = hal_io_in_32(PCI_CONFIG_DATA);
+    rcba_address = hal_io_in_32(PCI_CONFIG_DATA);
 
 
     if(rcba_address == 0xFFFFFFFF) {
@@ -184,15 +224,12 @@ void io_apic_init()
     *oic_addr = *oic_addr | 0x100;
 
     //Get IOAPIC base address
-    address_t ioapic_base = (address_t)hal_mmu_add_early_paging_addr(
-                                (void*)ioapic_phy_base,
-                                MMU_PAGE_RW_NC);
+    ioapic_base = (address_t)hal_mmu_add_early_paging_addr(
+                      (void*)ioapic_phy_base,
+                      MMU_PAGE_RW_NC);
     hal_early_print_printf("Mapping pysical address %p --> %p\n",
                            ioapic_phy_base,
                            ioapic_base);
-    ioapic_index_reg = (volatile u8*)ioapic_base;
-    ioapic_data_reg = (volatile u32*)(ioapic_base + 0x10);
-    ioapic_EOI_reg = (volatile u32*)(ioapic_base + 0x40);
 
     //Initialize IOAPIC
     ioapic_id_write((ioapic_id_read() & ~(u32)0xF000000));
@@ -332,4 +369,37 @@ void ioapic_redirct_tbl_write(u8 index, u64 data)
 
 void clock_init()
 {
+    //Get address
+    hal_early_print_printf("Initializing HPET...\n");
+    rcba_hpet_cfg_reg = (volatile u32*)hal_mmu_add_early_paging_addr(
+                            (void*)(rcba_address + 0x3404), MMU_PAGE_RW_NC);
+    hal_early_print_printf("Mapping physical address : %p --> %p.\n",
+                           rcba_address + 0x3404,
+                           rcba_hpet_cfg_reg);
+    *rcba_hpet_cfg_reg = 0x80;
+
+    hpet_base_address = (address_t)hal_mmu_add_early_paging_addr(
+                            (void*)0xFED00000, MMU_PAGE_RW_NC);
+
+    //Initialize HPET
+    hal_early_print_printf("HPET ID Register = %#.16llx.\n", *hpet_id_reg);
+
+    //Disable HPET
+    *hpet_configure_reg = (*hpet_configure_reg | 0x02) & (~(u64)0x01);
+    *hpet_counter_reg = 0;
+
+    //Disable all timer
+    for(u32 i = 0; i <= 7; i++) {
+        *hpet_timer_cfg_reg(i) &= ~(u64)0x04;
+    }
+
+    //Initialize timer#0
+    hal_early_print_printf("Initializing timer#0...\n");
+    hal_io_set_clock_period(10000);
+    *hpet_timer_cfg_reg(0) = 0x4C;
+
+    //Enable HPET
+    *hpet_configure_reg |= 0x01;
+
+    return;
 }
