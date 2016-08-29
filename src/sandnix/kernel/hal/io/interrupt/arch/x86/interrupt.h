@@ -22,9 +22,12 @@
 #include "apic.h"
 #include "tss.h"
 
+#define	REQUIRE_EOI_BEGIN	0x20
 #define	INT_IPI			0x20
 
-#define	IRQ_BASE		0x21
+#define	INT_TICK		0x21
+
+#define	IRQ_BASE		0x22
 #define	IRQ0			(IRQ_BASE)
 #define	IRQ1			(IRQ_BASE + 1)
 #define	IRQ2			(IRQ_BASE + 2)
@@ -52,6 +55,7 @@
 
 #define	IRQ_MAX			IRQ23
 #define	IRQ_CLOCK		IRQ2
+#define	REQUIRE_EOI_END	IRQ_MAX
 
 u32		hal_io_apic_read32(address_t off);
 void	hal_io_apic_write32(address_t off, u32 data);

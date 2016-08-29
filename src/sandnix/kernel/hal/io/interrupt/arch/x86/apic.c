@@ -71,6 +71,11 @@ static	inline	u32			ioapic_version_read();
 static	inline	u64			ioapic_redirct_tbl_read(u8 index);
 static	inline	void		ioapic_redirct_tbl_write(u8 index, u64 data);
 
+static	inline	void		tick_init();
+static	inline	u32			lapic_speed();
+static	void				timer_init_int(u32 int_num, pcontext_t p_context,
+        u32 err_code);
+
 void apic_init()
 {
     hal_early_print_printf("Initializing local APIC...\n");
@@ -104,6 +109,9 @@ void apic_init()
     clock_init();
 
     enable_apic();
+
+    //Initialize tick
+    tick_init();
 
     return;
 }
@@ -247,7 +255,7 @@ void io_apic_init()
     core_rtl_memset(&redict_entry_value, 0, sizeof(redict_entry_value));
 
     for(u32 i = 0; i < redirct_tbl_num; i++) {
-        redict_entry_value.data.vector = IRQ0 + i;
+        redict_entry_value.data.vector = IRQ_BASE + i;
         ioapic_redirct_tbl_write(i, redict_entry_value.value);
         hal_early_print_printf("IRQ%u --> INT %#.2X.\n", i, IRQ0 + i);
     }
@@ -401,5 +409,82 @@ void clock_init()
     //Enable HPET
     *hpet_configure_reg |= 0x01;
 
+    return;
+}
+
+void tick_init()
+{
+    //Inicialize local apic timer
+    hal_early_print_printf("Initialize local apic timer...\n");
+    hal_io_apic_write32(LOCAL_APIC_TIMER_INITIAL_COUNT_REG, 0);
+    hal_io_apic_write32(LOCAL_APIC_TIMER_CURRENT_COUNT_REG, 0);
+    u32 div_cfg = hal_io_apic_read32(LOCAL_APIC_TIMER_DIVIDE_CONF_REG);
+    div_cfg |= 0x0B;
+    hal_io_apic_write32(LOCAL_APIC_TIMER_DIVIDE_CONF_REG, div_cfg);
+
+    u32 timer_reg_val = hal_io_apic_read32(LOCAL_APIC_LVT_TIMER_REG);
+    timer_reg_val &= ~0x710FF;
+    timer_reg_val |= 0x20000 | (INT_TICK & 0xFF);
+    hal_io_apic_write32(LOCAL_APIC_LVT_TIMER_REG, timer_reg_val);
+
+    //Compute how many counts a tick.
+    u32 count_per_tick = lapic_speed();
+    hal_early_print_printf("%u counts per tick...\n");
+
+    //Enable timer
+    hal_io_apic_write32(LOCAL_APIC_TIMER_INITIAL_COUNT_REG, count_per_tick);
+
+    return;
+}
+
+static	volatile	u32 	timer_interrupted_count;
+u32 lapic_speed()
+{
+    //Set temporart interrupt call back
+    hal_io_int_callback_set(IRQ_CLOCK, timer_init_int);
+    hal_io_int_disable();
+    timer_interrupted_count = 0;
+
+    //Set clock period
+    hal_io_set_clock_period(TICK_PERIOD);
+
+    //Stop counting
+    hal_io_apic_write32(LOCAL_APIC_TIMER_INITIAL_COUNT_REG, 0);
+    hal_io_apic_write32(LOCAL_APIC_TIMER_CURRENT_COUNT_REG, 0);
+    hal_io_int_enable();
+
+    //Wait for first interrupt
+    u32 old_count = timer_interrupted_count;
+
+    while(old_count == timer_interrupted_count) {
+        MEM_BLOCK;
+    }
+
+    //Start counting
+    hal_io_apic_write32(LOCAL_APIC_TIMER_INITIAL_COUNT_REG, 0xFFFFFFFF);
+
+    //Wait for second interrupt
+    old_count = timer_interrupted_count;
+
+    while(old_count == timer_interrupted_count) {
+        MEM_BLOCK;
+    }
+
+    u32 ret = 0xFFFFFFFF - hal_io_apic_read32(LOCAL_APIC_TIMER_CURRENT_COUNT_REG);
+    hal_io_apic_write32(LOCAL_APIC_TIMER_INITIAL_COUNT_REG, 0);
+    hal_io_apic_write32(LOCAL_APIC_TIMER_CURRENT_COUNT_REG, 0);
+    hal_io_int_disable();
+    hal_io_int_callback_set(IRQ_CLOCK, NULL);
+
+    return ret;
+}
+
+void timer_init_int(u32 int_num, pcontext_t p_context,
+                    u32 err_code)
+{
+    timer_interrupted_count++;
+    UNREFERRED_PARAMETER(int_num);
+    UNREFERRED_PARAMETER(p_context);
+    UNREFERRED_PARAMETER(err_code);
     return;
 }

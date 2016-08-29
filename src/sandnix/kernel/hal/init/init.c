@@ -70,7 +70,6 @@ void keyboard_int(u32 int_num, pcontext_t p_context, u32 err_code)
 
 void clock_int(u32 int_num, pcontext_t p_context, u32 err_code)
 {
-    hal_early_print_printf("\r%.4u", tm);
     tm--;
 
     if(tm == 0) {
@@ -82,10 +81,19 @@ void clock_int(u32 int_num, pcontext_t p_context, u32 err_code)
     UNREFERRED_PARAMETER(err_code);
 }
 
+void tick_int(u32 int_num, pcontext_t p_context, u32 err_code)
+{
+    hal_early_print_printf("\r%.4u", tm);
+    UNREFERRED_PARAMETER(int_num);
+    UNREFERRED_PARAMETER(p_context);
+    UNREFERRED_PARAMETER(err_code);
+}
+
 void test()
 {
     hal_io_int_callback_set(IRQ1, keyboard_int);
     hal_io_int_callback_set(IRQ2, clock_int);
+    hal_io_int_callback_set(INT_TICK, tick_int);
     hal_io_set_clock_period(1000000);
     return;
 }
