@@ -91,6 +91,7 @@ void tick_int(u32 int_num, pcontext_t p_context, u32 err_code)
 
 void test()
 {
+    hal_early_print_printf("Test demo...\n");
     hal_io_int_callback_set(IRQ1, keyboard_int);
     hal_io_int_callback_set(IRQ2, clock_int);
     hal_io_int_callback_set(INT_TICK, tick_int);

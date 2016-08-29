@@ -571,7 +571,7 @@ void hal_io_irq_disable(
 //获得IRQ范围
 void hal_io_get_irq_range(
 	u32* p_begin,	//起始IRQ
-    u32 num);		//IRQ个数
+    u32* p_num);		//IRQ个数
 
 //针对IRQ发送EOI
 void hal_io_irq_send_eoi();

@@ -116,6 +116,67 @@ void apic_init()
     return;
 }
 
+void hal_io_irq_enable_all()
+{
+    ioapic_redirect_entry_t redict_entry_value;
+    u32 redirct_tbl_num = (ioapic_version_read() & 0xFF0000) >> 16;
+
+    for(u32 i = 0; i < redirct_tbl_num; i++) {
+        redict_entry_value.value = ioapic_redirct_tbl_read(i);
+        redict_entry_value.data.mask = 0;
+        ioapic_redirct_tbl_write(i, redict_entry_value.value);
+    }
+
+    return;
+}
+
+void hal_io_irq_disable_all()
+{
+    ioapic_redirect_entry_t redict_entry_value;
+    u32 redirct_tbl_num = (ioapic_version_read() & 0xFF0000) >> 16;
+
+    for(u32 i = 0; i < redirct_tbl_num; i++) {
+        redict_entry_value.value = ioapic_redirct_tbl_read(i);
+        redict_entry_value.data.mask = 1;
+        ioapic_redirct_tbl_write(i, redict_entry_value.value);
+    }
+
+    return;
+}
+
+void hal_io_irq_enable(u32 num)
+{
+    ioapic_redirect_entry_t redict_entry_value;
+
+    if(num >= IRQ_BASE && num <= IRQ_MAX) {
+        redict_entry_value.value = ioapic_redirct_tbl_read(num - IRQ_BASE);
+        redict_entry_value.data.mask = 0;
+        ioapic_redirct_tbl_write(num - IRQ_BASE, redict_entry_value.value);
+    }
+
+    return;
+}
+
+void hal_io_irq_disable(u32 num)
+{
+    ioapic_redirect_entry_t redict_entry_value;
+
+    if(num >= IRQ_BASE && num <= IRQ_MAX) {
+        redict_entry_value.value = ioapic_redirct_tbl_read(num - IRQ_BASE);
+        redict_entry_value.data.mask = 1;
+        ioapic_redirct_tbl_write(num - IRQ_BASE, redict_entry_value.value);
+    }
+
+    return;
+}
+
+void hal_io_get_irq_range(u32* p_begin, u32* p_num)
+{
+    *p_begin = IRQ_BASE;
+    *p_num = IRQ_MAX - IRQ_BASE + 1;
+    return;
+}
+
 u32 hal_io_apic_read32(address_t off)
 {
     return *((volatile u32*)(local_apic_base + off));

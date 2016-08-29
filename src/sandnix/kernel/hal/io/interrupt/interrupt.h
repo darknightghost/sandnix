@@ -64,7 +64,7 @@ void hal_io_irq_disable(
 //Get IRQ range
 void hal_io_get_irq_range(
     u32* p_begin,	//Begining IRQ
-    u32 num);		//Number of IRQ
+    u32* p_num);	//Number of IRQ
 
 //Send EOI
 void hal_io_irq_send_eoi();
