@@ -24,3 +24,11 @@ void interrupt_init()
     ivt_init();
     return;
 }
+
+void int_dispatcher(u32 int_num, pcontext_t p_context)
+{
+    while(1);
+
+    UNREFERRED_PARAMETER(int_num);
+    UNREFERRED_PARAMETER(p_context);
+}

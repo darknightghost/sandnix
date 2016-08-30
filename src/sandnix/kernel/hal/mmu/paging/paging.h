@@ -22,14 +22,19 @@
 #if defined X86
     #define	KERNEL_MEM_BASE		0xC0000000
     #define	KERNEL_MEM_SIZE		(1024 * 1024 * 1024)
-    #include "./arch/x86/page_table.h"
+    #ifndef	_ASM
+        #include "./arch/x86/page_table.h"
+    #endif
 
 #elif defined ARM_ARMV7
     #define	KERNEL_MEM_BASE		0xC0000000
     #define	KERNEL_MEM_SIZE		(1024 * 1024 * 1024)
-    #include "./arch/arm/armv7/page_table.h"
+    #ifndef	_ASM
+        #include "./arch/arm/armv7/page_table.h"
+    #endif
 #endif
 
+#ifndef	_ASM
 #include "../../../core/mm/mm.h"
 
 #define	MMU_PAGE_AVAIL			0x00000001
@@ -99,3 +104,5 @@ void		hal_mmu_pg_tbl_switch(
 
 void		paging_init();
 address_t	get_load_offset();
+
+#endif

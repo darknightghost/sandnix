@@ -16,11 +16,17 @@
 */
 
 #include "int_hndlr.h"
+#include "ivt.h"
+
 
 void ivt_init()
 {
+    //Set base address of IVT
     __asm__ __volatile__(
         "mcr	p15, 0, %0, c12, c0, 0\n"
         ::"r"(ivt_base));
+
     return;
 }
+
+
