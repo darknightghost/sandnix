@@ -17,6 +17,7 @@
 
 #include "../../../../init/init.h"
 
+.section	.text
 //esp = &context
 .macro		PUSH_CONTEXT
 		pushl	$0

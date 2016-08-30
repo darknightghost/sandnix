@@ -48,14 +48,14 @@ void kinit(void* p_bootloader_info)
     void test();
     test();
 
-    hal_io_int_enable();
-    hal_io_irq_send_eoi();
+    //hal_io_int_enable();
+    //hal_io_irq_send_eoi();
 
     while(1);
 
     return;
 }
-
+/*
 u32 tm = 3000;
 void keyboard_int(u32 int_num, pcontext_t p_context, u32 err_code)
 {
@@ -88,13 +88,11 @@ void tick_int(u32 int_num, pcontext_t p_context, u32 err_code)
     UNREFERRED_PARAMETER(p_context);
     UNREFERRED_PARAMETER(err_code);
 }
-
+*/
 void test()
 {
-    hal_early_print_printf("Test demo...\n");
-    hal_io_int_callback_set(IRQ1, keyboard_int);
-    hal_io_int_callback_set(IRQ2, clock_int);
-    hal_io_int_callback_set(INT_TICK, tick_int);
-    hal_io_set_clock_period(1000000);
+    __asm__ __volatile__(
+        "swi		0\n"
+        :::);
     return;
 }

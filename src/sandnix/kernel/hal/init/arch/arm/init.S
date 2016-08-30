@@ -59,7 +59,7 @@ _offchk_addr:
 	ldr		r6,=DEFAULT_STACK_SIZE
 	add		sp, sp, r6
 
-#if BOOTLOADER == MULTIBOOT2
+#if BOOTLOADER == UBOOT
 
 	//Push kernel args
 	stmfd	sp!, {r2}

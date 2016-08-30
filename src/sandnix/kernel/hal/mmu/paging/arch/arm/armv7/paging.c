@@ -99,7 +99,7 @@ void start_paging()
         :"=r"(offset)
         ::"r0");
 
-    if(offset != 0) {
+    if(offset == 0) {
         PANIC(ENOTSUP,
               "Function start_paging() can only "
               "be used when mmu module has not been initialized");
@@ -600,14 +600,14 @@ void lv2_prepare(address_t kernel_base, size_t kernel_size, size_t offset)
 void init_SCTLR()
 {
 #define	MASK	0x62007405
-#define	VAL		0x00006400
+#define	VAL		0x50010820
     /*
      * Theses bits of SCTLR is setted to:
      *		Bit 0(M)		: 0
      *		Bit 2(C)		: 0
      *		Bit 10(SW)		: 1
      *		Bit	12(I)		: 0
-     *		Bit 13(V)		: 1
+     *		Bit 13(V)		: 0
      *		Bit 14(RR)		: 1
      *		Bit	25(EE)		: 0
      *		Bit	29(AFE)		: 0

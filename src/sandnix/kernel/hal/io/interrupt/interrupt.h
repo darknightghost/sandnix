@@ -22,6 +22,8 @@
 
 #if defined X86
     #include "arch/x86/interrupt.h"
+#elif defined ARM_ARMV7_CORTEXA9
+    #include "arch/arm/armv7/cortex-a9/interrupt.h"
 #endif
 
 #define	TICK_PERIOD		10000
