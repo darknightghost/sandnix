@@ -33,9 +33,10 @@ typedef struct _context {
     u32		r10;
     u32		r11;
     u32		r12;
-    u32		sp;
-    u32		lr;
-    u32		pc;
+    u32		lr_usr;
+    u32		sp_usr;
+    u32		lr_svc;
     u32		sp_svc;
     u32		cpsr;
+    u32		pc;
 } context_t, *pcontext_t;

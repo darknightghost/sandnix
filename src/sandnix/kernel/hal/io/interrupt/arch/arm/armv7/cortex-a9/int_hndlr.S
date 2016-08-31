@@ -20,16 +20,31 @@
 
 #include "../../../../../../mmu/mmu.h"
 
-.align		16, 0
+.align		16
 ivt_base:
-	ldr		pc, _reset_entry
+_ivt_reset:
+	b		_reset_entry
+
+_ivt_undefined:
 	b		_undefined_entry
-	ldr		pc, _swi_entry
-	ldr		pc, _prefetch_abort_entry
-	ldr		pc, _data_abort_entry
-	ldr		pc, _reserved_entry
-	ldr		pc, _irq_entry
-	ldr		pc, _fiq_entry
+
+_ivt_swi:
+	b		_swi_entry
+
+_ivt_prefetch_abort:
+	b		_prefetch_abort_entry
+
+_ivt_data_abort:
+	b		_data_abort_entry
+
+_ivt_reserved:
+	b		_reserved_entry
+
+_ivt_irq:
+	b		_irq_entry
+
+_ivt_fiq:
+	b		_fiq_entry
 
 
 .align		4, 0
@@ -38,88 +53,124 @@ _reset_entry:
 		b		_reset_entry
 
 _undefined_entry:
-		//Switch to SVC mode
-		msr		cpsr_c,	#0xD3
+		msr		cpsr_c, #0xD3
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		b	_undefined_entry
 
-		//Push context
-		//r0-r12
-		stmfd	sp!, {r0-r12}
-
-1:
-b		1b
-
-		//sp, lr, pc
-		mov		r0, sp
-
-		//Switch to undefined mode
-		msr		cpsr_c,	#0xDB
-		mov		sp, r0
-
-		mov		r0, lr
-		ldr		r1,	=KERNEL_MEM_BASE
-
-		//if(lr >= KERNEL_MEM_BASE) 
-		cmp		r0, r1
-		1:
-		blo		1f
-
-		//{
-			//The interrupt is called from kernel memory
-			//sp
-			mov		r0, sp
-			add		r0, r0, #(13 * 4)
-			stmfd	sp!, {r0}
-
-			//lr pc
-			mov		r0, sp
-			mov		r1, lr
-
-			//Switch to SVC mode
-			msr		cpsr_c,	#0xD3
-			mov		sp, r0
-			stmfd	sp!, {lr}
- 			stmfd	sp!, {r1}
-
-		//} else {
-			1:
-
-			//The interrupt is called from user memory
-			//Switch to system mode
-			msr		cpsr_c,	#0xDF
-			mov		r0, sp
-			mov		r1, lr
-
-			//Switch to SVC mode
-			msr		cpsr_c,	#0xD3
-			stmfd	sp!, {r0-r1}
-
-			//Switch to undefined mode
-			mov		r0, sp
-			msr		cpsr_c,	#0xDB
-			stmfd	r0!, {lr}
-
-			//Switch to SVC mode
-			msr		cpsr_c,	#0xD3
-			mov		sp, r0
-
-		//}
-
-		mov		r0, #1
 
 _swi_entry:
-		b		_swi_entry
+		//Space for PC
+		//Space for cpsr
+		stmfd	sp!, {lr}
+		sub		sp, sp, #4
+
+		//sp_svc
+		//lr_svc
+		stmfd	sp!, {sp}
+		stmfd	sp!, {lr}
+
+		//sp_usr
+		//lr_usr
+		sub		sp, sp, #8
+
+		//Push r0 - r12
+		stmfd	sp!, {r0 - r12}
+
+		//Fix sp_svc value
+		add		r0, sp, #(16 * 4)
+		ldr		r1, [r0]
+		add		r1, r1, #8
+		str		r1, [r0]
+
+		//Fill cpsr
+		add		r0, sp, #(17 * 4)
+		mrs		r1, spsr
+		str		r1, [r0]
+
+		add		r0, sp, #(15 * 4)
+
+		//Switch to system mode
+		msr		cpsr_c, #0xDF
+		stmfd	r0!, {sp}
+		stmfd	r0!, {lr}
+
+		//Switch to SVC mode
+		msr		cpsr_c, #0xD3
+
+		//Call handler
+		mov		r0, sp
+		b		swi_hndlr
 
 _prefetch_abort_entry:
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
 		b		_prefetch_abort_entry
 
 _data_abort_entry:
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
 		b		_data_abort_entry
 
 _reserved_entry:
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
 		b		_reserved_entry
 
 _irq_entry:
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
 		b		_irq_entry
 
 _fiq_entry:
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
+		nop
 		b		_fiq_entry

@@ -599,8 +599,7 @@ void lv2_prepare(address_t kernel_base, size_t kernel_size, size_t offset)
 
 void init_SCTLR()
 {
-#define	MASK	0x62007405
-#define	VAL		0x50010820
+#define	VAL		0x00004400
     /*
      * Theses bits of SCTLR is setted to:
      *		Bit 0(M)		: 0
@@ -614,14 +613,10 @@ void init_SCTLR()
      *		Bit 30(TE)		: 0
      */
     __asm__ __volatile__(
-        "mrc    p15, 0, r0, c1, c0, 0\n"
-        "and	r0,	r0,	%0\n"
-        "orr	r0, r0, %1\n"
-        "mcr    p15, 0, r0, c1, c0, 0\n"
-        ::"r"(~MASK), "r"(VAL)
+        "mcr    p15, 0, %0, c1, c0, 0\n"
+        ::"r"(VAL)
         :"r0");
 #undef	VAL
-#undef	MASK
     return;
 }
 

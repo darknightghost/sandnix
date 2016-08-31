@@ -32,3 +32,8 @@ void int_dispatcher(u32 int_num, pcontext_t p_context)
     UNREFERRED_PARAMETER(int_num);
     UNREFERRED_PARAMETER(p_context);
 }
+
+void swi_hndlr(pcontext_t p_context)
+{
+    hal_cpu_context_load(p_context);
+}

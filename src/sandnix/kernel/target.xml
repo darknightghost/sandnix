@@ -9,13 +9,14 @@
         <arch name="x86">
             <PREV></PREV>
             <DEP>gcc</DEP>
-            <DEPRULE>$(DEP) -MM $&lt; | awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(dir $@)&quot;,$$0)} NR != 1 {print $$0}' | cat &gt; $@</DEPRULE>
+            <DEPFLAGS></DEPFLAGS>
+            <DEPRULE>$(DEP) $(DEPFLAGS) -MM $&lt; | awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(dir $@)&quot;,$$0)} NR != 1 {print $$0}' | cat &gt; $@</DEPRULE>
             <CC>gcc</CC>
-            <CFLAGS>-Wall -DX86 -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -c -Werror -mno-sse2 -mno-sse</CFLAGS>
-            <CCRULE>$(CC) $(CFLAGS) -o $@ $&lt;</CCRULE>
+            <CFLAGS>-Wall -DX86 -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -Werror -mno-sse2 -mno-sse</CFLAGS>
+            <CCRULE>$(CC) $(CFLAGS) -c -o $@ $&lt;</CCRULE>
             <AS>gcc</AS>
-            <ASFLAGS>-c -DX86 -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -Werror</ASFLAGS>
-            <ASRULE>$(AS) $(ASFLAGS) -o $@ $&lt;</ASRULE>
+            <ASFLAGS>-DX86 -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -Werror</ASFLAGS>
+            <ASRULE>$(AS) -c $(ASFLAGS) -o $@ $&lt;</ASRULE>
             <LD>ld</LD>
             <LDFLAGS>-m elf_i386 -Ttext 0xc0101000 -e _start --no-omagic -Map $(OUTDIR)/kernel.map</LDFLAGS>
             <LDRULE>$(LD) $(LDFLAGS) -o $@ $^</LDRULE>
@@ -24,13 +25,14 @@
         <arch name="arm.armv7.cortex-a9.samsung_exynos4412.itop_4412">
             <PREV></PREV>
             <DEP>arm-none-eabi-gcc</DEP>
-            <DEPRULE>$(DEP) -MM $&lt; | awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(dir $@)&quot;,$$0)} NR != 1 {print $$0}' | cat &gt; $@</DEPRULE>
+            <DEPFLAGS></DEPFLAGS>
+            <DEPRULE>$(DEP) $(DEPFLAGS) -MM $&lt; | awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(dir $@)&quot;,$$0)} NR != 1 {print $$0}' | cat &gt; $@</DEPRULE>
             <CC>arm-none-eabi-gcc</CC>
-            <CFLAGS>-Wall -DARM -DARM_ARMV7 -DARM_ARMV7_CORTEXA9 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412_ITOP_4412 -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -c -Werror -march=armv7-a -mlong-calls</CFLAGS>
-            <CCRULE>$(CC) $(CFLAGS) -o $@ $&lt;</CCRULE>
+            <CFLAGS>-Wall -DARM -DARM_ARMV7 -DARM_ARMV7_CORTEXA9 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412_ITOP_4412 -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -Werror -march=armv7-a -mlong-calls</CFLAGS>
+            <CCRULE>$(CC) -c $(CFLAGS) -o $@ $&lt;</CCRULE>
             <AS>arm-none-eabi-gcc</AS>
-            <ASFLAGS>-c -DARM -DARM_ARMV7 -DARM_ARMV7_CORTEXA9 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412_ITOP_4412 -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -Werror -march=armv7-a</ASFLAGS>
-            <ASRULE>$(AS) $(ASFLAGS) -o $@ $&lt;</ASRULE>
+            <ASFLAGS>-DARM -DARM_ARMV7 -DARM_ARMV7_CORTEXA9 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412_ITOP_4412 -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -Werror -march=armv7-a</ASFLAGS>
+            <ASRULE>$(AS) -c $(ASFLAGS) -o $@ $&lt;</ASRULE>
             <LD>arm-none-eabi-ld</LD>
             <LDFLAGS>-Ttext 0xC0000000 -e _start --no-omagic</LDFLAGS>
             <LDRULE>$(LD) $(LDFLAGS) -Map $(OUTDIR)/kernel.map -o $@ $^</LDRULE>
@@ -46,11 +48,11 @@
             <option enable="true" name="Build with symbols." target="CFLAGS|ASFLAGS" type="checkbox" value="-g"/>
         </option>
         <option name="BootLoader." type="menu">
-            <option name="Bootloader" selected="1" target="CFLAGS|ASFLAGS" type="list">
+            <option name="Bootloader" selected="1" target="CFLAGS|ASFLAGS|DEPFLAGS" type="list">
             <item name="multiboot2" value="-DBOOTLOADER=MULTIBOOT2"/>
             <item name="uboot" value="-DBOOTLOADER=UBOOT"/>
             </option>
         </option>
-        <option macro="-DMAX_CPU_NUM" name="Maxium number of cpu" target="CFLAGS|ASFLAGS" type="input" value="64"/>
+        <option macro="-DMAX_CPU_NUM" name="Maxium number of cpu" target="CFLAGS|ASFLAGS|DEPFLAGS" type="input" value="64"/>
     </options>
 </target>

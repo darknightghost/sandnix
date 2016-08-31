@@ -92,6 +92,7 @@ void tick_int(u32 int_num, pcontext_t p_context, u32 err_code)
 void test()
 {
     __asm__ __volatile__(
+        "swi		#0\n"
         ".long		0xFFFFFFFF\n"
         :::);
     return;

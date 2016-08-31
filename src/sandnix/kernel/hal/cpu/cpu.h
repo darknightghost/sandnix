@@ -18,7 +18,12 @@
 #pragma once
 
 #include "../../../../common/common.h"
-#include "./arch/x86/cpu.h"
 #include "./context/context.h"
+
+#if defined	X86
+    #include "./arch/x86/cpu.h"
+#elif defined ARM
+    #include "./arch/arm/cpu.h"
+#endif
 
 u32		hal_cpu_get_cpuid();
