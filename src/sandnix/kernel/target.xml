@@ -8,14 +8,15 @@
     <archs>
         <arch name="x86">
             <PREV></PREV>
+            <ARCHDEF>-DX86</ARCHDEF>
             <DEP>gcc</DEP>
-            <DEPFLAGS></DEPFLAGS>
+            <DEPFLAGS>$(ARCHDEF)</DEPFLAGS>
             <DEPRULE>$(DEP) $(DEPFLAGS) -MM $&lt; | awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(dir $@)&quot;,$$0)} NR != 1 {print $$0}' | cat &gt; $@</DEPRULE>
             <CC>gcc</CC>
-            <CFLAGS>-Wall -DX86 -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -Werror -mno-sse2 -mno-sse</CFLAGS>
+            <CFLAGS>-Wall $(ARCHDEF) -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -Werror -mno-sse2 -mno-sse</CFLAGS>
             <CCRULE>$(CC) $(CFLAGS) -c -o $@ $&lt;</CCRULE>
             <AS>gcc</AS>
-            <ASFLAGS>-DX86 -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -Werror</ASFLAGS>
+            <ASFLAGS>$(ARCHDEF) -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -Werror</ASFLAGS>
             <ASRULE>$(AS) -c $(ASFLAGS) -o $@ $&lt;</ASRULE>
             <LD>ld</LD>
             <LDFLAGS>-m elf_i386 -Ttext 0xc0101000 -e _start --no-omagic -Map $(OUTDIR)/kernel.map</LDFLAGS>
@@ -24,14 +25,15 @@
         </arch>
         <arch name="arm.armv7.cortex-a9.samsung_exynos4412.itop_4412">
             <PREV></PREV>
+            <ARCHDEF>-DARM -DARM_ARMV7 -DARM_ARMV7_CORTEXA9 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412_ITOP_4412</ARCHDEF>
             <DEP>arm-none-eabi-gcc</DEP>
-            <DEPFLAGS></DEPFLAGS>
+            <DEPFLAGS>$(ARCHDEF)</DEPFLAGS>
             <DEPRULE>$(DEP) $(DEPFLAGS) -MM $&lt; | awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(dir $@)&quot;,$$0)} NR != 1 {print $$0}' | cat &gt; $@</DEPRULE>
             <CC>arm-none-eabi-gcc</CC>
-            <CFLAGS>-Wall -DARM -DARM_ARMV7 -DARM_ARMV7_CORTEXA9 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412_ITOP_4412 -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -Werror -march=armv7-a -mlong-calls</CFLAGS>
+            <CFLAGS>-Wall $(ARCHDEF) -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -Werror -march=armv7-a -mlong-calls</CFLAGS>
             <CCRULE>$(CC) -c $(CFLAGS) -o $@ $&lt;</CCRULE>
             <AS>arm-none-eabi-gcc</AS>
-            <ASFLAGS>-DARM -DARM_ARMV7 -DARM_ARMV7_CORTEXA9 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412_ITOP_4412 -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -Werror -march=armv7-a</ASFLAGS>
+            <ASFLAGS>$(ARCHDEF) -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -Werror -march=armv7-a</ASFLAGS>
             <ASRULE>$(AS) -c $(ASFLAGS) -o $@ $&lt;</ASRULE>
             <LD>arm-none-eabi-ld</LD>
             <LDFLAGS>-Ttext 0xC0000000 -e _start --no-omagic</LDFLAGS>

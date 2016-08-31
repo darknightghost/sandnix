@@ -27,7 +27,7 @@ def get_child_tags_by_name(parent, name):
     return ret
 
 class arch:
-    tag_list = ["PREV", "DEP", "DEPRULE", "CC", "CFLAGS", "CCRULE", "AS", "ASFLAGS",
+    tag_list = ["PREV", "ARCHDEF", "DEP", "DEPFLAGS", "DEPRULE", "CC", "CFLAGS", "CCRULE", "AS", "ASFLAGS",
         "ASRULE", "LD", "LDFLAGS", "LDRULE", "AFTER"]
     def __init__(self, node, dom, path, parent = None):
         self.path = path

@@ -8,13 +8,15 @@
     <archs actived="arm.armv7.cortex-a9.samsung_exynos4412.itop_4412">
         <arch name="x86">
             <PREV></PREV>
+            <ARCHDEF>-DX86</ARCHDEF>
             <DEP>gcc</DEP>
+            <DEPFLAGS></DEPFLAGS>
             <DEPRULE>$(DEP) -MM $&lt; | awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(dir $@)&quot;,$$0)} NR != 1 {print $$0}' | cat &gt; $@</DEPRULE>
             <CC>gcc</CC>
-            <CFLAGS>-c</CFLAGS>
+            <CFLAGS>-c $(ARCHDEF)</CFLAGS>
             <CCRULE>$(CC) $(CFLAGS) -o $@ $&lt;</CCRULE>
             <AS>gcc</AS>
-            <ASFLAGS>-c</ASFLAGS>
+            <ASFLAGS>-c $(ARCHDEF)</ASFLAGS>
             <ASRULE>$(AS) $(ASFLAGS) -o $@ $&lt;</ASRULE>
             <LD>gcc</LD>
             <LDFLAGS>$(LD) $(LDFLAGS) -o $@ $^</LDFLAGS>
@@ -23,13 +25,15 @@
         </arch>
         <arch name="arm.armv7.cortex-a9.samsung_exynos4412.itop_4412">
             <PREV></PREV>
+            <ARCHDEF>-DARM -DARM_ARMV7 -DARM_ARMV7_CORTEXA9 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412_ITOP_4412</ARCHDEF>
             <DEP>arm-none-eabi-gcc</DEP>
+            <DEPFLAGS></DEPFLAGS>
             <DEPRULE>$(DEP) -MM $&lt; | awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(dir $@)&quot;,$$0)} NR != 1 {print $$0}' | cat &gt; $@</DEPRULE>
             <CC>arm-none-eabi-gcc</CC>
-            <CFLAGS>-c -DARM -DARM_ARMV7 -DARM_ARMV7_CORTEXA9 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412_ITOP_4412</CFLAGS>
+            <CFLAGS>-c $(ARCHDEF)</CFLAGS>
             <CCRULE>$(CC) $(CFLAGS) -o $@ $&lt;</CCRULE>
             <AS>arm-none-eabi-gcc</AS>
-            <ASFLAGS>-c -D_ASM -DARM -DARM_ARMV7 -DARM_ARMV7_CORTEXA9 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412_ITOP_4412</ASFLAGS>
+            <ASFLAGS>-c $(ARCHDEF)</ASFLAGS>
             <ASRULE>$(AS) $(ASFLAGS) -o $@ $&lt;</ASRULE>
             <LD>arm-none-eabi-gcc</LD>
             <LDFLAGS>$(LD) $(LDFLAGS) -o $@ $^</LDFLAGS>

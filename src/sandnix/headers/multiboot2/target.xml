@@ -8,14 +8,16 @@
     <archs>
         <arch name="x86">
             <PREV></PREV>
+            <ARCHDEF>-DX86</ARCHDEF>
             <DEP>gcc</DEP>
-            <DEPRULE>$(DEP) -MM $&lt; | awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(dir $@)&quot;,$$0)} NR != 1 {print $$0}' | cat &gt; $@</DEPRULE>
+            <DEPFLAGS>$(ARCHDEF)</DEPFLAGS>
+            <DEPRULE>$(DEP) $(DEPFLAGS) -MM $&lt; | awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(dir $@)&quot;,$$0)} NR != 1 {print $$0}' | cat &gt; $@</DEPRULE>
             <CC>gcc</CC>
-            <CFLAGS>-c</CFLAGS>
-            <CCRULE>$(CC) $(CFLAGS) -o $@ $&lt;</CCRULE>
+            <CFLAGS>$(ARCHDEF)</CFLAGS>
+            <CCRULE>$(CC) -c $(CFLAGS) -o $@ $&lt;</CCRULE>
             <AS>gcc</AS>
-            <ASFLAGS>-x assembler-with-cpp -c -m32 -D_ASM</ASFLAGS>
-            <ASRULE>$(AS) $(ASFLAGS) -o $@ $&lt;</ASRULE>
+            <ASFLAGS>-x assembler-with-cpp -m32 -D_ASM $(ARCHDEF)</ASFLAGS>
+            <ASRULE>$(AS) -c $(ASFLAGS) -o $@ $&lt;</ASRULE>
             <LD>ld</LD>
             <LDFLAGS>--oformat binary -m elf_i386 -N -Ttext 0x0000</LDFLAGS>
             <LDRULE>$(LD) $(LDFLAGS) -o $@ $^</LDRULE>

@@ -8,8 +8,10 @@
     <archs>
         <arch name="arm.armv7.cortex-a9.samsung_exynos4412.itop_4412">
             <PREV></PREV>
+            <ARCHDEF></ARCHDEF>
             <DEP>arm-none-eabi-gcc</DEP>
-            <DEPRULE>$(DEP) -MM $&lt; | awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(dir $@)&quot;,$$0)} NR != 1 {print $$0}' | cat &gt; $@</DEPRULE>
+            <DEPFLAGS></DEPFLAGS>
+            <DEPRULE>$(DEP) $(DEPFLAGS) -MM $&lt; | awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(dir $@)&quot;,$$0)} NR != 1 {print $$0}' | cat &gt; $@</DEPRULE>
             <CC>arm-none-eabi-gcc</CC>
             <CFLAGS>-c</CFLAGS>
             <CCRULE>$(CC) $(CFLAGS) -o $@ $&lt;</CCRULE>
