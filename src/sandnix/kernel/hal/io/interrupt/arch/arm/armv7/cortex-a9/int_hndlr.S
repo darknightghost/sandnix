@@ -53,6 +53,7 @@ _reset_entry:
 		b		_reset_entry
 
 _undefined_entry:
+		//Switch to SVC mode
 		msr		cpsr_c, #0xD3
 		nop
 		nop
