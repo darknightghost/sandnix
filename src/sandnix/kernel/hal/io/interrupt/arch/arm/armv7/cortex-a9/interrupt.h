@@ -22,6 +22,12 @@
 #include "samsung_exynos4412/gic.h"
 #include "ivt.h"
 
+#define	INT_UNDEF			0x00
+#define	INT_PREFETCH_ABT	0x01
+#define	INT_DATA_ABT		0x02
+#define INT_BP				0x03
+#define	INT_GATE			0x04
+
 #define	REQUIRE_EOI_BEGIN	0x20
 #define	INT_IPI			0x20
 

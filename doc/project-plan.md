@@ -761,10 +761,7 @@ src/sandnix/kernel/hal/exception
 //void mem_fault_hndlr(u32 thread_id, address_t address, u32 operation)
 typedef void	(*mem_fault_hndlr)(u32, address_t, u32);
 
-//void privilege_fault_hndlr(u32 thread_id, address_t address)
-typedef void	(*privilege_fault_hndlr)(u32, address_t);
-
-//void undef_op_fault_hndlr(u32 thread_id, address_t address
+//void illegal_op_fault_hndlr(u32 thread_id, address_t address
 typedef void	(*undef_op_fault_hndlr)(u32, address_t;
 
 //错误处理程序链表

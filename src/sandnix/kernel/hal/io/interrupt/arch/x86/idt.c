@@ -66,6 +66,7 @@ void fill_idt()
     SET_NORMAL_IDT(idt_table, 0x00);
     SET_NORMAL_IDT(idt_table, 0x01);
     SET_NORMAL_IDT(idt_table, 0x02);
+    SET_IDT(idt_table, 0x03, int_0x03, SELECTOR_K_CODE, TYPE_TRAP, 0, 3, 1);
     SET_NORMAL_IDT(idt_table, 0x03);
     SET_NORMAL_IDT(idt_table, 0x04);
     SET_NORMAL_IDT(idt_table, 0x05);

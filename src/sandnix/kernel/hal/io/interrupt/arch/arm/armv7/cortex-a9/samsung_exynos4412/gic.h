@@ -16,3 +16,9 @@
 */
 
 #pragma once
+#include "../../../../../../../../../../common/common.h"
+#include "../../../../../../../cpu/cpu.h"
+
+
+u32		gic_get_irq_num();
+u32		gic_get_fiq_num();

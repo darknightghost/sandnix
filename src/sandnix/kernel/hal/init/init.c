@@ -91,18 +91,6 @@ void tick_int(u32 int_num, pcontext_t p_context, u32 err_code)
 */
 void test()
 {
-    __asm__ __volatile__(
-        "ldr	r0, =1f\n"
-        "add	r0, r0, #1\n"
-        "bx		r0\n"
-        "1:\n"
-        ".thumb\n"
-        "swi	#0\n"
-        ".word	0xFFFF\n"
-        "ldr	r0, =1f\n"
-        "bx		r0\n"
-        ".arm\n"
-        "1:\n"
-        :::"r0");
+    hal_early_print_printf("Tested\n");
     return;
 }

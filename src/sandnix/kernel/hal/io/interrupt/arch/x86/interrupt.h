@@ -22,6 +22,8 @@
 #include "apic.h"
 #include "tss.h"
 
+#define	INT_BP			0x03
+
 #define	REQUIRE_EOI_BEGIN	0x20
 #define	INT_IPI			0x20
 
