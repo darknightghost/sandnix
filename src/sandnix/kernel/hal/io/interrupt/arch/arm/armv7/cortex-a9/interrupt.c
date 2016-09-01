@@ -18,6 +18,7 @@
 
 #include "interrupt.h"
 #include "ivt.h"
+#include "../../../../../../exception/exception.h"
 
 void interrupt_init()
 {
@@ -33,7 +34,45 @@ void int_dispatcher(u32 int_num, pcontext_t p_context)
     UNREFERRED_PARAMETER(p_context);
 }
 
+void reset_hndlr()
+{
+    PANIC(ENOTSUP, "Reset.");
+}
+
+void undef_hndlr(pcontext_t p_context)
+{
+    p_context->pc += 4;
+    hal_cpu_context_load(p_context);
+}
+
 void swi_hndlr(pcontext_t p_context)
+{
+    hal_cpu_context_load(p_context);
+}
+
+void prefetch_abort_hndlr(pcontext_t p_context)
+{
+    hal_cpu_context_load(p_context);
+}
+
+void data_abort_hndlr(pcontext_t p_context)
+{
+    hal_cpu_context_load(p_context);
+}
+
+void reserved_hndlr()
+{
+    PANIC(ENOTSUP,
+          "Reserved interrupt called.");
+    return;
+}
+
+void irq_hndlr(pcontext_t p_context)
+{
+    hal_cpu_context_load(p_context);
+}
+
+void fiq_hndlr(pcontext_t p_context)
 {
     hal_cpu_context_load(p_context);
 }

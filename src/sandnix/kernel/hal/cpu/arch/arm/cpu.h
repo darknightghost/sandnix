@@ -39,7 +39,7 @@
                               "add		sp, sp, #8\n" \
                               "ldmfd	sp!, {lr}\n" \
                               "add		sp, sp, #8\n" \
-                              "ldmfd	sp!, {pc}\n" \
+                              "ldmfd	sp!, {pc}^\n" \
                               ::"r"((p_context)) \
                               :); \
     }
