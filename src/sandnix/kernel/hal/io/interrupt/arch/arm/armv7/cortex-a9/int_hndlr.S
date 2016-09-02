@@ -400,4 +400,4 @@ _fiq_entry:
 
 		//Call handler
 		mov		r0, sp
-		b		fiq_hndlr
+		b		irq_hndlr

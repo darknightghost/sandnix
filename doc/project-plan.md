@@ -589,7 +589,10 @@ void hal_io_set_clock_period(
 u32 hal_io_get_clock_period();
 
 //广播IPI
-void hal_io_send_IPI();
+void hal_io_broadcast_IPI();
+
+//发送IPI
+void hal_io_send_IPI(u32 target_cpu);
 
 //针对IPI发送EOI
 void hal_io_IPI_send_eoi();

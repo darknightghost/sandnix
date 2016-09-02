@@ -318,7 +318,7 @@ void io_apic_init()
     for(u32 i = 0; i < redirct_tbl_num; i++) {
         redict_entry_value.data.vector = IRQ_BASE + i;
         ioapic_redirct_tbl_write(i, redict_entry_value.value);
-        hal_early_print_printf("IRQ%u --> INT %#.2X.\n", i, IRQ0 + i);
+        hal_early_print_printf("IRQ%u --> INT %#.2X.\n", i, IRQ(i));
     }
 
     return;

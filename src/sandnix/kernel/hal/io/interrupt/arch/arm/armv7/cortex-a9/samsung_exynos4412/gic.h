@@ -20,5 +20,5 @@
 #include "../../../../../../../cpu/cpu.h"
 
 
+void	gic_init();
 u32		gic_get_irq_num();
-u32		gic_get_fiq_num();

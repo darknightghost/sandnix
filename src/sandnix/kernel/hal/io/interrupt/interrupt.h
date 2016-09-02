@@ -86,8 +86,11 @@ void hal_io_set_clock_period(
 //Get system clock period
 u32 hal_io_get_clock_period();
 
-//Send IPI
-void hal_io_send_IPI();
+//Broadcast inter-processor information
+void hal_io_broadcast_IPI();
 
-//Send EOI
+//Send inter-processor information
+void hal_io_send_IPI(u32 target_cpu_id);
+
+//Send EOI(inter-processor information)
 void hal_io_IPI_send_eoi();

@@ -30,6 +30,7 @@ void interrupt_init()
     hal_early_print_printf("Initializing interrupt...\n");
     core_pm_spnlck_init(&lock);
     ivt_init();
+    gic_init();
     return;
 }
 
@@ -42,6 +43,28 @@ void* hal_io_int_callback_set(u32 num, int_callback_t callback)
     return old_hndlr;
 }
 
+void hal_io_int_disable()
+{
+    __asm__ __volatile__(
+        "mrs	r0, cpsr\n"
+        "orr	r0, r0, %0\n"
+        "msr	cpsr, r0\n"
+        ::"i"(0xC0)
+        :"r0");
+    return;
+}
+
+void hal_io_int_enable()
+{
+    __asm__ __volatile__(
+        "mrs	r0, cpsr\n"
+        "and	r0, r0, %0\n"
+        "msr	cpsr, r0\n"
+        ::"i"(~(u32)0xC0)
+        :"r0");
+    return;
+}
+
 void reset_hndlr()
 {
     PANIC(ENOTSUP, "Reset.");
@@ -49,9 +72,11 @@ void reset_hndlr()
 
 void undef_hndlr(pcontext_t p_context)
 {
-    if(int_hndlr_table[INT_UNDEF] != NULL) {
-        int_hndlr_table[INT_UNDEF](INT_UNDEF,
-                                   p_context, 0);
+    int_callback_t callback = int_hndlr_table[INT_UNDEF];
+
+    if(callback != NULL) {
+        callback(INT_UNDEF,
+                 p_context, 0);
     }
 
     PANIC(EINTERRUPT, "Unhandled undefined exception.\n"
@@ -85,9 +110,11 @@ void undef_hndlr(pcontext_t p_context)
 
 void swi_hndlr(pcontext_t p_context)
 {
-    if(int_hndlr_table[INT_GATE] != NULL) {
-        int_hndlr_table[INT_GATE](INT_GATE,
-                                  p_context, 0);
+    int_callback_t callback = int_hndlr_table[INT_GATE];
+
+    if(callback != NULL) {
+        callback(INT_GATE,
+                 p_context, 0);
     }
 
     hal_cpu_context_load(p_context);
@@ -95,9 +122,11 @@ void swi_hndlr(pcontext_t p_context)
 
 void prefetch_abort_hndlr(pcontext_t p_context)
 {
-    if(int_hndlr_table[INT_PREFETCH_ABT] != NULL) {
-        int_hndlr_table[INT_PREFETCH_ABT](INT_PREFETCH_ABT,
-                                          p_context, 0);
+    int_callback_t callback = int_hndlr_table[INT_PREFETCH_ABT];
+
+    if(callback != NULL) {
+        callback(INT_PREFETCH_ABT,
+                 p_context, 0);
     }
 
     PANIC(EINTERRUPT, "Unhandled prefetch abort exception.\n"
@@ -132,9 +161,11 @@ void prefetch_abort_hndlr(pcontext_t p_context)
 
 void data_abort_hndlr(pcontext_t p_context)
 {
-    if(int_hndlr_table[INT_DATA_ABT] != NULL) {
-        int_hndlr_table[INT_DATA_ABT](INT_DATA_ABT,
-                                      p_context, 0);
+    int_callback_t callback = int_hndlr_table[INT_DATA_ABT];
+
+    if(callback != NULL) {
+        callback(INT_DATA_ABT,
+                 p_context, 0);
     }
 
     PANIC(EINTERRUPT, "Unhandled data abort exception.\n"
@@ -176,11 +207,13 @@ void reserved_hndlr()
 
 void irq_hndlr(pcontext_t p_context)
 {
-    hal_cpu_context_load(p_context);
-}
+    u32 int_id = gic_get_irq_num();
+    int_callback_t callback = int_hndlr_table[int_id + IRQ_BASE];
 
-void fiq_hndlr(pcontext_t p_context)
-{
-    hal_cpu_context_load(p_context);
-}
+    if(callback != NULL) {
+        callback(int_id + IRQ_BASE, p_context, 0);
+    }
 
+    hal_cpu_context_load(p_context);
+    return;
+}
