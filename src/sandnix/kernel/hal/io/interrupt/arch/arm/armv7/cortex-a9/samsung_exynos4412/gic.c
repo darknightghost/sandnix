@@ -17,6 +17,7 @@
 
 #include "gic.h"
 #include "../../../../../../../mmu/mmu.h"
+#include "../../../../../../../cpu/cpu.h"
 #include "../../../../../../../early_print/early_print.h"
 
 #define	GIC_CONTROLLER_PHY_BASE		0x10480000
@@ -118,12 +119,16 @@ void gic_init()
     return;
 }
 
-u32 gic_get_irq_num()
+void hal_io_irq_send_eoi()
 {
-    return 0;
+    u32 cpuid = hal_cpu_get_cpuid();
+
+    ICCEOI_CPU(cpuid) = ICCIAR_CPU(cpuid);
+
+    return;
 }
 
-u32 hal_io_gic_get_cpu_id()
+u32 gic_get_irq_num()
 {
-    return ICCIIDR;
+    return ICCIAR_CPU(hal_cpu_get_cpuid()) & 0x1FF;
 }

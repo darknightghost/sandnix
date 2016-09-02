@@ -214,6 +214,7 @@ void irq_hndlr(pcontext_t p_context)
         callback(int_id + IRQ_BASE, p_context, 0);
     }
 
+    hal_io_irq_send_eoi();
     hal_cpu_context_load(p_context);
     return;
 }

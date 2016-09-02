@@ -1,3 +1,6 @@
 #hal
 ##mmu
 hal/mmu/paging/arch/arm/armv7/paging.c
+
+##cpu
+hal/cpu/arch/arm/cpu.c

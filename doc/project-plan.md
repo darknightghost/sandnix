@@ -683,9 +683,6 @@ void hal_io_outs_64(address_t port, size_t count, void* src);
 u32		hal_io_apic_read32(address_t off);
 void	hal_io_apic_write32(address_t off, u32 data);
 
-//ARM only
-u32		hal_io_gic_get_cpu_id();
-
 ```
 ######文件列表
 ```c
