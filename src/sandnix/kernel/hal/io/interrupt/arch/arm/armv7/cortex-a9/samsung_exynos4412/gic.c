@@ -96,6 +96,11 @@ void gic_init()
         ICDISER_SPI(i) = 0xFFFFFFFF;
     }
 
+    //Set IRQ targets
+    for(u32 i = 0; i < 32; i++) {
+        ICDIPTR_SPI(i) = 0x1010101;
+    }
+
     for(u32 i = 0; i < 4; i++) {
         ICCPMR_CPU(i) = 0x00;
         ICCBPR_CPU(i) = 0x00;
