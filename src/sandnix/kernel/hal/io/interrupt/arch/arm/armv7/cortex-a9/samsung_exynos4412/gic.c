@@ -29,13 +29,13 @@ static		address_t	gic_distributor_base[4];
 
 //GIC controller registers
 #define	ICCICR_CPU(n)			TO_REG(gic_controller_bases[(n)] + 0x00)
-#define	ICCPMR(n)				TO_REG(gic_controller_bases[(n)] + 0x04)
-#define	ICCBPR(n)				TO_REG(gic_controller_bases[(n)] + 0x08)
-#define	ICCIAR(n)				TO_REG(gic_controller_bases[(n)] + 0x0C)
-#define	ICCEOI(n)				TO_REG(gic_controller_bases[(n)] + 0x10)
-#define	ICCRPR(n)				TO_REG(gic_controller_bases[(n)] + 0x14)
-#define	ICCHPIR(n)				TO_REG(gic_controller_bases[(n)] + 0x18)
-#define	ICCABPR(n)				TO_REG(gic_controller_bases[(n)] + 0x1C)
+#define	ICCPMR_CPU(n)			TO_REG(gic_controller_bases[(n)] + 0x04)
+#define	ICCBPR_CPU(n)			TO_REG(gic_controller_bases[(n)] + 0x08)
+#define	ICCIAR_CPU(n)			TO_REG(gic_controller_bases[(n)] + 0x0C)
+#define	ICCEOI_CPU(n)			TO_REG(gic_controller_bases[(n)] + 0x10)
+#define	ICCRPR_CPU(n)			TO_REG(gic_controller_bases[(n)] + 0x14)
+#define	ICCHPIR_CPU(n)			TO_REG(gic_controller_bases[(n)] + 0x18)
+#define	ICCABPR_CPU(n)			TO_REG(gic_controller_bases[(n)] + 0x1C)
 #define	INTEG_EN_C_CPU(n)		TO_REG(gic_controller_bases[(n)] + 0x40)
 #define	INTERRUPT_OUT_CPU(n)	TO_REG(gic_controller_bases[(n)] + 0x44)
 #define	ICCIIDR					TO_REG(gic_controller_bases[0] + 0xFC)
@@ -88,6 +88,27 @@ void gic_init()
                                phy_base, gic_controller_bases[i]);
     }
 
+    //Initialize GIC
+    ICDDCR = 0x01;
+
+    for(u32 i = 0; i < 4; i++) {
+        ICDISR_SPI(i) = 0xFFFFFFFF;
+        ICDISER_SPI(i) = 0xFFFFFFFF;
+    }
+
+    for(u32 i = 0; i < 4; i++) {
+        ICCPMR_CPU(i) = 0x00;
+        ICCBPR_CPU(i) = 0x00;
+        ICCRPR_CPU(i) = 0xFF;
+        ICCABPR_CPU(i) = 0x00;
+        INTEG_EN_C_CPU(i) = 0x00;
+        INTERRUPT_OUT_CPU(i) = 0x00;
+        ICDISR_SGI_PPI(i) = 0xFFFFFFFF;
+        ICDISER_SGI_PPI(i) = 0xFFFFFFFF;
+
+        //Enable GIC
+        ICCICR_CPU(i) = 0x01;
+    }
 
     return;
 }
@@ -97,7 +118,7 @@ u32 gic_get_irq_num()
     return 0;
 }
 
-u32 gic_get_fiq_num()
+u32 hal_io_gic_get_cpu_id()
 {
-    return 0;
+    return ICCIIDR;
 }

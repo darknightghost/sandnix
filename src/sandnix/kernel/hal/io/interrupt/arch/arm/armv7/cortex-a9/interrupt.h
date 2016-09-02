@@ -37,3 +37,5 @@
 #define	IRQ_MAX			IRQ(159)
 #define	IRQ_CLOCK		IRQ(2)
 #define	REQUIRE_EOI_END	IRQ_MAX
+
+u32		hal_io_gic_get_cpu_id();
