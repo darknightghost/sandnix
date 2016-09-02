@@ -25,7 +25,7 @@
 static		address_t	gic_controller_bases[4];
 static		address_t	gic_distributor_base[4];
 
-#define	TO_REG(addr)	((volatile u32*)(void*)((addr)))
+#define	TO_REG(addr)	(*((volatile u32*)(void*)((addr))))
 
 //GIC controller registers
 #define	ICCICR_CPU(n)			TO_REG(gic_controller_bases[(n)] + 0x00)
@@ -55,6 +55,17 @@ static		address_t	gic_distributor_base[4];
 #define	ICDICFR_SPI(n)			TO_REG(gic_distributor_base[0] + 0xC08 + 4 * (n))
 #define	SPI_STATUS(n)			TO_REG(gic_distributor_base[0] + 0xD04 + 4 * (n))
 #define	ICDSGIR					TO_REG(gic_distributor_base[0] + 0xF00)
+
+#define	ICDISR_SGI_PPI(cpu)		TO_REG(gic_distributor_base[(cpu)] + 0x80)
+#define	ICDISER_SGI_PPI(cpu)	TO_REG(gic_distributor_base[(cpu)] + 0x100)
+#define	ICDICER_SGI_PPI(cpu)	TO_REG(gic_distributor_base[(cpu)] + 0x180)
+#define	ICDISPR_SGI_PPI(cpu)	TO_REG(gic_distributor_base[(cpu)] + 0x200)
+#define	ICDICPR_SGI_PPI(cpu)	TO_REG(gic_distributor_base[(cpu)] + 0x280)
+#define	ICDABR_SGI_PPI(cpu)		TO_REG(gic_distributor_base[(cpu)] + 0x300)
+#define	ICDIPR_SGI_PPI(cpu, n)	TO_REG(gic_distributor_base[(cpu)] + 0x400 \
+                                       + 4 * (n))
+#define	ICDIPTR_SGI(cpu, n)		TO_REG(gic_distributor_base[(cpu)] + 0x800 \
+                                       + 4 * (n))
 
 void gic_init()
 {
