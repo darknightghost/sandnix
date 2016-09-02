@@ -123,7 +123,7 @@ void hal_io_irq_send_eoi()
 {
     u32 cpuid = hal_cpu_get_cpuid();
 
-    ICCEOI_CPU(cpuid) = ICCIAR_CPU(cpuid);
+    ICCEOI_CPU(cpuid) = ICCIAR_CPU(cpuid) & 0x1FF;
 
     return;
 }
