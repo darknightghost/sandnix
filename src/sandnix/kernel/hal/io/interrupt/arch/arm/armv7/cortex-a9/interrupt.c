@@ -208,6 +208,11 @@ void reserved_hndlr()
 void irq_hndlr(pcontext_t p_context)
 {
     u32 int_id = gic_get_irq_num();
+
+    if(int_id == IRQ_CLOCK - IRQ_BASE) {
+        gic_clock_eoi();
+    }
+
     int_callback_t callback = int_hndlr_table[int_id + IRQ_BASE];
 
     if(callback != NULL) {

@@ -86,6 +86,9 @@ void hal_io_set_clock_period(
 //Get system clock period
 u32 hal_io_get_clock_period();
 
+//Get max clock period
+u32 hal_io_get_max_clock_period();
+
 //Broadcast inter-processor information
 void hal_io_broadcast_IPI();
 

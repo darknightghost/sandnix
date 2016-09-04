@@ -588,6 +588,9 @@ void hal_io_set_clock_period(
 //获得时钟中断周期
 u32 hal_io_get_clock_period();
 
+//获得最大时钟中断周期
+u32 hal_io_get_max_clock_period();
+
 //广播IPI
 void hal_io_broadcast_IPI();
 

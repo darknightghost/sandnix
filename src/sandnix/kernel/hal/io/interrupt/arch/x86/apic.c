@@ -197,17 +197,32 @@ void hal_io_irq_send_eoi()
 void hal_io_set_clock_period(u32 microsecond)
 {
     timer_period = microsecond;
+
+    u64 val = hal_rtl_math_div64((u64)microsecond * 1000
+                                 * 1000 * 1000,
+                                 HPET_COUNT_FS);
     *hpet_configure_reg &= ~(u64)0x01;
-    *hpet_counter_reg = 0;
-    *hpet_timer_comp_reg(0) = hal_rtl_math_div64((u64)microsecond * 1000
-                              * 1000 * 1000,
-                              HPET_COUNT_FS);
+    *hpet_timer_comp_reg(0) = val;
     *hpet_configure_reg |= 0x01;
+
+    return;
 }
 
 u32 hal_io_get_clock_period()
 {
     return timer_period;
+}
+
+u32 hal_io_get_max_clock_period()
+{
+    u64 ret = 0x10000000 * HPET_COUNT_FS - 1;
+
+    if(ret < 0x100000000) {
+        return ret;
+
+    } else {
+        return 0xFFFFFFFF;
+    }
 }
 
 bool is_apic_supported()
@@ -464,6 +479,7 @@ void clock_init()
 
     //Initialize timer#0
     hal_early_print_printf("Initializing timer#0...\n");
+    *hpet_counter_reg = 0;
     hal_io_set_clock_period(10000);
     *hpet_timer_cfg_reg(0) = 0x4C;
 

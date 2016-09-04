@@ -51,18 +51,20 @@ void kinit(void* p_bootloader_info)
     hal_io_int_enable();
     //hal_io_irq_send_eoi();
 
-    while(1);
+    while(1) {
+        hal_io_int_enable();
+    }
 
     return;
 }
-/*
+
 u32 tm = 3000;
 void keyboard_int(u32 int_num, pcontext_t p_context, u32 err_code)
 {
     tm = 3000;
-    hal_io_in_8(I8408_DATA_PORT);
-    hal_io_in_8(I8408_DATA_PORT);
-    hal_io_in_8(I8408_DATA_PORT);
+    //hal_io_in_8(I8408_DATA_PORT);
+    //hal_io_in_8(I8408_DATA_PORT);
+    //hal_io_in_8(I8408_DATA_PORT);
     UNREFERRED_PARAMETER(int_num);
     UNREFERRED_PARAMETER(p_context);
     UNREFERRED_PARAMETER(err_code);
@@ -76,6 +78,8 @@ void clock_int(u32 int_num, pcontext_t p_context, u32 err_code)
         tm = 3000;
     }
 
+    hal_early_print_printf("\r%.4u", tm);
+
     UNREFERRED_PARAMETER(int_num);
     UNREFERRED_PARAMETER(p_context);
     UNREFERRED_PARAMETER(err_code);
@@ -88,22 +92,11 @@ void tick_int(u32 int_num, pcontext_t p_context, u32 err_code)
     UNREFERRED_PARAMETER(p_context);
     UNREFERRED_PARAMETER(err_code);
 }
-*/
+
 void test()
 {
-    hal_early_print_printf("Tested\n");
-
-    for(u32 i = 0; i < 100000; i++);
-
-    for(u32 i = 0; i < 100000; i++);
-
-    hal_early_print_printf("Tested\n");
-
-    for(u32 i = 0; i < 100000; i++);
-
-    for(u32 i = 0; i < 100000; i++);
-
-    hal_early_print_printf("Tested\n");
+    hal_early_print_printf("Test\n");
+    hal_io_int_callback_set(IRQ_CLOCK, clock_int);
 
     return;
 }

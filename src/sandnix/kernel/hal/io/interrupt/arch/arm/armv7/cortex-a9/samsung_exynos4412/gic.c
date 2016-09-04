@@ -19,12 +19,14 @@
 #include "../../../../../../../mmu/mmu.h"
 #include "../../../../../../../cpu/cpu.h"
 #include "../../../../../../../early_print/early_print.h"
+#include "../../../../../../../rtl/math/math.h"
 
 #define	GIC_CONTROLLER_PHY_BASE		0x10480000
 #define	GIC_DISTRIBUTOR_PHY_BASE	0x10490000
 
 static		address_t	gic_controller_bases[4];
 static		address_t	gic_distributor_base[4];
+static		u32			current_irq_id[MAX_PROCESS_NUM] = {0};
 
 #define	TO_REG(addr)	(*((volatile u32*)(void*)((addr))))
 
@@ -67,6 +69,21 @@ static		address_t	gic_distributor_base[4];
                                        + 4 * (n))
 #define	ICDIPTR_SGI(cpu, n)		TO_REG(gic_distributor_base[(cpu)] + 0x800 \
                                        + 4 * (n))
+
+//Pulse Width Modulation Time
+#define	PCLK_FREQ				66000000
+static	address_t				pwm_base_addr;
+
+#define	PWM_PHY_BASE			0x139D0000
+#define	TCFG0					TO_REG(pwm_base_addr + 0x0000)
+#define	TCFG1					TO_REG(pwm_base_addr + 0x0004)
+#define	TCON					TO_REG(pwm_base_addr + 0x0008)
+#define	TCNTB(n)				TO_REG(pwm_base_addr + 0x000C + 0x0C * (n))
+#define	TCMPB(n)				TO_REG(pwm_base_addr + 0x0010 + 0x0C * (n))
+#define	TCNTO(n)				TO_REG(pwm_base_addr + 0x0014 + 0x0C * (n))
+#define	TINT_CSTAT				TO_REG(pwm_base_addr + 0x0044)
+
+static	void	init_clock();
 
 void gic_init()
 {
@@ -116,6 +133,11 @@ void gic_init()
         ICCICR_CPU(i) = 0x01;
     }
 
+    //Initialize clock
+    init_clock();
+
+    //Initialize tick
+
     return;
 }
 
@@ -123,12 +145,81 @@ void hal_io_irq_send_eoi()
 {
     u32 cpuid = hal_cpu_get_cpuid();
 
-    ICCEOI_CPU(cpuid) = ICCIAR_CPU(cpuid) & 0x1FF;
+    ICCEOI_CPU(cpuid) = (ICCIAR_CPU(cpuid) & (~(u32)0x1FF)) | gic_get_irq_num();
 
     return;
 }
 
+void hal_io_set_clock_period(u32 microsecond)
+{
+    u32 val = (u32)(hal_rtl_math_div64((u64)microsecond * PCLK_FREQ,
+                                       (1000 * 1000)));
+    TCNTB(0) = val;
+    TCON |= 0x02;
+    TCON &= ~(u32)0x02;
+    return;
+}
+
+u32 hal_io_get_clock_period()
+{
+    return (u32)hal_rtl_math_div64((u64)TCNTB(0) * 1000 * 1000,
+                                   PCLK_FREQ);
+}
+
+u32 hal_io_get_max_clock_period()
+{
+    return (u32)hal_rtl_math_div64((u64)0x100000000 * 1000 * 1000,
+                                   PCLK_FREQ) - 1;
+}
+
 u32 gic_get_irq_num()
 {
-    return ICCIAR_CPU(hal_cpu_get_cpuid()) & 0x1FF;
+    u32 cpuid = hal_cpu_get_cpuid();
+    u32 val = ICCIAR_CPU(cpuid) & 0x1FF;
+
+    if(val == (0x3FF & 0x1FF)) {
+        return current_irq_id[cpuid];
+
+    } else {
+        current_irq_id[cpuid] = val;
+        return val;
+    }
+}
+
+void init_clock()
+{
+    hal_early_print_printf("Initializing System clock...\n");
+    //Map registers
+    pwm_base_addr = (address_t)hal_mmu_add_early_paging_addr((void*)PWM_PHY_BASE,
+                    MMU_PAGE_RW_NC);
+    hal_early_print_printf("Mapping physical address %p->%p.\n",
+                           PWM_PHY_BASE, pwm_base_addr);
+
+    //Disable all timers
+    TINT_CSTAT = 0x0;
+    TCON = 0x0;
+
+    //Initialize PWM
+    TCFG0 = 0x0101;
+    TCFG1 = 0x0;
+
+    //Initialize timer 0
+    TCMPB(0) = 1;
+    TCON = 0x08;
+    hal_io_set_clock_period(1000000);
+    //TCNTO(0) = TCNTB(0);
+    TCNTO(0) = 66000000;
+
+    //Enable Timer 0 & start counting
+    TINT_CSTAT = 0x01;
+    TCON = 0x09;
+    TINT_CSTAT = 0x3E1;
+
+    return;
+}
+
+void gic_clock_eoi()
+{
+    TINT_CSTAT |= 0x20;
+    return;
 }
