@@ -83,7 +83,34 @@ static	address_t				pwm_base_addr;
 #define	TCNTO(n)				TO_REG(pwm_base_addr + 0x0014 + 0x0C * (n))
 #define	TINT_CSTAT				TO_REG(pwm_base_addr + 0x0044)
 
+//Multi Core Timer
+static	address_t				mct_base_addr;
+
+#define	MCT_PHY_BASE			0x10050000
+#define	MCT_CFG					TO_REG(mct_base_addr + 0x0000)
+#define	G_CNT_L					TO_REG(mct_base_addr + 0x0100)
+#define	G_CNT_U					TO_REG(mct_base_addr + 0x0104)
+#define	G_CNT_WSTAT				TO_REG(mct_base_addr + 0x0110)
+#define	G_COMP_L(n)				TO_REG(mct_base_addr + 0x0200 + 0x10 * (n))
+#define	G_COMP_U(n)				TO_REG(mct_base_addr + 0x0204 + 0x10 * (n))
+#define	G_COMP_ADD_INCR(n)		TO_REG(mct_base_addr + 0x0208 + 0x10 * (n))
+#define	G_TCON					TO_REG(mct_base_addr + 0x0240)
+#define	G_INT_CSTAT				TO_REG(mct_base_addr + 0x0244)
+#define	G_INT_ENB				TO_REG(mct_base_addr + 0x0248)
+#define	G_WSTAT					TO_REG(mct_base_addr + 0x024C)
+#define	L_TCNTB(n)				TO_REG(mct_base_addr + 0x0300 + 0x100 * (n))
+#define	L_TCNTO(n)				TO_REG(mct_base_addr + 0x0304 + 0x100 * (n))
+#define	L_ICNTB(n)				TO_REG(mct_base_addr + 0x0308 + 0x100 * (n))
+#define	L_ICNTO(n)				TO_REG(mct_base_addr + 0x030C + 0x100 * (n))
+#define	L_FRCNTB(n)				TO_REG(mct_base_addr + 0x0310 + 0x100 * (n))
+#define	L_FRCNTO(n)				TO_REG(mct_base_addr + 0x0314 + 0x100 * (n))
+#define	L_TCON(n)				TO_REG(mct_base_addr + 0x0320 + 0x100 * (n))
+#define	L_INT_CSTAT(n)			TO_REG(mct_base_addr + 0x0330 + 0x100 * (n))
+#define	L_INT_ENB(n)			TO_REG(mct_base_addr + 0x0334 + 0x100 * (n))
+#define	L_WSTAT(n)				TO_REG(mct_base_addr + 0x0340 + 0x100 * (n))
+
 static	void	init_clock();
+static	void	init_tick();
 
 void gic_init()
 {
@@ -137,6 +164,7 @@ void gic_init()
     init_clock();
 
     //Initialize tick
+    init_tick();
 
     return;
 }
@@ -207,7 +235,6 @@ void init_clock()
     TCMPB(0) = 1;
     TCON = 0x08;
     hal_io_set_clock_period(1000000);
-    //TCNTO(0) = TCNTB(0);
     TCNTO(0) = 66000000;
 
     //Enable Timer 0 & start counting
@@ -222,4 +249,11 @@ void gic_clock_eoi()
 {
     TINT_CSTAT |= 0x20;
     return;
+}
+
+void init_tick()
+{
+    hal_early_print_printf("Initializing system tick...\n");
+    mct_base_addr = (address_t)hal_mmu_add_early_paging_addr((void*)MCT_PHY_BASE,
+                    MMU_PAGE_RW_NC);
 }

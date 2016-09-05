@@ -78,8 +78,6 @@ void clock_int(u32 int_num, pcontext_t p_context, u32 err_code)
         tm = 3000;
     }
 
-    hal_early_print_printf("\r%.4u", tm);
-
     UNREFERRED_PARAMETER(int_num);
     UNREFERRED_PARAMETER(p_context);
     UNREFERRED_PARAMETER(err_code);
@@ -97,6 +95,7 @@ void test()
 {
     hal_early_print_printf("Test\n");
     hal_io_int_callback_set(IRQ_CLOCK, clock_int);
+    hal_io_int_callback_set(IRQ_TICK, tick_int);
 
     return;
 }
