@@ -211,6 +211,9 @@ void irq_hndlr(pcontext_t p_context)
 
     if(int_id == IRQ_CLOCK - IRQ_BASE) {
         gic_clock_eoi();
+
+    } else if(int_id == IRQ_TICK - IRQ_BASE) {
+        gic_tick_eoi();
     }
 
     int_callback_t callback = int_hndlr_table[int_id + IRQ_BASE];

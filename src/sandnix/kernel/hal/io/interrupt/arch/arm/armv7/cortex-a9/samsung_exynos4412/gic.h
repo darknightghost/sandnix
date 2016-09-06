@@ -23,3 +23,4 @@
 void	gic_init();
 u32		gic_get_irq_num();
 void	gic_clock_eoi();
+void	gic_tick_eoi();

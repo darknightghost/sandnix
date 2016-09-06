@@ -58,7 +58,7 @@ void kinit(void* p_bootloader_info)
     return;
 }
 
-u32 tm = 3000;
+volatile u32 tm = 3000;
 void keyboard_int(u32 int_num, pcontext_t p_context, u32 err_code)
 {
     tm = 3000;

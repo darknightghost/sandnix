@@ -20,6 +20,7 @@
 #include "../../../../../../../cpu/cpu.h"
 #include "../../../../../../../early_print/early_print.h"
 #include "../../../../../../../rtl/math/math.h"
+#include "../../../../../interrupt.h"
 
 #define	GIC_CONTROLLER_PHY_BASE		0x10480000
 #define	GIC_DISTRIBUTOR_PHY_BASE	0x10490000
@@ -108,6 +109,11 @@ static	address_t				mct_base_addr;
 #define	L_INT_CSTAT(n)			TO_REG(mct_base_addr + 0x0330 + 0x100 * (n))
 #define	L_INT_ENB(n)			TO_REG(mct_base_addr + 0x0334 + 0x100 * (n))
 #define	L_WSTAT(n)				TO_REG(mct_base_addr + 0x0340 + 0x100 * (n))
+
+#define	L_REG_W_WAIT(n, mask)	{ \
+        while(!(L_WSTAT((n)) & mask)); \
+        L_WSTAT((n)) = mask; \
+    }
 
 static	void	init_clock();
 static	void	init_tick();
@@ -251,9 +257,41 @@ void gic_clock_eoi()
     return;
 }
 
+void gic_tick_eoi()
+{
+    L_INT_CSTAT(0) = 0x03;
+    return;
+}
+
 void init_tick()
 {
     hal_early_print_printf("Initializing system tick...\n");
+
+    //Map address
     mct_base_addr = (address_t)hal_mmu_add_early_paging_addr((void*)MCT_PHY_BASE,
                     MMU_PAGE_RW_NC);
+    hal_early_print_printf("Mapping physical address %p->%p.\n",
+                           MCT_PHY_BASE, mct_base_addr);
+
+    //Initialize local time
+    //Disable timer
+    L_WSTAT(0) = 0x0F;
+    L_TCON(0) = 0x04;
+    L_REG_W_WAIT(0, 0x08);
+    L_INT_ENB(0) = 0x0;
+
+    //Initialize timer
+    MCT_CFG = 0x9800;
+    L_ICNTB(0) = 0x80000000 + 1;
+    L_REG_W_WAIT(0, 0x02);
+    L_TCNTB(0) = 100000000 / 1000 / 1000 * TICK_PERIOD;
+    L_REG_W_WAIT(0, 0x01);
+    gic_tick_eoi();
+
+    //Enable timer
+    L_INT_ENB(0) = 0x01;
+    L_TCON(0) = 0x07;
+    L_REG_W_WAIT(0, 0x08);
+
+    return;
 }
