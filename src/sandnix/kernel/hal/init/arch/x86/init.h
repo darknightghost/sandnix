@@ -18,6 +18,8 @@
 #pragma once
 #include "../../../../../../common/common.h"
 
+#define arch_init()
+
 #define	DA_32		0x4000		//32 bit segment
 #define	DA_DPL0		0x00		//DPL = 0
 #define	DA_DPL1		0x20		//DPL = 1

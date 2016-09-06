@@ -35,7 +35,7 @@
 #define	IRQ(n)			(IRQ_BASE + (n))
 
 #define	IRQ_MAX			IRQ(159)
-#define	IRQ_CLOCK		IRQ(69)
-#define	IRQ_TICK		IRQ(28)
+#define	INT_CLOCK		IRQ(69)
+#define	INT_TICK		IRQ(28)
 #define	REQUIRE_EOI_END	IRQ_MAX
 

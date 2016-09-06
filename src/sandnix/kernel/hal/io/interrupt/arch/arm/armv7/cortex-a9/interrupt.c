@@ -209,10 +209,10 @@ void irq_hndlr(pcontext_t p_context)
 {
     u32 int_id = gic_get_irq_num();
 
-    if(int_id == IRQ_CLOCK - IRQ_BASE) {
+    if(int_id == INT_CLOCK - IRQ_BASE) {
         gic_clock_eoi();
 
-    } else if(int_id == IRQ_TICK - IRQ_BASE) {
+    } else if(int_id == INT_TICK - IRQ_BASE) {
         gic_tick_eoi();
     }
 

@@ -26,4 +26,8 @@
     #include "./arch/arm/cpu.h"
 #endif
 
-u32		hal_cpu_get_cpuid();
+u32	hal_cpu_get_cpu_id();
+
+u32	hal_cpu_get_cpu_index();
+u32	hal_cpu_get_cpu_id_by_index();
+u32	hal_cpu_get_cpu_index_by_id();

@@ -33,6 +33,7 @@
 u8	__attribute__((aligned(4096)))	init_stack[DEFAULT_STACK_SIZE];
 void kinit(void* p_bootloader_info)
 {
+    arch_init();
     hal_early_print_init();
     hal_early_print_printf("%s loading...\n", VER_STR);
 
@@ -61,10 +62,19 @@ void kinit(void* p_bootloader_info)
 volatile u32 tm = 3000;
 void keyboard_int(u32 int_num, pcontext_t p_context, u32 err_code)
 {
+    hal_io_in_8(I8408_DATA_PORT);
+    hal_io_in_8(I8408_DATA_PORT);
+    hal_io_in_8(I8408_DATA_PORT);
+    hal_io_send_IPI(hal_cpu_get_cpu_id());
+    UNREFERRED_PARAMETER(int_num);
+    UNREFERRED_PARAMETER(p_context);
+    UNREFERRED_PARAMETER(err_code);
+}
+
+void ipi_int(u32 int_num, pcontext_t p_context, u32 err_code)
+{
     tm = 3000;
-    //hal_io_in_8(I8408_DATA_PORT);
-    //hal_io_in_8(I8408_DATA_PORT);
-    //hal_io_in_8(I8408_DATA_PORT);
+    hal_io_IPI_send_eoi();
     UNREFERRED_PARAMETER(int_num);
     UNREFERRED_PARAMETER(p_context);
     UNREFERRED_PARAMETER(err_code);
@@ -94,8 +104,10 @@ void tick_int(u32 int_num, pcontext_t p_context, u32 err_code)
 void test()
 {
     hal_early_print_printf("Test\n");
-    hal_io_int_callback_set(IRQ_CLOCK, clock_int);
-    hal_io_int_callback_set(IRQ_TICK, tick_int);
+    hal_io_int_callback_set(INT_CLOCK, clock_int);
+    hal_io_int_callback_set(INT_TICK, tick_int);
+    hal_io_int_callback_set(INT_IPI, ipi_int);
+    hal_io_int_callback_set(IRQ(1), keyboard_int);
 
     return;
 }

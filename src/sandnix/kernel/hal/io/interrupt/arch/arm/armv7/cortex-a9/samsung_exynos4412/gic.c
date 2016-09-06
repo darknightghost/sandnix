@@ -17,6 +17,7 @@
 
 #include "gic.h"
 #include "../../../../../../../mmu/mmu.h"
+#include "../../../../../../../init/init.h"
 #include "../../../../../../../cpu/cpu.h"
 #include "../../../../../../../early_print/early_print.h"
 #include "../../../../../../../rtl/math/math.h"
@@ -72,7 +73,6 @@ static		u32			current_irq_id[MAX_PROCESS_NUM] = {0};
                                        + 4 * (n))
 
 //Pulse Width Modulation Time
-#define	PCLK_FREQ				66000000
 static	address_t				pwm_base_addr;
 
 #define	PWM_PHY_BASE			0x139D0000
@@ -177,7 +177,7 @@ void gic_init()
 
 void hal_io_irq_send_eoi()
 {
-    u32 cpuid = hal_cpu_get_cpuid();
+    u32 cpuid = hal_cpu_get_cpu_id();
 
     ICCEOI_CPU(cpuid) = (ICCIAR_CPU(cpuid) & (~(u32)0x1FF)) | gic_get_irq_num();
 
@@ -208,7 +208,7 @@ u32 hal_io_get_max_clock_period()
 
 u32 gic_get_irq_num()
 {
-    u32 cpuid = hal_cpu_get_cpuid();
+    u32 cpuid = hal_cpu_get_cpu_id();
     u32 val = ICCIAR_CPU(cpuid) & 0x1FF;
 
     if(val == (0x3FF & 0x1FF)) {
@@ -284,7 +284,7 @@ void init_tick()
     MCT_CFG = 0x9800;
     L_ICNTB(0) = 0x80000000 + 1;
     L_REG_W_WAIT(0, 0x02);
-    L_TCNTB(0) = 100000000 / 1000 / 1000 * TICK_PERIOD;
+    L_TCNTB(0) = MCT_FREQ / 1000 / 1000 * TICK_PERIOD;
     L_REG_W_WAIT(0, 0x01);
     gic_tick_eoi();
 

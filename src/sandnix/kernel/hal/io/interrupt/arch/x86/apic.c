@@ -225,6 +225,27 @@ u32 hal_io_get_max_clock_period()
     }
 }
 
+void hal_io_broadcast_IPI()
+{
+    hal_io_apic_write32(LOCAL_APIC_ICR1_REG, 0xFF000000);
+    hal_io_apic_write32(LOCAL_APIC_ICR0_REG,
+                        0x000C0000 | (0x000000FF & INT_IPI));
+    return;
+}
+
+void hal_io_send_IPI(u32 target_cpu_id)
+{
+    hal_io_apic_write32(LOCAL_APIC_ICR1_REG, target_cpu_id);
+    hal_io_apic_write32(LOCAL_APIC_ICR0_REG, 0x000000FF & INT_IPI);
+    return;
+}
+
+void hal_io_IPI_send_eoi()
+{
+    hal_io_irq_send_eoi();
+    return;
+}
+
 bool is_apic_supported()
 {
     bool ret;
@@ -518,7 +539,7 @@ static	volatile	u32 	timer_interrupted_count;
 u32 lapic_speed()
 {
     //Set temporart interrupt call back
-    hal_io_int_callback_set(IRQ_CLOCK, timer_init_int);
+    hal_io_int_callback_set(INT_CLOCK, timer_init_int);
     hal_io_int_disable();
     timer_interrupted_count = 0;
 
@@ -551,7 +572,7 @@ u32 lapic_speed()
     hal_io_apic_write32(LOCAL_APIC_TIMER_INITIAL_COUNT_REG, 0);
     hal_io_apic_write32(LOCAL_APIC_TIMER_CURRENT_COUNT_REG, 0);
     hal_io_int_disable();
-    hal_io_int_callback_set(IRQ_CLOCK, NULL);
+    hal_io_int_callback_set(INT_CLOCK, NULL);
 
     return ret;
 }

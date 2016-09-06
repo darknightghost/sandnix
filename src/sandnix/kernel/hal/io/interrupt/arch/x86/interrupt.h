@@ -33,7 +33,7 @@
 #define	IRQ(n)			(IRQ_BASE + (n))
 
 #define	IRQ_MAX			IRQ(23)
-#define	IRQ_CLOCK		IRQ(2)
+#define	INT_CLOCK		IRQ(2)
 #define	REQUIRE_EOI_END	IRQ_MAX
 
 u32		hal_io_apic_read32(address_t off);

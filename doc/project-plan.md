@@ -732,8 +732,17 @@ void hal_cpu_core_release();
 //cpu信息
 void hal_cpu_get_info(pcpuinfo_t p_ret);
 
-//获得当前CPU
-u32	hal_cpu_get_cpuid();
+//获得当前CPU id
+u32	hal_cpu_get_cpu_id();
+
+//获得当前CPU索引
+u32	hal_cpu_get_cpu_index();
+
+//获得CPU id
+u32	hal_cpu_get_cpu_id_by_index();
+
+//获得CPU索引
+u32	hal_cpu_get_cpu_index_by_id();
 
 //性能管理
 //读取cpu频率

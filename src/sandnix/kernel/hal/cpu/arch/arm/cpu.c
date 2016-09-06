@@ -17,7 +17,12 @@
 
 #include "cpu.h"
 
-u32	hal_cpu_get_cpuid()
+u32	hal_cpu_get_cpu_id()
 {
     return 0;
+}
+
+u32	hal_cpu_get_cpu_index()
+{
+    return hal_cpu_get_cpu_id();
 }

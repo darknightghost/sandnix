@@ -16,8 +16,31 @@
 */
 
 #include "cpu.h"
+#include "../../../io/io.h"
 
-u32	hal_cpu_get_cpuid()
+static	bool		initialized = false;
+
+u32	hal_cpu_get_cpu_id()
+{
+    return hal_io_apic_read32(LOCAL_APIC_ID_REG);
+}
+
+u32	hal_cpu_get_cpu_index()
+{
+    if(!initialized) {
+        return 0;
+    }
+
+    //TODO
+    return 0;
+}
+
+u32	hal_cpu_get_cpu_id_by_index()
+{
+    return hal_io_apic_read32(LOCAL_APIC_ID_REG);
+}
+
+u32	hal_cpu_get_cpu_index_by_id()
 {
     return 0;
 }

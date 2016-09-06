@@ -47,6 +47,6 @@ void tss_init()
 
 void hal_io_set_krnl_stack(address_t addr)
 {
-    tss_table[hal_cpu_get_cpuid()].esp0 = addr;
+    tss_table[hal_cpu_get_cpu_index()].esp0 = addr;
     return;
 }

@@ -26,6 +26,7 @@
 #elif defined ARM
     #define	DEFAULT_STACK_SIZE		(12 * 4096)
     #define KERNEL_HEADER_MAGIC		0x444E4153
+    #include "./arch/arm/init.h"
 #endif
 
 #ifndef _ASM
