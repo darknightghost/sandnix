@@ -209,20 +209,27 @@ void irq_hndlr(pcontext_t p_context)
 {
     u32 int_id = gic_get_irq_num();
 
-    if(int_id == INT_CLOCK - IRQ_BASE) {
-        gic_clock_eoi();
-
-    } else if(int_id == INT_TICK - IRQ_BASE) {
-        gic_tick_eoi();
-    }
-
     int_callback_t callback = int_hndlr_table[int_id + IRQ_BASE];
 
     if(callback != NULL) {
         callback(int_id + IRQ_BASE, p_context, 0);
     }
 
-    hal_io_irq_send_eoi();
+    if(int_id == INT_CLOCK - IRQ_BASE) {
+        gic_clock_eoi();
+
+    } else if(int_id == INT_TICK - IRQ_BASE) {
+        gic_tick_eoi();
+
+    }
+
+    if(int_id == INT_IPI - IRQ_BASE) {
+        hal_io_IPI_send_eoi();
+
+    } else {
+        hal_io_irq_send_eoi();
+    }
+
     hal_cpu_context_load(p_context);
     return;
 }

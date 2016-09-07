@@ -54,7 +54,7 @@ static		u32			current_irq_id[MAX_PROCESS_NUM] = {0};
 #define	ICDICER_SPI(n)			TO_REG(gic_distributor_base[0] + 0x184 + 4 * (n))
 #define	ICDISPR_SPI(n)			TO_REG(gic_distributor_base[0] + 0x204 + 4 * (n))
 #define	ICDICPR_SPI(n)			TO_REG(gic_distributor_base[0] + 0x284 + 4 * (n))
-#define	ICDIABR_SPI(n)			TO_REG(gic_distributor_base[0] + 0x304 + 4 * (n))
+#define	ICDABR_SPI(n)			TO_REG(gic_distributor_base[0] + 0x304 + 4 * (n))
 #define	ICDIPR_SPI(n)			TO_REG(gic_distributor_base[0] + 0x420 + 4 * (n))
 #define	ICDIPTR_SPI(n)			TO_REG(gic_distributor_base[0] + 0x820 + 4 * (n))
 #define	ICDICFR_SPI(n)			TO_REG(gic_distributor_base[0] + 0xC08 + 4 * (n))
@@ -179,7 +179,20 @@ void hal_io_irq_send_eoi()
 {
     u32 cpuid = hal_cpu_get_cpu_id();
 
-    ICCEOI_CPU(cpuid) = (ICCIAR_CPU(cpuid) & (~(u32)0x1FF)) | gic_get_irq_num();
+    u32 irq_num = gic_get_irq_num();
+
+    if(irq_num >= 32) {
+        if(!(ICDABR_SPI((irq_num - 32) / 32) & (1 << (irq_num % 32)))) {
+            return;
+        }
+
+    } else {
+        if(!(ICDABR_SGI_PPI(cpuid) & (1 << (irq_num % 32)))) {
+            return;
+        }
+    }
+
+    ICCEOI_CPU(cpuid) = (ICCIAR_CPU(cpuid) & (~(u32)0x1FF)) | irq_num;
 
     return;
 }
@@ -206,6 +219,30 @@ u32 hal_io_get_max_clock_period()
                                    PCLK_FREQ) - 1;
 }
 
+void hal_io_broadcast_IPI()
+{
+    ICDSGIR = 0x1008000;
+    return;
+}
+
+void hal_io_send_IPI(u32 target_cpu_id)
+{
+    ICDSGIR = 0x8000 | (1 << target_cpu_id << 16);
+    return;
+}
+
+void hal_io_IPI_send_eoi()
+{
+    u32 cpuid = hal_cpu_get_cpu_id();
+
+    if(!(ICDABR_SGI_PPI(cpuid) & 0x01)) {
+        return;
+    }
+
+    ICCEOI_CPU(cpuid) = (ICCIAR_CPU(cpuid) & (~(u32)0x1FF));
+    return;
+}
+
 u32 gic_get_irq_num()
 {
     u32 cpuid = hal_cpu_get_cpu_id();
@@ -215,7 +252,10 @@ u32 gic_get_irq_num()
         return current_irq_id[cpuid];
 
     } else {
-        current_irq_id[cpuid] = val;
+        if(val != 0) {
+            current_irq_id[cpuid] = val;
+        }
+
         return val;
     }
 }

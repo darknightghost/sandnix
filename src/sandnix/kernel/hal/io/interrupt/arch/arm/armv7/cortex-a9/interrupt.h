@@ -29,13 +29,12 @@
 #define	INT_GATE			0x04
 
 #define	REQUIRE_EOI_BEGIN	0x10
-#define	INT_IPI			0x10
-
 #define	IRQ_BASE		0x11
 #define	IRQ(n)			(IRQ_BASE + (n))
 
 #define	IRQ_MAX			IRQ(159)
 #define	INT_CLOCK		IRQ(69)
 #define	INT_TICK		IRQ(28)
+#define	INT_IPI			IRQ(0)
 #define	REQUIRE_EOI_END	IRQ_MAX
 

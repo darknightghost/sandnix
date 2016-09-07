@@ -50,7 +50,6 @@ void kinit(void* p_bootloader_info)
     test();
 
     hal_io_int_enable();
-    //hal_io_irq_send_eoi();
 
     while(1) {
         hal_io_int_enable();
@@ -60,21 +59,28 @@ void kinit(void* p_bootloader_info)
 }
 
 volatile u32 tm = 3000;
+/*
 void keyboard_int(u32 int_num, pcontext_t p_context, u32 err_code)
 {
-    hal_io_in_8(I8408_DATA_PORT);
-    hal_io_in_8(I8408_DATA_PORT);
-    hal_io_in_8(I8408_DATA_PORT);
-    hal_io_send_IPI(hal_cpu_get_cpu_id());
+    //hal_io_in_8(I8408_DATA_PORT);
+    //hal_io_in_8(I8408_DATA_PORT);
+    //hal_io_in_8(I8408_DATA_PORT);
     UNREFERRED_PARAMETER(int_num);
     UNREFERRED_PARAMETER(p_context);
     UNREFERRED_PARAMETER(err_code);
 }
+*/
 
 void ipi_int(u32 int_num, pcontext_t p_context, u32 err_code)
 {
-    tm = 3000;
+    tm--;
+
+    if(tm == 0) {
+        tm = 3000;
+    }
+
     hal_io_IPI_send_eoi();
+
     UNREFERRED_PARAMETER(int_num);
     UNREFERRED_PARAMETER(p_context);
     UNREFERRED_PARAMETER(err_code);
@@ -82,11 +88,8 @@ void ipi_int(u32 int_num, pcontext_t p_context, u32 err_code)
 
 void clock_int(u32 int_num, pcontext_t p_context, u32 err_code)
 {
-    tm--;
 
-    if(tm == 0) {
-        tm = 3000;
-    }
+    hal_io_send_IPI(hal_cpu_get_cpu_id());
 
     UNREFERRED_PARAMETER(int_num);
     UNREFERRED_PARAMETER(p_context);
@@ -104,10 +107,10 @@ void tick_int(u32 int_num, pcontext_t p_context, u32 err_code)
 void test()
 {
     hal_early_print_printf("Test\n");
+    hal_io_set_clock_period(1000000);
     hal_io_int_callback_set(INT_CLOCK, clock_int);
     hal_io_int_callback_set(INT_TICK, tick_int);
     hal_io_int_callback_set(INT_IPI, ipi_int);
-    hal_io_int_callback_set(IRQ(1), keyboard_int);
 
     return;
 }

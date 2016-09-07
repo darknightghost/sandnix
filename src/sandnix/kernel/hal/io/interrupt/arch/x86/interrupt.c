@@ -89,7 +89,7 @@ void int_dispatcher(u32 int_num, pcontext_t p_context)
     }
 
     if(int_num == INT_IPI) {
-        //hal_io_IPI_send_eoi();
+        hal_io_IPI_send_eoi();
 
     } else if(int_num >= REQUIRE_EOI_BEGIN && int_num <= REQUIRE_EOI_END) {
         hal_io_irq_send_eoi();
