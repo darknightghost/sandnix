@@ -40,3 +40,32 @@ typedef struct _context {
     u32		cpsr;
     u32		pc;
 } context_t, *pcontext_t;
+
+#define	hal_cpu_context_load(p_context)	{ \
+        __asm__ __volatile__( \
+                              "msr		cpsr_c, #0xD3\n" \
+                              "mov		sp, %0\n" \
+                              /*User lr, sp.*/ \
+                              "add		r0, sp, #(13 * 4)\n" \
+                              "msr		cpsr_c, #0xDF\n" \
+                              "ldr		lr,	[r0]\n" \
+                              "add		r0, r0, #4\n" \
+                              "ldr		sp,	[r0]\n" \
+                              /*SVC mode.*/ \
+                              "msr		cpsr_c, #0xD3\n" \
+                              "add		r0, sp, #(17 * 4)\n" \
+                              "ldr		r0, [r0]\n" \
+                              "msr		spsr, r0\n" \
+                              "ldmfd	sp!, {r0 - r12}\n" \
+                              "add		sp, sp, #8\n" \
+                              "ldmfd	sp!, {lr}\n" \
+                              "add		sp, sp, #8\n" \
+                              "ldmfd	sp!, {pc}^\n" \
+                              ::"r"((p_context)) \
+                              :); \
+    }
+
+
+#define hal_cpu_context_save_call(dest_func)
+
+#define	hal_cpu_get_stack_base(buff, size)	((void*)((address_t)(buff) + (size)))

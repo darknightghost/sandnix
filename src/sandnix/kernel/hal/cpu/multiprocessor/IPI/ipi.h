@@ -15,14 +15,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "cpu.h"
+#pragma once
+#include "../../../../../../common/common.h"
+#include "../../context/context.h"
 
-u32	hal_cpu_get_cpu_id()
-{
-    return 0;
-}
+typedef	void	(ipi_hndlr_t*)(pcontext_t p_context);
 
-u32	hal_cpu_get_cpu_index()
-{
-    return hal_cpu_get_cpu_id();
-}
+//Send IPI
+void hal_cpu_send_IPI(s32 index, u32 type, void* p_args);
+
+//Regist IPI handler
+void* hal_cpu_regist_IPI_hndlr(u32 type, ipi_hndlr_t hndlr);

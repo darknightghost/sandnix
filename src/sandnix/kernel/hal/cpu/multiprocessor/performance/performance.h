@@ -15,12 +15,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "io.h"
-#include "../early_print/early_print.h"
+#pragma once
+#include "../../../../../../common/common.h"
 
-void hal_io_init()
-{
-    hal_early_print_printf("\nInitializing io...\n");
-    interrupt_init();
-    return;
-}
+//TODO:Not finished
+//Get current frequency
+u32 hal_cpu_get_frequency();
+
+//Set current cpu frequency
+u32 hal_cpu_set_frequency();

@@ -15,12 +15,19 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "io.h"
-#include "../early_print/early_print.h"
+#pragma once
+#include "../../../../../../common/common.h"
 
-void hal_io_init()
-{
-    hal_early_print_printf("\nInitializing io...\n");
-    interrupt_init();
-    return;
-}
+void cpu_id_init();
+
+//Get current CPU id
+u32	hal_cpu_get_cpu_id();
+
+//Get current CPU index
+u32	hal_cpu_get_cpu_index();
+
+//Get CPU id
+u32	hal_cpu_get_cpu_id_by_index(u32 index);
+
+//Get CPU index
+u32	hal_cpu_get_cpu_index_by_id(u32 id);

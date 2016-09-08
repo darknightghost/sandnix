@@ -24,6 +24,10 @@ hal/rtl/math/math.c
 ##io
 hal/io/io.c
 
+##cpu
+hal/cpu/cpu.c
+hal/cpu/multiprocessor/IPI/ipi.c
+
 #core
 ##pm
 core/pm/thread/thread.c

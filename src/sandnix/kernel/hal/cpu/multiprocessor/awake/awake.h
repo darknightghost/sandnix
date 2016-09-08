@@ -15,12 +15,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "io.h"
-#include "../early_print/early_print.h"
+#pragma once
+#include "../../../../../../common/common.h"
 
-void hal_io_init()
-{
-    hal_early_print_printf("\nInitializing io...\n");
-    interrupt_init();
-    return;
-}
+//Awake AP core
+void hal_cpu_core_awake(u32 cpuid);
+
+//Release AP core
+void hal_cpu_core_release();

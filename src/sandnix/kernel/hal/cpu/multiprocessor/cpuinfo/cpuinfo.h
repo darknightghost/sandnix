@@ -15,12 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "io.h"
-#include "../early_print/early_print.h"
+#pragma once
+#include "../../../../../../common/common.h"
 
-void hal_io_init()
-{
-    hal_early_print_printf("\nInitializing io...\n");
-    interrupt_init();
-    return;
-}
+void hal_cpu_get_info(pcpuinfo_t p_ret);

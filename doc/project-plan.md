@@ -711,6 +711,9 @@ context_t
 
 //cpu信息
 cpuinfo_t
+
+//IPI处理函数
+ipi_hndlr_t
 ```
 ######接口函数及宏
 ```c
@@ -721,6 +724,12 @@ void hal_cpu_init();
 //线程上下文管理
 //加载线程上下文
 #define hal_cpu_context_load(p_context)
+
+//保存线程上下文
+#define hal_cpu_context_save_call(dest_func)
+
+//计算栈底
+#define	hal_cpu_get_stack_base(buff, size)
 
 //多核心管理
 //唤醒核心
@@ -739,10 +748,17 @@ u32	hal_cpu_get_cpu_id();
 u32	hal_cpu_get_cpu_index();
 
 //获得CPU id
-u32	hal_cpu_get_cpu_id_by_index();
+u32	hal_cpu_get_cpu_id_by_index(u32 index);
 
 //获得CPU索引
-u32	hal_cpu_get_cpu_index_by_id();
+u32	hal_cpu_get_cpu_index_by_id(u32 id);
+
+//多处理器同步
+//发送处理器间消息
+void hal_cpu_send_IPI(s32 index, u32 type, void* p_args);
+
+//注册处理器间消息函数
+void* hal_cpu_regist_IPI_hndlr(u32 type, ipi_hndlr_t hndlr);
 
 //性能管理
 //读取cpu频率
@@ -750,9 +766,6 @@ u32 hal_cpu_get_frequency();
 
 //设置cpu频率
 u32 hal_cpu_set_frequency();
-
-//计算栈底
-#define	hal_cpu_get_stack_base(buff, size)
 ```
 ######文件列表
 ```c

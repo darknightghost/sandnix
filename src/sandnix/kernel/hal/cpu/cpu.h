@@ -19,15 +19,7 @@
 
 #include "../../../../common/common.h"
 #include "./context/context.h"
+#include "./multiprocessor/multiprocessor.h"
 
-#if defined	X86
-    #include "./arch/x86/cpu.h"
-#elif defined ARM
-    #include "./arch/arm/cpu.h"
-#endif
-
-u32	hal_cpu_get_cpu_id();
-
-u32	hal_cpu_get_cpu_index();
-u32	hal_cpu_get_cpu_id_by_index();
-u32	hal_cpu_get_cpu_index_by_id();
+//Initialize the module
+void hal_cpu_init();

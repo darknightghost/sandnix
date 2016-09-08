@@ -15,12 +15,30 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "io.h"
-#include "../early_print/early_print.h"
+#include "../../id.h"
+#include "../../../../../io/io.h"
+#include "../../../../../../core/rtl/rtl.h"
+#include "../../../../../../core/pm/pm.h"
+#include "../../../../../../core/mm/mm.h"
 
-void hal_io_init()
+static	bool		initialized = false;
+
+void cpu_id_init()
 {
-    hal_early_print_printf("\nInitializing io...\n");
-    interrupt_init();
     return;
 }
+
+u32	hal_cpu_get_cpu_id()
+{
+    return hal_io_apic_read32(LOCAL_APIC_ID_REG);
+}
+
+u32	hal_cpu_get_cpu_index()
+{
+    if(!initialized) {
+        return 0;
+    }
+}
+
+u32	hal_cpu_get_cpu_id_by_index(u32 index);
+u32	hal_cpu_get_cpu_index_by_id(u32 id);

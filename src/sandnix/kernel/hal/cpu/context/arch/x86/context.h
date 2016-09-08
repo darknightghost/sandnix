@@ -87,3 +87,38 @@ typedef	struct	_context {
     u32			ecx;
     u32			eax;
 } __attribute__((packed)) context_t, *pcontext_t;
+
+#define	hal_cpu_context_load(p_context)	{ \
+        if((p_context)->ss == SELECTOR_K_DATA) { \
+            /* Return to kernel memory*/ \
+            /* EIP */ \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 1) = (p_context)->eip; \
+            /* EFLAGS */ \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 3) = (p_context)->eflags; \
+            \
+        } else { \
+            /* Return to user memory */ \
+            /* EIP */ \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 1) = (p_context)->eip; \
+            /* EFLAGS */ \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 3) = (p_context)->eflags; \
+            /* ESP */ \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 4) = (p_context)->esp; \
+            (p_context)->esp = (u32)((u32*)(p_context) + sizeof(context_t) / 4 + 1); \
+        } \
+        \
+        __asm__ __volatile__( \
+                              "movl		%0, %%esp\n" \
+                              "frstor	(%%esp)\n" \
+                              "addl		%1, %%esp\n" \
+                              "addl		$32, %%esp\n" \
+                              "popal\n" \
+                              "addl		$4, %%esp\n" \
+                              "iret\n" \
+                              ::"r"(p_context), \
+                              "i"(sizeof(fpu_env_t))); \
+    }
+
+#define hal_cpu_context_save_call(dest_func)
+
+#define	hal_cpu_get_stack_base(buff, size)	((void*)((address_t)(buff) + (size)))
