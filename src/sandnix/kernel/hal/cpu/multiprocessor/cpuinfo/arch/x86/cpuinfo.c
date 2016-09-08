@@ -26,12 +26,17 @@ static	map_t		cpuid_map;
 static	pcpuinfo_t	cpuinfos[MAX_PROCESS_NUM] = {0};
 
 static	int			cpuid_cmp(void* cpuid1, void* cpuid2);
+static	spnlck_rw_t	lock;
 
 void cpuinfo_init()
 {
     core_rtl_map_init(&cpuid_map, cpuid_cmp , NULL);
+    core_pm_spnlck_rw_init(&lock);
     initialized = true;
 }
+
+void cpuinfo_core_init();
+void cpuinfo_core_release();
 
 u32	hal_cpu_get_cpu_id()
 {
@@ -44,8 +49,11 @@ u32	hal_cpu_get_cpu_index()
         return 0;
     }
 
+    core_pm_spnlck_rw_r_lock(&lock);
     pcpuinfo_t p_info = (pcpuinfo_t)core_rtl_map_get(&cpuid_map,
                         (void*)hal_io_apic_read32(LOCAL_APIC_ID_REG));
+
+    core_pm_spnlck_rw_r_unlock(&lock);
 
     if(p_info == NULL) {
         return INVALID_CPU_INDEX;
@@ -66,8 +74,10 @@ u32	hal_cpu_get_cpu_id_by_index(u32 index)
 
 u32	hal_cpu_get_cpu_index_by_id(u32 id)
 {
+    core_pm_spnlck_rw_r_lock(&lock);
     pcpuinfo_t p_info = (pcpuinfo_t)core_rtl_map_get(&cpuid_map,
                         (void*)id);
+    core_pm_spnlck_rw_r_lock(&unlock);
 
     if(p_info == NULL) {
         return INVALID_CPU_INDEX;

@@ -27,6 +27,9 @@
 
 void cpuinfo_init();
 
+void cpuinfo_core_init();
+void cpuinfo_core_release();
+
 //Get current CPU id
 u32	hal_cpu_get_cpu_id();
 
