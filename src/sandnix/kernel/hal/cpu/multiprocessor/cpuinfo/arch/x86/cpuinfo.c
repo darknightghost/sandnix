@@ -23,7 +23,7 @@
 
 static	bool		initialized = false;
 static	map_t		cpuid_map;
-static	pcpuinfo_t	cpuinfo;
+static	pcpuinfo_t	cpuinfos[MAX_PROCESS_NUM] = {0};
 
 static	int			cpuid_cmp(void* cpuid1, void* cpuid2);
 
@@ -54,15 +54,34 @@ u32	hal_cpu_get_cpu_index()
     return p_info->index;
 }
 
-u32	hal_cpu_get_cpu_id_by_index(u32 index);
-u32	hal_cpu_get_cpu_index_by_id(u32 id);
+u32	hal_cpu_get_cpu_id_by_index(u32 index)
+{
+    if(index >= MAX_PROCESS_NUM
+       || cpuinfos[index] == NULL) {
+        return INVALID_CPU_ID;
+    }
+
+    return cpuinfos[index]->cpuid;
+}
+
+u32	hal_cpu_get_cpu_index_by_id(u32 id)
+{
+    pcpuinfo_t p_info = (pcpuinfo_t)core_rtl_map_get(&cpuid_map,
+                        (void*)id);
+
+    if(p_info == NULL) {
+        return INVALID_CPU_INDEX;
+    }
+
+    return p_info->index;
+}
 
 int cpuid_cmp(void* cpuid1, void* cpuid2)
 {
     if((u32)cpuid1 > (u32)cpuid2) {
         return 1;
 
-    } else if((u32)cpuid1 = (u32)cpuid2) {
+    } else if((u32)cpuid1 == (u32)cpuid2) {
         return 0;
 
     } else {
