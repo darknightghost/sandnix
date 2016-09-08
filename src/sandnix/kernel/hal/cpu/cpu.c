@@ -17,9 +17,11 @@
 
 
 #include "cpu.h"
+#include "../early_print/early_print.h"
 
 void hal_cpu_init()
 {
-    cpu_id_init();
+    hal_early_print_printf("Initializing cpu...\n");
+    cpuinfo_init();
     return;
 }

@@ -19,7 +19,7 @@
 #include "../../../../../../common/common.h"
 #include "../../context/context.h"
 
-typedef	void	(ipi_hndlr_t*)(pcontext_t p_context);
+typedef	void	(*ipi_hndlr_t)(pcontext_t p_context);
 
 //Send IPI
 void hal_cpu_send_IPI(s32 index, u32 type, void* p_args);

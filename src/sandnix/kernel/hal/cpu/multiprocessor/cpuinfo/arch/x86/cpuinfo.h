@@ -15,3 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#pragma once
+#include "../../../../../../../../common/common.h"
+
+typedef struct _cpuinfo {
+    u32		index;
+    u32		cpuid;
+} cpuinfo_t, *pcpuinfo_t;

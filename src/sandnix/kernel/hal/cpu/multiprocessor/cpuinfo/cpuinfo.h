@@ -18,4 +18,24 @@
 #pragma once
 #include "../../../../../../common/common.h"
 
+#if defined X86
+    #include "./arch/x86/cpuinfo.h"
+#endif
+
+#define INVALID_CPU_INDEX	0xFFFFFFFF
+#define INVALID_CPU_ID		0xFFFFFFFF
+
+void cpuinfo_init();
+
+//Get current CPU id
+u32	hal_cpu_get_cpu_id();
+
+//Get current CPU index
+u32	hal_cpu_get_cpu_index();
+
+//Get CPU id
+u32	hal_cpu_get_cpu_id_by_index(u32 index);
+
+//Get CPU index
+u32	hal_cpu_get_cpu_index_by_id(u32 id);
 void hal_cpu_get_info(pcpuinfo_t p_ret);

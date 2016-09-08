@@ -18,7 +18,6 @@
 #pragma once
 
 #include "../../../../../common/common.h"
-#include "./id/id.h"
 #include "./cpuinfo/cpuinfo.h"
 #include "./IPI/ipi.h"
 #include "./awake/awake.h"

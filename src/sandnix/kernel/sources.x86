@@ -19,7 +19,5 @@ hal/io/interrupt/arch/x86/interrupt.c
 hal/io/interrupt/arch/x86/int_hndlr.S
 
 ##cpu
-hal/cpu/multiprocessor/IPI/ipi.c
-hal/cpu/multiprocessor/id/arch/x86/id.c
 hal/cpu/multiprocessor/cpuinfo/arch/x86/cpuinfo.c
 hal/cpu/multiprocessor/performance/arch/x86/performance.c
