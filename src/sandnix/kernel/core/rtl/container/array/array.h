@@ -18,13 +18,14 @@
 #pragma once
 
 #include "../../../../../../common/common.h"
-#include "../container.h"
 #include "../../../mm/mm.h"
 
 typedef	struct	_array_blk {
     size_t		ref;
     void**		p_p_items;
 } array_blk_t, *parray_blk_t;
+
+#include "../container.h"
 
 typedef	struct	_array {
     size_t			size;

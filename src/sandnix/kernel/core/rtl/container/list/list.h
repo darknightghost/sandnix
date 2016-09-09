@@ -18,7 +18,6 @@
 #pragma once
 
 #include "../../../../../../common/common.h"
-#include "../container.h"
 #include "../../../mm/mm.h"
 
 typedef struct	_list_node {
@@ -26,6 +25,8 @@ typedef struct	_list_node {
     struct _list_node*		p_next;
     void*					p_item;
 } list_node_t, *plist_node_t, *list_t, **plist_t;
+
+#include "../container.h"
 
 //Initialize
 #define core_rtl_list_init(p_list)		(*(p_list) = NULL)

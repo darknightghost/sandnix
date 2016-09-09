@@ -30,6 +30,7 @@ typedef void (*item_destroyer_t)(void*, void*);
 //int item_compare(void* p_item1, void* p_item2);
 typedef int (*item_compare_t)(void*, void*);
 
-#include "./list/list.h"
 #include "./map/map.h"
 #include "./array/array.h"
+#include "./queue/queue.h"
+#include "./list/list.h"

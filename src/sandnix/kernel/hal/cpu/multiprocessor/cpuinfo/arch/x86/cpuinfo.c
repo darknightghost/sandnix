@@ -23,7 +23,7 @@
 
 static	bool			initialized = false;
 static	map_t			cpuid_map;
-static	pcpu_id_info_t	cpu_id_infos[MAX_PROCESS_NUM] = {0};
+static	pcpu_id_info_t	cpu_id_infos[MAX_CPU_NUM] = {0};
 
 static	int			cpuid_cmp(void* cpuid1, void* cpuid2);
 static	spnlck_rw_t	lock;

@@ -18,13 +18,15 @@
 #pragma once
 
 #include "../../../../../../common/common.h"
-#include "../container.h"
+#include "../list/list.h"
 #include "../../../mm/mm.h"
 
 typedef struct	_queue {
     list_t		data_list;
     pheap_t		heap;
 } queue_t, *pqueue_t;
+
+#include "../container.h"
 
 //Initialize
 void core_rtl_queue_init(

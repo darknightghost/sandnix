@@ -18,7 +18,6 @@
 #pragma once
 
 #include "../../../../../../common/common.h"
-#include "../container.h"
 #include "../../../mm/mm.h"
 
 typedef struct	_rbtree_node {
@@ -29,6 +28,8 @@ typedef struct	_rbtree_node {
     void*					p_key;
     void*					p_value;
 } rbtree_node_t, *prbtree_node_t, *rbtree_t, **prbtree_t;
+
+#include "../container.h"
 
 typedef struct _map {
     rbtree_t		p_tree;

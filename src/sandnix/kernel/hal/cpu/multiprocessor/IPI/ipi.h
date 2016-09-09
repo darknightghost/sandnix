@@ -18,10 +18,25 @@
 #pragma once
 #include "../../../../../../common/common.h"
 #include "../../context/context.h"
+#include "../../../../core/pm/pm.h"
+#include "../../../../core/rtl/rtl.h"
 
-typedef	void	(*ipi_hndlr_t)(pcontext_t p_context);
+typedef	struct	_ipi_msg {
+    u32		type;
+    void*	p_args;
+} ipi_msg_t, *pipi_msg_t;
 
-void	cpu_ipi_init();
+typedef	struct	_ipi_queue {
+    bool		initialized;
+    queue_t		msg_queue;
+    spnlck_t	lock;
+} ipi_queue_t, *pipi_queue_t;
+
+typedef	void	(*ipi_hndlr_t)(pcontext_t p_context, void* p_args);
+
+void cpu_ipi_init();
+void cpu_ipi_core_init();
+void cpu_ipi_core_release();
 
 //Send IPI
 void hal_cpu_send_IPI(s32 index, u32 type, void* p_args);

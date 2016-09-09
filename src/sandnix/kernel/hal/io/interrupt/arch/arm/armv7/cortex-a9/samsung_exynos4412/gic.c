@@ -28,7 +28,7 @@
 
 static		address_t	gic_controller_bases[4];
 static		address_t	gic_distributor_base[4];
-static		u32			current_irq_id[MAX_PROCESS_NUM] = {0};
+static		u32			current_irq_id[MAX_CPU_NUM] = {0};
 
 #define	TO_REG(addr)	(*((volatile u32*)(void*)((addr))))
 

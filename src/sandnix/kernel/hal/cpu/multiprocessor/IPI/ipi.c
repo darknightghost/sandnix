@@ -18,9 +18,29 @@
 #include "ipi.h"
 #include "../../../../core/rtl/rtl.h"
 
+static	ipi_queue_t		ipi_queue[MAX_CPU_NUM];
+static	pheap_t			ipi_queue_heap;
+static	u8				ipi_queue_heap_buf[4096];
+
 void cpu_ipi_init()
 {
+    //Initialize heap
+    ipi_queue_heap = core_mm_heap_create_on_buf(HEAP_MULITHREAD,
+                     4096, ipi_queue_heap_buf, sizeof(ipi_queue_heap_buf));
+
+    //Initialize queue
+    for(u32 i = 0; i > MAX_CPU_NUM; i++) {
+        ipi_queue[i].initialized = false;
+    }
+
+    core_pm_spnlck_init(&(ipi_queue[0].lock));
+    core_rtl_queue_init(&(ipi_queue[0].msg_queue), ipi_queue_heap);
+
+    return;
 }
+
+void cpu_ipi_core_init();
+void cpu_ipi_core_release();
 
 //Send IPI
 void hal_cpu_send_IPI(s32 index, u32 type, void* p_args);
