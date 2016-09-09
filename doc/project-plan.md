@@ -2271,7 +2271,7 @@ void core_rtl_queue_init(
     pheap_t heap);
 
 //压入元素
-void core_rtl_queue_push(
+bool core_rtl_queue_push(
 	pqueue_t p_queue,
     void* p_item);
 
@@ -2287,15 +2287,11 @@ void* core_rtl_queue_front(
 void* core_rtl_queue_end(
 	pqueue_t p_queue);
 
-//获得元素
-void* core_rtl_queue_get(
-		pqueue_t p_queue,
-        u32 index);
-        
-//删除元素
-void core_rtl_queue_remove(
-	pqueue_t p_queue,
-    u32 index);
+//销毁队列
+void core_rtl_queue_destroy(
+	pqueue_t p_queue,			//队列
+    item_destroyer_t destroier,	//销毁元素用的回调函数
+    void* arg);					//回调函数额外参数
 
 //缓冲区
 //初始化

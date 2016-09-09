@@ -19,6 +19,10 @@
 #include "../../../../../../../../common/common.h"
 
 typedef struct _cpuinfo {
+    char	name[64];
+} cpuinfo_t, *pcpuinfo_t;
+
+typedef struct _cpu_id_info {
     u32		index;
     u32		cpuid;
-} cpuinfo_t, *pcpuinfo_t;
+} cpu_id_info_t, *pcpu_id_info_t;

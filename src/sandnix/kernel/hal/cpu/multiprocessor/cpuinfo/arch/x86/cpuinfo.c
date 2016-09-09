@@ -21,9 +21,9 @@
 #include "../../../../../../core/pm/pm.h"
 #include "../../../../../../core/mm/mm.h"
 
-static	bool		initialized = false;
-static	map_t		cpuid_map;
-static	pcpuinfo_t	cpuinfos[MAX_PROCESS_NUM] = {0};
+static	bool			initialized = false;
+static	map_t			cpuid_map;
+static	pcpu_id_info_t	cpu_id_infos[MAX_PROCESS_NUM] = {0};
 
 static	int			cpuid_cmp(void* cpuid1, void* cpuid2);
 static	spnlck_rw_t	lock;
@@ -35,8 +35,8 @@ void cpuinfo_init()
     initialized = true;
 }
 
-void cpuinfo_core_init();
-void cpuinfo_core_release();
+void cpu_id_info_core_init();
+void cpu_id_info_core_release();
 
 u32	hal_cpu_get_cpu_id()
 {
@@ -50,8 +50,8 @@ u32	hal_cpu_get_cpu_index()
     }
 
     core_pm_spnlck_rw_r_lock(&lock);
-    pcpuinfo_t p_info = (pcpuinfo_t)core_rtl_map_get(&cpuid_map,
-                        (void*)hal_io_apic_read32(LOCAL_APIC_ID_REG));
+    pcpu_id_info_t p_info = (pcpu_id_info_t)core_rtl_map_get(&cpuid_map,
+                            (void*)hal_io_apic_read32(LOCAL_APIC_ID_REG));
 
     core_pm_spnlck_rw_r_unlock(&lock);
 
@@ -65,25 +65,30 @@ u32	hal_cpu_get_cpu_index()
 u32	hal_cpu_get_cpu_id_by_index(u32 index)
 {
     if(index >= MAX_PROCESS_NUM
-       || cpuinfos[index] == NULL) {
+       || cpu_id_infos[index] == NULL) {
         return INVALID_CPU_ID;
     }
 
-    return cpuinfos[index]->cpuid;
+    return cpu_id_infos[index]->cpuid;
 }
 
 u32	hal_cpu_get_cpu_index_by_id(u32 id)
 {
     core_pm_spnlck_rw_r_lock(&lock);
-    pcpuinfo_t p_info = (pcpuinfo_t)core_rtl_map_get(&cpuid_map,
-                        (void*)id);
-    core_pm_spnlck_rw_r_lock(&unlock);
+    pcpu_id_info_t p_info = (pcpu_id_info_t)core_rtl_map_get(&cpuid_map,
+                            (void*)id);
+    core_pm_spnlck_rw_r_unlock(&lock);
 
     if(p_info == NULL) {
         return INVALID_CPU_INDEX;
     }
 
     return p_info->index;
+}
+
+void hal_cpu_get_info(pcpuinfo_t p_ret)
+{
+    UNREFERRED_PARAMETER(p_ret);
 }
 
 int cpuid_cmp(void* cpuid1, void* cpuid2)

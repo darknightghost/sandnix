@@ -111,6 +111,10 @@ void* core_rtl_list_remove(plist_node_t pos, plist_t p_list, pheap_t heap)
 {
     void* ret;
 
+    if(pos == NULL) {
+        return NULL;
+    }
+
     ret = pos->p_item;
 
     if(pos->p_prev == pos) {

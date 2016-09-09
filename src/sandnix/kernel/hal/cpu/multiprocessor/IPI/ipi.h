@@ -21,6 +21,8 @@
 
 typedef	void	(*ipi_hndlr_t)(pcontext_t p_context);
 
+void	cpu_ipi_init();
+
 //Send IPI
 void hal_cpu_send_IPI(s32 index, u32 type, void* p_args);
 

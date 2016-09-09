@@ -45,5 +45,6 @@ core/rtl/math/math.c
 core/rtl/container/list/list.c
 core/rtl/container/map/map.c
 core/rtl/container/array/array.c
+core/rtl/container/queue/queue.c
 core/rtl/obj/obj.c
 core/rtl/kstring/kstring.c

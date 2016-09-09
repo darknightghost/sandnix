@@ -15,15 +15,41 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "ipi.h"
-#include "../../../../core/rtl/rtl.h"
+#pragma once
 
-void cpu_ipi_init()
-{
-}
+#include "../../../../../../common/common.h"
+#include "../container.h"
+#include "../../../mm/mm.h"
 
-//Send IPI
-void hal_cpu_send_IPI(s32 index, u32 type, void* p_args);
+typedef struct	_queue {
+    list_t		data_list;
+    pheap_t		heap;
+} queue_t, *pqueue_t;
 
-//Regist IPI handler
-void* hal_cpu_regist_IPI_hndlr(u32 type, ipi_hndlr_t hndlr);
+//Initialize
+void core_rtl_queue_init(
+    pqueue_t p_queue,
+    pheap_t heap);
+
+//Push item
+bool core_rtl_queue_push(
+    pqueue_t p_queue,
+    void* p_item);
+
+//Pop item
+void* core_rtl_queue_pop(
+    pqueue_t p_queue);
+
+//Get first item
+void* core_rtl_queue_front(
+    pqueue_t p_queue);
+
+//Get last item
+void* core_rtl_queue_end(
+    pqueue_t p_queue);
+
+//Destroy item
+void core_rtl_queue_destroy(
+    pqueue_t p_queue,
+    item_destroyer_t destroier,
+    void* arg);

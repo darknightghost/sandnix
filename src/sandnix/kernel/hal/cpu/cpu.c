@@ -23,5 +23,6 @@ void hal_cpu_init()
 {
     hal_early_print_printf("Initializing cpu...\n");
     cpuinfo_init();
+    cpu_ipi_init();
     return;
 }

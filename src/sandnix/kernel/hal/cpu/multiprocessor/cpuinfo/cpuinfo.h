@@ -41,4 +41,6 @@ u32	hal_cpu_get_cpu_id_by_index(u32 index);
 
 //Get CPU index
 u32	hal_cpu_get_cpu_index_by_id(u32 id);
+
+//Get CPU information
 void hal_cpu_get_info(pcpuinfo_t p_ret);
