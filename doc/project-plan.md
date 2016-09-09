@@ -758,7 +758,7 @@ u32	hal_cpu_get_cpu_index_by_id(u32 id);
 void hal_cpu_send_IPI(s32 index, u32 type, void* p_args);
 
 //注册处理器间消息函数
-void* hal_cpu_regist_IPI_hndlr(u32 type, ipi_hndlr_t hndlr);
+ipi_hndlr_t hal_cpu_regist_IPI_hndlr(u32 type, ipi_hndlr_t hndlr);
 
 //性能管理
 //读取cpu频率

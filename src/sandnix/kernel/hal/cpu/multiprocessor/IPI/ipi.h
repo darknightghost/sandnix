@@ -21,6 +21,8 @@
 #include "../../../../core/pm/pm.h"
 #include "../../../../core/rtl/rtl.h"
 
+#define	MAX_IPI_MSG_NUM		0x10
+
 typedef	struct	_ipi_msg {
     u32		type;
     void*	p_args;
@@ -42,4 +44,4 @@ void cpu_ipi_core_release();
 void hal_cpu_send_IPI(s32 index, u32 type, void* p_args);
 
 //Regist IPI handler
-void* hal_cpu_regist_IPI_hndlr(u32 type, ipi_hndlr_t hndlr);
+ipi_hndlr_t hal_cpu_regist_IPI_hndlr(u32 type, ipi_hndlr_t hndlr);
