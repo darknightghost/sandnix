@@ -27,13 +27,15 @@ static	u8				ipi_queue_heap_buf[4096];
 static	ipi_hndlr_t		hndlrs[MAX_IPI_MSG_NUM] = {NULL};
 static	spnlck_rw_t		hndlrs_lock;
 
+static	spnlck_t		send_lock;
+
 static	void			ipi_int_hndlr(u32 int_num, pcontext_t p_context,
                                       u32 err_code);
 
 void cpu_ipi_init()
 {
     //Initialize heap
-    ipi_queue_heap = core_mm_heap_create_on_buf(HEAP_MULITHREAD,
+    ipi_queue_heap = core_mm_heap_create_on_buf(HEAP_MULITHREAD | HEAP_PREALLOC,
                      4096, ipi_queue_heap_buf, sizeof(ipi_queue_heap_buf));
 
     //Initialize queue
@@ -43,6 +45,7 @@ void cpu_ipi_init()
 
     ipi_queue[0].initialized = true;
     core_pm_spnlck_init(&(ipi_queue[0].lock));
+    core_pm_spnlck_init(&send_lock);
     core_pm_spnlck_rw_init(&hndlrs_lock);
     core_rtl_queue_init(&(ipi_queue[0].msg_queue), ipi_queue_heap);
 
@@ -89,7 +92,9 @@ void hal_cpu_send_IPI(s32 index, u32 type, void* p_args)
             }
         }
 
+        core_pm_spnlck_lock(&send_lock);
         hal_io_broadcast_IPI();
+        core_pm_spnlck_unlock(&send_lock);
 
     } else {
         //Send message
@@ -105,7 +110,9 @@ void hal_cpu_send_IPI(s32 index, u32 type, void* p_args)
         core_rtl_queue_push(&(ipi_queue[index].msg_queue), p_new_msg);
         core_pm_spnlck_unlock(&(ipi_queue[index].lock));
 
+        core_pm_spnlck_lock(&send_lock);
         hal_io_send_IPI(hal_cpu_get_cpu_id_by_index((u32)index));
+        core_pm_spnlck_unlock(&send_lock);
     }
 
     return;
@@ -134,6 +141,8 @@ void ipi_int_hndlr(u32 int_num, pcontext_t p_context, u32 err_code)
     //Dispatch message
     pipi_msg_t p_msg = core_rtl_queue_pop(&ipi_queue[cpuindex].msg_queue);
 
+    core_pm_spnlck_unlock(&(ipi_queue[cpuindex].lock));
+
     if(p_msg == NULL) {
         core_pm_spnlck_unlock(&(ipi_queue[cpuindex].lock));
         return;
@@ -151,7 +160,6 @@ void ipi_int_hndlr(u32 int_num, pcontext_t p_context, u32 err_code)
         hndlr(p_context, p_args);
     }
 
-    core_pm_spnlck_unlock(&(ipi_queue[cpuindex].lock));
     UNREFERRED_PARAMETER(err_code);
     UNREFERRED_PARAMETER(int_num);
     return;
