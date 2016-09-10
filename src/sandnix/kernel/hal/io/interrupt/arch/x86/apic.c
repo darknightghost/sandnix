@@ -68,7 +68,6 @@ static	inline	void		delay();
 static	inline	u32			ioapic_id_read();
 static	inline	void		ioapic_id_write(u32 data);
 static	inline	u32			ioapic_version_read();
-static	inline	u64			ioapic_redirct_tbl_read(u8 index);
 static	inline	void		ioapic_redirct_tbl_write(u8 index, u64 data);
 
 static	inline	void		tick_init();
@@ -122,7 +121,8 @@ void hal_io_irq_enable_all()
     u32 redirct_tbl_num = (ioapic_version_read() & 0xFF0000) >> 16;
 
     for(u32 i = 0; i < redirct_tbl_num; i++) {
-        redict_entry_value.value = ioapic_redirct_tbl_read(i);
+        redict_entry_value.value = 0;
+        redict_entry_value.data.vector = IRQ(i);
         redict_entry_value.data.mask = 0;
         ioapic_redirct_tbl_write(i, redict_entry_value.value);
     }
@@ -136,7 +136,8 @@ void hal_io_irq_disable_all()
     u32 redirct_tbl_num = (ioapic_version_read() & 0xFF0000) >> 16;
 
     for(u32 i = 0; i < redirct_tbl_num; i++) {
-        redict_entry_value.value = ioapic_redirct_tbl_read(i);
+        redict_entry_value.value = 0;
+        redict_entry_value.data.vector = IRQ(i);
         redict_entry_value.data.mask = 1;
         ioapic_redirct_tbl_write(i, redict_entry_value.value);
     }
@@ -149,7 +150,8 @@ void hal_io_irq_enable(u32 num)
     ioapic_redirect_entry_t redict_entry_value;
 
     if(num >= IRQ_BASE && num <= IRQ_MAX) {
-        redict_entry_value.value = ioapic_redirct_tbl_read(num - IRQ_BASE);
+        redict_entry_value.value = 0;
+        redict_entry_value.data.vector = num;
         redict_entry_value.data.mask = 0;
         ioapic_redirct_tbl_write(num - IRQ_BASE, redict_entry_value.value);
     }
@@ -162,7 +164,8 @@ void hal_io_irq_disable(u32 num)
     ioapic_redirect_entry_t redict_entry_value;
 
     if(num >= IRQ_BASE && num <= IRQ_MAX) {
-        redict_entry_value.value = ioapic_redirct_tbl_read(num - IRQ_BASE);
+        redict_entry_value.value = 0;
+        redict_entry_value.data.vector = num;
         redict_entry_value.data.mask = 1;
         ioapic_redirct_tbl_write(num - IRQ_BASE, redict_entry_value.value);
     }
@@ -349,10 +352,10 @@ void io_apic_init()
 
     //Initialize redirection table
     ioapic_redirect_entry_t redict_entry_value;
-    core_rtl_memset(&redict_entry_value, 0, sizeof(redict_entry_value));
+    redict_entry_value.value = 0;
 
     for(u32 i = 0; i < redirct_tbl_num; i++) {
-        redict_entry_value.data.vector = IRQ_BASE + i;
+        redict_entry_value.data.vector = IRQ(i);
         ioapic_redirct_tbl_write(i, redict_entry_value.value);
         hal_early_print_printf("IRQ%u --> INT %#.2X.\n", i, IRQ(i));
     }
@@ -447,18 +450,6 @@ u32 ioapic_version_read()
 {
     *ioapic_index_reg = 0x01;
     return *ioapic_data_reg;
-}
-
-u64 ioapic_redirct_tbl_read(u8 index)
-{
-    index = index * 2;
-    u64 ret = 0;
-    *ioapic_index_reg = 0x10 + index;
-    ret = *ioapic_data_reg;
-    *ioapic_index_reg = 0x10 + index + 1;
-    ret = (ret << 32) + *ioapic_data_reg;
-
-    return ret;
 }
 
 void ioapic_redirct_tbl_write(u8 index, u64 data)

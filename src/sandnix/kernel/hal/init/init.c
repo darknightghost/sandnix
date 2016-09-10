@@ -50,6 +50,7 @@ void kinit(void* p_bootloader_info)
     test();
 
     hal_io_int_enable();
+    hal_io_irq_enable_all();
 
     while(1);
 
