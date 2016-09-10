@@ -50,7 +50,7 @@ void kinit(void* p_bootloader_info)
     test();
 
     hal_io_int_enable();
-    hal_io_irq_enable_all();
+    //hal_io_irq_enable_all();
 
     while(1);
 
@@ -58,6 +58,7 @@ void kinit(void* p_bootloader_info)
 }
 
 volatile u32 tm = 3000;
+/*
 void keyboard_int(u32 int_num, pcontext_t p_context, u32 err_code)
 {
     tm = 3000;
@@ -68,6 +69,7 @@ void keyboard_int(u32 int_num, pcontext_t p_context, u32 err_code)
     UNREFERRED_PARAMETER(p_context);
     UNREFERRED_PARAMETER(err_code);
 }
+*/
 
 void ipi_hndlr(pcontext_t p_context, void* p_arg)
 {
@@ -103,7 +105,6 @@ void test()
     hal_io_set_clock_period(1000000);
     hal_io_int_callback_set(INT_CLOCK, clock_int);
     hal_io_int_callback_set(INT_TICK, tick_int);
-    hal_io_int_callback_set(IRQ(1), keyboard_int);
     hal_cpu_regist_IPI_hndlr(0, ipi_hndlr);
 
     return;

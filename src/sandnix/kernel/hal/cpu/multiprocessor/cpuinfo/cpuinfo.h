@@ -19,21 +19,17 @@
 #include "../../../../../../common/common.h"
 
 #if defined X86
-    #include "./arch/x86/cpuinfo.h"
+    #include "arch/x86/cpuinfo.h"
+#elif defined ARM
+    #include "arch/arm/armv7/cortex-a9/cpuinfo.h"
 #endif
 
 #define INVALID_CPU_INDEX	0xFFFFFFFF
 #define INVALID_CPU_ID		0xFFFFFFFF
 
-#if defined X86
-    void cpuinfo_init();
-    void cpuinfo_core_init();
-    void cpuinfo_core_release();
-#elif define ARM
-    #define	cpuinfo_init()
-    #define	cpuinfo_core_init()
-    #define	cpuinfo_core_release()
-#endif
+void cpuinfo_init();
+void cpuinfo_core_init();
+void cpuinfo_core_release();
 
 //Get current CPU id
 u32	hal_cpu_get_cpu_id();

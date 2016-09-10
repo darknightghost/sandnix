@@ -15,41 +15,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../../cpuinfo.h"
-#include "../../../../../io/io.h"
-#include "../../../../../exception/exception.h"
-#include "../../../../../../core/rtl/rtl.h"
-#include "../../../../../../core/pm/pm.h"
-#include "../../../../../../core/mm/mm.h"
+#pragma once
+#include "../../../../../../../../../../common/common.h"
 
-void cpuinfo_init()
-{
-}
+typedef struct _cpuinfo {
+    char	name[64];
+} cpuinfo_t, *pcpuinfo_t;
 
-void cpu_id_info_core_init();
-void cpu_id_info_core_release();
-
-u32	hal_cpu_get_cpu_id()
-{
-}
-
-u32	hal_cpu_get_cpu_index()
-{
-
-}
-
-u32	hal_cpu_get_cpu_id_by_index(u32 index)
-{
-
-}
-
-u32	hal_cpu_get_cpu_index_by_id(u32 id)
-{
-
-}
-
-void hal_cpu_get_info(pcpuinfo_t p_ret)
-{
-    UNREFERRED_PARAMETER(p_ret);
-}
-
+typedef struct _cpu_id_info {
+    u32		index;
+    u32		cpuid;
+} cpu_id_info_t, *pcpu_id_info_t;
