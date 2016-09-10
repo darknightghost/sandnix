@@ -54,14 +54,11 @@ void cpu_id_info_core_release();
 
 u32	hal_cpu_get_cpu_id()
 {
-    return 0;
     return hal_io_apic_read32(LOCAL_APIC_ID_REG);
 }
 
 u32	hal_cpu_get_cpu_index()
 {
-    return 0;
-
     if(!initialized) {
         return 0;
     }
