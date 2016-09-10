@@ -106,12 +106,12 @@ void apic_init()
     io_apic_init();
 
     //Initialize clock
-    clock_init();
+    //clock_init();
 
     enable_apic();
 
     //Initialize tick
-    tick_init();
+    //tick_init();
 
     return;
 }

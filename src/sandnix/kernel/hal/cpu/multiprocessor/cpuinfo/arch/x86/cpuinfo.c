@@ -17,6 +17,7 @@
 
 #include "../../cpuinfo.h"
 #include "../../../../../io/io.h"
+#include "../../../../../exception/exception.h"
 #include "../../../../../../core/rtl/rtl.h"
 #include "../../../../../../core/pm/pm.h"
 #include "../../../../../../core/mm/mm.h"
@@ -32,6 +33,19 @@ void cpuinfo_init()
 {
     core_rtl_map_init(&cpuid_map, cpuid_cmp , NULL);
     core_pm_spnlck_rw_init(&lock);
+    pcpu_id_info_t p_info = core_mm_heap_alloc(sizeof(cpu_id_info_t),
+                            NULL);
+
+    if(p_info == NULL) {
+        PANIC(ENOMEM, "Failed to allocate memory for cpu0.\n");
+    }
+
+    p_info->index = 0;
+    p_info->cpuid = hal_cpu_get_cpu_id();
+    core_rtl_map_set(&cpuid_map,
+                     (void*)(p_info->cpuid),
+                     p_info);
+
     initialized = true;
 }
 
@@ -40,11 +54,14 @@ void cpu_id_info_core_release();
 
 u32	hal_cpu_get_cpu_id()
 {
+    return 0;
     return hal_io_apic_read32(LOCAL_APIC_ID_REG);
 }
 
 u32	hal_cpu_get_cpu_index()
 {
+    return 0;
+
     if(!initialized) {
         return 0;
     }
