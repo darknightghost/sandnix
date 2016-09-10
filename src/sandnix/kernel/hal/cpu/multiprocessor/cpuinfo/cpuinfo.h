@@ -25,10 +25,15 @@
 #define INVALID_CPU_INDEX	0xFFFFFFFF
 #define INVALID_CPU_ID		0xFFFFFFFF
 
-void cpuinfo_init();
-
-void cpuinfo_core_init();
-void cpuinfo_core_release();
+#if defined X86
+    void cpuinfo_init();
+    void cpuinfo_core_init();
+    void cpuinfo_core_release();
+#elif define ARM
+    #define	cpuinfo_init()
+    #define	cpuinfo_core_init()
+    #define	cpuinfo_core_release()
+#endif
 
 //Get current CPU id
 u32	hal_cpu_get_cpu_id();
