@@ -18,8 +18,11 @@
 #include "../../../../common/common.h"
 #include "../early_print/early_print.h"
 #include "../../core/rtl/rtl.h"
+#include "../cpu/cpu.h"
+#include "../io/io.h"
 
 #include "exception.h"
+#include "arch/exception.h"
 
 #define PANIC_BUF_SIZE		1024
 
@@ -170,13 +173,32 @@ static const		char*	errno_tbl[ERRNO_MAX] = {
 };
 
 static	char	panic_buf[PANIC_BUF_SIZE];
+static	bool	initialized = false;
 
+static	void	lets_die();
+static	void	die_ipi_hndlr(pcontext_t p_context, void* p_args);
+
+void hal_exception_init()
+{
+    hal_early_print_printf("\nInitializing exception module...\n");
+    hal_exception_arch_init();
+
+    hal_cpu_regist_IPI_hndlr(IPI_TYPE_DIE, die_ipi_hndlr);
+    initialized = true;
+}
 
 void hal_exception_panic(char* file, u32 line, u32 error_code, char* fmt, ...)
 {
     va_list ap;
 
-    //TODO:Stop all cpus
+    //Disbale interrupts
+    hal_io_int_disable();
+
+    //Stop all cpus
+    if(initialized) {
+        lets_die();
+    }
+
     //TODO:Try to call debugger
 
     hal_early_print_init();
@@ -199,5 +221,23 @@ void hal_exception_panic(char* file, u32 line, u32 error_code, char* fmt, ...)
     core_rtl_vsnprintf(panic_buf, PANIC_BUF_SIZE, fmt, ap);
     hal_early_print_puts(panic_buf);
 
-    while(true);
+    //Stack trace
+    die();
+
+    //Never return
+    return;
+}
+
+void lets_die()
+{
+    hal_cpu_send_IPI(-1, IPI_TYPE_DIE, NULL);
+    return;
+}
+
+void die_ipi_hndlr(pcontext_t p_context, void* p_args)
+{
+    die();
+    UNREFERRED_PARAMETER(p_context);
+    UNREFERRED_PARAMETER(p_args);
+    return;
 }

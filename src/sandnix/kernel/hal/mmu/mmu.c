@@ -20,7 +20,7 @@
 
 void hal_mmu_init()
 {
-    hal_early_print_printf("\nInitializing mmu...\n");
+    hal_early_print_printf("\nInitializing mmu module...\n");
     phymem_init();
     paging_init();
     return;

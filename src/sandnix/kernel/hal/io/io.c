@@ -20,7 +20,7 @@
 
 void hal_io_init()
 {
-    hal_early_print_printf("\nInitializing io...\n");
+    hal_early_print_printf("\nInitializing io module...\n");
     interrupt_init();
     return;
 }

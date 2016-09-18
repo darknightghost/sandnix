@@ -50,7 +50,7 @@
             <option enable="true" name="Build with symbols." target="CFLAGS|ASFLAGS" type="checkbox" value="-g"/>
         </option>
         <option name="BootLoader." type="menu">
-            <option name="Bootloader" selected="1" target="CFLAGS|ASFLAGS|DEPFLAGS" type="list">
+            <option name="Bootloader" selected="0" target="CFLAGS|ASFLAGS|DEPFLAGS" type="list">
             <item name="multiboot2" value="-DBOOTLOADER=MULTIBOOT2"/>
             <item name="uboot" value="-DBOOTLOADER=UBOOT"/>
             </option>

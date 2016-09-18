@@ -786,14 +786,7 @@ src/sandnix/kernel/hal/exception
 ```
 ######接口数据结构
 ```c
-//void mem_fault_hndlr(u32 thread_id, address_t address, u32 operation)
-typedef void	(*mem_fault_hndlr)(u32, address_t, u32);
 
-//void illegal_op_fault_hndlr(u32 thread_id, address_t address
-typedef void	(*undef_op_fault_hndlr)(u32, address_t;
-
-//错误处理程序链表
-hndlr_info;
 ```
 ######接口函数及宏
 ```c
@@ -817,19 +810,6 @@ void hal_exception_panic(
     ...);
     
 #define	PANIC(error_code, fmt, ...)		hal_exception_panic(__FILE__, __LINE__,  error_code, fmt,##__VA_ARGS__)
-
-//添加错误处理程序
-//内存错误
-void hal_exception_mem_fault_hndlr_set(
-	phndlr_info p_hndlr_info);
-
-//越权操作
-void hal_exception_privilege_fault_hndlr_set(
-	phndlr_info p_hndlr_info);
-
-//未定义指令
-void hal_exception_undef_op_fault_hndlr_set(
-	phndlr_info p_hndlr_info);
 
 //Assert
 #define ASSERT(x)

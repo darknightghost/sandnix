@@ -17,8 +17,18 @@
 
 #pragma once
 #include "../../../../common/common.h"
-
 #include "errno.h"
+
+//Initialize module
+void	hal_exception_init();
+
+//Initialize cpu core
+void	hal_exception_core_init(
+    u32 cpuid);
+
+//Release cpu core
+void	hal_exception_core_release(
+    u32 cpuid);
 
 void	hal_exception_panic(
     char* file,
@@ -30,4 +40,15 @@ void	hal_exception_panic(
 #define	PANIC(error_code, fmt, ...)	hal_exception_panic(__FILE__, __LINE__, \
         (error_code), (fmt), ##__VA_ARGS__);
 
-#define	NOT_SUPPORT		PANIC(ENOTSUP,"Function not completed!.")
+#include "../debug/debug.h"
+
+#define	ASSERT(exp)	({ \
+        if(DEBUG) { \
+            if(!(exp)) { \
+                PANIC(EASSERT, \
+                      "Assert failed, expression \"%s\" is false.", \
+                      #exp); \
+            } \
+        })
+
+#define	NOT_SUPPORT		PANIC(ENOTSUP,"Function not completed!")

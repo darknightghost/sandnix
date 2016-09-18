@@ -21,3 +21,6 @@ hal/io/interrupt/arch/x86/int_hndlr.S
 ##cpu
 hal/cpu/multiprocessor/cpuinfo/arch/x86/cpuinfo.c
 hal/cpu/multiprocessor/performance/arch/x86/performance.c
+
+##exception
+hal/exception/arch/x86/exception.c

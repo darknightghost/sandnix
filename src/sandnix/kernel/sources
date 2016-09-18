@@ -16,7 +16,7 @@ hal/early_print/early_print.c
 hal/debug/debug.c
 
 ##exception
-hal/exception/panic.c
+hal/exception/exception.c
 
 ##rtl
 hal/rtl/math/math.c

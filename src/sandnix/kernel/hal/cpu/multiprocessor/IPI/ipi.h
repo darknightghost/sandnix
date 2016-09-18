@@ -23,6 +23,9 @@
 
 #define	MAX_IPI_MSG_NUM		0x10
 
+#define	IPI_TYPE_DIE			0x00
+#define	IPI_TYPE_TLB_REFRESH	0x01
+
 typedef	struct	_ipi_msg {
     u32		type;
     void*	p_args;
@@ -34,7 +37,8 @@ typedef	struct	_ipi_queue {
     spnlck_t	lock;
 } ipi_queue_t, *pipi_queue_t;
 
-typedef	void	(*ipi_hndlr_t)(pcontext_t p_context, void* p_args);
+//void	ipi_hndlr(pcontext_t p_context, void* p_args);
+typedef	void	(*ipi_hndlr_t)(pcontext_t, void*);
 
 void cpu_ipi_init();
 void cpu_ipi_core_init();
