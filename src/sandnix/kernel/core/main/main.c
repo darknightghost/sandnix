@@ -20,4 +20,5 @@
 
 void core_main_main()
 {
+    hal_early_print_printf("\nEntering kernel main...\n");
 }
