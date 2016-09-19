@@ -24,7 +24,6 @@
 * cpu
 * io
 * sys\_gate
-* power
 * exception
 * debug
 * rtl
@@ -828,44 +827,6 @@ src/sandnix/kernel/hal/exception/%(arch)/exception.c
 //Panic
 src/sandnix/kernel/hal/exception/panic.c
 ```
-#####power
-负责处理基本的电源操作,比如断电,复位,睡眠等.
-######模块路径
-```
-src/sandnix/kernel/hal/power/
-```
-######接口数据结构
-```c
-
-```
-######接口函数及宏
-```c
-//h初始化模块
-void hal_power_init();
-
-//初始化处理器核心
-void hal_power_core_init(u32 cpuid);
-
-//释放处理器核心
-void hal_power_core_release(u32 cpuid);
-
-//断电
-void hal_power_off();
-
-//睡眠
-void hal_power_sleep();
-
-//复位
-void hal_power_reset();
-```
-######文件列表
-```c
-//接口头文件
-src/sandnix/kernel/hal/power/power.h
-
-//实现代码
-src/sandnix/kernel/hal/power/$(arch)/power.c
-```
 #####sys\_gate
 负责提供用户态和内核态之间的切换.
 ######模块路径
@@ -874,6 +835,8 @@ src/sandnix/kernel/hal/sys_gate/
 ```
 ######接口数据结构
 ```c
+//void	sys_gate_entry(u32 call_number, ...);
+typedef	void	(*sys_gate_entry_t)(u32, ...);
 
 ```
 ######接口函数及宏

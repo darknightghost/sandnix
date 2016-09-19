@@ -21,6 +21,7 @@
 #include "../exception/exception.h"
 #include "../kparam/kparam.h"
 #include "../io/io.h"
+#include "../sys_gate/sys_gate.h"
 #include "../../core/rtl/rtl.h"
 #include "../../core/mm/mm.h"
 
@@ -45,12 +46,15 @@ void kinit(void* p_bootloader_info)
     hal_io_init();
     hal_cpu_init();
     hal_mmu_init();
+    hal_exception_init();
+    hal_debug_init();
+    //hal_sys_gate_init();
 
     void test();
     test();
 
     hal_io_int_enable();
-    //hal_io_irq_enable_all();
+    hal_io_irq_enable_all();
 
     while(1);
 
@@ -85,7 +89,7 @@ void ipi_hndlr(pcontext_t p_context, void* p_arg)
 
 void clock_int(u32 int_num, pcontext_t p_context, u32 err_code)
 {
-    hal_cpu_send_IPI(0, 0, NULL);
+    hal_cpu_send_IPI(0, 4, NULL);
     UNREFERRED_PARAMETER(int_num);
     UNREFERRED_PARAMETER(p_context);
     UNREFERRED_PARAMETER(err_code);
@@ -105,7 +109,7 @@ void test()
     hal_io_set_clock_period(1000000);
     hal_io_int_callback_set(INT_CLOCK, clock_int);
     hal_io_int_callback_set(INT_TICK, tick_int);
-    hal_cpu_regist_IPI_hndlr(0, ipi_hndlr);
+    hal_cpu_regist_IPI_hndlr(4, ipi_hndlr);
 
     return;
 }

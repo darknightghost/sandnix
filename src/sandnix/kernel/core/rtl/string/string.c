@@ -857,7 +857,7 @@ int core_rtl_strncmp(const char* s1, const char* s2, size_t len)
     for(p1 = (unsigned char*)s1, p2 = (unsigned char*)s2;
         len > 0;
         p1++, p2++, len--) {
-        ret = *p1 = *p2;
+        ret = *p1 - *p2;
 
         if(ret != 0 || *p1 == '\0') {
             return ret;

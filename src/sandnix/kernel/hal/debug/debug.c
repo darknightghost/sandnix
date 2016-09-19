@@ -16,13 +16,33 @@
 */
 
 #include "debug.h"
+#include "../early_print/early_print.h"
+#include "../kparam/kparam.h"
+#include "../exception/exception.h"
+
+#include "../../core/rtl/rtl.h"
+
+static	bool	is_debug_on = true;
 
 void hal_debug_init()
 {
+    char buf[32];
+    hal_early_print_printf("\nInitializing debug module..\n");
+
+    if(hal_kparam_get_value("debug", buf, sizeof(buf)) != ESUCCESS
+       || core_rtl_strcmp(buf, "on") != 0) {
+        hal_early_print_printf("Debug off.\n");
+        is_debug_on = false;
+
+    } else {
+        hal_early_print_printf("Debug on.\n");
+        is_debug_on = true;
+    }
+
     return;
 }
 
 bool hal_debug_is_on_dbg()
 {
-    return true;
+    return is_debug_on;
 }
