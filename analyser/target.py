@@ -271,32 +271,46 @@ class target:
             self.menu.append(self.active_arch_menu)
         
         #Architecuture settings
-        arch_setting_menu = []
-        for a in self.base_archs:
-            arch_setting_menu.append(a.open_menu())
-        self.menu.append(["submenu", "Architecture settings" , arch_setting_menu])
+        if self.build_type == "build":
+            arch_setting_menu = []
+            for a in self.base_archs:
+                arch_setting_menu.append(a.open_menu())
+            self.menu.append(["submenu", "Architecture settings" , arch_setting_menu])
 
         #Build options
-        if len(self.options) > 0:
-            self.menu.append(["lable", "", None])
-            self.menu.append(["lable", "Build options:", None])
-            option_menu = []
-            for opt in self.options:
-                option_menu.append(opt.open_menu())
-            self.menu.append(["submenu", "Build options" , option_menu])
+        if self.build_type == "build":
+            if len(self.options) > 0:
+                self.menu.append(["lable", "", None])
+                self.menu.append(["lable", "Build options:", None])
+                option_menu = []
+                for opt in self.options:
+                    option_menu.append(opt.open_menu())
+                self.menu.append(["submenu", "Build options" , option_menu])
         
         #Sub targets
-        if len(self.sub_targets) > 0:
-            self.menu.append(["lable", "", None])
-            self.menu.append(["lable", "Sub targets:", None])
-            sub_targets_menu = []
-            for t in self.sub_targets:
-                sub_targets_menu.append(["lable", "Target:" + t[1].name, None])
-                c = ["checkbox", "Build this target", t[2]]
-                sub_targets_menu.append(c)
-                t[3] = c
-                sub_targets_menu.append(["submenu", t[1].name + " options", t[1].open_menu()])
-            self.menu.append(["submenu", "Sub targets options" , sub_targets_menu])
+        if self.build_type == "build":
+            if len(self.sub_targets) > 0:
+                self.menu.append(["lable", "", None])
+                self.menu.append(["lable", "Sub targets:", None])
+                sub_targets_menu = []
+                for t in self.sub_targets:
+                    sub_targets_menu.append(["lable", t[1].name, None])
+                    c = ["checkbox", "Build this target", t[2]]
+                    sub_targets_menu.append(c)
+                    t[3] = c
+                    sub_targets_menu.append(["submenu", t[1].name + " options", t[1].open_menu()])
+                self.menu.append(["submenu", "Sub targets options" , sub_targets_menu])
+        else:
+            if len(self.sub_targets) > 0:
+                self.menu.append(["lable", "", None])
+                self.menu.append(["lable", "Sub targets:", None])
+                for t in self.sub_targets:
+                    self.menu.append(["lable", " " * 4 + t[1].name + ":", None])
+                    c = ["checkbox", "Build this target", t[2]]
+                    self.menu.append(c)
+                    t[3] = c
+                    self.menu.append(["submenu", t[1].name + " options", t[1].open_menu()])
+                    self.menu.append(["lable", " ", None])
         
         return self.menu
 
@@ -307,12 +321,14 @@ class target:
             self.active_arch_menu = None
         
         #Architecuture settings
-        for a in self.base_archs:
-            a.close_menu()
+        if self.build_type == "build":
+            for a in self.base_archs:
+                a.close_menu()
         
         #Options
-        for opt in self.options:
-            opt.close_menu()
+        if self.build_type == "build":
+            for opt in self.options:
+                opt.close_menu()
             
         #sub targets
         for t in self.sub_targets:

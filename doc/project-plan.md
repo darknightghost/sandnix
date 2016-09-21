@@ -1190,6 +1190,9 @@ src/sandnix/kernel/core/pm
 //进程对象
 process_obj_t
 
+//进程引用对象
+thread_ref_obj_t
+
 //线程对象
 thread_obj_t
 
@@ -2394,12 +2397,15 @@ src/sandnix/kernel/core/exception
 ```
 ######接口数据结构
 ```c
+//异常对象
+except_obj_t
+
 //异常处理结果
 except_stat_t
 
 //异常处理回调
-//except_stat_t except_hndlr_t(kstatus_t reason, pcontext_t context, void* p_arg);
-except_stat_t (*except_hndlr_t)(kstatus_t, pcontext_t, void*);
+//except_stat_t except_hndlr_t(except_obj_t except, pcontext_t context);
+except_stat_t (*except_hndlr_t)(except_obj_t, pcontext_t);
 ```
 ######接口函数及宏
 ```c
@@ -2412,15 +2418,22 @@ except_stat_t (*except_hndlr_t)(kstatus_t, pcontext_t, void*);
 //初始化模块
 void core_exception_init();
 
+//创建错误处理对象
+
 //抛出异常
 void core_exception_raise(
-	kstatus_t reason,
-    char* description,
-    void* p_arg,
+	pcontext_t p_context,
+	except_obj_t except,
     char* src_file,
     char* line);
 
 #define RAISE(reason, description, p_arg)
+
+//注册全局错误处理函数
+void core_exception_add_hndlr(except_hndlr_t hndlr);
+
+//取消注册全局错误处理函数
+void core_exception_remove_hndlr(except_hndlr_t hndlr);
 
 //压入错误处理函数
 void core_exception_push_hndlr(except_hndlr_t hndlr);

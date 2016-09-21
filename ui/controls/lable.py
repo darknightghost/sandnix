@@ -32,7 +32,7 @@ class lable(control):
         self.lines = []
         for l in self.text.split("\n"):
             while True:
-                self.lines.append(l[ : self.text_width].strip())
+                self.lines.append(l[ : self.text_width])
                 l = l[self.text_width : ]
                 if len(l) <= 0:
                     break;

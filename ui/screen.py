@@ -46,7 +46,7 @@ class screen:
     "textbox"       string                                      TextBox
     "listcontrol"   [[text1,text2,text3...],selected-index]     Show a list and select one
     '''
-    str_help = "Press <ESC> to return.Press <Page Up>, <Page Down> to switch pages.Press <↑>, <↓>, <←>, <→> to switch focus in one window.Press <TAB> to switch focus among all windows."
+    str_help = "Press <ESC> to return. Press <Page Up>, <Page Down> to switch pages. Press <↑>, <↓>, <←>, <→> to switch focus in one window. Press <TAB> to switch focus among all windows."
     def __init__(self):
         locale.setlocale(locale.LC_ALL, '')
         self.stdscr = None
