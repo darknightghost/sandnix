@@ -20,5 +20,7 @@
 #include "../../../../../common/common.h"
 
 //Runtime
-#define		CLASS_OBJ			0x00000000
-#define		CLASS_KSTRING		0x00000001
+#define		CLASS_OBJ				0x00000000
+#define		CLASS_KSTRING			0x00000001
+
+#define		CLASS_THREAD_REF_OBJ	0x00010000

@@ -36,8 +36,10 @@ static	int				search(pkstring_obj_t p_this, pkstring_obj_t p_substr);
 pkstring_obj_t kstring(char* str, pheap_t heap)
 {
     //Allocate memory
-    pkstring_obj_t p_ret = core_mm_heap_alloc(sizeof(kstring_obj_t),
-                           heap);
+    pkstring_obj_t p_ret = (pkstring_obj_t)obj(CLASS_KSTRING,
+                           (destructor_t)destructer,
+                           (compare_obj_t)compare, (to_string_t)to_string,
+                           heap, sizeof(kstring_obj_t));
 
     if(p_ret == NULL) {
         return NULL;
@@ -54,9 +56,6 @@ pkstring_obj_t kstring(char* str, pheap_t heap)
     core_rtl_strncpy(p_ret->buf, str, len);
 
     //Initialize methods
-    obj(&(p_ret->obj), CLASS_KSTRING, (destructor_t)destructer,
-        (compare_obj_t)compare, (to_string_t)to_string,
-        heap);
     p_ret->len = kstring_len;
     p_ret->copy = copy;
     p_ret->substr = substr;

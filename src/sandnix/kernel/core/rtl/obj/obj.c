@@ -16,18 +16,25 @@
 */
 
 #include "obj.h"
+#include "../../mm/mm.h"
 
-void obj(pobj_t p_obj, u32 class_id, destructor_t destructor,
-         compare_obj_t compare_func, to_string_t to_string_func,
-         pheap_t heap)
+pobj_t obj(u32 class_id, destructor_t destructor,
+           compare_obj_t compare_func, to_string_t to_string_func,
+           pheap_t heap, size_t size)
 {
+    pobj_t p_obj = (pobj_t)core_mm_heap_alloc(size, heap);
+
+    if(p_obj == NULL) {
+        return NULL;
+    }
+
     p_obj->class_id = class_id;
     p_obj->ref_count = 1;
     p_obj->heap = heap;
     p_obj->destructor = destructor;
     p_obj->compare = compare_func;
     p_obj->to_string = to_string_func;
-    return;
+    return p_obj;
 }
 
 void core_rtl_obj_inc_ref(pobj_t p_obj)

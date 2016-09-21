@@ -34,6 +34,7 @@ core/main/main.c
 
 ##pm
 core/pm/thread/thread.c
+core/pm/thread/thread_ref_obj.c
 core/pm/lock/spinlock/spnlck.c
 core/pm/lock/spinlock/spnlck_rw.c
 

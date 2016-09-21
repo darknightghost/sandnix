@@ -1317,6 +1317,13 @@ void core_pm_set_errno(kstatus_t errno);
 //获得errno
 kstatus_t core_pm_get_errno();
 
+//线程引用对象
+//构造函数
+pthread_ref_obj_t thread_ref_obj_t.thread_ref_obj(pheap_t heap, size_t size, u32 thread_id);
+
+//fork
+pthread_ref_obj_t thread_ref_obj_t.fork();
+
 //spinlock
 //normal
 void core_pm_spnlck_init(pspnlck_t p_lock);
@@ -2417,8 +2424,6 @@ except_stat_t (*except_hndlr_t)(except_obj_t, pcontext_t);
 
 //初始化模块
 void core_exception_init();
-
-//创建错误处理对象
 
 //抛出异常
 void core_exception_raise(

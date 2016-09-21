@@ -58,9 +58,9 @@ typedef	struct	_obj {
 #define	CLASS_ID(p_obj)				(*(((pobj_t)(p_obj))->class_id))
 
 //Constructor
-void		obj(pobj_t p_obj, u32 class_id, destructor_t destructor,
+pobj_t		obj(u32 class_id, destructor_t destructor,
                 compare_obj_t compare_func, to_string_t to_string_func,
-                pheap_t heap);
+                pheap_t heap, size_t size);
 
 //Increase reference count
 void		core_rtl_obj_inc_ref(pobj_t p_obj);
