@@ -15,9 +15,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "../../../../../core/rtl/rtl.h"
+#include "../../../../../core/pm/pm.h"
 #include "idt.h"
-#include "../../../../early_print/early_print.h"
 #include "int_hndlr.h"
+#include "../../../../early_print/early_print.h"
 
 static idt_t		idt_table[256];
 static void			fill_idt();

@@ -17,5 +17,9 @@
 
 #pragma once
 
+#define CORE_EXCEPTION_EXPORT
+
 #include "../../../../common/common.h"
 
+typedef	u32		except_stat_t;
+//typedef	except_stat_t	(*except_hndlr_t)(except_obj_t, pcontext_t);

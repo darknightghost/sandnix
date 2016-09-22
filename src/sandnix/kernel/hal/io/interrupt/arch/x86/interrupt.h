@@ -18,9 +18,12 @@
 #pragma once
 #include "../../../../../../../common/common.h"
 #include "../../interrupt.h"
-#include "../../../../cpu/cpu.h"
 #include "apic.h"
 #include "tss.h"
+
+#ifndef	HAL_IO_EXPORT
+    #include "../../../../cpu/cpu.h"
+#endif
 
 #define	INT_BP			0x03
 

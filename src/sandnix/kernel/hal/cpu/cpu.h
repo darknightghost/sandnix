@@ -17,6 +17,8 @@
 
 #pragma once
 
+#define	HAL_CPU_EXPORT
+
 #include "../../../../common/common.h"
 #include "./context/context.h"
 #include "./multiprocessor/multiprocessor.h"

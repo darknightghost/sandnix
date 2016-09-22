@@ -15,9 +15,12 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../../early_print.h"
+#include "../../../../core/rtl/rtl.h"
 #include "../../../mmu/mmu.h"
 #include "../../../../core/pm/pm.h"
+
+#undef	HAL_EARLY_PRINT_EXPORT
+#include "../../early_print.h"
 
 #define	DEFAULT_STDOUT_WIDTH	80
 #define	DEFAULT_STDOUT_HEIGHT	25

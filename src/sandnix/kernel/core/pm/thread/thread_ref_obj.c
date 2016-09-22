@@ -19,8 +19,7 @@
 #include "../../mm/mm.h"
 
 pthread_ref_obj_t thread_ref_obj(u32 thread_id,
-                                 struct _thread_ref_obj * (*fork)(struct _thread_ref_obj* p_this),
-                                 void (*on_thread_exit)(struct _thread_ref_obj* p_this),
+                                 void (*on_thread_exit)(pthread_ref_obj_t),
                                  u32 class_id,
                                  destructor_t destructor,
                                  compare_obj_t compare_func,
@@ -41,7 +40,6 @@ pthread_ref_obj_t thread_ref_obj(u32 thread_id,
 
     //Initialize member functions
     p_ret->thread_id = thread_id;
-    p_ret->fork = fork;
     p_ret->on_thread_exit = on_thread_exit;
 
     return p_ret;

@@ -18,6 +18,7 @@
 #pragma once
 
 #include "../../../../../common/common.h"
+#include "thread_ref_obj.h"
 
 #define PRIORITY_HIGHEST		0x000000FF
 #define PRIORITY_LOWEST			0x00000000
@@ -52,5 +53,3 @@ u32			core_pm_get_crrnt_thread_id();
 u32			core_pm_get_thrd_priority(u32 thrd_id);
 void		core_pm_set_thrd_priority(u32 thrd_id, u32 priority);
 void		core_pm_schedule();
-void		core_pm_set_errno(kstatus_t errno);
-kstatus_t	core_pm_get_errno();

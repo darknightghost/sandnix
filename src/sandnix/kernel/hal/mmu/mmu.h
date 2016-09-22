@@ -17,6 +17,8 @@
 
 #pragma once
 
+#define HAL_MMU_EXPORT
+
 #include "../../../../common/common.h"
 #include "./paging/paging.h"
 

@@ -18,8 +18,11 @@
 #pragma once
 
 #include "../../../../../common/common.h"
-#include "../../mm/mm.h"
 #include "class_ids.h"
+
+#ifndef CORE_RTL_EXPORT
+    #include "../../mm/mm.h"
+#endif
 
 struct	_obj;
 struct	_kstring_obj;
@@ -32,6 +35,8 @@ typedef	int	(*compare_obj_t)(struct _obj*, struct _obj*);
 
 //void obj_t.destructor(pobj_t p_this);
 typedef	void (*destructor_t)(struct _obj*);
+
+typedef struct _heap_t	heap_t, *pheap_t;
 
 typedef	struct	_obj {
     u32				class_id;

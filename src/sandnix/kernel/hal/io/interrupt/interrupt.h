@@ -18,7 +18,10 @@
 #pragma once
 
 #include "../../../../../common/common.h"
-#include "../../cpu/cpu.h"
+
+#ifndef	HAL_IO_EXPORT
+    #include "../../cpu/cpu.h"
+#endif
 
 #if defined X86
     #include "arch/x86/interrupt.h"

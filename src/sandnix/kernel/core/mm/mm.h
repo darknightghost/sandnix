@@ -17,6 +17,8 @@
 
 #pragma once
 
+#define	CORE_MM_EXPORT
+
 #include "../../../../common/common.h"
 #include "./heap/heap.h"
 #include "./paging/paging.h"

@@ -18,7 +18,12 @@
 #pragma once
 
 #include "../../../../../../common/common.h"
-#include "../../../mm/mm.h"
+
+#ifndef CORE_RTL_EXPORT
+    #include "../../../mm/mm.h"
+#endif
+
+typedef struct _heap_t	heap_t, *pheap_t;
 
 typedef	struct	_array_blk {
     size_t		ref;

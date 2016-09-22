@@ -18,7 +18,10 @@
 #pragma once
 
 #include "../../../../../../common/common.h"
-#include "../../../mm/mm.h"
+
+#ifndef CORE_RTL_EXPORT
+    #include "../../../mm/mm.h"
+#endif
 
 typedef struct	_rbtree_node {
     struct _rbtree_node*	p_parent;
@@ -28,6 +31,8 @@ typedef struct	_rbtree_node {
     void*					p_key;
     void*					p_value;
 } rbtree_node_t, *prbtree_node_t, *rbtree_t, **prbtree_t;
+
+typedef struct _heap_t	heap_t, *pheap_t;
 
 #include "../container.h"
 

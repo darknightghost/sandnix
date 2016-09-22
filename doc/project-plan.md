@@ -1311,18 +1311,19 @@ void core_pm_set_thrd_priority(u32 thrd_id, u32 priority);
 //调度
 void core_pm_schedule();
 
-//设置errno
-void core_pm_set_errno(kstatus_t errno);
-
-//获得errno
-kstatus_t core_pm_get_errno();
-
 //线程引用对象
 //构造函数
-pthread_ref_obj_t thread_ref_obj_t.thread_ref_obj(pheap_t heap, size_t size, u32 thread_id);
+pthread_ref_obj_t thread_ref_obj(u32 thread_id,
+	struct _thread_ref_obj * (*fork)(pthread_ref_obj_t),
+	void (*on_thread_exit)(pthread_ref_obj_t),
+	u32 class_id,
+	destructor_t destructor,
+	compare_obj_t compare_func,
+	to_string_t to_string_func,
+	pheap_t heap, size_t size);
 
-//fork
-pthread_ref_obj_t thread_ref_obj_t.fork();
+//线程退出清理
+pthread_ref_obj_t thread_ref_obj_t.on_thread_exit(pthread_ref_obj_t p_this);
 
 //spinlock
 //normal
@@ -2410,6 +2411,9 @@ except_obj_t
 //异常处理结果
 except_stat_t
 
+//线程异常处理信息
+thread_except_stat_obj_t : thread_ref_obj_t
+
 //异常处理回调
 //except_stat_t except_hndlr_t(except_obj_t except, pcontext_t context);
 except_stat_t (*except_hndlr_t)(except_obj_t, pcontext_t);
@@ -2424,6 +2428,12 @@ except_stat_t (*except_hndlr_t)(except_obj_t, pcontext_t);
 
 //初始化模块
 void core_exception_init();
+
+//设置errno
+void core_exception_set_errno(kstatus_t status);
+
+//获得errno
+kstatus_t core_exception_get_errno();
 
 //抛出异常
 void core_exception_raise(

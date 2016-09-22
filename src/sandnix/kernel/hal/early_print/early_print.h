@@ -16,6 +16,8 @@
 */
 
 #pragma once
+#define	HAL_EARLY_PRINT_EXPORT
+
 #include "../../../../common/common.h"
 
 #if defined X86
@@ -29,7 +31,6 @@
         #endif
     #endif
 #endif
-
 
 //Initialize
 void hal_early_print_init();

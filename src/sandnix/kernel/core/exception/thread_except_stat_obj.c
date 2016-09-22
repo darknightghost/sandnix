@@ -15,29 +15,4 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
-#include "../../../../../../../../../common/common.h"
-#include "../../../../interrupt.h"
-#include "samsung_exynos4412/gic.h"
-#include "ivt.h"
-
-#ifndef	HAL_IO_EXPORT
-    #include "../../../../../../cpu/cpu.h"
-#endif
-
-#define	INT_UNDEF			0x00
-#define	INT_PREFETCH_ABT	0x01
-#define	INT_DATA_ABT		0x02
-#define INT_BP				0x03
-#define	INT_GATE			0x04
-
-#define	REQUIRE_EOI_BEGIN	0x10
-#define	IRQ_BASE		0x11
-#define	IRQ(n)			(IRQ_BASE + (n))
-
-#define	IRQ_MAX			IRQ(159)
-#define	INT_CLOCK		IRQ(69)
-#define	INT_TICK		IRQ(28)
-#define	INT_IPI			IRQ(0)
-#define	REQUIRE_EOI_END	IRQ_MAX
-
+#include "thread_except_stat_obj.h"

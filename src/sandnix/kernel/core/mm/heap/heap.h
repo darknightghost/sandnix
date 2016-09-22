@@ -18,8 +18,11 @@
 #pragma once
 
 #include "../../../../../common/common.h"
-#include "../../../hal/debug/debug.h"
-#include "../../pm/pm.h"
+
+#ifndef	CORE_PM_EXPORT
+    #include "../../../hal/debug/debug.h"
+    #include "../../pm/pm.h"
+#endif
 
 //Magic
 #define	HEAP_MEMBLOCK_MAGIC		0xFFF23333

@@ -18,7 +18,10 @@
 #pragma once
 
 #include "../../../../../../../../common/common.h"
-#include "../../../../../../core/rtl/rtl.h"
+
+#ifndef	HAL_MMU_EXPORT
+    #include "../../../../../../core/rtl/rtl.h"
+#endif
 
 /* MMU page table */
 //LV1 descriptor

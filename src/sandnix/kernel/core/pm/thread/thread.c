@@ -18,7 +18,6 @@
 #include "thread.h"
 
 static int tmp_priority = PRIORITY_DISPATCH;
-static kstatus_t tmp_status = 0;
 
 u32 core_pm_get_crrnt_thread_id()
 {
@@ -38,12 +37,3 @@ void core_pm_set_thrd_priority(u32 thrd_id, u32 priority)
     return;
 }
 
-void		core_pm_set_errno(kstatus_t errno)
-{
-    tmp_status = errno;
-}
-
-kstatus_t	core_pm_get_errno()
-{
-    return tmp_status;
-}

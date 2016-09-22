@@ -17,7 +17,10 @@
 
 #pragma once
 #include "../../../../../../../../../../common/common.h"
-#include "../../../../../../../cpu/cpu.h"
+
+#ifndef	HAL_IO_EXPORT
+    #include "../../../../../../../cpu/cpu.h"
+#endif
 
 
 void	gic_init();

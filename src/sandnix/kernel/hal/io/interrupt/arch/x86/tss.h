@@ -18,7 +18,10 @@
 #pragma once
 
 #include "../../interrupt.h"
-#include "../../../../init/init.h"
+
+#ifndef	HAL_IO_EXPORT
+    #include "../../../../init/init.h"
+#endif
 
 typedef	struct _tss {
     u16		prev_task_link;

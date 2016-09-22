@@ -19,6 +19,8 @@
 
 #include "../../../../common/common.h"
 
+#define	CORE_RTL_EXPORT
+
 #include "varg.h"
 #include "./string/string.h"
 #include "./math/math.h"

@@ -16,6 +16,7 @@
 */
 
 #pragma once
+#define	HAL_INIT_EXPORT
 
 #include "../../../../common/common.h"
 

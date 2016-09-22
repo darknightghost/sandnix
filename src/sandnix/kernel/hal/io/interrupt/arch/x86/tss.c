@@ -16,8 +16,8 @@
 */
 
 #include "tss.h"
-#include "../../../../early_print/early_print.h"
 #include "../../../../../core/rtl/rtl.h"
+#include "../../../../early_print/early_print.h"
 #include "../../../../cpu/cpu.h"
 
 static	tss_t		tss_table[MAX_CPU_NUM];

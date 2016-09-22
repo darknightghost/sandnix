@@ -35,7 +35,9 @@
 #endif
 
 #ifndef	_ASM
-#include "../../../core/mm/mm.h"
+#ifndef	HAL_MMU_EXPORT
+    #include "../../../core/mm/mm.h"
+#endif
 
 #define	MMU_PAGE_AVAIL			0x00000001
 #define	MMU_PAGE_WRITABLE		0x00000002

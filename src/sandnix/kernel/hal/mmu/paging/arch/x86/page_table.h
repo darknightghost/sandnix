@@ -18,7 +18,12 @@
 #pragma once
 
 #include "../../../../../../../common/common.h"
-#include "../../../../../core/rtl/rtl.h"
+
+#ifndef	HAL_MMU_EXPORT
+    #include "../../../../../core/rtl/rtl.h"
+#endif
+
+typedef struct _map	map_t, *pmap_t;
 
 /* MMU page table */
 

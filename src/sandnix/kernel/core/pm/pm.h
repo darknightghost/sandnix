@@ -21,6 +21,8 @@
 
 #define	MAX_PROCESS_NUM			65535
 
+#define	CORE_PM_EXPORT
+
 //Spinlock
 #include "./lock/spinlock/spnlck.h"
 #include "./lock/spinlock/spnlck_rw.h"

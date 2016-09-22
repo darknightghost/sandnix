@@ -18,13 +18,18 @@
 #pragma once
 #include "../../../../../../common/common.h"
 #include "../../context/context.h"
-#include "../../../../core/pm/pm.h"
-#include "../../../../core/rtl/rtl.h"
+
+#ifndef	HAL_CPU_EXPORT
+    #include "../../../../core/pm/pm.h"
+    #include "../../../../core/rtl/rtl.h"
+#endif
 
 #define	MAX_IPI_MSG_NUM		0x10
 
 #define	IPI_TYPE_DIE			0x00
 #define	IPI_TYPE_TLB_REFRESH	0x01
+
+typedef struct _spnlck_t spnlck_t, *pspnlck_t;
 
 typedef	struct	_ipi_msg {
     u32		type;
