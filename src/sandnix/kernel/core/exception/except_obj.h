@@ -15,4 +15,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "thread_except_stat_obj.h"
+#pragma once
+
+#include "../../../../common/common.h"
+
+#include "../rtl/rtl.h"
+
+typedef	struct	_except_obj {
+    obj_t		obj;
+    char*		description;
+} except_obj_t, *pexcept_obj_t;

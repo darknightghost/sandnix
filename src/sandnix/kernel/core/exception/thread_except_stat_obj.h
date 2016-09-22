@@ -28,3 +28,5 @@ typedef	struct	_thread_except_stat_obj {
     u32					errno;			//errno
     list_t				hndlr_list;		//Exception handlers
 } thread_except_stat_obj_t, *pthread_except_stat_obj_t;
+
+pthread_except_stat_obj_t	thread_except_stat_obj(u32 thread_id);

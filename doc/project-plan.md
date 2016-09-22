@@ -2406,7 +2406,7 @@ src/sandnix/kernel/core/exception
 ######接口数据结构
 ```c
 //异常对象
-except_obj_t
+except_obj_t : obj_t
 
 //异常处理结果
 except_stat_t

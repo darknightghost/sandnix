@@ -52,3 +52,6 @@ core/rtl/container/array/array.c
 core/rtl/container/queue/queue.c
 core/rtl/obj/obj.c
 core/rtl/kstring/kstring.c
+
+##exception
+core/exception/exception.c

@@ -15,4 +15,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "../rtl/rtl.h"
+#include "../mm/mm.h"
 
+#include "../../hal/cpu/cpu.h"
+
+#include "exception.h"
+
+
+void core_exception_init()
+{
+}
