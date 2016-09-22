@@ -15,12 +15,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../../cpuinfo.h"
-#include "../../../../../io/io.h"
-#include "../../../../../exception/exception.h"
 #include "../../../../../../core/rtl/rtl.h"
 #include "../../../../../../core/pm/pm.h"
 #include "../../../../../../core/mm/mm.h"
+#include "../../../../../io/io.h"
+#include "../../../../../exception/exception.h"
+#include "../../cpuinfo.h"
 
 static	bool			initialized = false;
 static	map_t			cpuid_map;

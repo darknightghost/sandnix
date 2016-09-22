@@ -29,8 +29,6 @@
 #define	IPI_TYPE_DIE			0x00
 #define	IPI_TYPE_TLB_REFRESH	0x01
 
-typedef struct _spnlck_t spnlck_t, *pspnlck_t;
-
 typedef	struct	_ipi_msg {
     u32		type;
     void*	p_args;

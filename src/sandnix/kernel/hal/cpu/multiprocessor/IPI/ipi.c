@@ -15,10 +15,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "ipi.h"
 #include "../../../../core/rtl/rtl.h"
+#include "../../../../core/mm/mm.h"
+#include "../../../../core/pm/pm.h"
+
 #include "../../../io/io.h"
+
 #include "../cpuinfo/cpuinfo.h"
+#include "ipi.h"
 
 static	ipi_queue_t		ipi_queue[MAX_CPU_NUM];
 static	pheap_t			ipi_queue_heap;

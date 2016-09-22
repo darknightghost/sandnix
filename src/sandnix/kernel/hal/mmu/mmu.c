@@ -15,8 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "mmu.h"
 #include "../early_print/early_print.h"
+
+#include "./paging/paging.h"
+#include "./phymem/phymem.h"
 
 void hal_mmu_init()
 {

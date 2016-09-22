@@ -15,8 +15,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "string.h"
 #include "../obj/obj.h"
+
+#include "string.h"
 
 #define	FLAG_LEFT_ALIGN			0x01
 #define	FLAG_SIGN				0x02

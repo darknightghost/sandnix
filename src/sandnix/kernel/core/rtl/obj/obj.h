@@ -20,10 +20,6 @@
 #include "../../../../../common/common.h"
 #include "class_ids.h"
 
-#ifndef CORE_RTL_EXPORT
-    #include "../../mm/mm.h"
-#endif
-
 struct	_obj;
 struct	_kstring_obj;
 
@@ -46,6 +42,10 @@ typedef	struct	_obj {
     compare_obj_t	compare;
     to_string_t		to_string;
 } obj_t, *pobj_t;
+
+#ifndef CORE_RTL_EXPORT
+    #include "../../mm/mm.h"
+#endif
 
 #include "../kstring/kstring.h"
 

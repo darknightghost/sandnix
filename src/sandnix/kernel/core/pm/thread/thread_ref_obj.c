@@ -15,8 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "thread_ref_obj.h"
+#include "../../rtl/rtl.h"
 #include "../../mm/mm.h"
+
+#include "thread_ref_obj.h"
 
 pthread_ref_obj_t thread_ref_obj(u32 thread_id,
                                  void (*on_thread_exit)(pthread_ref_obj_t),

@@ -15,8 +15,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "heap.h"
 #include "../../../hal/exception/exception.h"
+
+#include "../../rtl/rtl.h"
+#include "../../pm/pm.h"
+
+#include "heap.h"
 
 static	bool							is_default_heap_ready = false;
 static __attribute__((aligned(8)))	u8	default_heap_pg_block[4096 * 2];

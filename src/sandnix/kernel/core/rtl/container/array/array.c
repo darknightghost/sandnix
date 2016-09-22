@@ -15,11 +15,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "array.h"
-#include "../../../mm/mm.h"
 #include "../../../../hal/exception/exception.h"
-#include "../../string/string.h"
 #include "../../../../hal/early_print/early_print.h"
+
+#include "../../obj/obj.h"
+#include "../../../mm/mm.h"
+#include "../../string/string.h"
+
+#include "array.h"
 
 kstatus_t core_rtl_array_init(parray_t p_array, u32 num, pheap_t heap)
 {

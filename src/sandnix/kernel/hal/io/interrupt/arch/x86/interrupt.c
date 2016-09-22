@@ -15,12 +15,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "../../../../../core/rtl/rtl.h"
+#include "../../../../../core/pm/pm.h"
+#include "../../../../exception/exception.h"
+#include "../../../../early_print/early_print.h"
+
 #include "idt.h"
 #include "interrupt.h"
 #include "apic.h"
-#include "../../../../exception/exception.h"
-#include "../../../../early_print/early_print.h"
-#include "../../../../../core/pm/pm.h"
 
 static	spnlck_t			lock;
 static	int_callback_t		int_hndlr_table[256] = {NULL};

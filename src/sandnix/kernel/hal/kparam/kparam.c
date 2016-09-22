@@ -15,12 +15,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "kparam.h"
+#include "../../core/rtl/rtl.h"
+#include "../../core/mm/mm.h"
+
 #include "../init/init.h"
 #include "../mmu/mmu.h"
-#include "../../core/rtl/rtl.h"
 #include "../exception/exception.h"
 #include "../early_print/early_print.h"
+
+#include "kparam.h"
 
 static	map_t		krnl_param_map;
 

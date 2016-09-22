@@ -15,13 +15,16 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../../../io/io.h"
-#include "apic.h"
-#include "interrupt.h"
+#include "../../../../../core/rtl/rtl.h"
+#include "../../../../../core/pm/pm.h"
 #include "../../../../early_print/early_print.h"
 #include "../../../../exception/exception.h"
 #include "../../../../mmu/mmu.h"
 #include "../../../../rtl/rtl.h"
+
+#include "../../../io/io.h"
+#include "apic.h"
+#include "interrupt.h"
 
 #define	IA32_APIC_BASE	0x1B
 

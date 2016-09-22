@@ -15,16 +15,20 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "init.h"
+#include "../../core/main/main.h"
+#include "../../core/rtl/rtl.h"
+#include "../../core/mm/mm.h"
+#include "../../core/pm/pm.h"
+
 #include "../early_print/early_print.h"
 #include "../mmu/mmu.h"
 #include "../exception/exception.h"
 #include "../kparam/kparam.h"
 #include "../io/io.h"
+#include "../cpu/cpu.h"
 #include "../sys_gate/sys_gate.h"
-#include "../../core/main/main.h"
-#include "../../core/rtl/rtl.h"
-#include "../../core/mm/mm.h"
+
+#include "init.h"
 
 #if defined(X86)
     #include "./arch/x86/header.h"

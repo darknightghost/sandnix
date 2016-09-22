@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "../../obj/obj.h"
 #include "queue.h"
 
 void core_rtl_queue_init(pqueue_t p_queue, pheap_t heap)

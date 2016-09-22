@@ -15,8 +15,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "list.h"
+#include "../../obj/obj.h"
 #include "../../../mm/mm.h"
+#include "list.h"
 
 /*
 static	void	qsort_adjust(plist_node_t begin, plist_node_t end,

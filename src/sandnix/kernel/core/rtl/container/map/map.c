@@ -15,8 +15,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "map.h"
+#include "../../obj/obj.h"
 #include "../../../mm/mm.h"
+#include "map.h"
 
 static prbtree_node_t	get_node(pmap_t p_map, void* p_key);
 static prbtree_node_t	insert_node(pmap_t p_map, void* p_key, void* p_value);

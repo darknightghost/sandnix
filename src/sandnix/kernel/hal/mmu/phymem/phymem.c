@@ -15,11 +15,17 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "phymem.h"
+#include "../../../core/rtl/rtl.h"
+#include "../../../core/pm/pm.h"
+#include "../../../core/mm/mm.h"
+
 #include "../../init/init.h"
 #include "../../early_print/early_print.h"
 #include "../../rtl/rtl.h"
 #include "../../exception/exception.h"
+
+#include "phymem.h"
+
 #include "../mmu.h"
 
 #define	IN_RANGE(n, start, size) ((n) >= (start) && (n) < (start) + (size))

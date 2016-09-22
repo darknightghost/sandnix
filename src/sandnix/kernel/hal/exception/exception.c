@@ -15,14 +15,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../../../../common/common.h"
-#include "../early_print/early_print.h"
 #include "../../core/rtl/rtl.h"
+#include "../../core/pm/pm.h"
+
+#include "../early_print/early_print.h"
 #include "../cpu/cpu.h"
 #include "../io/io.h"
 
-#include "exception.h"
 #include "arch/exception.h"
+
+#include "exception.h"
 
 #define PANIC_BUF_SIZE		1024
 

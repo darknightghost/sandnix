@@ -15,10 +15,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "tss.h"
 #include "../../../../../core/rtl/rtl.h"
+#include "../../../../../core/pm/pm.h"
 #include "../../../../early_print/early_print.h"
 #include "../../../../cpu/cpu.h"
+
+#include "tss.h"
 
 static	tss_t		tss_table[MAX_CPU_NUM];
 

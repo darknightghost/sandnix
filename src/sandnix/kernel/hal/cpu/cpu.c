@@ -15,9 +15,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "../../core/rtl/rtl.h"
 
-#include "cpu.h"
 #include "../early_print/early_print.h"
+#include "./context/context.h"
+#include "./multiprocessor/multiprocessor.h"
 
 void hal_cpu_init()
 {
