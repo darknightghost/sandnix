@@ -2252,7 +2252,8 @@ void core_rtl_queue_destroy(
 void core_rtl_buffer_init(
 	pbuffer_t p_buffer,
     size_t size,
-	void* buf);
+	void* buf,
+    bool overwrite);
 
 //读
 size_t core_rtl_buffer_read(

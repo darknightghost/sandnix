@@ -47,9 +47,11 @@ static volatile	u8	fg;
 
 static spnlck_t	lock;
 
-static void		update_cursor();
-static void		scoll_down();
-static void		out_ch(u16 ch);
+static void			update_cursor();
+static void			scoll_down();
+static void			out_ch(u16 ch);
+static const char*	analyse_color_escape(const char* p);
+static bool			get_color_num(const char** p_p, u8* p_num);
 
 void hal_early_print_init()
 {
@@ -228,6 +230,9 @@ void hal_early_print_puts(const char* str)
                 case	0x19:
                 case	0x1A:
                 case	0x1B:
+                    p = analyse_color_escape(p);
+                    break;
+
                 case	0x1C:
                 case	0x1D:
                 case	0x1E:
@@ -327,4 +332,62 @@ void out_ch(u16 ch)
     update_cursor();
 
     return;
+}
+
+const char* analyse_color_escape(const char* p)
+{
+    u8 new_bg = bg;
+    u8 new_fg = fg;
+
+    p++;
+
+    if(*p != '[') {
+        return p;
+    }
+
+    p++;
+
+    u8 num;
+
+    //Analyse parameters
+    while(get_color_num(&p, &num)) {
+        if(num >= 30 && num < 40) {
+            switch(*p) {
+            }
+        } else if(num >= 40 && num < 50) {
+            switch(*p) {
+            }
+        } else {
+            switch(*p) {
+            }
+        }
+    }
+
+    if(*p == 'm') {
+        bg = new_bg;
+        fg = new_fg;
+    }
+
+    p++;
+
+    return p;
+}
+
+bool get_color_num(const char** p_p, u8* p_num)
+{
+    if(**p_p > '9' &&**p_p < '0') {
+        return false;
+    }
+
+    *p_num = (u8)core_rtl_atoi((char*)(*p_p), 10);
+
+    while(**p_p >= '0' &&**p_p <= '9') {
+        (*p_p)++;
+    }
+
+    if(**p_p == ';') {
+        (*p_p)++;
+    }
+
+    return true;
 }

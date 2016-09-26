@@ -15,12 +15,37 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "main.h"
-#include "../../hal/early_print/early_print.h"
+#pragma once
 
-void core_main_main()
-{
-    hal_early_print_printf("\nEntering kernel main...\n");
+#include "../../../../../../common/common.h"
 
-    while(1);
-}
+typedef	struct _buffer {
+    u8*		p_buffer;
+    size_t	size;
+    u8*		p_begin;
+    u8*		p_end;
+    bool	is_full;
+    bool	overwrite;
+} buffer_t, *pbuffer_t;
+
+//Initialize
+void core_rtl_buffer_init(
+    pbuffer_t p_buffer,
+    size_t size,
+    void* buf,
+    bool overwrite);
+
+//Read
+size_t core_rtl_buffer_read(
+    pbuffer_t p_buffer,
+    void* p_buf,
+    size_t len_to_read,
+    bool block);
+
+//Write
+size_t core_rtl_buffer_write(
+    pbuffer_t p_buffer,
+    void* p_data,
+    size_t len_to_write,
+    bool block,
+    bool overwrite);

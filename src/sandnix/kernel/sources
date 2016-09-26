@@ -50,8 +50,12 @@ core/rtl/container/list/list.c
 core/rtl/container/map/map.c
 core/rtl/container/array/array.c
 core/rtl/container/queue/queue.c
+core/rtl/container/buffer/buffer.c
 core/rtl/obj/obj.c
 core/rtl/kstring/kstring.c
 
 ##exception
 core/exception/exception.c
+
+##kconsole
+core/kconsole/kconsole.c

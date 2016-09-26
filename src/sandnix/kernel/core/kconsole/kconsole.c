@@ -15,12 +15,18 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "main.h"
-#include "../../hal/early_print/early_print.h"
+#include "kconsole.h"
 
-void core_main_main()
+static	bool	initialized = false;
+
+void core_kconsole_init()
 {
-    hal_early_print_printf("\nEntering kernel main...\n");
+    //TODO:Unfinished
+    initialized = true;
 
-    while(1);
+    return;
 }
+
+void core_kconsole_kprint(u32 level, char* fmt, ...);
+
+kstatus_t core_kconsole_set_output(char* output_device);
