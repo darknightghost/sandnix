@@ -455,6 +455,11 @@ const char* analyse_color_escape(const char* p)
                     //High light
                     new_fg = new_fg | 0x80;
                     break;
+
+                case 0:
+                    new_bg = 0;
+                    new_fg = 70;
+                    break;
             }
         }
     }
@@ -464,14 +469,12 @@ const char* analyse_color_escape(const char* p)
         fg = new_fg;
     }
 
-    p++;
-
     return p;
 }
 
 bool get_color_num(const char** p_p, u8* p_num)
 {
-    if(**p_p > '9' &&**p_p < '0') {
+    if(**p_p > '9' || **p_p < '0') {
         return false;
     }
 
