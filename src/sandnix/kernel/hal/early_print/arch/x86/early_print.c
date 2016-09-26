@@ -336,8 +336,8 @@ void out_ch(u16 ch)
 
 const char* analyse_color_escape(const char* p)
 {
-    u8 new_bg = bg;
-    u8 new_fg = fg;
+    u8 new_bg = 0;
+    u8 new_fg = 70;
 
     p++;
 
@@ -352,13 +352,109 @@ const char* analyse_color_escape(const char* p)
     //Analyse parameters
     while(get_color_num(&p, &num)) {
         if(num >= 30 && num < 40) {
+            //Foreground
             switch(*p) {
+                case 30:
+                    //Black
+                    new_fg = (new_fg & 0x80) | 0x00;
+                    break;
+
+                case 31:
+                    //Red
+                    new_fg = (new_fg & 0x80) | 0x40;
+                    break;
+
+                case 32:
+                    //Green
+                    new_fg = (new_fg & 0x80) | 0x20;
+                    break;
+
+                case 33:
+                    //Yellow
+                    new_fg = (new_fg & 0x80) | 0x60;
+                    break;
+
+                case 34:
+                    //Blue
+                    new_fg = (new_fg & 0x80) | 0x10;
+                    break;
+
+                case 35:
+                    //Magenta
+                    new_fg = (new_fg & 0x80) | 0x50;
+                    break;
+
+                case 36:
+                    //Cyan
+                    new_fg = (new_fg & 0x80) | 0x30;
+                    break;
+
+                case 37:
+                    //White
+                    new_fg = (new_fg & 0x80) | 0x70;
+                    break;
             }
+
         } else if(num >= 40 && num < 50) {
+            //Background
             switch(*p) {
+                case 40:
+                    //Black
+                    new_bg = (new_bg & 0x08) | 0x00;
+                    break;
+
+                case 41:
+                    //Red
+                    new_bg = (new_bg & 0x08) | 0x04;
+                    break;
+
+                case 42:
+                    //Green
+                    new_bg = (new_bg & 0x08) | 0x02;
+                    break;
+
+                case 43:
+                    //Yellow
+                    new_bg = (new_bg & 0x08) | 0x06;
+                    break;
+
+                case 44:
+                    //Blue
+                    new_bg = (new_bg & 0x08) | 0x01;
+                    break;
+
+                case 45:
+                    //Magenta
+                    new_bg = (new_bg & 0x08) | 0x05;
+                    break;
+
+                case 46:
+                    //Cyan
+                    new_bg = (new_bg & 0x08) | 0x03;
+                    break;
+
+                case 47:
+                    //White
+                    new_bg = (new_bg & 0x08) | 0x07;
+                    break;
             }
+
         } else {
             switch(*p) {
+                case 5:
+                    //Blink
+                    new_bg = new_bg | 0x08;
+                    break;
+
+                case 25:
+                    //Not blink
+                    new_bg = new_bg & 0x07;
+                    break;
+
+                case 1:
+                    //High light
+                    new_fg = new_fg | 0x80;
+                    break;
             }
         }
     }
