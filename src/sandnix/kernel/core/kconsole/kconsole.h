@@ -38,27 +38,27 @@
 #define core_kconsole_print_panic(fmt, ...)	core_kconsole_kprint( \
         PRINT_LEVEL_PANIC, \
         fmt, \
-        ##VA_ARGS);
+        ##__VA_ARGS__);
 
 #define core_kconsole_print_err(fmt, ...) core_kconsole_kprint( \
         PRINT_LEVEL_ERR, \
         fmt, \
-        ##VA_ARGS);
+        ##__VA_ARGS__);
 
 #define core_kconsole_print_warning(fmt, ...) core_kconsole_kprint( \
         PRINT_LEVEL_WARNING, \
         fmt, \
-        ##VA_ARGS);
+        ##__VA_ARGS__);
 
 #define core_kconsole_print_info(fmt, ...) core_kconsole_kprint( \
         PRINT_LEVEL_INFO, \
         fmt, \
-        ##VA_ARGS);
+        ##__VA_ARGS__);
 
 #define core_kconsole_print_debug(fmt, ...)	core_kconsole_kprint( \
         PRINT_LEVEL_DEBUG, \
         fmt, \
-        ##VA_ARGS);
+        ##__VA_ARGS__);
 
 
 //Initialize

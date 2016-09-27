@@ -17,11 +17,17 @@
 
 #include "main.h"
 #include "../../hal/early_print/early_print.h"
+#include "../kconsole/kconsole.h"
 
 void core_main_main()
 {
-    hal_early_print_printf("\n\x1b[31;42mEntering kernel main...\x1b[0m\n");
-    hal_early_print_printf("aaaa\n");
+    hal_early_print_printf("\nEntering kernel main...\n");
+
+    core_kconsole_print_panic("%s\n", "Panic info.");
+    core_kconsole_print_err("%s\n", "Error info.");
+    core_kconsole_print_warning("%s\n", "Warning info.");
+    core_kconsole_print_info("%s\n", "Normal info.");
+    core_kconsole_print_debug("%s\n", "Debugging info.");
 
     while(1);
 }

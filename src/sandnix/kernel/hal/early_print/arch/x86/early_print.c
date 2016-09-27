@@ -302,7 +302,7 @@ void scoll_down()
     __asm__ __volatile__(
         "cld\n"
         "rep	stosw\n"
-        ::"a"(((u16)(bg | fg)) << 8 | ' '),
+        ::"a"(((u16)((bg & 0x0F) | (fg & 0xF0))) << 8 | ' '),
         "c"(DEFAULT_STDOUT_WIDTH), "D"((address_t)basic_video_addr +
                                        DEFAULT_STDOUT_WIDTH * (DEFAULT_STDOUT_HEIGHT - 1) * 2)
         :"memory");
@@ -356,42 +356,42 @@ const char* analyse_color_escape(const char* p)
             switch(num) {
                 case 30:
                     //Black
-                    new_fg = (new_fg & 0x80) | 0x00;
+                    new_bg = (new_bg & 0x08) | 0x00;
                     break;
 
                 case 31:
                     //Red
-                    new_fg = (new_fg & 0x80) | 0x40;
+                    new_bg = (new_bg & 0x08) | 0x04;
                     break;
 
                 case 32:
                     //Green
-                    new_fg = (new_fg & 0x80) | 0x20;
+                    new_bg = (new_bg & 0x08) | 0x02;
                     break;
 
                 case 33:
                     //Yellow
-                    new_fg = (new_fg & 0x80) | 0x60;
+                    new_bg = (new_bg & 0x08) | 0x06;
                     break;
 
                 case 34:
                     //Blue
-                    new_fg = (new_fg & 0x80) | 0x10;
+                    new_bg = (new_bg & 0x08) | 0x01;
                     break;
 
                 case 35:
                     //Magenta
-                    new_fg = (new_fg & 0x80) | 0x50;
+                    new_bg = (new_bg & 0x08) | 0x05;
                     break;
 
                 case 36:
                     //Cyan
-                    new_fg = (new_fg & 0x80) | 0x30;
+                    new_bg = (new_bg & 0x08) | 0x03;
                     break;
 
                 case 37:
                     //White
-                    new_fg = (new_fg & 0x80) | 0x70;
+                    new_bg = (new_bg & 0x08) | 0x07;
                     break;
             }
 
@@ -400,42 +400,42 @@ const char* analyse_color_escape(const char* p)
             switch(num) {
                 case 40:
                     //Black
-                    new_bg = (new_bg & 0x08) | 0x00;
+                    new_fg = (new_fg & 0x80) | 0x00;
                     break;
 
                 case 41:
                     //Red
-                    new_bg = (new_bg & 0x08) | 0x04;
+                    new_fg = (new_fg & 0x80) | 0x40;
                     break;
 
                 case 42:
                     //Green
-                    new_bg = (new_bg & 0x08) | 0x02;
+                    new_fg = (new_fg & 0x80) | 0x20;
                     break;
 
                 case 43:
                     //Yellow
-                    new_bg = (new_bg & 0x08) | 0x06;
+                    new_fg = (new_fg & 0x80) | 0x60;
                     break;
 
                 case 44:
                     //Blue
-                    new_bg = (new_bg & 0x08) | 0x01;
+                    new_fg = (new_fg & 0x80) | 0x10;
                     break;
 
                 case 45:
                     //Magenta
-                    new_bg = (new_bg & 0x08) | 0x05;
+                    new_fg = (new_fg & 0x80) | 0x50;
                     break;
 
                 case 46:
                     //Cyan
-                    new_bg = (new_bg & 0x08) | 0x03;
+                    new_fg = (new_fg & 0x80) | 0x30;
                     break;
 
                 case 47:
                     //White
-                    new_bg = (new_bg & 0x08) | 0x07;
+                    new_fg = (new_fg & 0x80) | 0x70;
                     break;
             }
 
@@ -443,22 +443,22 @@ const char* analyse_color_escape(const char* p)
             switch(num) {
                 case 5:
                     //Blink
-                    new_bg = new_bg | 0x08;
+                    new_bg = new_bg | 0x80;
                     break;
 
                 case 25:
                     //Not blink
-                    new_bg = new_bg & 0x07;
+                    new_bg = new_bg & 0x70;
                     break;
 
                 case 1:
                     //High light
-                    new_fg = new_fg | 0x80;
+                    new_fg = new_fg | 0x08;
                     break;
 
                 case 0:
-                    new_bg = 0;
-                    new_fg = FG_BRIGHT_WHITE;
+                    new_fg &= ~0x08;
+                    new_bg &= ~0x80;
                     break;
             }
         }

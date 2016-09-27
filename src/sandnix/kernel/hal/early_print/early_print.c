@@ -26,6 +26,7 @@ void hal_early_print_printf(char* fmt, ...)
     va_start(ap, fmt);
     core_rtl_vsnprintf(buf, 1024, fmt, ap);
     hal_early_print_puts(buf);
+    va_end(ap);
 
     return;
 }
