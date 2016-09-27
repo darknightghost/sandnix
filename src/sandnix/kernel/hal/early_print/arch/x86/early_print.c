@@ -337,7 +337,7 @@ void out_ch(u16 ch)
 const char* analyse_color_escape(const char* p)
 {
     u8 new_bg = 0;
-    u8 new_fg = 70;
+    u8 new_fg = FG_BRIGHT_WHITE;
 
     p++;
 
@@ -353,7 +353,7 @@ const char* analyse_color_escape(const char* p)
     while(get_color_num(&p, &num)) {
         if(num >= 30 && num < 40) {
             //Foreground
-            switch(*p) {
+            switch(num) {
                 case 30:
                     //Black
                     new_fg = (new_fg & 0x80) | 0x00;
@@ -397,7 +397,7 @@ const char* analyse_color_escape(const char* p)
 
         } else if(num >= 40 && num < 50) {
             //Background
-            switch(*p) {
+            switch(num) {
                 case 40:
                     //Black
                     new_bg = (new_bg & 0x08) | 0x00;
@@ -440,7 +440,7 @@ const char* analyse_color_escape(const char* p)
             }
 
         } else {
-            switch(*p) {
+            switch(num) {
                 case 5:
                     //Blink
                     new_bg = new_bg | 0x08;
@@ -458,7 +458,7 @@ const char* analyse_color_escape(const char* p)
 
                 case 0:
                     new_bg = 0;
-                    new_fg = 70;
+                    new_fg = FG_BRIGHT_WHITE;
                     break;
             }
         }

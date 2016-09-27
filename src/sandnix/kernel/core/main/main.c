@@ -21,6 +21,7 @@
 void core_main_main()
 {
     hal_early_print_printf("\n\x1b[31;42mEntering kernel main...\x1b[0m\n");
+    hal_early_print_printf("aaaa\n");
 
     while(1);
 }
