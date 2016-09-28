@@ -22,16 +22,27 @@
 #include "../../../../common/common.h"
 
 #include "thread_except_stat_obj.h"
-#include "except_obj.h"
+#include "except_obj/except_obj.h"
 
-#define EXCEPT_STATUS_FAILED		0x00000000
-#define EXCEPT_STATUS_CONTINUE		0x00000001
-#define EXCEPT_STATUS_PANIC			0x00000002
+#define EXCEPT_STATUS_CONTINUE_EXEC		0x00000000
+#define	EXCEPT_STATUS_UNWIND			0x00000001
+#define EXCEPT_STATUS_CONTINUE_SEARCH	0x00000002
+
+#define	EXCEPT_REASON_EXCEPT	0x00000000
+#define	EXCEPT_REASON_UNWIND	0x00000001
 
 //#define OPERATE_SUCCESS
 
 typedef	u32		except_stat_t;
-typedef	except_stat_t	(*except_hndlr_t)(except_obj_t, pcontext_t);
+
+//except_stat_t except_hndlr_t(u32 reason, pexcept_obj_t p_except, pcontext_t context);
+typedef	except_stat_t	(*except_hndlr_t)(u32, pexcept_obj_t, pcontext_t);
+
+typedef	struct	_except_hndlr_info {
+    kstatus_t		reason;
+    except_hndlr_t	hndlr;
+    context_t		context;
+} except_hndlr_info_t, *pexcept_hndlr_t;
 
 //Initialize module
 void core_exception_init();
@@ -45,11 +56,7 @@ kstatus_t core_exception_get_errno();
 //Raise exception
 void core_exception_raise(
     pcontext_t p_context,
-    except_obj_t except,
-    char* src_file,
-    char* line);
-
-//#define RAISE(reason, description, p_arg)
+    except_obj_t except);
 
 //Regist global exception handler
 void core_exception_add_hndlr(except_hndlr_t hndlr);

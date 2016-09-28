@@ -808,6 +808,9 @@ void hal_exception_panic(
     char* fmt,			//格式化字符串
     ...);
     
+//获得错误码名称
+const char* hal_exception_get_err_name(kstatus_t error_code);
+    
 #define	PANIC(error_code, fmt, ...)		hal_exception_panic(__FILE__, __LINE__,  error_code, fmt,##__VA_ARGS__)
 
 //Assert
@@ -2407,7 +2410,7 @@ src/sandnix/kernel/core/exception
 ######接口数据结构
 ```c
 //异常对象
-except_obj_t : obj_t
+except_obj_t
 
 //异常处理结果
 except_stat_t
@@ -2416,14 +2419,25 @@ except_stat_t
 thread_except_stat_obj_t : thread_ref_obj_t
 
 //异常处理回调
-//except_stat_t except_hndlr_t(except_obj_t except, pcontext_t context);
-except_stat_t (*except_hndlr_t)(except_obj_t, pcontext_t);
+//except_stat_t except_hndlr_t(u32 reason, except_obj_t except, pcontext_t context);
+except_stat_t (*except_hndlr_t)(u32, except_obj_t, pcontext_t);
+
+//异常处理回调信息
+except_hndlr_info_t
 ```
 ######接口函数及宏
 ```c
-#define EXCEPT_STATUS_FAILED		0x00000000
-#define EXCEPT_STATUS_CONTINUE		0x00000001
-#define EXCEPT_STATUS_PANIC			0x00000002
+//从抛出异常处继续执行
+#define EXCEPT_STATUS_CONTINUE_EXEC		0x00000000
+
+//展开操作, 即返回到压入该异常处, 不支持全局处理函数
+#define	EXCEPT_STATUS_UNWIND			0x00000002
+
+//当前处理函数无法处理
+#define EXCEPT_STATUS_CONTINUE_SEARCH	0x00000001
+
+#define	EXCEPT_REASON_EXCEPT	0x00000000
+#define	EXCEPT_REASON_UNWIND	0x00000001
 
 #define OPERATE_SUCCESS
 
@@ -2437,13 +2451,9 @@ void core_exception_set_errno(kstatus_t status);
 kstatus_t core_exception_get_errno();
 
 //抛出异常
-void core_exception_raise(
+void core_exception_raise_obj(
 	pcontext_t p_context,
-	except_obj_t except,
-    char* src_file,
-    char* line);
-
-#define RAISE(reason, description, p_arg)
+	except_obj_t except);
 
 //注册全局错误处理函数
 void core_exception_add_hndlr(except_hndlr_t hndlr);

@@ -33,7 +33,7 @@ static	pkstring_obj_t	upper(pkstring_obj_t p_this);
 static	pkstring_obj_t	lower(pkstring_obj_t p_this);
 static	int				search(pkstring_obj_t p_this, pkstring_obj_t p_substr);
 
-pkstring_obj_t kstring(char* str, pheap_t heap)
+pkstring_obj_t kstring(const char* str, pheap_t heap)
 {
     //Allocate memory
     pkstring_obj_t p_ret = (pkstring_obj_t)obj(CLASS_KSTRING,

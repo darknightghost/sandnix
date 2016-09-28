@@ -17,11 +17,22 @@
 
 #pragma once
 
-#include "../../../../common/common.h"
+#define CORE_EXCEPTION_EXPORT
 
-#include "../rtl/rtl.h"
+#include "../../../../../common/common.h"
+
+#include "../../rtl/rtl.h"
+
+#include "../../../hal/cpu/cpu.h"
 
 typedef	struct	_except_obj {
     obj_t		obj;
-    char*		description;
+    kstatus_t	reason;
+    pcontext_t	p_context;
+
+    void	(*raise)(struct _except_obj* p_this);
 } except_obj_t, *pexcept_obj_t;
+
+pexcept_obj_t	except_obj(size_t size, kstatus_t reason, pcontext_t p_context);
+
+

@@ -189,6 +189,11 @@ void hal_exception_init()
     initialized = true;
 }
 
+const char* hal_exception_get_err_name(kstatus_t error_code)
+{
+    return errno_tbl[error_code];
+}
+
 void hal_exception_panic(char* file, u32 line, u32 error_code, char* fmt, ...)
 {
     va_list ap;

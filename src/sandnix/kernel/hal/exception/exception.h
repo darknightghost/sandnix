@@ -37,6 +37,9 @@ void	hal_exception_panic(
     char* fmt,			//format
     ...);
 
+//Error code to string. Don't free.
+const char*	hal_exception_get_err_name(kstatus_t error_code);
+
 #define	PANIC(error_code, fmt, ...)	hal_exception_panic(__FILE__, __LINE__, \
         (error_code), (fmt), ##__VA_ARGS__);
 

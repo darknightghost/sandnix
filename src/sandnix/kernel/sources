@@ -56,6 +56,7 @@ core/rtl/kstring/kstring.c
 
 ##exception
 core/exception/exception.c
+core/exception/except_obj/except_obj.c
 
 ##kconsole
 core/kconsole/kconsole.c
