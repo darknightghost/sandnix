@@ -19,10 +19,8 @@
 #include "../../../mm/mm.h"
 #include "list.h"
 
-/*
 static	void	qsort_adjust(plist_node_t begin, plist_node_t end,
                              item_compare_t compare, bool b2s);
-							 */
 
 plist_node_t core_rtl_list_insert_before(plist_node_t pos, plist_t p_list,
         void* p_item, pheap_t heap)
@@ -178,42 +176,13 @@ void core_rtl_list_join(plist_t p_src, plist_t p_dest, pheap_t src_heap,
 
 void core_rtl_list_qsort(plist_t p_list, item_compare_t compare, bool b2s)
 {
-    /*
     if(*p_list != (*p_list)->p_prev) {
         qsort_adjust(*p_list, (*p_list)->p_prev, compare, b2s);
-    }*/
-
-    //Bubble sort
-    plist_node_t p1, p2;
-    int cmp_result;
-    void* p_tmp_item;
-
-    for(p1 = *p_list;
-        p1 != NULL;
-        p1 = core_rtl_list_next(p1, p_list)) {
-        for(p2 = core_rtl_list_next(p1, p_list);
-            p2 != NULL;
-            p2 = core_rtl_list_next(p2, p_list)) {
-            cmp_result = compare(p1->p_item, p2->p_item);
-
-            if(b2s) {
-                cmp_result = -cmp_result;
-            }
-
-            if(cmp_result > 0) {
-                p_tmp_item = p1->p_item;
-                p1->p_item = p2->p_item;
-                p2->p_item = p_tmp_item;
-            }
-
-        }
-
     }
 
     return;
 }
 
-/*
 void qsort_adjust(plist_node_t begin, plist_node_t end,
                   item_compare_t compare, bool b2s)
 {
@@ -224,49 +193,58 @@ void qsort_adjust(plist_node_t begin, plist_node_t end,
     int cmp_result;
 
     p = begin;
-    p_i = begin;
+    p_i = begin->p_next;;
     p_j = end;
 
     while(true) {
         //j
-        cmp_result = compare(p->p_item, p_j->p_item);
+        while(1) {
+            cmp_result = compare(p->p_item, p_j->p_item);
 
-        if(b2s) {
-            cmp_result = -cmp_result;
+            if(b2s) {
+                cmp_result = -cmp_result;
+            }
+
+            if(cmp_result < 0) {
+                break;
+            }
+
+            p_j = p_j->p_prev;
         }
 
-        if(cmp_result < 0) {
-            p_tmp_item = p->p_item;
-            p->p_item = p_j->p_item;
-            p_j->p_item = p_tmp_item;
-            p = p_j;
-        }
+        p_tmp_item = p->p_item;
+        p->p_item = p_j->p_item;
+        p_j->p_item = p_tmp_item;
+        p = p_j;
 
         if(p_i == p_j) {
             break;
         }
-
-        p_j = p_j->p_prev;
 
         //i
-        cmp_result = compare(p->p_item, p_i->p_item);
+        while(1) {
+            cmp_result = compare(p->p_item, p_i->p_item);
 
-        if(b2s) {
-            cmp_result = -cmp_result;
+            if(b2s) {
+                cmp_result = -cmp_result;
+            }
+
+            if(cmp_result > 0) {
+                break;
+            }
+
+            p_i = p_i->p_next;
         }
 
-        if(cmp_result > 0) {
-            p_tmp_item = p->p_item;
-            p->p_item = p_i->p_item;
-            p_i->p_item = p_tmp_item;
-            p = p_i;
-        }
+        p_tmp_item = p->p_item;
+        p->p_item = p_i->p_item;
+        p_i->p_item = p_tmp_item;
+        p = p_i;
 
         if(p_i == p_j) {
             break;
         }
 
-        p_i = p_i->p_next;
 
     }
 
@@ -280,4 +258,3 @@ void qsort_adjust(plist_node_t begin, plist_node_t end,
 
     return;
 }
-*/
