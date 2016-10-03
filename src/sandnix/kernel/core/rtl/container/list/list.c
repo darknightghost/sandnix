@@ -185,21 +185,22 @@ void core_rtl_list_qsort(plist_t p_list, item_compare_t compare, bool b2s)
 
 void qsort_adjust(plist_node_t begin, plist_node_t end,
                   item_compare_t compare, bool b2s)
+
 {
-    plist_node_t p;
-    plist_node_t p_i;
-    plist_node_t p_j;
+    plist_node_t p_front;
+    plist_node_t p_back;
+    void* p_key;
     void* p_tmp_item;
     int cmp_result;
 
-    p = begin;
-    p_i = begin->p_next;;
-    p_j = end;
+    p_key = begin->p_item;
+    p_front = begin;
+    p_back = end;
 
-    while(true) {
-        //j
-        while(1) {
-            cmp_result = compare(p->p_item, p_j->p_item);
+    while(p_front != p_back) {
+        //Back
+        while(p_front != p_back) {
+            cmp_result = compare(p_back->p_item, p_key);
 
             if(b2s) {
                 cmp_result = -cmp_result;
@@ -209,21 +210,16 @@ void qsort_adjust(plist_node_t begin, plist_node_t end,
                 break;
             }
 
-            p_j = p_j->p_prev;
+            p_back = p_back->p_prev;
         }
 
-        p_tmp_item = p->p_item;
-        p->p_item = p_j->p_item;
-        p_j->p_item = p_tmp_item;
-        p = p_j;
+        p_tmp_item = p_front->p_item;
+        p_front->p_item = p_back->p_item;
+        p_back->p_item = p_tmp_item;
 
-        if(p_i == p_j) {
-            break;
-        }
-
-        //i
-        while(1) {
-            cmp_result = compare(p->p_item, p_i->p_item);
+        //Front
+        while(p_front != p_back) {
+            cmp_result = compare(p_front->p_item, p_key);
 
             if(b2s) {
                 cmp_result = -cmp_result;
@@ -233,27 +229,20 @@ void qsort_adjust(plist_node_t begin, plist_node_t end,
                 break;
             }
 
-            p_i = p_i->p_next;
+            p_front = p_front->p_next;
         }
 
-        p_tmp_item = p->p_item;
-        p->p_item = p_i->p_item;
-        p_i->p_item = p_tmp_item;
-        p = p_i;
-
-        if(p_i == p_j) {
-            break;
-        }
-
-
+        p_tmp_item = p_front->p_item;
+        p_front->p_item = p_back->p_item;
+        p_back->p_item = p_tmp_item;
     }
 
-    if(begin != p->p_prev && begin != p) {
-        qsort_adjust(begin, p->p_prev, compare, b2s);
+    if(begin != p_front->p_prev && begin != p_front) {
+        qsort_adjust(begin, p_front->p_prev, compare, b2s);
     }
 
-    if(end != p->p_next && end != p) {
-        qsort_adjust(p->p_next, end, compare, b2s);
+    if(end != p_back->p_next && end != p_back) {
+        qsort_adjust(p_back->p_next, end, compare, b2s);
     }
 
     return;
