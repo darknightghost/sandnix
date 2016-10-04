@@ -17,25 +17,15 @@
 
 #pragma once
 
-#define CORE_EXCEPTION_EXPORT
-
 #include "../../../../../common/common.h"
+#include "except_obj.h"
 
-#include "../../rtl/rtl.h"
+typedef struct _enoent_except {
+    except_obj_t	except;
+    pkstring_obj_t	path;
+} enoent_except_t, *penoent_except_t;
 
-#include "../../../hal/cpu/cpu.h"
+penoent_except_t	enoent_except(pkstring_obj_t p_path);
 
-typedef	struct	_except_obj {
-    obj_t		obj;
-    kstatus_t	reason;
-    pcontext_t	p_context;
 
-    void	(*raise)(struct _except_obj*, pcontext_t);
-} except_obj_t, *pexcept_obj_t;
 
-pexcept_obj_t	except_obj(size_t size, kstatus_t reason);
-
-extern	pheap_t	p_except_obj_heap;
-
-#include "./eperm_except.h"
-#include "./enoent_except.h"

@@ -21,7 +21,7 @@
 #include "../../mm/mm.h"
 #include "../../pm/pm.h"
 
-#include "eperm_except.h"
+#include "./eperm_except.h"
 #include "../exception.h"
 
 static	pkstring_obj_t		to_string(peperm_except_t p_this);
