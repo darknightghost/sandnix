@@ -15,26 +15,33 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
-
-#define CORE_EXCEPTION_EXPORT
-
-#include "../../../../../common/common.h"
+#include "../../../hal/exception/exception.h"
 
 #include "../../rtl/rtl.h"
+#include "../../mm/mm.h"
+#include "../../pm/pm.h"
 
-#include "../../../hal/cpu/cpu.h"
+#include "eperm_except.h"
+#include "../exception.h"
 
-typedef	struct	_except_obj {
-    obj_t		obj;
-    kstatus_t	reason;
-    pcontext_t	p_context;
+static	pkstring_obj_t		to_string(peperm_except_t p_this);
 
-    void	(*raise)(struct _except_obj*, pcontext_t);
-} except_obj_t, *pexcept_obj_t;
+peperm_except_t eperm_except()
+{
+    peperm_except_t p_ret = (peperm_except_t)except_obj(
+                                sizeof(eperm_except),
+                                EPERM);
 
-pexcept_obj_t	except_obj(size_t size, kstatus_t reason);
+    if(p_ret != NULL) {
+        p_ret->except.obj.class_id = CLASS_EXCEPT(EPERM);
+        p_ret->except.obj.to_string = (to_string_t)to_string;
+    }
 
-extern	pheap_t	p_except_obj_heap;
+    return p_ret;
+}
 
-#include "./eperm_except.h"
+pkstring_obj_t to_string(peperm_except_t p_this)
+{
+    return kstring("Operation not permitted.", p_except_obj_heap);
+    UNREFERRED_PARAMETER(p_this);
+}

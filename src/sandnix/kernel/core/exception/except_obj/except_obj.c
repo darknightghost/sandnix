@@ -24,15 +24,16 @@
 #include "./except_obj.h"
 #include "../exception.h"
 
-static	void			raise(pexcept_obj_t p_this);
+static	void			raise(pexcept_obj_t p_this, pcontext_t p_context);
 static	void			destructor(pexcept_obj_t p_this);
 static	int				compare(pexcept_obj_t p_this, pexcept_obj_t p_str);
 static	pkstring_obj_t	to_string(pexcept_obj_t p_this);
 
-static	pheap_t	p_except_obj_heap = NULL;
+pheap_t	p_except_obj_heap = NULL;
+
 static	u8		except_obj_heap_buf[4096];
 
-pexcept_obj_t except_obj(size_t size, kstatus_t reason, pcontext_t p_context)
+pexcept_obj_t except_obj(size_t size, kstatus_t reason)
 {
     if(p_except_obj_heap == NULL) {
         //Create heap
@@ -58,15 +59,15 @@ pexcept_obj_t except_obj(size_t size, kstatus_t reason, pcontext_t p_context)
     }
 
     //Initialize exception object
-    p_ret->p_context = p_context;
     p_ret->reason = reason;
     p_ret->raise = raise;
 
     return p_ret;
 }
 
-void raise(pexcept_obj_t p_this)
+void raise(pexcept_obj_t p_this, pcontext_t p_context)
 {
+    p_this->p_context = p_context;
     //TODO:
     UNREFERRED_PARAMETER(p_this);
 }

@@ -17,24 +17,12 @@
 
 #pragma once
 
-#define CORE_EXCEPTION_EXPORT
-
 #include "../../../../../common/common.h"
+#include "except_obj.h"
 
-#include "../../rtl/rtl.h"
+typedef struct _eperm_except {
+    except_obj_t	except;
+} eperm_except_t, *peperm_except_t;
 
-#include "../../../hal/cpu/cpu.h"
+peperm_except_t		eperm_except();
 
-typedef	struct	_except_obj {
-    obj_t		obj;
-    kstatus_t	reason;
-    pcontext_t	p_context;
-
-    void	(*raise)(struct _except_obj*, pcontext_t);
-} except_obj_t, *pexcept_obj_t;
-
-pexcept_obj_t	except_obj(size_t size, kstatus_t reason);
-
-extern	pheap_t	p_except_obj_heap;
-
-#include "./eperm_except.h"
