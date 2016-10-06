@@ -17,40 +17,31 @@
 
 #pragma once
 
-#include "../../../../../../common/common.h"
+#include "../../../../../common/common.h"
+#include "class_ids.h"
 
-#include "../../../mm/mm_defs.h"
+#include "../../mm/mm_defs.h"
+#include "../kstring/kstring_defs.h"
+
+struct	_obj;
+struct	_kstring_obj;
+
+//kstring_obj_t obj_t.to_string(pobj_t p_this);
+typedef	struct _kstring_obj*	(*to_string_t)(struct _obj*);
+
+//int obj_t.compare(pobj_t p_this, pobj_t p_obj2);
+typedef	int	(*compare_obj_t)(struct _obj*, struct _obj*);
+
+//void obj_t.destructor(pobj_t p_this);
+typedef	void (*destructor_t)(struct _obj*);
 
 typedef struct _heap_t	heap_t, *pheap_t;
 
-#include "./queue_defs.h"
-
-#include "../container_defs.h"
-
-//Initialize
-void core_rtl_queue_init(
-    pqueue_t p_queue,
-    pheap_t heap);
-
-//Push item
-bool core_rtl_queue_push(
-    pqueue_t p_queue,
-    void* p_item);
-
-//Pop item
-void* core_rtl_queue_pop(
-    pqueue_t p_queue);
-
-//Get first item
-void* core_rtl_queue_front(
-    pqueue_t p_queue);
-
-//Get last item
-void* core_rtl_queue_end(
-    pqueue_t p_queue);
-
-//Destroy item
-void core_rtl_queue_destroy(
-    pqueue_t p_queue,
-    item_destroyer_t destroier,
-    void* arg);
+typedef	struct	_obj {
+    u32				class_id;
+    u32				ref_count;
+    pheap_t			heap;
+    destructor_t	destructor;
+    compare_obj_t	compare;
+    to_string_t		to_string;
+} obj_t, *pobj_t;

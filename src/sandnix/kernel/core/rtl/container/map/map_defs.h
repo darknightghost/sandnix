@@ -21,36 +21,28 @@
 
 #include "../../../mm/mm_defs.h"
 
-typedef struct _heap_t	heap_t, *pheap_t;
+typedef struct	_rbtree_node {
+    struct _rbtree_node*	p_parent;
+    struct _rbtree_node*	p_lchild;
+    struct _rbtree_node*	p_rchild;
+    u32						color;
+    void*					p_key;
+    void*					p_value;
+} rbtree_node_t, *prbtree_node_t, *rbtree_t, **prbtree_t;
 
-#include "./queue_defs.h"
+typedef struct _heap_t	heap_t, *pheap_t;
 
 #include "../container_defs.h"
 
-//Initialize
-void core_rtl_queue_init(
-    pqueue_t p_queue,
-    pheap_t heap);
+typedef struct _map {
+    rbtree_t		p_tree;
+    item_compare_t	compare_func;
+    pheap_t			p_heap;
+} map_t, *pmap_t;
 
-//Push item
-bool core_rtl_queue_push(
-    pqueue_t p_queue,
-    void* p_item);
+#define	RBTREE_NODE_BLACK		0
+#define	RBTREE_NODE_RED			1
 
-//Pop item
-void* core_rtl_queue_pop(
-    pqueue_t p_queue);
-
-//Get first item
-void* core_rtl_queue_front(
-    pqueue_t p_queue);
-
-//Get last item
-void* core_rtl_queue_end(
-    pqueue_t p_queue);
-
-//Destroy item
-void core_rtl_queue_destroy(
-    pqueue_t p_queue,
-    item_destroyer_t destroier,
-    void* arg);
+//Search key and value
+//int	(*map_search_func_t)(void* p_condition, void* p_key, void* p_value,void* p_arg);
+typedef	int	(*map_search_func_t)(void*, void*, void*, void*);

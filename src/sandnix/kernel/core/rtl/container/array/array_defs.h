@@ -23,34 +23,16 @@
 
 typedef struct _heap_t	heap_t, *pheap_t;
 
-#include "./queue_defs.h"
+typedef	struct	_array_blk {
+    size_t		ref;
+    void**		p_p_items;
+} array_blk_t, *parray_blk_t;
 
 #include "../container_defs.h"
 
-//Initialize
-void core_rtl_queue_init(
-    pqueue_t p_queue,
-    pheap_t heap);
-
-//Push item
-bool core_rtl_queue_push(
-    pqueue_t p_queue,
-    void* p_item);
-
-//Pop item
-void* core_rtl_queue_pop(
-    pqueue_t p_queue);
-
-//Get first item
-void* core_rtl_queue_front(
-    pqueue_t p_queue);
-
-//Get last item
-void* core_rtl_queue_end(
-    pqueue_t p_queue);
-
-//Destroy item
-void core_rtl_queue_destroy(
-    pqueue_t p_queue,
-    item_destroyer_t destroier,
-    void* arg);
+typedef	struct	_array {
+    size_t			size;
+    size_t			scale;
+    pheap_t			heap;
+    parray_blk_t*	p_p_blks;
+} array_t, *parray_t;

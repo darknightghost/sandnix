@@ -19,10 +19,9 @@
 
 #include "../../../../common/common.h"
 
-#define	CORE_RTL_EXPORT
-
-#include "varg.h"
 #include "./string/string.h"
 #include "./math/math.h"
 #include "./container/container.h"
 #include "./obj/obj.h"
+
+#include "./rtl_defs.h"

@@ -19,25 +19,13 @@
 
 #include "../../../../../../common/common.h"
 
-#ifndef CORE_RTL_EXPORT
-    #include "../../../mm/mm.h"
-#endif
+#include "../../../mm/mm_defs.h"
+
+#include "../container_defs.h"
+
+#include "./array_defs.h"
 
 typedef struct _heap_t	heap_t, *pheap_t;
-
-typedef	struct	_array_blk {
-    size_t		ref;
-    void**		p_p_items;
-} array_blk_t, *parray_blk_t;
-
-#include "../container.h"
-
-typedef	struct	_array {
-    size_t			size;
-    size_t			scale;
-    pheap_t			heap;
-    parray_blk_t*	p_p_blks;
-} array_t, *parray_t;
 
 //Initialize.
 kstatus_t core_rtl_array_init(

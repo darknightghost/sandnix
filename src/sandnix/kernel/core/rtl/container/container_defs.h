@@ -17,40 +17,20 @@
 
 #pragma once
 
-#include "../../../../../../common/common.h"
+#include "../../../../../common/common.h"
 
-#include "../../../mm/mm_defs.h"
-
-typedef struct _heap_t	heap_t, *pheap_t;
-
-#include "./queue_defs.h"
-
-#include "../container_defs.h"
-
-//Initialize
-void core_rtl_queue_init(
-    pqueue_t p_queue,
-    pheap_t heap);
-
-//Push item
-bool core_rtl_queue_push(
-    pqueue_t p_queue,
-    void* p_item);
-
-//Pop item
-void* core_rtl_queue_pop(
-    pqueue_t p_queue);
-
-//Get first item
-void* core_rtl_queue_front(
-    pqueue_t p_queue);
-
-//Get last item
-void* core_rtl_queue_end(
-    pqueue_t p_queue);
-
+//Call back functions
 //Destroy item
-void core_rtl_queue_destroy(
-    pqueue_t p_queue,
-    item_destroyer_t destroier,
-    void* arg);
+//void item_destroyer(void* p_item, void* p_arg)
+typedef void (*item_destroyer_t)(void*, void*);
+
+//Compare two item.If item1 > item2, the return value > 0.
+//If the two item equals, return 0.
+//If item1 < item2, the return value < 0.
+//int item_compare(void* p_item1, void* p_item2);
+typedef int (*item_compare_t)(void*, void*);
+
+#include "./map/map_defs.h"
+#include "./array/array_defs.h"
+#include "./queue/queue_defs.h"
+#include "./list/list_defs.h"

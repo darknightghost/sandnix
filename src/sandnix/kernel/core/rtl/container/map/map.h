@@ -19,31 +19,13 @@
 
 #include "../../../../../../common/common.h"
 
-#ifndef CORE_RTL_EXPORT
-    #include "../../../mm/mm.h"
-#endif
-
-typedef struct	_rbtree_node {
-    struct _rbtree_node*	p_parent;
-    struct _rbtree_node*	p_lchild;
-    struct _rbtree_node*	p_rchild;
-    u32						color;
-    void*					p_key;
-    void*					p_value;
-} rbtree_node_t, *prbtree_node_t, *rbtree_t, **prbtree_t;
+#include "../../../mm/mm_defs.h"
 
 typedef struct _heap_t	heap_t, *pheap_t;
 
-#include "../container.h"
+#include "../container_defs.h"
 
-typedef struct _map {
-    rbtree_t		p_tree;
-    item_compare_t	compare_func;
-    pheap_t			p_heap;
-} map_t, *pmap_t;
-
-#define	RBTREE_NODE_BLACK		0
-#define	RBTREE_NODE_RED			1
+#include "./map_defs.h"
 
 //Initialize
 void core_rtl_map_init(

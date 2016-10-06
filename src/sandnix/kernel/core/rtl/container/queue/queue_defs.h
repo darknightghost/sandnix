@@ -18,39 +18,13 @@
 #pragma once
 
 #include "../../../../../../common/common.h"
+#include "../list/list_defs.h"
 
 #include "../../../mm/mm_defs.h"
 
 typedef struct _heap_t	heap_t, *pheap_t;
 
-#include "./queue_defs.h"
-
-#include "../container_defs.h"
-
-//Initialize
-void core_rtl_queue_init(
-    pqueue_t p_queue,
-    pheap_t heap);
-
-//Push item
-bool core_rtl_queue_push(
-    pqueue_t p_queue,
-    void* p_item);
-
-//Pop item
-void* core_rtl_queue_pop(
-    pqueue_t p_queue);
-
-//Get first item
-void* core_rtl_queue_front(
-    pqueue_t p_queue);
-
-//Get last item
-void* core_rtl_queue_end(
-    pqueue_t p_queue);
-
-//Destroy item
-void core_rtl_queue_destroy(
-    pqueue_t p_queue,
-    item_destroyer_t destroier,
-    void* arg);
+typedef struct	_queue {
+    list_t		data_list;
+    pheap_t		heap;
+} queue_t, *pqueue_t;

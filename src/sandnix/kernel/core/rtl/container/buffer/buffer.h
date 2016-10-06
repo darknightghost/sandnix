@@ -19,14 +19,7 @@
 
 #include "../../../../../../common/common.h"
 
-typedef	struct _buffer {
-    u8*		p_buffer;
-    size_t	size;
-    u8*		p_begin;
-    u8*		p_end;
-    bool	is_full;
-    bool	overwrite;
-} buffer_t, *pbuffer_t;
+#include "./buffer_defs.h"
 
 //Initialize
 void core_rtl_buffer_init(

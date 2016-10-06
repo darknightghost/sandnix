@@ -20,34 +20,11 @@
 #include "../../../../../common/common.h"
 #include "class_ids.h"
 
-struct	_obj;
-struct	_kstring_obj;
+#include "../../mm/mm_defs.h"
 
-//kstring_obj_t obj_t.to_string(pobj_t p_this);
-typedef	struct _kstring_obj*	(*to_string_t)(struct _obj*);
+#include "../kstring/kstring_defs.h"
 
-//int obj_t.compare(pobj_t p_this, pobj_t p_obj2);
-typedef	int	(*compare_obj_t)(struct _obj*, struct _obj*);
-
-//void obj_t.destructor(pobj_t p_this);
-typedef	void (*destructor_t)(struct _obj*);
-
-typedef struct _heap_t	heap_t, *pheap_t;
-
-typedef	struct	_obj {
-    u32				class_id;
-    u32				ref_count;
-    pheap_t			heap;
-    destructor_t	destructor;
-    compare_obj_t	compare;
-    to_string_t		to_string;
-} obj_t, *pobj_t;
-
-#ifndef CORE_RTL_EXPORT
-    #include "../../mm/mm.h"
-#endif
-
-#include "../kstring/kstring.h"
+#include "./obj_defs.h"
 
 //Increase reference count
 #define INC_REF(p_obj)				(core_rtl_obj_inc_ref((pobj_t)(p_obj)))
