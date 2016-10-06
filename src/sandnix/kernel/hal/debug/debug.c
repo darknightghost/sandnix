@@ -14,13 +14,13 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include "../../core/rtl/rtl.h"
 
 #include "debug.h"
 #include "../early_print/early_print.h"
 #include "../kparam/kparam.h"
 #include "../exception/exception.h"
 
-#include "../../core/rtl/rtl.h"
 
 static	bool	is_debug_on = true;
 

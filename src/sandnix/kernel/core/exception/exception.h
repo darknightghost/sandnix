@@ -56,7 +56,7 @@ kstatus_t core_exception_get_errno();
 //Raise exception
 void core_exception_raise(
     pcontext_t p_context,
-    except_obj_t except);
+    pexcept_obj_t except);
 
 //Regist global exception handler
 void core_exception_add_hndlr(except_hndlr_t hndlr);
@@ -69,3 +69,5 @@ void core_exception_push_hndlr(except_hndlr_t hndlr);
 
 //Pop exception hndlr of current thread
 except_hndlr_t core_exception_pop_hndlr();
+
+#include "../../hal/exception/exception.h"

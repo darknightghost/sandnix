@@ -18,6 +18,9 @@
 #pragma once
 
 #include "../../../../../common/common.h"
+
+#include "./multiprocessor_defs.h"
+
 #include "./cpuinfo/cpuinfo.h"
 #include "./IPI/ipi.h"
 #include "./awake/awake.h"

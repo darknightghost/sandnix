@@ -18,6 +18,8 @@
 #pragma once
 #include "../../../../../../common/common.h"
 
+#include "./awake_defs.h"
+
 //Awake AP core
 void hal_cpu_core_awake(u32 cpuid);
 

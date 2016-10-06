@@ -19,9 +19,7 @@
 
 #include "../../../../../../../common/common.h"
 
-#ifndef	HAL_MMU_EXPORT
-    #include "../../../../../core/rtl/rtl.h"
-#endif
+#include "../../../../../core/rtl/rtl_defs.h"
 
 typedef struct _map	map_t, *pmap_t;
 

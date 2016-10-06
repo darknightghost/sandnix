@@ -18,23 +18,16 @@
 #pragma once
 
 #include "../../../../../common/common.h"
+
+#include "./interrupt_defs.h"
+
 #if defined X86
     #include "arch/x86/interrupt.h"
 #elif defined ARM_ARMV7_CORTEXA9
     #include "arch/arm/armv7/cortex-a9/interrupt.h"
 #endif
 
-#ifndef	HAL_IO_EXPORT
-    #include "../../cpu/cpu.h"
-#endif
-
-#define	TICK_PERIOD		10000
-
-struct	_context;
-typedef	struct	_context	context_t, *pcontext_t;
-
-//void	int_callback(u32 int_num, pcontext_t p_context, u32 err_code);
-typedef void	(*int_callback_t)(u32, pcontext_t, u32);
+#include "../../cpu/cpu_defs.h"
 
 //Initialize
 void interrupt_init();

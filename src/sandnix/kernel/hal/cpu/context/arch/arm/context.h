@@ -18,28 +18,7 @@
 #pragma once
 
 #include "../../../../../../../common/common.h"
-
-typedef struct _context {
-    u32		r0;
-    u32		r1;
-    u32		r2;
-    u32		r3;
-    u32		r4;
-    u32		r5;
-    u32		r6;
-    u32		r7;
-    u32		r8;
-    u32		r9;
-    u32		r10;
-    u32		r11;
-    u32		r12;
-    u32		lr_usr;
-    u32		sp_usr;
-    u32		lr_svc;
-    u32		sp_svc;
-    u32		cpsr;
-    u32		pc;
-} context_t, *pcontext_t;
+#include "./context_defs.h"
 
 #define	hal_cpu_context_load(p_context)	{ \
         __asm__ __volatile__( \

@@ -17,10 +17,4 @@
 
 #pragma once
 
-#define	BG_BLACK			40
-#define	BG_RED				41
-#define	BG_WHITE			47
-#define	FG_BLACK			30
-#define	FG_BRIGHT_RED		31
-#define	FG_BRIGHT_WHITE		37
-
+#include "./early_print_defs.h"

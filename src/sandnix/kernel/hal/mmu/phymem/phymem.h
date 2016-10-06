@@ -19,27 +19,9 @@
 
 #include "../../../../../common/common.h"
 
-#ifndef	HAL_MMU_EXPORT
-    #include "../../../core/rtl/rtl.h"
-#endif
+#include "../../../core/rtl/rtl_defs.h"
 
-#define	PHYMEM_AVAILABLE	0x00
-#define	PHYMEM_DMA			0x01
-#define	PHYMEM_USED			0x02
-#define	PHYMEM_DMA_USED		0x03
-#define	PHYMEM_SYSTEM		0x04
-#define	PHYMEM_RESERVED		0x05
-#define	PHYMEM_BAD			0x06
-
-#ifdef	X86
-    #define	RESERVE_DMA
-#endif
-
-typedef	struct	_physical_memory_info {
-    u64			begin;
-    u64			size;
-    u32			type;
-} physical_memory_info_t, *pphysical_memory_info_t;
+#include "./phymem_defs.h"
 
 void	phymem_init();
 

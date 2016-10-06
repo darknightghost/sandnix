@@ -17,8 +17,6 @@
 
 #pragma once
 
-#define HAL_MMU_EXPORT
-
 #include "../../../../common/common.h"
 #include "./paging/paging.h"
 
@@ -26,8 +24,7 @@
     #include "./phymem/phymem.h"
 #endif
 
-#define	SANDNIX_KERNEL_PAGE_SIZE	4096
-#define	KERNEL_MAX_SIZE				(16 * 1024 * 1024)
+#include "./mmu_defs.h"
 
 #ifndef	_ASM
 //Initialize mmu module

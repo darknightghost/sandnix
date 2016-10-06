@@ -18,14 +18,13 @@
 #pragma once
 #include "../../../../../../common/common.h"
 
+#include "./cpuinfo_defs.h"
+
 #if defined X86
     #include "arch/x86/cpuinfo.h"
 #elif defined ARM
     #include "arch/arm/armv7/cortex-a9/cpuinfo.h"
 #endif
-
-#define INVALID_CPU_INDEX	0xFFFFFFFF
-#define INVALID_CPU_ID		0xFFFFFFFF
 
 void cpuinfo_init();
 void cpuinfo_core_init();

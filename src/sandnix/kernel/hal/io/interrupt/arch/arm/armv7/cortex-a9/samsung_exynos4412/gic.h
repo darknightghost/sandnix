@@ -18,10 +18,7 @@
 #pragma once
 #include "../../../../../../../../../../common/common.h"
 
-#ifndef	HAL_IO_EXPORT
-    #include "../../../../../../../cpu/cpu.h"
-#endif
-
+#include "../../../../../../../cpu/cpu_defs.h"
 
 void	gic_init();
 u32		gic_get_irq_num();

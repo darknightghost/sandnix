@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define	HAL_CPU_EXPORT
+#include "./cpu_defs.h"
 
 #include "../../../../common/common.h"
 #include "./context/context.h"

@@ -19,40 +19,15 @@
 #define	HAL_INIT_EXPORT
 
 #include "../../../../common/common.h"
+#include "./init_defs.h"
 
 #if defined X86
-    #define	DEFAULT_STACK_SIZE		(12 * 4096)
-    #define KERNEL_HEADER_MAGIC		0x444E4153
     #include "./arch/x86/init.h"
 #elif defined ARM
-    #define	DEFAULT_STACK_SIZE		(12 * 4096)
-    #define KERNEL_HEADER_MAGIC		0x444E4153
     #include "./arch/arm/init.h"
 #endif
 
 #ifndef _ASM
-
-#include "../../core/rtl/rtl.h"
-
-#define	DEFAULT_STACK_SIZE		(12 * 4096)
-
-#ifndef	MAX_CPU_NUM
-    #pragma	error("Missing macro MAX_CPU_NUM.");
-#endif
-
-#ifndef	BOOTLOADER
-    #pragma	error("Missing macro BOOTLOADER.");
-#endif
-
-typedef struct _krnl_hdr_t {
-    address_t	magic;
-    void*		code_start;
-    size_t		code_size;
-    void*		data_start;
-    size_t		data_size;
-    size_t		header_size;
-    address_t	checksum;
-} __attribute__((packed)) krnl_hdr_t, *pkrnl_hdr_t;
 
 extern	krnl_hdr_t	kernel_header;
 extern	u8			init_stack[];

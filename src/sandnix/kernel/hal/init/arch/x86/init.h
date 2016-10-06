@@ -17,73 +17,13 @@
 
 #pragma once
 #include "../../../../../../common/common.h"
+#include "./init_defs.h"
 
 #define arch_init()
 
-#define	DA_32		0x4000		//32 bit segment
-#define	DA_DPL0		0x00		//DPL = 0
-#define	DA_DPL1		0x20		//DPL = 1
-#define	DA_DPL2		0x40		//DPL = 2
-#define	DA_DPL3		0x60		//DPL = 3
-
-//Data segment
-#define	DA_DR		0x90		//Read-only
-#define	DA_DRW		0x92		//Readable & writeable
-#define	DA_DRWA		0x93		//Readable writeable & accessed
-
-//Code segment
-#define	DA_C		0x98		//Excute-only
-#define	DA_CR		0x9A		//Excuteable & readable
-#define	DA_CCO		0x9C		//Excute-only conforming code segment
-#define	DA_CCOR		0x9E		//Excuteable & readable conforming code segment
-
-#define	DA_LDT		0x82		//LDT descriptor
-#define	DA_TASKGATE	0x85		//Task gate
-#define	DA_386TSS	0x89		//TSS
-#define	DA_386CGATE	0x8C		//Call gate
-#define	DA_386IGATE	0x8E		//Interrupt gate
-#define	DA_386TGATE	0x8F		//Trap gate
-
-//Segment selectors
-#define	DESCRIPTOR_SIZE			8
-#define	SELECTOR_K_DATA			(1 * DESCRIPTOR_SIZE)
-#define	SELECTOR_K_CODE			(2 * DESCRIPTOR_SIZE)
-#define	SELECTOR_U_DATA			(3 * DESCRIPTOR_SIZE | 3)
-#define	SELECTOR_U_CODE			(4 * DESCRIPTOR_SIZE | 3)
-#define	SELECTOR_TSS(n)			((5 + (n)) * DESCRIPTOR_SIZE)
-
-#ifdef	_ASM
-    .macro		SEGMENT_DESCRIPTOR base, limit, property
-    //Limit1
-    .word(\limit) & 0xFFFF
-    // Base1
-    .word(\base) & 0xFFFF
-    //Base2
-    .byte((\base) >> 16) & 0xFF
-    //Property1+Limit2+property2,G=1
-    .word(((\limit) >> 8) & 0x0F00) | ((\property) & 0xF0FF) | 0x8000
-    //Base3
-    .byte((\base) >> 24) & 0xFF
-    .endm
-#endif
-
 #ifndef	_ASM
-#pragma pack(push)
-#pragma pack(1)
-#define	TSS_DESC_ADDR_SET(n, addr)	(tss_desc_table[(n)] = \
-                                     (tss_desc_table[(n)] & 0xFFFF000000FFFF) \
-                                     | (((u64)(address_t)(addr) & 0xFFFFFF) << 16) \
-                                     | (((u64)(address_t)(addr) & 0xFF000000) << 32))
+
 extern	u64		tss_desc_table[];
-
-typedef	struct	_gdt_t {
-    u16		limit;
-    u16		base1;
-    u8		base2;
-    u16		attr;
-    u8		base3;
-} gdt_t, *pgdt_t;
-
 extern	pgdt_t		gdt;
-#pragma pack(pop)
+
 #endif

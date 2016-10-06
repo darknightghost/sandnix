@@ -813,6 +813,9 @@ const char* hal_exception_get_err_name(kstatus_t error_code);
     
 #define	PANIC(error_code, fmt, ...)		hal_exception_panic(__FILE__, __LINE__,  error_code, fmt,##__VA_ARGS__)
 
+//抛异常
+void hal_exception_raise(pexcept_obj_t p_exception);
+
 //Assert
 #define ASSERT(x)
 ```

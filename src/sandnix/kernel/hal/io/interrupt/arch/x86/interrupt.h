@@ -21,23 +21,9 @@
 #include "apic.h"
 #include "tss.h"
 
-#ifndef	HAL_IO_EXPORT
-    #include "../../../../cpu/cpu.h"
-#endif
+#include "../../../../cpu/cpu_defs.h"
 
-#define	INT_BP			0x03
-
-#define	REQUIRE_EOI_BEGIN	0x20
-#define	INT_IPI			0x20
-
-#define	INT_TICK		0x21
-
-#define	IRQ_BASE		0x22
-#define	IRQ(n)			(IRQ_BASE + (n))
-
-#define	IRQ_MAX			IRQ(23)
-#define	INT_CLOCK		IRQ(2)
-#define	REQUIRE_EOI_END	IRQ_MAX
+#include "./interrupt_defs.h"
 
 u32		hal_io_apic_read32(address_t off);
 void	hal_io_apic_write32(address_t off, u32 data);

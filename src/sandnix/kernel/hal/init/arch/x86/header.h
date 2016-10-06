@@ -17,10 +17,7 @@
 
 #pragma once
 #include "../../../../../../common/common.h"
-
-#ifndef	HAL_INIT_EXPORT
-    #include "../../../../core/rtl/rtl.h"
-#endif
+#include "../../../../core/rtl/rtl_defs.h"
 
 void	analyse_bootloader_info(void* p_info);
 

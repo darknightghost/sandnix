@@ -18,6 +18,8 @@
 #pragma once
 #include "../../../../../../common/common.h"
 
+#include "./performance_defs.h"
+
 //TODO:Not finished
 //Get current frequency
 u32 hal_cpu_get_frequency();

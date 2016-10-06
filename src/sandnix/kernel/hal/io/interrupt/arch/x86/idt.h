@@ -19,45 +19,8 @@
 
 #include "../../interrupt.h"
 
-#ifndef	HAL_IO_EXPORT
-    #include "../../../../init/init.h"
-#endif
+#include "../../../../init/init_defs.h"
 
-typedef struct {
-    u16		limit;
-    u32		base;
-} __attribute__((packed)) idt_reg_t, *pidt_reg_t;
-
-typedef	struct	_idt {
-    u16		offset1;			//0-15 bits of offset
-    u16		selector;			//CS selector
-    struct {
-        u16		reserved: 5;	//Zero
-        u16		zero: 3;		//Zero
-        u16		type: 4;		//Interrupt or trap
-        u16		s: 1;			//Zero
-        u16		dpl: 2;			//DPL
-        u16		p: 1;			//Segment present flag
-    } __attribute__((packed)) attr;
-    u16		offset2;			//16-32 bits of offset
-} __attribute__((packed)) idt_t, *pidt_t;
-
-#define		TYPE_TRAP			0x0F
-#define		TYPE_INTERRUPT		0x0E
-
-#define		INTERRUPT_MAX_NUM	256
-#define		SET_IDT(base, num, func, cs_selector, d_type, d_s, d_dpl, s_p) { \
-        (base)[(num)].offset1=(u32)(func)&0x0000FFFF; \
-        (base)[(num)].offset2=(((u32)(func)&0xFFFF0000)>>16); \
-        (base)[(num)].selector=(cs_selector); \
-        (base)[(num)].attr.reserved=0; \
-        (base)[(num)].attr.zero=0; \
-        (base)[(num)].attr.type=(d_type); \
-        (base)[(num)].attr.s=(d_s); \
-        (base)[(num)].attr.dpl=(d_dpl); \
-        (base)[(num)].attr.p=(s_p); \
-    }
-
-#define	SET_NORMAL_IDT(base,num) SET_IDT((base), num, int_##num, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1)
+#include "./idt_defs.h"
 
 void	idt_init();

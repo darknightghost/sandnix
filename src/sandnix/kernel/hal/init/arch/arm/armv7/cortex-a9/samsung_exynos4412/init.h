@@ -18,7 +18,5 @@
 #pragma once
 
 #include "../../../../../../../../../common/common.h"
-
-#define	PCLK_FREQ				66000000
-#define MCT_FREQ				100000000
+#include "./init_defs.h"
 

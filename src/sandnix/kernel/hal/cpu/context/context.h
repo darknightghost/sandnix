@@ -18,6 +18,7 @@
 #pragma once
 
 #include "../../../../../common/common.h"
+#include "./context_defs.h"
 
 #if defined X86
 #include "./arch/x86/context.h"

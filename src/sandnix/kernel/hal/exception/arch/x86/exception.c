@@ -15,6 +15,8 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "../../../../core/rtl/rtl.h"
+
 #include "../../exception.h"
 #include "../exception.h"
 #include "../../../io/io.h"

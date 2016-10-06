@@ -17,31 +17,13 @@
 
 #pragma once
 #include "../../../../../../common/common.h"
-#include "../../context/context.h"
 
-#ifndef	HAL_CPU_EXPORT
-    #include "../../../../core/pm/pm.h"
-    #include "../../../../core/rtl/rtl.h"
-#endif
+#include "./ipi_defs.h"
 
-#define	MAX_IPI_MSG_NUM		0x10
+#include "../../context/context_defs.h"
 
-#define	IPI_TYPE_DIE			0x00
-#define	IPI_TYPE_TLB_REFRESH	0x01
-
-typedef	struct	_ipi_msg {
-    u32		type;
-    void*	p_args;
-} ipi_msg_t, *pipi_msg_t;
-
-typedef	struct	_ipi_queue {
-    bool		initialized;
-    queue_t		msg_queue;
-    spnlck_t	lock;
-} ipi_queue_t, *pipi_queue_t;
-
-//void	ipi_hndlr(pcontext_t p_context, void* p_args);
-typedef	void	(*ipi_hndlr_t)(pcontext_t, void*);
+#include "../../../../core/pm/pm_defs.h"
+#include "../../../../core/rtl/rtl_defs.h"
 
 void cpu_ipi_init();
 void cpu_ipi_core_init();

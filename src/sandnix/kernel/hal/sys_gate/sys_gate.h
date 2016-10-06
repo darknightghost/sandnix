@@ -19,8 +19,7 @@
 
 #include "../../../../common/common.h"
 
-//void	sys_gate_entry(u32 call_number, ...);
-typedef	void	(*sys_gate_entry_t)(u32, ...);
+#include "./sys_gate_defs.h"
 
 //Initialize
 void hal_sys_gate_init();
@@ -42,4 +41,3 @@ void hal_sys_gate_go_to_usr(
     int argc,				//Number of arguments
     char* argv[],			//Arguments
     char* env[]);			//Environment
-

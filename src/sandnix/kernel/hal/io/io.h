@@ -16,9 +16,11 @@
 */
 
 #pragma once
-#define HAL_IO_EXPORT
 
 #include "../../../../common/common.h"
+
+#include "./io_defs.h"
+
 #include "io/io.h"
 #include "interrupt/interrupt.h"
 

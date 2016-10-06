@@ -19,6 +19,8 @@
 
 #include "../../../../../common/common.h"
 
+#include "./io_defs.h"
+
 #if defined X86
     #include "arch/x86/io.h"
 #endif

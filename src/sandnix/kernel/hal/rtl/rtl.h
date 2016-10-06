@@ -21,3 +21,5 @@
 #include "./atomic/atomic.h"
 #include "./string/string.h"
 #include "./math/math.h"
+
+#include "./rtl_defs.h"

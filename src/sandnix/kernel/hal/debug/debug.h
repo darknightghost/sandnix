@@ -18,6 +18,8 @@
 #pragma once
 #include "../../../../common/common.h"
 
+#include "./debug_defs.h"
+
 #define DEBUG	hal_debug_is_on_dbg()
 
 //Initialize the module

@@ -16,9 +16,10 @@
 */
 
 #pragma once
-#define	HAL_EARLY_PRINT_EXPORT
 
 #include "../../../../common/common.h"
+
+#include "./early_print_defs.h"
 
 #if defined X86
     #include "./arch/x86/early_print.h"

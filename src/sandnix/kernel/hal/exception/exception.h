@@ -17,7 +17,9 @@
 
 #pragma once
 #include "../../../../common/common.h"
+#include "./exception_defs.h"
 #include "errno.h"
+#include "../../core/exception/exception_defs.h"
 
 //Initialize module
 void	hal_exception_init();
@@ -40,18 +42,5 @@ void	hal_exception_panic(
 //Error code to string. Don't free.
 const char*	hal_exception_get_err_name(kstatus_t error_code);
 
-#define	PANIC(error_code, fmt, ...)	hal_exception_panic(__FILE__, __LINE__, \
-        (error_code), (fmt), ##__VA_ARGS__);
-
-#include "../debug/debug.h"
-
-#define	ASSERT(exp)	({ \
-        if(DEBUG) { \
-            if(!(exp)) { \
-                PANIC(EASSERT, \
-                      "Assert failed, expression \"%s\" is false.", \
-                      #exp); \
-            } \
-        })
-
-#define	NOT_SUPPORT		PANIC(ENOTSUP,"Function not completed!")
+//Raise ecxeption
+void hal_exception_raise(pexcept_obj_t p_exception);
