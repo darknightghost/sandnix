@@ -19,20 +19,10 @@
 
 #include "../../../../../common/common.h"
 
-#ifndef	CORE_PM_EXPORT
-    #include "../../rtl/rtl.h"
-    #include "../../mm/mm.h"
-#endif
+#include "../../rtl/rtl_defs.h"
+#include "../../mm/mm_defs.h"
 
-typedef	struct	_obj	obj_t, *pobj_t;
-
-typedef struct	_thread_ref_obj {
-    obj_t		obj;
-    u32			thread_id;		//Which thread the object belongs to
-
-    //Called when the thread exit
-    void	(*on_thread_exit)(struct _thread_ref_obj*);
-} thread_ref_obj_t, *pthread_ref_obj_t;
+#include "./thread_ref_obj_defs.h"
 
 //Construction function
 pthread_ref_obj_t thread_ref_obj(u32 thread_id,

@@ -19,16 +19,7 @@
 
 #include "../../../../../../common/common.h"
 
-typedef struct _spnlck_t {
-    union {
-        volatile u32		lock;
-        struct {
-            volatile u16		ticket;
-            volatile u16		owner;
-        } __attribute__((aligned(1)));
-    };
-    volatile u32		priority;
-} spnlck_t, *pspnlck_t;
+#include "./spnlck_defs.h"
 
 //Initialize the lock.
 void	core_pm_spnlck_init(pspnlck_t p_lock);

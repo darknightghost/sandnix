@@ -17,6 +17,12 @@
 
 #pragma once
 
-#include "../../../../../common/common.h"
+#include "../../../../common/common.h"
 
-#include "./paging_defs.h"
+#include "../pm/pm_defs.h"
+
+typedef	struct	_thread_except_stat_obj {
+    thread_ref_obj_t	parent;
+    u32					errno;			//errno
+    list_t				hndlr_list;		//Exception handlers
+} thread_except_stat_obj_t, *pthread_except_stat_obj_t;

@@ -17,6 +17,14 @@
 
 #pragma once
 
-#include "../../../../../common/common.h"
+#include "../../../../common/common.h"
 
-#include "./paging_defs.h"
+#define	MAX_PROCESS_NUM			65535
+
+//Spinlock
+#include "./lock/spinlock/spnlck_defs.h"
+#include "./lock/spinlock/spnlck_rw_defs.h"
+
+//Thread
+#include "./thread/thread_defs.h"
+

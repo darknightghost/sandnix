@@ -17,6 +17,10 @@
 
 #pragma once
 
-#include "../../../../../common/common.h"
+#include "../../../../../../common/common.h"
+#include "spnlck_defs.h"
 
-#include "./paging_defs.h"
+typedef struct _spnlck_rw_t {
+    spnlck_t			lock;
+    volatile u32		reader_count;
+} spnlck_rw_t, *pspnlck_rw_t;

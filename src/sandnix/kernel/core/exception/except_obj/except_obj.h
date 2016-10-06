@@ -21,17 +21,11 @@
 
 #include "../../../../../common/common.h"
 
-#include "../../rtl/rtl.h"
+#include "../../rtl/rtl_defs.h"
 
-#include "../../../hal/cpu/cpu.h"
+#include "../../../hal/cpu/cpu_defs.h"
 
-typedef	struct	_except_obj {
-    obj_t		obj;
-    kstatus_t	reason;
-    pcontext_t	p_context;
-
-    void	(*raise)(struct _except_obj*, pcontext_t);
-} except_obj_t, *pexcept_obj_t;
+#include "./except_obj_defs.h"
 
 pexcept_obj_t	except_obj(size_t size, kstatus_t reason);
 

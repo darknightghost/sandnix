@@ -19,21 +19,7 @@
 
 #include "../../../../common/common.h"
 
-//Print level
-//Kernel panic
-#define PRINT_LEVEL_PANIC	0x00000001
-
-//Error
-#define PRINT_LEVEL_ERR		0x00000002
-
-//Alert
-#define PRINT_LEVEL_WARNING	0x00000003
-
-//Information
-#define PRINT_LEVEL_INFO	0x00000004
-
-//Debug info
-#define PRINT_LEVEL_DEBUG	0x00000005
+#include "./kconsole_defs.h"
 
 #define core_kconsole_print_panic(fmt, ...)	core_kconsole_kprint( \
         PRINT_LEVEL_PANIC, \

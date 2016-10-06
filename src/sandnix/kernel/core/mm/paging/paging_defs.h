@@ -19,4 +19,23 @@
 
 #include "../../../../../common/common.h"
 
-#include "./paging_defs.h"
+//Page attributes
+#define	PAGE_AVAIL				0x00000001
+
+#define PAGE_READABLE			0x00000002
+#define PAGE_WRITABLE			0x00000004
+#define PAGE_EXECUTABLE			0x00000008
+
+#define PAGE_COPY_ON_WRITE		0x00000010
+#define PAGE_ALLOC_ON_ACCESS	0x00000020
+
+#define PAGE_SWAPPABLE			0x00000040
+#define PAGE_SWAPPED			0x00000080
+
+#define	PAGE_DMA				0x00000100
+
+#define	PAGE_KERNEL				0x80000000
+
+typedef struct _krnl_pg_tbl {
+    address_t	base_addr;
+} krnl_pg_tbl_t, *pkrnl_pg_tbl_t;

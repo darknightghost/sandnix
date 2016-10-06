@@ -17,6 +17,15 @@
 
 #pragma once
 
-#include "../../../../../common/common.h"
+#include "../../../../../../common/common.h"
 
-#include "./paging_defs.h"
+typedef struct _spnlck_t {
+    union {
+        volatile u32		lock;
+        struct {
+            volatile u16		ticket;
+            volatile u16		owner;
+        } __attribute__((aligned(1)));
+    };
+    volatile u32		priority;
+} spnlck_t, *pspnlck_t;

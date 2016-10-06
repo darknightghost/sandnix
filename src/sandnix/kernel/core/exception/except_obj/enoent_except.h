@@ -18,12 +18,9 @@
 #pragma once
 
 #include "../../../../../common/common.h"
-#include "except_obj.h"
+#include "./except_obj.h"
 
-typedef struct _enoent_except {
-    except_obj_t	except;
-    pkstring_obj_t	path;
-} enoent_except_t, *penoent_except_t;
+#include "./enoent_except_defs.h"
 
 penoent_except_t	enoent_except(pkstring_obj_t p_path);
 

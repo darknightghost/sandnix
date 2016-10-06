@@ -17,6 +17,21 @@
 
 #pragma once
 
+#define CORE_EXCEPTION_EXPORT
+
 #include "../../../../../common/common.h"
 
-#include "./paging_defs.h"
+#include "../../rtl/rtl_defs.h"
+
+#include "../../../hal/cpu/cpu_defs.h"
+
+typedef	struct	_except_obj {
+    obj_t		obj;
+    kstatus_t	reason;
+    pcontext_t	p_context;
+
+    void	(*raise)(struct _except_obj*, pcontext_t);
+} except_obj_t, *pexcept_obj_t;
+
+#include "./eperm_except_defs.h"
+#include "./enoent_except_defs.h"

@@ -17,29 +17,29 @@
 
 #pragma once
 
-#include "../../../../../../common/common.h"
-#include "spnlck.h"
+#define CORE_EXCEPTION_EXPORT
 
-#include "./spnlck_rw_defs.h"
+#include "../../../../common/common.h"
 
-//r/w lock
-//Initialize the lock
-void		core_pm_spnlck_rw_init(pspnlck_rw_t p_lock);
+#include "./thread_except_stat_obj_defs.h"
+#include "./except_obj/except_obj_defs.h"
 
-//Read lock
-void		core_pm_spnlck_rw_r_lock(pspnlck_rw_t p_lock);
+#define EXCEPT_STATUS_CONTINUE_EXEC		0x00000000
+#define	EXCEPT_STATUS_UNWIND			0x00000001
+#define EXCEPT_STATUS_CONTINUE_SEARCH	0x00000002
 
-//Read try lock
-kstatus_t	core_pm_spnlck_rw_r_trylock(pspnlck_rw_t p_lock);
+#define	EXCEPT_REASON_EXCEPT	0x00000000
+#define	EXCEPT_REASON_UNWIND	0x00000001
 
-//Read ublock
-void		core_pm_spnlck_rw_r_unlock(pspnlck_rw_t p_lock);
+//#define OPERATE_SUCCESS
 
-//Write lock
-void		core_pm_spnlck_rw_w_lock(pspnlck_rw_t p_lock);
+typedef	u32		except_stat_t;
 
-//Write try lock
-kstatus_t	core_pm_spnlck_rw_w_trylock(pspnlck_rw_t p_lock);
+//except_stat_t except_hndlr_t(u32 reason, pexcept_obj_t p_except, pcontext_t context);
+typedef	except_stat_t	(*except_hndlr_t)(u32, pexcept_obj_t, pcontext_t);
 
-//Write unlock
-void		core_pm_spnlck_rw_w_unlock(pspnlck_rw_t p_lock);
+typedef	struct	_except_hndlr_info {
+    kstatus_t		reason;
+    except_hndlr_t	hndlr;
+    context_t		context;
+} except_hndlr_info_t, *pexcept_hndlr_t;

@@ -17,6 +17,6 @@
 
 #pragma once
 
-#include "../../../../../common/common.h"
-
-#include "./paging_defs.h"
+#include "../../../../common/common.h"
+#include "./heap/heap_defs.h"
+#include "./paging/paging_defs.h"

@@ -19,14 +19,6 @@
 
 #include "../../../../common/common.h"
 
-#ifndef	CORE_PM_EXPORT
-    #include "../pm/pm.h"
-#endif
-
-typedef	struct	_thread_except_stat_obj {
-    thread_ref_obj_t	parent;
-    u32					errno;			//errno
-    list_t				hndlr_list;		//Exception handlers
-} thread_except_stat_obj_t, *pthread_except_stat_obj_t;
+#include "./thread_except_stat_obj_defs.h"
 
 pthread_except_stat_obj_t	thread_except_stat_obj(u32 thread_id);

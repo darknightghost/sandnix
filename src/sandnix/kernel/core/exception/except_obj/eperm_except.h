@@ -20,9 +20,6 @@
 #include "../../../../../common/common.h"
 #include "except_obj.h"
 
-typedef struct _eperm_except {
-    except_obj_t	except;
-} eperm_except_t, *peperm_except_t;
+#include "./eperm_except_defs.h"
 
 peperm_except_t		eperm_except();
-

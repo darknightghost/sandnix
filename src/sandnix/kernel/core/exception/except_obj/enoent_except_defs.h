@@ -18,5 +18,9 @@
 #pragma once
 
 #include "../../../../../common/common.h"
+#include "./except_obj_defs.h"
 
-#include "./paging_defs.h"
+typedef struct _enoent_except {
+    except_obj_t	except;
+    pkstring_obj_t	path;
+} enoent_except_t, *penoent_except_t;

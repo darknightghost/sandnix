@@ -18,5 +18,8 @@
 #pragma once
 
 #include "../../../../../common/common.h"
+#include "./except_obj_defs.h"
 
-#include "./paging_defs.h"
+typedef struct _eperm_except {
+    except_obj_t	except;
+} eperm_except_t, *peperm_except_t;
