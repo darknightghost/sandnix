@@ -19,6 +19,7 @@
 #include "../../../../../core/pm/pm.h"
 #include "../../../../early_print/early_print.h"
 #include "../../../../cpu/cpu.h"
+#include "../../../../init/init.h"
 
 #include "tss.h"
 

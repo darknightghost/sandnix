@@ -19,9 +19,10 @@
 
 #include "../../../../common/common.h"
 
+#include "./rtl_defs.h"
+
 #include "./string/string.h"
 #include "./math/math.h"
 #include "./container/container.h"
 #include "./obj/obj.h"
-
-#include "./rtl_defs.h"
+#include "./kstring/kstring.h"

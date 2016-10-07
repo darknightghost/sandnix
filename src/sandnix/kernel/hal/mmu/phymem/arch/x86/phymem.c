@@ -17,6 +17,7 @@
 
 #include "../../phymem.h"
 #include "../../../../../core/mm/mm.h"
+#include "../../../../../core/rtl/rtl.h"
 #include "../../../../init/init.h"
 #include "../../../mmu.h"
 #include "../../../../exception/exception.h"

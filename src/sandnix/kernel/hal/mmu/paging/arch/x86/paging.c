@@ -18,6 +18,8 @@
 #include "../../paging.h"
 #include "../../../mmu.h"
 #include "../../../../../core/pm/pm.h"
+#include "../../../../../core/mm/mm.h"
+#include "../../../../../core/rtl/rtl.h"
 #include "../../../../init/init.h"
 #include "../../../../exception/exception.h"
 #include "../../../../early_print/early_print.h"

@@ -20,11 +20,9 @@
 #include "../../../../../common/common.h"
 #include "class_ids.h"
 
-#include "../../mm/mm_defs.h"
-#include "../kstring/kstring_defs.h"
-
 struct	_obj;
 struct	_kstring_obj;
+struct	_heap_t;
 
 //kstring_obj_t obj_t.to_string(pobj_t p_this);
 typedef	struct _kstring_obj*	(*to_string_t)(struct _obj*);
@@ -40,8 +38,11 @@ typedef struct _heap_t	heap_t, *pheap_t;
 typedef	struct	_obj {
     u32				class_id;
     u32				ref_count;
-    pheap_t			heap;
+    struct _heap_t*	heap;
     destructor_t	destructor;
     compare_obj_t	compare;
     to_string_t		to_string;
 } obj_t, *pobj_t;
+
+#include "../kstring/kstring_defs.h"
+#include "../../mm/mm_defs.h"

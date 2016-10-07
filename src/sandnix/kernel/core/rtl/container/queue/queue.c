@@ -17,6 +17,8 @@
 
 #include "../../obj/obj.h"
 #include "queue.h"
+#include "../list/list.h"
+#include "../../../mm/mm.h"
 
 void core_rtl_queue_init(pqueue_t p_queue, pheap_t heap)
 {

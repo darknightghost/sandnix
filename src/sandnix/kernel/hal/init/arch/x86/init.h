@@ -23,7 +23,7 @@
 
 #ifndef	_ASM
 
-extern	u64		tss_desc_table[];
+extern	u64			tss_desc_table[];
 extern	pgdt_t		gdt;
 
 #endif

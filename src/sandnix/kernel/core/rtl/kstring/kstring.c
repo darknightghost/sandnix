@@ -18,6 +18,7 @@
 #include "kstring.h"
 #include "../../mm/mm.h"
 #include "../string/string.h"
+#include "../obj/obj.h"
 
 //obj
 static	void			destructer(pkstring_obj_t p_this);

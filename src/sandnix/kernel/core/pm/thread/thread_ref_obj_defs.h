@@ -21,7 +21,6 @@
 
 #include "../../rtl/rtl_defs.h"
 
-typedef	struct	_obj	obj_t, *pobj_t;
 
 typedef struct	_thread_ref_obj {
     obj_t		obj;
