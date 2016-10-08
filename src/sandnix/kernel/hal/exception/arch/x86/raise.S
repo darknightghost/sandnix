@@ -15,8 +15,58 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "../../../init/init_defs.h"
+
 .section	.text
 .global		hal_exception_raise
 
+//void hal_exception_raise(pexcept_obj_t p_exception);
 hal_exception_raise:
+		//(%esp) : eip
+		//4(%esp) : p_exception
+
+		//Push context
+		pushal
+
+		//%eax : old esp
+		movl	16(%esp), %eax
+
+		//%ebx : eip
+		movl	(%eax), %ebx
+
+		addl	$4, %eax
+		movl	%eax, 16(%esp)	
+		pushl	%ebx
+
+		xorl	%eax, %eax
+		//cs
+		movl	$SELECTOR_K_CODE, %eax
+		pushl	%eax
+
+		//eflags
+		pushfl
+
+		//ss
+		movw	%ss, %ax
+		pushl	%eax
+
+		//gs
+		movw	%gs, %ax
+		pushl	%eax
+
+		//fs
+		movw	%fs, %ax
+		pushl	%eax
+
+		//ds
+		movw	%ds, %ax
+		pushl	%eax
+
+		//es
+		movw	%es, %ax
+		pushl	%eax
+
+		subl	$108, %esp
+		fnsave	(%esp)
+
 		jmp		core_exception_raise

@@ -25,3 +25,10 @@
 void core_exception_init()
 {
 }
+
+void core_exception_raise(pcontext_t p_context, pexcept_obj_t except)
+{
+    UNREFERRED_PARAMETER(p_context);
+    UNREFERRED_PARAMETER(except);
+    return;
+}
