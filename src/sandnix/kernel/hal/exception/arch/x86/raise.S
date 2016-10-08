@@ -24,21 +24,31 @@
 hal_exception_raise:
 		//(%esp) : eip
 		//4(%esp) : p_exception
+		//Prepare for iret
+		//%eax : old esp
+		movl	%esp, %eax
+
+		//%edx : eip
+		popl	%edx
+		pushfl
+		pushl	$SELECTOR_K_CODE
+		pushl	%edx
+
+		pushl	$0
 
 		//Push context
 		pushal
 
-		//%eax : old esp
-		movl	16(%esp), %eax
-
-		//%ebx : eip
-		movl	(%eax), %ebx
-
 		addl	$4, %eax
 		movl	%eax, 16(%esp)	
-		pushl	%ebx
+
+		//%ebx : p_exception
+		movl	(%eax), %ebx
+
+		pushl	%edx
 
 		xorl	%eax, %eax
+
 		//cs
 		movl	$SELECTOR_K_CODE, %eax
 		pushl	%eax
@@ -69,4 +79,7 @@ hal_exception_raise:
 		subl	$108, %esp
 		fnsave	(%esp)
 
-		jmp		core_exception_raise
+		movl	%esp, %eax
+		pushl	%ebx
+		pushl	%eax
+		call	core_exception_raise

@@ -30,5 +30,6 @@ void core_exception_raise(pcontext_t p_context, pexcept_obj_t except)
 {
     UNREFERRED_PARAMETER(p_context);
     UNREFERRED_PARAMETER(except);
+    hal_cpu_context_load(p_context);
     return;
 }

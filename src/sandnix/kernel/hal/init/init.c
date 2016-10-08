@@ -59,6 +59,8 @@ void kinit(void* p_bootloader_info)
     hal_io_int_enable();
     hal_io_irq_enable_all();
 
+    RAISE(NULL);
+
     //Call kernel main
     core_main_main();
 

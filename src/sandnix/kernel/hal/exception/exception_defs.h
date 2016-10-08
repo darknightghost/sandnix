@@ -19,20 +19,4 @@
 #include "../../../../common/common.h"
 #include "errno.h"
 
-#define	RAISE(e) hal_exception_raise(e)
 
-#define	PANIC(error_code, fmt, ...)	hal_exception_panic(__FILE__, __LINE__, \
-        (error_code), (fmt), ##__VA_ARGS__);
-
-#include "../debug/debug.h"
-
-#define	ASSERT(exp)	({ \
-        if(DEBUG) { \
-            if(!(exp)) { \
-                PANIC(EASSERT, \
-                      "Assert failed, expression \"%s\" is false.", \
-                      #exp); \
-            } \
-        })
-
-#define	NOT_SUPPORT		PANIC(ENOTSUP,"Function not completed!")

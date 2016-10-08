@@ -19,44 +19,38 @@
 
 #include "../../../../../../../common/common.h"
 #include "./context_defs.h"
+#include "../../../../init/init_defs.h"
+
 
 #define	hal_cpu_context_load(p_context)	{ \
+        if((p_context)->ss == SELECTOR_K_DATA) { \
+            /* Return to kernel memory*/ \
+            /* EIP */ \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 1) = (p_context)->eip; \
+            /* EFLAGS */ \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 3) = (p_context)->eflags; \
+            \
+        } else { \
+            /* Return to user memory */ \
+            /* EIP */ \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 1) = (p_context)->eip; \
+            /* EFLAGS */ \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 3) = (p_context)->eflags; \
+            /* ESP */ \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 4) = (p_context)->esp; \
+            (p_context)->esp = (u32)((u32*)(p_context) + sizeof(context_t) / 4 + 1); \
+        } \
+        \
         __asm__ __volatile__( \
                               "movl		%0, %%esp\n" \
-                              /*Prepare for iret*/ \
-                              /*SS*/ \
-                              "pushl	(108 + 4 * 4)(%%ebx)\n" \
-                              /*ESP*/ \
-                              "pushl	(108 - 5 * 4)(%0)\n" \
-                              /*EFLAGS*/ \
-                              "pushl	(108 + 5 * 4)(%0)\n" \
-                              /*CS*/ \
-                              "pushl	(108 + 6 * 4)(%0)\n" \
-                              /*EIP*/ \
-                              "pushl	(108 + 7 * 4)(%0)\n" \
-                              \
-                              /*Load context*/ \
-                              "movl		%0, %%esp\n" \
                               "frstor	(%%esp)\n" \
-                              "addl		$108, %%esp\n" \
-                              "popl		%%eax\n" \
-                              "movw		%%ax, %%es\n" \
-                              "popl		%%eax\n" \
-                              "movw		%%ax, %%ds\n" \
-                              "popl		%%eax\n" \
-                              "movw		%%ax, %%fs\n" \
-                              "popl		%%eax\n" \
-                              "movw		%%ax, %%gs\n" \
-                              "addl		$(4 * 4), %%esp\n" \
+                              "addl		%1, %%esp\n" \
+                              "addl		$32, %%esp\n" \
                               "popal\n" \
-                              \
-                              /*iret*/ \
-                              "subl		%1, %%esp\n" \
-                              "" \
-                              "" \
-                              ::"b"(p_context), \
-                              "i"(sizeof(context_t) + 5 * 4) \
-                              :"memory"); \
+                              "addl		$4, %%esp\n" \
+                              "iret\n" \
+                              ::"r"(p_context), \
+                              "i"(sizeof(fpu_env_t))); \
     }
 
 #define hal_cpu_context_save_call(dest_func)
