@@ -21,7 +21,8 @@
 
 void core_main_main()
 {
-    hal_early_print_printf("\nEntering kernel main...\n");
+    core_kconsole_init();
+    core_kconsole_print_info("Entering kernel main...\n\n");
 
     while(1);
 }

@@ -17,21 +17,7 @@
 
 #pragma once
 
-#include "../../../../../common/common.h"
-
-//Call back functions
-//Destroy item
-//void item_destroyer(void* p_item, void* p_arg)
-typedef void (*item_destroyer_t)(void*, void*);
-
-//Compare two item.If item1 > item2, the return value > 0.
-//If the two item equals, return 0.
-//If item1 < item2, the return value < 0.
-//int item_compare(void* p_item1, void* p_item2);
-typedef int (*item_compare_t)(void*, void*);
-
-#include "./map/map_defs.h"
-#include "./array/array_defs.h"
-#include "./queue/queue_defs.h"
+#include "../../../../../../common/common.h"
 #include "./list/list_defs.h"
-#include "./stack/stack_defs.h"
+
+typedef	list_node_t		*stack_t, stact_node_t, *pstack_node_t, **pstack_t;

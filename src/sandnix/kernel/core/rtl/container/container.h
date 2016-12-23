@@ -23,5 +23,6 @@
 #include "./array/array.h"
 #include "./queue/queue.h"
 #include "./list/list.h"
+#include "./stack/stack.h"
 
 #include "./container_defs.h"

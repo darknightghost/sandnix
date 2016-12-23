@@ -20,10 +20,13 @@
 
 #include "../../hal/cpu/cpu.h"
 
+#include "../kconsole/kconsole.h"
+
 #include "exception.h"
 
 void core_exception_init()
 {
+    core_kconsole_print_info("Initializaing exception module...\n");
 }
 
 void core_exception_raise(pcontext_t p_context, pexcept_obj_t except)

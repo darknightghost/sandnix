@@ -17,21 +17,17 @@
 
 #pragma once
 
-#include "../../../../../common/common.h"
+#include "../../../../../../common/common.h"
+#include "./stack_defs.h"
+#include "./list/list.h"
 
-//Call back functions
-//Destroy item
-//void item_destroyer(void* p_item, void* p_arg)
-typedef void (*item_destroyer_t)(void*, void*);
 
-//Compare two item.If item1 > item2, the return value > 0.
-//If the two item equals, return 0.
-//If item1 < item2, the return value < 0.
-//int item_compare(void* p_item1, void* p_item2);
-typedef int (*item_compare_t)(void*, void*);
+//Initialize
+#define core_rtl_stack_init(p_stack)	core_rtl_list_init(p_stack)
 
-#include "./map/map_defs.h"
-#include "./array/array_defs.h"
-#include "./queue/queue_defs.h"
-#include "./list/list_defs.h"
-#include "./stack/stack_defs.h"
+//Check if the list is empty
+#define core_rtl_stack_empty(p_stack)	core_rtl_list_empty(p_stack)
+
+//Push
+
+//Pop
