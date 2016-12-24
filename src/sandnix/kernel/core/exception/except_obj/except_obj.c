@@ -111,22 +111,36 @@ void panic(pexcept_obj_t p_this)
     list_t bt_lst;
     hal_debug_backtrace(&bt_lst, p_this->p_context, p_except_obj_heap);
 
-    pkstring_obj_t p_str_bt;
+    pkstring_obj_t p_str_bt = kstring("", p_except_obj_heap);
+
+    if(bt_lst != NULL) {
+        plist_node_t p_node = bt_lst;
+
+        do {
+            pkstring_obj_t p_new_str = kstring_fmt("%k\n%p", p_except_obj_heap,
+                                                   p_str_bt, p_node->p_item);
+            DEC_REF(p_str_bt);
+            p_str_bt = p_new_str;
+            p_node = p_node->p_next;
+        } while(p_node != bt_lst);
+    }
+
 
     //Panic
     if(p_this->comment == NULL) {
         hal_exception_panic(p_this->file->buf,
                             p_this->line,
                             p_this->reason,
-                            "",
-                            "");
+                            "Call stack:%k",
+                            p_str_bt);
 
     } else {
         hal_exception_panic(p_this->file->buf,
                             p_this->line,
                             p_this->reason,
-                            "%k",
-                            p_this->comment);
+                            "%k\nCall stact:%k",
+                            p_this->comment,
+                            p_str_bt);
     }
 
     return;

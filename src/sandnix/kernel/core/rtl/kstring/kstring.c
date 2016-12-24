@@ -68,7 +68,29 @@ pkstring_obj_t kstring(const char* str, pheap_t heap)
     return p_ret;
 }
 
-pkstring_obj_t kstring_fmt(const char* fmt, pheap_t heap, ...);
+pkstring_obj_t kstring_fmt(const char* fmt, pheap_t heap, ...)
+{
+    //Allocate buffer
+    size_t buf_size = 1024;
+    char* buf = core_mm_heap_alloc(buf_size, heap);
+
+    if(buf == NULL) {
+        return NULL;
+    }
+
+    //Format string
+    va_list ap;
+    va_start(ap, heap);
+    core_rtl_vsnprintf(buf, buf_size, fmt, ap);
+
+    //Call constructor
+    pkstring_obj_t ret = kstring(fmt, heap);
+
+    //Free buffer
+    core_mm_heap_free(buf, heap);
+
+    return ret;
+}
 
 void destructer(pkstring_obj_t p_this)
 {
