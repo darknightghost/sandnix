@@ -29,8 +29,17 @@ typedef	struct	_except_obj {
     obj_t		obj;
     kstatus_t	reason;
     pcontext_t	p_context;
+    pkstring_obj_t	file;
+    u32			line;
+    pkstring_obj_t	comment;
 
-    void	(*raise)(struct _except_obj*, pcontext_t);
+    //void	raise(pexcept_obj_t p_this, pcontext_t p_context, char* file,
+    //	u32 line, char* comment);
+    void	(*raise)(struct _except_obj*, pcontext_t, char*, u32,
+                     char*);
+
+    //void	panic(pexcept_obj_t p_this);
+    void	(*panic)(struct _except_obj*);
 } except_obj_t, *pexcept_obj_t;
 
 #include "./eperm_except_defs.h"

@@ -24,7 +24,8 @@
 #include "./except_obj.h"
 #include "../exception.h"
 
-static	void			raise(pexcept_obj_t p_this, pcontext_t p_context);
+static	void			raise(pexcept_obj_t p_this, pcontext_t p_context,
+                              char* file, u32 line, char* comment);
 static	void			destructor(pexcept_obj_t p_this);
 static	int				compare(pexcept_obj_t p_this, pexcept_obj_t p_str);
 static	pkstring_obj_t	to_string(pexcept_obj_t p_this);
@@ -65,11 +66,21 @@ pexcept_obj_t except_obj(size_t size, kstatus_t reason)
     return p_ret;
 }
 
-void raise(pexcept_obj_t p_this, pcontext_t p_context)
+void raise(pexcept_obj_t p_this, pcontext_t p_context, char* file, u32 line,
+           char* comment)
 {
     p_this->p_context = p_context;
-    //TODO:
-    UNREFERRED_PARAMETER(p_this);
+    p_this->file = kstring(file, p_except_obj_heap);
+    p_this->line = line;
+
+    if(comment == NULL) {
+        p_this->comment = NULL;
+
+    } else {
+        p_this->comment = kstring(comment, p_except_obj_heap);
+    }
+
+    //TODO:Raise exception
 }
 
 void destructor(pexcept_obj_t p_this)

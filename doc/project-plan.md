@@ -2418,6 +2418,12 @@ except_obj_t
 //异常处理结果
 except_stat_t
 
+//处理函数调用原因
+except_reason_t;
+
+//线程异常处理函数返回原因
+xcept_ret_stat_t;
+
 //线程异常处理信息
 thread_except_stat_obj_t : thread_ref_obj_t
 
@@ -2434,18 +2440,32 @@ except_hndlr_info_t
 #define EXCEPT_STATUS_CONTINUE_EXEC		0x00000000
 
 //展开操作, 即返回到压入该异常处, 不支持全局处理函数
-#define	EXCEPT_STATUS_UNWIND			0x00000002
+#define	EXCEPT_STATUS_UNWIND			0x00000001
 
 //当前处理函数无法处理
-#define EXCEPT_STATUS_CONTINUE_SEARCH	0x00000001
+#define EXCEPT_STATUS_CONTINUE_SEARCH	0x00000002
 
+//系统崩溃
+#define EXCEPT_STATUS_PANIC				0x00000003
+
+//发生异常
 #define	EXCEPT_REASON_EXCEPT	0x00000000
+
+//展开操作
 #define	EXCEPT_REASON_UNWIND	0x00000001
+
+//处理函数注册
+#define	EXCEPT_RET_PUSH			0x00000000
+//发生了展开操作
+#define	EXCEPT_RET_UNWIND		0x00000001
 
 #define OPERATE_SUCCESS
 
 //初始化模块
 void core_exception_init();
+
+//启用线程异常处理
+void core_exception_thread_hndlr_enable();
 
 //设置errno
 void core_exception_set_errno(kstatus_t status);
@@ -2459,13 +2479,13 @@ void core_exception_raise_obj(
 	except_obj_t except);
 
 //注册全局错误处理函数
-void core_exception_add_hndlr(except_hndlr_t hndlr);
+plist_node_t core_exception_add_hndlr(except_hndlr_t hndlr);
 
 //取消注册全局错误处理函数
-void core_exception_remove_hndlr(except_hndlr_t hndlr);
+void core_exception_remove_hndlr(plist_node_t pos);
 
 //压入错误处理函数
-void core_exception_push_hndlr(except_hndlr_t hndlr);
+xcept_ret_stat_t core_exception_push_hndlr(except_hndlr_t hndlr);
 
 //弹出最顶层错误处理函数
 except_hndlr_t core_exception_pop_hndlr();

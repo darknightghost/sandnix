@@ -172,13 +172,15 @@ static const		char*	errno_tbl[ERRNO_MAX + 1] = {
     //Debugging
     [EASSERT] = "Assert",
     [EBREAKPOINT] = "Breakpoint",
-    [EKNOTSUP] = "Kernel function not supperted",
 
     //Kernel arguments
     [EKERNELARG] = "Kernel argument error",
 
     //Memory
     [EHPCORRUPTION] = "Heap corruption",
+
+    //Others
+    [EIRETVAL] = "Illegal return value"
 };
 
 static	char	panic_buf[PANIC_BUF_SIZE];
@@ -235,7 +237,6 @@ void hal_exception_panic(char* file, u32 line, u32 error_code, char* fmt, ...)
     core_rtl_vsnprintf(panic_buf, PANIC_BUF_SIZE, fmt, ap);
     hal_early_print_puts(panic_buf);
 
-    //Stack trace
     die();
 
     //Never return

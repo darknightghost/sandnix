@@ -54,7 +54,7 @@ void int_except_dispatcher(u32 int_num, pcontext_t p_context, u32 err_code)
         hndlr(int_num, p_context, err_code);
     }
 
-    PANIC(EKNOTSUP, "Unhandled exception.\n"
+    PANIC(ENOTSUP, "Unhandled exception.\n"
           "Interrupt number = 0x%.4X. Error code = %p.\n"
           "Context:\n"
           "EAX = %p.\n"

@@ -157,7 +157,7 @@
 #define	EHWPOISON		133		//Memory page has hardware Error
 #define	ENOTSUP			134		//Not supported
 
-#define	ERRNO_USR_MAX	255		//Maxium user errno
+#define	ERRNO_COMMON_MAX	255		//Maxium user errno
 
 //Sandnix kernel exceptions
 #define	ERRNO_KERNEL_BEGIN	256
@@ -165,7 +165,6 @@
 //Debugging
 #define	EASSERT				0x100	//Assert
 #define	EBREAKPOINT			0x101	//Breakpoint
-#define EKNOTSUP			0x102	//Kernel function not supperted
 
 //Kernel arguments
 #define	EKERNELARG			0x110	//Kernel argument error
@@ -173,5 +172,7 @@
 //Memory
 #define	EHPCORRUPTION		0x120	//Heap corruption
 
+//Others
+#define	EIRETVAL			0x3E0	//Illegal return value
 
-#define	ERRNO_MAX			1023	//Maxium kernel errno
+#define	ERRNO_MAX			0x3FF	//Maxium kernel errno
