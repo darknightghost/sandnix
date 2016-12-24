@@ -16,17 +16,10 @@
 */
 
 #pragma once
-#include "../../../../common/common.h"
+#include "../../../../../common/common.h"
 
-#include "./debug_defs.h"
+#include "../../../core/rtl/rtl_defs.h"
+#include "../../cpu/cpu_defs.h"
 
-#include "./backtrace/backtrace.h"
-
-#define DEBUG	hal_debug_is_on_dbg()
-
-//Initialize the module
-void hal_debug_init();
-
-//Check if debuging is enabled
-bool hal_debug_is_on_dbg();
-
+//Get backtrace
+void hal_debug_backtrace(plist_t p_ret, pcontext_t p_context, pheap_t heap);

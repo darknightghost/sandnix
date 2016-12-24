@@ -68,6 +68,8 @@ pkstring_obj_t kstring(const char* str, pheap_t heap)
     return p_ret;
 }
 
+pkstring_obj_t kstring_fmt(const char* fmt, pheap_t heap, ...);
+
 void destructer(pkstring_obj_t p_this)
 {
     core_mm_heap_free(p_this->buf, p_this->obj.heap);

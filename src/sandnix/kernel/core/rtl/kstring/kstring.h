@@ -24,3 +24,4 @@
 
 //Constructor
 pkstring_obj_t kstring(const char* str, pheap_t heap);
+pkstring_obj_t kstring_fmt(const char* fmt, pheap_t heap, ...);

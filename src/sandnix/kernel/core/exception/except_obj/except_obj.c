@@ -21,6 +21,8 @@
 #include "../../mm/mm.h"
 #include "../../pm/pm.h"
 
+#include "../../../hal/debug/debug.h"
+
 #include "./except_obj.h"
 #include "../exception.h"
 
@@ -29,6 +31,7 @@ static	void			raise(pexcept_obj_t p_this, pcontext_t p_context,
 static	void			destructor(pexcept_obj_t p_this);
 static	int				compare(pexcept_obj_t p_this, pexcept_obj_t p_str);
 static	pkstring_obj_t	to_string(pexcept_obj_t p_this);
+static	void			panic(pexcept_obj_t p_this);
 
 pheap_t	p_except_obj_heap = NULL;
 
@@ -62,6 +65,7 @@ pexcept_obj_t except_obj(size_t size, kstatus_t reason)
     //Initialize exception object
     p_ret->reason = reason;
     p_ret->raise = raise;
+    p_ret->panic = panic;
 
     return p_ret;
 }
@@ -80,7 +84,7 @@ void raise(pexcept_obj_t p_this, pcontext_t p_context, char* file, u32 line,
         p_this->comment = kstring(comment, p_except_obj_heap);
     }
 
-    //TODO:Raise exception
+    core_exception_raise(p_this);
 }
 
 void destructor(pexcept_obj_t p_this)
@@ -99,4 +103,31 @@ pkstring_obj_t to_string(pexcept_obj_t p_this)
     pkstring_obj_t p_ret = kstring(hal_exception_get_err_name(p_this->reason),
                                    p_except_obj_heap);
     return p_ret;
+}
+
+void panic(pexcept_obj_t p_this)
+{
+    //Get call stack
+    list_t bt_lst;
+    hal_debug_backtrace(&bt_lst, p_this->p_context, p_except_obj_heap);
+
+    pkstring_obj_t p_str_bt;
+
+    //Panic
+    if(p_this->comment == NULL) {
+        hal_exception_panic(p_this->file->buf,
+                            p_this->line,
+                            p_this->reason,
+                            "",
+                            "");
+
+    } else {
+        hal_exception_panic(p_this->file->buf,
+                            p_this->line,
+                            p_this->reason,
+                            "%k",
+                            p_this->comment);
+    }
+
+    return;
 }
