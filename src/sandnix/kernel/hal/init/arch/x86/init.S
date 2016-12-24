@@ -105,11 +105,12 @@ _ADDR_1:
 	lgdt	(%ebx)
 
 	//Load segments
-	movw	$SELECTOR_U_DATA, %ax
+	movw	$SELECTOR_K_DATA, %ax
 	movw	%ax, %ds
 	movw	%ax, %es
 	movw	%ax, %fs
 	movw	%ax, %gs
+	movw	%ax, %ss
 
 	//Start paging
 	call	start_paging

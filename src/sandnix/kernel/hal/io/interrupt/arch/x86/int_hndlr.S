@@ -45,7 +45,9 @@
 			//Kernel
 			addl	$4,	%ebx
 			movl	%ebx, 24(%esp)		//esp in context
-			pushl	$SELECTOR_K_DATA
+
+			//ss
+			pushl	%ss
 		jmp		2f
 		//else
 		1:
@@ -53,13 +55,17 @@
 			addl	$4,	%ebx
 			movl	(%ebx), %eax		
 			movl	%eax, 24(%esp)		//esp in context
-			pushl	$SELECTOR_U_DATA
+
+			//ss
+			addl	$4,	%ebx
+			pushl	(%ebx)
 			
 		2:
-		pushl	$SELECTOR_U_DATA
-		pushl	$SELECTOR_U_DATA
-		pushl	$SELECTOR_U_DATA
-		pushl	$SELECTOR_U_DATA
+		pushl	%gs
+		pushl	%fs
+		pushl	%ds
+		pushl	%es
+
 		//Save fpu status
 		subl	$108, %esp
 		fnsave	(%esp)
@@ -70,7 +76,7 @@
 .macro		PUSH_CONTEXT_WITH_ERRCODE
 		pushal
 		mov		%esp, %ebx
-
+		
 		//Get error code
 		addl	$32, %ebx
 		movl	(%ebx), %edx
@@ -95,7 +101,9 @@
 			//Kernel
 			addl	$4,	%ebx
 			movl	%ebx, 24(%esp)		//esp in context
-			pushl	$SELECTOR_K_DATA
+
+			//ss
+			pushl	%ss
 		jmp		2f
 		//else
 		1:
@@ -103,12 +111,15 @@
 			addl	$4,	%ebx
 			movl	(%ebx), %eax		
 			movl	%eax, 24(%esp)		//esp in context
-			pushl	$SELECTOR_U_DATA
+
+			//ss
+			addl	$4,	%ebx
+			pushl	(%ebx)
 		2:
-		pushl	$SELECTOR_U_DATA
-		pushl	$SELECTOR_U_DATA
-		pushl	$SELECTOR_U_DATA
-		pushl	$SELECTOR_U_DATA
+		pushl	%gs
+		pushl	%fs
+		pushl	%ds
+		pushl	%es
 
 		//Save fpu status
 		subl	$108, %esp

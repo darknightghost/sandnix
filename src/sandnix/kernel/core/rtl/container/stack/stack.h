@@ -19,15 +19,39 @@
 
 #include "../../../../../../common/common.h"
 #include "./stack_defs.h"
-#include "./list/list.h"
+#include "../list/list.h"
 
 
 //Initialize
-#define core_rtl_stack_init(p_stack)	core_rtl_list_init(p_stack)
+#define core_rtl_stack_init(p_stack)	core_rtl_list_init((p_stack))
 
 //Check if the list is empty
-#define core_rtl_stack_empty(p_stack)	core_rtl_list_empty(p_stack)
+#define core_rtl_stack_empty(p_stack)	core_rtl_list_empty((p_stack))
 
 //Push
+#define	core_rtl_stack_push(p_stack, p_item, heap) ( \
+        core_rtl_list_insert_after( \
+                                    NULL, \
+                                    (p_stack), \
+                                    (p_item), \
+                                    (heap)))
 
 //Pop
+#define	core_rtl_stack_pop(p_stack, heap) (*(p_stack) == NULL \
+        ? NULL \
+        : core_rtl_list_remove((*(p_stack))->p_prev, \
+                               (p_stack), \
+                               (heap)))
+
+//Top
+#define	core_rtl_stack_top(p_stack) (*(p_stack) == NULL \
+                                     ? NULL \
+                                     : (*(p_stack))->p_prev->p_item)
+
+//Destroy
+#define	core_rtl_stack_destroy(p_stack, heap, destorier, arg) ( \
+        core_rtl_list_destroy( \
+                               (p_stack), \
+                               (heap), \
+                               (destroier), \
+                               (arg)))

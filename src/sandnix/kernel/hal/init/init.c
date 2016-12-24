@@ -59,9 +59,8 @@ void kinit(void* p_bootloader_info)
     hal_io_int_enable();
     hal_io_irq_enable_all();
 
-    RAISE(NULL);
-
     //Call kernel main
+    hal_early_print_printf("\nCalling kernel main...\n\n");
     core_main_main();
 
     //Never return, in fact.

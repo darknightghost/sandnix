@@ -18,6 +18,6 @@
 #pragma once
 
 #include "../../../../../../common/common.h"
-#include "./list/list_defs.h"
+#include "../list/list_defs.h"
 
 typedef	list_node_t		*stack_t, stact_node_t, *pstack_node_t, **pstack_t;

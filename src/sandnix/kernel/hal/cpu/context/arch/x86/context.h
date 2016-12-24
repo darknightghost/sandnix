@@ -20,25 +20,46 @@
 #include "../../../../../../../common/common.h"
 #include "./context_defs.h"
 #include "../../../../init/init_defs.h"
+#include "../../../../../core/rtl/rtl.h"
 
+/*
+	ATTENTION!!! Before using this function, make sure there is enough free
+	spaces to prepare for iret.
+*/
 
 #define	hal_cpu_context_load(p_context)	{ \
-        if((p_context)->ss == SELECTOR_K_DATA) { \
-            /* Return to kernel memory*/ \
+        if((p_context)->cs == SELECTOR_K_CODE) { \
+            if((address_t)p_context + sizeof(context_t) + 3 * 4 \
+               != (address_t)(p_context->esp)) { \
+                /* Copy context */ \
+                pcontext_t p_new_base = (pcontext_t)((address_t)(p_context->esp) \
+                                                     - 3 * 4 - sizeof(context_t)); \
+                core_rtl_memmove(p_new_base, \
+                                 p_context, \
+                                 sizeof(context_t)); \
+                p_context = p_new_base; \
+            } \
+            \
+            /* Return to kernel memory */ \
             /* EIP */ \
-            *((u32*)(p_context) + sizeof(context_t) / 4 + 1) = (p_context)->eip; \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 0) = (p_context)->eip; \
+            /* CS */ \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 1) = (p_context)->cs; \
             /* EFLAGS */ \
-            *((u32*)(p_context) + sizeof(context_t) / 4 + 3) = (p_context)->eflags; \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 2) = (p_context)->eflags; \
             \
         } else { \
             /* Return to user memory */ \
             /* EIP */ \
-            *((u32*)(p_context) + sizeof(context_t) / 4 + 1) = (p_context)->eip; \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 0) = (p_context)->eip; \
+            /* CS */ \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 1) = (p_context)->cs; \
             /* EFLAGS */ \
-            *((u32*)(p_context) + sizeof(context_t) / 4 + 3) = (p_context)->eflags; \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 2) = (p_context)->eflags; \
             /* ESP */ \
-            *((u32*)(p_context) + sizeof(context_t) / 4 + 4) = (p_context)->esp; \
-            (p_context)->esp = (u32)((u32*)(p_context) + sizeof(context_t) / 4 + 1); \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 3) = (p_context)->esp; \
+            /* SS */ \
+            *((u32*)(p_context) + sizeof(context_t) / 4 + 4) = (p_context)->ss; \
         } \
         \
         __asm__ __volatile__( \
@@ -47,7 +68,6 @@
                               "addl		%1, %%esp\n" \
                               "addl		$32, %%esp\n" \
                               "popal\n" \
-                              "addl		$4, %%esp\n" \
                               "iret\n" \
                               ::"r"(p_context), \
                               "i"(sizeof(fpu_env_t))); \
