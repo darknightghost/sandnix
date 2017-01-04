@@ -15,22 +15,23 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "../../../hal/exception/exception.h"
 
-#define CORE_EXCEPTION_EXPORT
+#include "../../rtl/rtl.h"
+#include "../../mm/mm.h"
+#include "../../pm/pm.h"
 
-#include "../../../../../common/common.h"
-
-#include "../../rtl/rtl_defs.h"
-
-#include "../../../hal/cpu/cpu_defs.h"
-
-#include "./except_obj_defs.h"
-
-pexcept_obj_t	except_obj(size_t size, kstatus_t reason);
-
-extern	pheap_t	p_except_obj_heap;
-
-#include "./eperm_except.h"
-#include "./enoent_except.h"
 #include "./ediv_except.h"
+#include "../exception.h"
+
+pediv_except_t ediv_except()
+{
+    pediv_except_t p_ret = (pediv_except_t)except_obj(sizeof(ediv_except_t),
+                           EDIV);
+
+    if(p_ret != NULL) {
+        p_ret->except.obj.class_id = CLASS_EXCEPT(EDIV);
+    }
+
+    return p_ret;
+}

@@ -171,8 +171,19 @@
 
 //Memory
 #define	EHPCORRUPTION		0x120	//Heap corruption
+#define EPAGEREAD			0x121	//Page cannot be read
+#define EPAGEWRITE			0x122	//Page cannot be write
+#define	EPAGEEXEC			0x123	//Page cannot be executed
+
+//Math
+#define	EDIV				0x130	//Divide error
+#define EFLOAT				0x131	//No math coprosessor
+
+//Opcode
+#define	EUNDEFINED			0x140	//Undefined opcode
 
 //Others
 #define	EIRETVAL			0x3E0	//Illegal return value
+#define EUNKNOWINT			0x3E1	//Unknow interrupt
 
 #define	ERRNO_MAX			0x3FF	//Maxium kernel errno

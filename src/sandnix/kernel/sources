@@ -59,6 +59,7 @@ core/exception/exception.c
 core/exception/except_obj/except_obj.c
 core/exception/except_obj/eperm_except.c
 core/exception/except_obj/enoent_except.c
+core/exception/except_obj/ediv_except.c
 
 ##kconsole
 core/kconsole/kconsole.c

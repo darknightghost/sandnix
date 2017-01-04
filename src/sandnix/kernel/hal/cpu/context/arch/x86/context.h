@@ -28,38 +28,39 @@
 */
 
 #define	hal_cpu_context_load(p_context)	{ \
-        if((p_context)->cs == SELECTOR_K_CODE) { \
+        pcontext_t	__tmp_p_context = (p_context); \
+        if(__tmp_p_context->cs == SELECTOR_K_CODE) { \
             if((address_t)p_context + sizeof(context_t) + 3 * 4 \
-               != (address_t)(p_context->esp)) { \
+               != (address_t)(__tmp_p_context->esp)) { \
                 /* Copy context */ \
-                pcontext_t p_new_base = (pcontext_t)((address_t)(p_context->esp) \
+                pcontext_t p_new_base = (pcontext_t)((address_t)(__tmp_p_context->esp) \
                                                      - 3 * 4 - sizeof(context_t)); \
                 core_rtl_memmove(p_new_base, \
                                  p_context, \
                                  sizeof(context_t)); \
-                p_context = p_new_base; \
+                __tmp_p_context = p_new_base; \
             } \
             \
             /* Return to kernel memory */ \
             /* EIP */ \
-            *((u32*)(p_context) + sizeof(context_t) / 4 + 0) = (p_context)->eip; \
+            *((u32*)__tmp_p_context + sizeof(context_t) / 4 + 0) = __tmp_p_context->eip; \
             /* CS */ \
-            *((u32*)(p_context) + sizeof(context_t) / 4 + 1) = (p_context)->cs; \
+            *((u32*)__tmp_p_context + sizeof(context_t) / 4 + 1) = __tmp_p_context->cs; \
             /* EFLAGS */ \
-            *((u32*)(p_context) + sizeof(context_t) / 4 + 2) = (p_context)->eflags; \
+            *((u32*)__tmp_p_context + sizeof(context_t) / 4 + 2) = __tmp_p_context->eflags; \
             \
         } else { \
             /* Return to user memory */ \
             /* EIP */ \
-            *((u32*)(p_context) + sizeof(context_t) / 4 + 0) = (p_context)->eip; \
+            *((u32*)__tmp_p_context + sizeof(context_t) / 4 + 0) = __tmp_p_context->eip; \
             /* CS */ \
-            *((u32*)(p_context) + sizeof(context_t) / 4 + 1) = (p_context)->cs; \
+            *((u32*)__tmp_p_context + sizeof(context_t) / 4 + 1) = __tmp_p_context->cs; \
             /* EFLAGS */ \
-            *((u32*)(p_context) + sizeof(context_t) / 4 + 2) = (p_context)->eflags; \
+            *((u32*)__tmp_p_context + sizeof(context_t) / 4 + 2) = __tmp_p_context->eflags; \
             /* ESP */ \
-            *((u32*)(p_context) + sizeof(context_t) / 4 + 3) = (p_context)->esp; \
+            *((u32*)__tmp_p_context + sizeof(context_t) / 4 + 3) = __tmp_p_context->esp; \
             /* SS */ \
-            *((u32*)(p_context) + sizeof(context_t) / 4 + 4) = (p_context)->ss; \
+            *((u32*)__tmp_p_context + sizeof(context_t) / 4 + 4) = __tmp_p_context->ss; \
         } \
         \
         __asm__ __volatile__( \
@@ -69,7 +70,7 @@
                               "addl		$32, %%esp\n" \
                               "popal\n" \
                               "iret\n" \
-                              ::"r"(p_context), \
+                              ::"r"(__tmp_p_context), \
                               "i"(sizeof(fpu_env_t))); \
     }
 

@@ -28,6 +28,7 @@
 
 pheap_t		p_except_heap = NULL;
 
+static	bool		initialized = false;
 static	spnlck_rw_t	globl_list_lock;
 static	list_t		globl_except_hndlr_list;
 static	u8			except_heap_buf[4096];
@@ -52,6 +53,9 @@ void core_exception_init()
     //Initialize list
     core_rtl_list_init(&globl_except_hndlr_list);
     core_pm_spnlck_rw_init(&globl_list_lock);
+    initialized = true;
+
+    return;
 }
 
 void core_exception_thread_hndlr_enable()
@@ -113,6 +117,13 @@ void core_exception_remove_hndlr(plist_node_t pos)
 
 void call_globl_hndlrs(pexcept_obj_t except)
 {
+    context_t context;
+
+    if(!initialized) {
+        except->panic(except);
+        return;
+    }
+
     if(core_rtl_list_empty(&globl_except_hndlr_list)) {
         //No handler found. Panic.
         except->panic(except);
@@ -134,7 +145,9 @@ void call_globl_hndlrs(pexcept_obj_t except)
                     case EXCEPT_STATUS_CONTINUE_EXEC:
                         //Continue execution
                         core_pm_spnlck_rw_r_unlock(&globl_list_lock);
-                        hal_cpu_context_load(except->p_context);
+                        core_rtl_memcpy(&context, except->p_context, sizeof(context_t));
+                        DEC_REF(except);
+                        hal_cpu_context_load(&context);
                         break;
 
                     case EXCEPT_STATUS_CONTINUE_SEARCH:
@@ -149,9 +162,12 @@ void call_globl_hndlrs(pexcept_obj_t except)
                         break;
 
                     default:
-                        //Unknow return value, raise a new exception.
+                        //Unknow return value, panic
                         core_pm_spnlck_rw_r_unlock(&globl_list_lock);
-                        //TODO:Raise new exception
+                        PANIC(EIRETVAL,
+                              "Illegal return value 0x%.8X in exception handler %p.",
+                              status,
+                              p_info->hndlr);
                         break;
                 }
             }

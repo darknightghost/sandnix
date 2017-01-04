@@ -178,9 +178,20 @@ static const		char*	errno_tbl[ERRNO_MAX + 1] = {
 
     //Memory
     [EHPCORRUPTION] = "Heap corruption",
+    [EPAGEREAD] = "Page cannot be read",
+    [EPAGEWRITE] = "Page cannot be write",
+    [EPAGEEXEC] = "Page cannot be executed",
+
+    //Math
+    [EDIV] = "Divide error",
+    [EFLOAT] = "No math coprosessor",
+
+    //Opcode
+    [EUNDEFINED] = "Undefined opcode",
 
     //Others
-    [EIRETVAL] = "Illegal return value"
+    [EIRETVAL] = "Illegal return value",
+    [EUNKNOWINT] = "Unknow interrupt"
 };
 
 static	char	panic_buf[PANIC_BUF_SIZE];
