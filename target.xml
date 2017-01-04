@@ -21,6 +21,8 @@
             <LD>gcc</LD>
             <LDFLAGS>$(LD) $(LDFLAGS) -o $@ $^</LDFLAGS>
             <LDRULE>$(LD) $(LDFLAGS) -o $@ $^</LDRULE>
+			<AR></AR>
+			<ARRULE></ARRULE>
             <AFTER></AFTER>
         </arch>
         <arch name="arm.armv7.cortex-a9.samsung_exynos4412.itop_4412">
@@ -38,6 +40,8 @@
             <LD>arm-none-eabi-gcc</LD>
             <LDFLAGS>$(LD) $(LDFLAGS) -o $@ $^</LDFLAGS>
             <LDRULE>$(LD) $(LDFLAGS) -o $@ $^</LDRULE>
+			<AR></AR>
+			<ARRULE></ARRULE>
             <AFTER></AFTER>
         </arch>
     </archs>
