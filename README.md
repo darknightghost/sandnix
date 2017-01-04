@@ -3,9 +3,13 @@ Sandix is a simple unix-like kernel. It has not been finished. Just for learning
 Arm has not been support now, it will be supported in the future.
 #How to compile
 Use `./skconfig` to change compile options.
+
 Use `./configure` to get make file.
+
 Use `make all` to compile.
+
 Multiboot 2 header only support X86 architecture.
+
 Uboot header only support arm architecture.
 #How to install
 ##X86
