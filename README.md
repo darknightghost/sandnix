@@ -18,6 +18,7 @@ menuentry 'Sandnix 0.0.2' {
         module2 (hd0,3)/sandnix-initrd
 }
 
-```<br />
+```
+<br />
 #Something else
 <a href="./doc/project-plan.md" >Project plan</a>
