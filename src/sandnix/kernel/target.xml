@@ -21,6 +21,8 @@
             <LD>ld</LD>
             <LDFLAGS>-m elf_i386 -Ttext 0xc0101000 -e _start --no-omagic -Map $(OUTDIR)/kernel.map</LDFLAGS>
             <LDRULE>$(LD) $(LDFLAGS) -o $@ $^</LDRULE>
+			<AR>ar</AR>
+			<ARRULE>$(AR) rcs $@ $^</ARRULE>
             <AFTER>cp $(LINKED) $(OUTDIR)/$(OUTPUT)</AFTER>
         </arch>
         <arch name="arm.armv7.cortex-a9.samsung_exynos4412.itop_4412">
@@ -38,6 +40,8 @@
             <LD>arm-none-eabi-ld</LD>
             <LDFLAGS>-Ttext 0xC0000000 -e _start --no-omagic</LDFLAGS>
             <LDRULE>$(LD) $(LDFLAGS) -Map $(OUTDIR)/kernel.map -o $@ $^</LDRULE>
+			<AR>arm-none-eabi-ar</AR>
+			<ARRULE>$(AR) rcs $@ $^</ARRULE>
             <AFTER>cp $(LINKED) $(OUTDIR)/$(OUTPUT)</AFTER>
         </arch>
     </archs>

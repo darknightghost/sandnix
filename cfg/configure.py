@@ -67,8 +67,8 @@ def create_makefile(build_tree):
         for s in sources:
             basename = os.path.splitext(s)[0]
             filelist.append([os.path.abspath(s),
-                os.path.abspath("$(MIDDIR)/" + basename + ".o"),
-                os.path.abspath("$(MIDDIR)/" + basename + ".dep")])
+                os.path.abspath(cur_target.middir + os.sep + basename + ".o"),
+                os.path.abspath(cur_target.middir + os.sep+ basename + ".dep")])
 
         #Create Makefile
         print("Create Makefile...")
@@ -89,11 +89,11 @@ def create_makefile(build_tree):
         for f in filelist:
             makefile.write("\trm -f %s\n"%(f[2].strip()))
         
-        #clean
-        makefile.write("clean : \n")
+        #clear
+        makefile.write("clear : \n")
         if len(build_tree[1]) > 0:
             for s in build_tree[1]:
-                cmd = "\tcd " + os.path.dirname(s[0].path) + ";make clean\n"
+                cmd = "\tcd " + os.path.dirname(s[0].path) + ";make clear\n"
                 makefile.write(cmd)
 
         for f in filelist:
@@ -102,8 +102,8 @@ def create_makefile(build_tree):
         makefile.write("\trm -f %s\n"%(linkfile.strip()))
         makefile.write("\n")
         
-        #delete
-        makefile.write("delete : \n")
+        #clean
+        makefile.write("clean : \n")
         if len(build_tree[1]) > 0:
             for s in build_tree[1]:
                 cmd = "\tcd " + os.path.dirname(s[0].path) + ";make clean\n"
@@ -118,12 +118,24 @@ def create_makefile(build_tree):
         
         #rebuild
         makefile.write("rebuild : \n")
+        makefile.write("\tmake clean\n")
+        makefile.write("\tmake all\n")
+        makefile.write("\n")
+
+        #distclean
+        makefile.write("distclean : \n")
         if len(build_tree[1]) > 0:
             for s in build_tree[1]:
-                cmd = "\tcd " + os.path.dirname(s[0].path) + ";make clean\n"
+                cmd = "\tcd " + os.path.dirname(s[0].path) + ";make distclean\n"
                 makefile.write(cmd)
-        makefile.write("\tmake delete\n")
-        makefile.write("\tmake all\n")
+
+        for f in filelist:
+            makefile.write("\trm -f %s\n"%(f[1].strip()))
+            makefile.write("\trm -f %s\n"%(f[2].strip()))
+
+        makefile.write("\trm -f %s\n"%(linkfile.strip()))
+        makefile.write("\trm -f $(OUTDIR)/$(OUTPUT)\n")
+        makefile.write("\trm -f ./Makefile\n")
         makefile.write("\n")
         
         #target
@@ -199,28 +211,37 @@ def create_makefile(build_tree):
         makefile.write("\t$(AFTER)\n")
         makefile.write("\n")
         
-        #clean
-        makefile.write("clean :\n")
+        #clear
+        makefile.write("clear :\n")
         if len(build_tree[1]) > 0:
             for s in build_tree[1]:
-                cmd = "\tcd " + os.path.dirname(s[0].path) + ";make clean\n"
+                cmd = "\tcd " + os.path.dirname(s[0].path) + ";make clear\n"
                 makefile.write(cmd)
         makefile.write("\n")
         
-        #delete
-        makefile.write("delete :\n")
+        #clean
+        makefile.write("clean :\n")
         for s in build_tree[1]:
-                cmd = "\tcd " + os.path.dirname(s[0].path) + ";make delete\n"
+                cmd = "\tcd " + os.path.dirname(s[0].path) + ";make clean\n"
                 makefile.write(cmd)
         makefile.write("\n")
         
         #rebuild
         makefile.write("rebuild :\n")
-        for s in build_tree[1]:
-                cmd = "\tcd " + os.path.dirname(s[0].path) + ";make rebuild\n"
-                makefile.write(cmd)
+        makefile.write("\tmake clean\n")
+        makefile.write("\tmake all\n")
         makefile.write("\n")
     
+        #distclean
+        makefile.write("distclean : \n")
+        if len(build_tree[1]) > 0:
+            for s in build_tree[1]:
+                cmd = "\tcd " + os.path.dirname(s[0].path) + ";make distclean\n"
+                makefile.write(cmd)
+
+        makefile.write("\trm -f ./Makefile\n")
+        makefile.write("\n")
+
     makefile.close()
     
     #Change working directory
