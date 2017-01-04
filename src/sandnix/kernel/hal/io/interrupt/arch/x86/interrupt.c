@@ -17,6 +17,7 @@
 
 #include "../../../../../core/rtl/rtl.h"
 #include "../../../../../core/pm/pm.h"
+#include "../../../../../core/exception/exception.h"
 #include "../../../../exception/exception.h"
 #include "../../../../early_print/early_print.h"
 
@@ -54,31 +55,96 @@ void int_except_dispatcher(u32 int_num, pcontext_t p_context, u32 err_code)
         hndlr(int_num, p_context, err_code);
     }
 
-    PANIC(ENOTSUP, "Unhandled exception.\n"
-          "Interrupt number = 0x%.4X. Error code = %p.\n"
-          "Context:\n"
-          "EAX = %p.\n"
-          "EBX = %p.\n"
-          "ECX = %p.\n"
-          "EDX = %p.\n"
-          "ESI = %p.\n"
-          "EDI = %p.\n"
-          "ESP = %p.\n"
-          "EBP = %p.\n"
-          "EIP = %p.\n"
-          "EFLAGS = %p.\n"
-          "CS = 0x%.4X.\n"
-          "SS = 0x%.4X.\n"
-          "DS = 0x%.4X.\n"
-          "ES = 0x%.4X.\n"
-          "FS = 0x%.4X.\n"
-          "GS = 0x%.4X.\n",
-          int_num, err_code, p_context->eax, p_context->ebx,
-          p_context->ecx, p_context->edx, p_context->esi,
-          p_context->edi, p_context->esp, p_context->ebp,
-          p_context->eip, p_context->eflags, p_context->cs,
-          p_context->ss, p_context->ds, p_context->es,
-          p_context->fs, p_context->gs);
+    pexcept_obj_t p_except;
+
+    switch(err_code) {
+        case 0x00:
+            //DE
+            p_except = (pexcept_obj_t)ediv_except();
+            p_except->raise((pexcept_obj_t)p_except,
+                            p_context,
+                            __FILE__,
+                            __LINE__,
+                            NULL);
+            break;
+
+        case 0x01:
+            //DB
+            break;
+
+        case 0x02:
+            //NMI
+            break;
+
+        case 0x03:
+            //BP
+            break;
+
+        case 0x04:
+            //OF
+            break;
+
+        case 0x05:
+            //BR
+            break;
+
+        case 0x06:
+            //UD
+            break;
+
+        case 0x07:
+            //NM
+            break;
+
+        case 0x08:
+            //DF
+            break;
+
+        case 0x09:
+            //Reserve(Coprocessor Segment overrun)
+            break;
+
+        case 0x0A:
+            //TS
+            break;
+
+        case 0x0B:
+            //NP
+            break;
+
+        case 0x0C:
+            //SS
+            break;
+
+        case 0x0D:
+            //GP
+            break;
+
+        case 0x0E:
+            //PF
+            break;
+
+        case 0x0F:
+            //Reserved
+            break;
+
+        case 0x10:
+            //MF
+            break;
+
+        case 0x11:
+            //AC
+            break;
+
+        case 0x12:
+            //MC
+            break;
+
+        case 0x13:
+            //XM
+            break;
+    }
+
     return;
 }
 

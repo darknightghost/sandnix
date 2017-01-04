@@ -20,6 +20,7 @@
 #include "./exception_defs.h"
 #include "errno.h"
 #include "../../core/exception/exception_defs.h"
+#include "./arch/exception.h"
 
 //Initialize module
 void	hal_exception_init();
