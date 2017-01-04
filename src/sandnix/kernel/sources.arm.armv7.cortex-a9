@@ -1,0 +1,8 @@
+#hal
+##io
+hal/io/interrupt/arch/arm/armv7/cortex-a9/int_hndlr.S
+hal/io/interrupt/arch/arm/armv7/cortex-a9/interrupt.c
+hal/io/interrupt/arch/arm/armv7/cortex-a9/ivt.c
+
+##cpu
+hal/cpu/multiprocessor/cpuinfo/arch/arm/armv7/cortex-a9/cpuinfo.c

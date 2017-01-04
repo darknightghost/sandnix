@@ -1,40 +1,60 @@
-<?xml version="1.0" encoding="utf-8"?><target>
-	<build objdir="../../../obj/sandnix/kernel" output="../../../bin/sandnix/$(ARCH)/kernel">
-		<arch name="x86">
-			<!--Build options,projects's private options can override them-->			
-			<AS type="textbox">gcc</AS>			
-			<ASFLAGS type="textbox">-x assembler-with-cpp -fno-zero-initialized-in-bss -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -fno-builtin -c -D_ASM -Werror</ASFLAGS>
-			<ASRULE type="textbox">$(AS) $(ASFLAGS) -o $@ $&lt;</ASRULE>
-			<CC type="textbox">gcc</CC>	
-			<CFLAGS type="textbox">-fno-zero-initialized-in-bss -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -fno-builtin -c -O0 -Werror -mno-sse2 -mno-sse</CFLAGS>
-			<CCRULE type="textbox">$(CC) $(CFLAGS) -o $@ $&lt;</CCRULE>
-			<LD type="textbox">ld</LD>
-			<LDFLAGS type="textbox">-m elf_i386 -Ttext 0xc0101000 -e _start --no-omagic</LDFLAGS>
-			<LDRULE type="textbox">$(LD) $(LDFLAGS) -o $@ -Map $(basename $@).map $^</LDRULE>		
-			<DEP type="textbox">gcc</DEP>
-			<DEPRULE type="textbox">$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then cat $@|awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(OBJDIR)/$(ARCH)/&quot;,$$0)} NR != 1 {print $$0}' &gt; $@; fi</DEPRULE>
-			<AFTER type="textbox"></AFTER>			
-		</arch>
-		<arch name="amd64">
-			<!--Build options,projects's private options can override them-->			
-			<AS type="textbox">gcc</AS>			
-			<ASFLAGS type="textbox">-m32 -c</ASFLAGS>
-			<ASRULE type="textbox"></ASRULE>
-			<CC type="textbox">gcc</CC>	
-			<CFLAGS type="textbox">-m32 -c</CFLAGS>
-			<CCRULE type="textbox"></CCRULE>
-			<LD type="textbox">ld</LD>
-			<LDFLAGS type="textbox"></LDFLAGS>
-			<LDRULE type="textbox">$(LD) $(LDFLAGS) -o $@ -Map $() $^</LDRULE>		
-			<DEP type="textbox">gcc</DEP>
-			<DEPRULE type="textbox">$(DEP) -MM -o $@ $&lt;;if [ $$? == 0 ];then cat $@|awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(OBJDIR)/$(ARCH)/&quot;,$$0)} NR != 1 {print $$0}' &gt; $@; fi</DEPRULE>
-			<AFTER type="textbox"></AFTER>			
-		</arch>
-	</build>
-	<menu>
-		<options text="Kernel hacking...">
-			<option macro="-g" text="Link with symbols" type="checkbox" value="true"/>
-			<option macro="-DDEBUG" text="Enable debugging" type="checkbox" value="true"/>
-		</options>
-	</menu>
+<?xml version="1.0" encoding="utf-8"?><target name="kernel" type="build">
+    <output name="kernel"/>
+    <outdir path="../../../bin/$(ARCH)/sandnix"/>
+    <middir path="../../../obj/$(ARCH)/sandnix"/>
+    <introduction>
+        Sandnix kernel
+    </introduction>
+    <archs>
+        <arch name="x86">
+            <PREV></PREV>
+            <ARCHDEF>-DX86</ARCHDEF>
+            <DEP>gcc</DEP>
+            <DEPFLAGS>$(ARCHDEF)</DEPFLAGS>
+            <DEPRULE>$(DEP) $(DEPFLAGS) -MM $&lt; | awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(dir $@)&quot;,$$0)} NR != 1 {print $$0}' | cat &gt; $@</DEPRULE>
+            <CC>gcc</CC>
+            <CFLAGS>-Wall $(ARCHDEF) -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -Werror -mno-sse2 -mno-sse</CFLAGS>
+            <CCRULE>$(CC) $(CFLAGS) -c -o $@ $&lt;</CCRULE>
+            <AS>gcc</AS>
+            <ASFLAGS>$(ARCHDEF) -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -Werror</ASFLAGS>
+            <ASRULE>$(AS) -c $(ASFLAGS) -o $@ $&lt;</ASRULE>
+            <LD>ld</LD>
+            <LDFLAGS>-m elf_i386 -Ttext 0xc0101000 -e _start --no-omagic -Map $(OUTDIR)/kernel.map</LDFLAGS>
+            <LDRULE>$(LD) $(LDFLAGS) -o $@ $^</LDRULE>
+            <AFTER>cp $(LINKED) $(OUTDIR)/$(OUTPUT)</AFTER>
+        </arch>
+        <arch name="arm.armv7.cortex-a9.samsung_exynos4412.itop_4412">
+            <PREV></PREV>
+            <ARCHDEF>-DARM -DARM_ARMV7 -DARM_ARMV7_CORTEXA9 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412 -DARM_ARMV7_CORTEXA9_SAMSUNG_EXYNOS4412_ITOP_4412</ARCHDEF>
+            <DEP>arm-none-eabi-gcc</DEP>
+            <DEPFLAGS>$(ARCHDEF)</DEPFLAGS>
+            <DEPRULE>$(DEP) $(DEPFLAGS) -MM $&lt; | awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(dir $@)&quot;,$$0)} NR != 1 {print $$0}' | cat &gt; $@</DEPRULE>
+            <CC>arm-none-eabi-gcc</CC>
+            <CFLAGS>-Wall $(ARCHDEF) -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -Werror -march=armv7-a -mlong-calls</CFLAGS>
+            <CCRULE>$(CC) -c $(CFLAGS) -o $@ $&lt;</CCRULE>
+            <AS>arm-none-eabi-gcc</AS>
+            <ASFLAGS>$(ARCHDEF) -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -Werror -march=armv7-a</ASFLAGS>
+            <ASRULE>$(AS) -c $(ASFLAGS) -o $@ $&lt;</ASRULE>
+            <LD>arm-none-eabi-ld</LD>
+            <LDFLAGS>-Ttext 0xC0000000 -e _start --no-omagic</LDFLAGS>
+            <LDRULE>$(LD) $(LDFLAGS) -Map $(OUTDIR)/kernel.map -o $@ $^</LDRULE>
+            <AFTER>cp $(LINKED) $(OUTDIR)/$(OUTPUT)</AFTER>
+        </arch>
+    </archs>
+    <dependencies>
+    </dependencies>
+    <sub-targets>
+    </sub-targets>
+    <options>
+        <option name="kernel hacking." type="menu">
+            <option enable="true" name="Build with symbols." target="CFLAGS|ASFLAGS" type="checkbox" value="-g"/>
+        </option>
+        <option name="BootLoader." type="menu">
+            <option name="Bootloader" selected="0" target="CFLAGS|ASFLAGS|DEPFLAGS" type="list">
+            <item name="multiboot2" value="-DBOOTLOADER=MULTIBOOT2"/>
+            <item name="uboot" value="-DBOOTLOADER=UBOOT"/>
+            </option>
+        </option>
+        <option macro="-DMAX_CPU_NUM" name="Maxium number of cpu" target="CFLAGS|ASFLAGS|DEPFLAGS" type="input" value="64"/>
+    </options>
 </target>

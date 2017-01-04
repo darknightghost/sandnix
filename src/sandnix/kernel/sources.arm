@@ -1,0 +1,7 @@
+#hal
+##init
+hal/init/arch/arm/init.S
+hal/init/arch/arm/header.c
+
+##rtl
+hal/rtl/math/arch/arm/math.S

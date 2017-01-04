@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><target name="headers" type="virtual">
+    <output name=""/>
+    <outdir path=""/>
+    <middir path=""/>
+    <introduction>
+      Kernel header
+    </introduction>
+    <archs>
+    </archs>
+    <dependencies>
+        <dep path="../kernel/target.xml"/>
+    </dependencies>
+    <sub-targets>
+        <target enable="true" path="./multiboot2/target.xml"/>
+        <target enable="false" path="./uboot/target.xml"/>
+    </sub-targets>
+    <options>
+    </options>
+</target>

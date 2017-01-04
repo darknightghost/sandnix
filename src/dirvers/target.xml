@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><target name="drivers" type="virtual">
+    <output name=""/>
+    <outdir path=""/>
+    <middir path=""/>
+    <introduction>
+      Drivers.
+    </introduction>
+    <archs>
+    </archs>
+    <dependencies>
+    </dependencies>
+    <sub-targets>
+    </sub-targets>
+    <options>
+    </options>
+</target>

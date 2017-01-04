@@ -1,28 +1,30 @@
-#init
-init/arch/x86/init.S
-init/arch/x86/start_paging.c
-init/boot_info/arch/x86/boot_info.c
+#hal
+##init
+hal/init/arch/x86/init.S
+hal/init/arch/x86/header.c
 
-#io
-io/arch/x86/ports.c
-io/arch/x86/interrupt/interrupt.c
-io/arch/x86/interrupt/int_entry.S
+##early_print
+hal/early_print/arch/x86/early_print.c
 
-#io/arch/x86/interrupt/apic/apic.c
-io/arch/x86/interrupt/8259a/8259a.c
+##mmu
+hal/mmu/paging/arch/x86/paging.c
+hal/mmu/phymem/arch/x86/phymem.c
 
-#debug
-debug/arch/x86/early_print.c
+##io
+hal/io/io/arch/x86/io.c
+hal/io/interrupt/arch/x86/idt.c
+hal/io/interrupt/arch/x86/tss.c
+hal/io/interrupt/arch/x86/apic.c
+hal/io/interrupt/arch/x86/interrupt.c
+hal/io/interrupt/arch/x86/int_hndlr.S
 
-#mm
-mm/arch/x86/phymem/phymem.c
-mm/arch/x86/paging/paging.c
+##cpu
+hal/cpu/multiprocessor/cpuinfo/arch/x86/cpuinfo.c
+hal/cpu/multiprocessor/performance/arch/x86/performance.c
 
-#pm
-pm/spinlock/arch/x86/spinlock.c
+##exception
+hal/exception/arch/x86/exception.c
+hal/exception/arch/x86/raise.S
 
-#rtl
-rtl/math/arch/x86/math.c
-
-#exceptions
-exceptions/arch/x86/panic.c
+##debug
+hal/debug/backtrace/arch/x86/backtrace.c

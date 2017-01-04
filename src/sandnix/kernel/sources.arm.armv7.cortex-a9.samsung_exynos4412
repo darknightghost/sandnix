@@ -1,0 +1,12 @@
+#hal
+##init
+hal/init/arch/arm/armv7/cortex-a9/samsung_exynos4412/init.c
+
+##early_print
+hal/early_print/arch/arm/armv7/cortex-a9/samsung_exynos4412/early_print.c
+
+##mmu
+hal/mmu/phymem/arch/arm/armv7/cortex-a9/samsung_exynos4412/phymem.c
+
+##io
+hal/io/interrupt/arch/arm/armv7/cortex-a9/samsung_exynos4412/gic.c
