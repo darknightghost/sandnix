@@ -114,6 +114,12 @@ void int_except_dispatcher(u32 int_num, pcontext_t p_context, u32 err_code)
 
         case 0x06:
             //UD
+            p_except = (pexcept_obj_t)eundefined_except();
+            p_except->raise((pexcept_obj_t)p_except,
+                            p_context,
+                            __FILE__,
+                            __LINE__,
+                            NULL);
             break;
 
         case 0x07:
