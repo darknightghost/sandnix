@@ -17,22 +17,9 @@
 
 #pragma once
 
-#define CORE_EXCEPTION_EXPORT
-
 #include "../../../../../common/common.h"
-
-#include "../../rtl/rtl_defs.h"
-
-#include "../../../hal/cpu/cpu_defs.h"
-
 #include "./except_obj_defs.h"
 
-pexcept_obj_t	except_obj(size_t size, kstatus_t reason);
-
-extern	pheap_t	p_except_obj_heap;
-
-#include "./eperm_except.h"
-#include "./enoent_except.h"
-#include "./ediv_except.h"
-#include "./eunknowint_except.h"
-#include "./ebreakpoint_except.h"
+typedef struct _ebreakpoint_except {
+    except_obj_t	except;
+} ebreakpoint_except_t, *pebreakpoint_except_t;

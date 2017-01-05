@@ -25,21 +25,29 @@
 
 #include "../../../hal/cpu/cpu_defs.h"
 
+struct	_except_obj;
+//void	raise(pexcept_obj_t p_this, pcontext_t p_context, char* file,
+//	u32 line, char* comment);
+typedef	void	(*except_raise_t)(struct _except_obj*, pcontext_t, char*, u32,
+                                  char*);
+
+//void	panic(pexcept_obj_t p_this);
+typedef void	(*except_panic_t)(struct _except_obj*);
+
 typedef	struct	_except_obj {
-    obj_t		obj;
-    kstatus_t	reason;
-    pcontext_t	p_context;
+    obj_t			obj;
+    kstatus_t		reason;
+    pcontext_t		p_context;
     pkstring_obj_t	file;
-    u32			line;
+    u32				line;
     pkstring_obj_t	comment;
 
     //void	raise(pexcept_obj_t p_this, pcontext_t p_context, char* file,
     //	u32 line, char* comment);
-    void	(*raise)(struct _except_obj*, pcontext_t, char*, u32,
-                     char*);
+    except_raise_t	raise;
 
     //void	panic(pexcept_obj_t p_this);
-    void	(*panic)(struct _except_obj*);
+    except_panic_t	panic;
 } except_obj_t, *pexcept_obj_t;
 
 #include "./eperm_except_defs.h"
