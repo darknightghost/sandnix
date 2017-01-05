@@ -48,7 +48,7 @@ def create_makefile(build_tree):
     print("Configuring target : \"%s\"...\npath = \"%s\""%(cur_target.name, cur_target.path))
     
     #Change working directory
-    old_dir = os.path.abspath(".")
+    old_dir = os.path.relpath(".")
     cur_dir = os.path.dirname(cur_target.path)
     os.chdir(cur_dir)
     
@@ -66,9 +66,9 @@ def create_makefile(build_tree):
         linkfile = "$(MIDDIR)/$(NAME).$(ARCH).linked"
         for s in sources:
             basename = os.path.splitext(s)[0]
-            filelist.append([os.path.abspath(s),
-                os.path.abspath(cur_target.middir + os.sep + basename + ".o"),
-                os.path.abspath(cur_target.middir + os.sep+ basename + ".dep")])
+            filelist.append([os.path.relpath(s),
+                os.path.relpath(cur_target.middir + os.sep + basename + ".o"),
+                os.path.relpath(cur_target.middir + os.sep+ basename + ".dep")])
 
         #Create Makefile
         print("Create Makefile...")
