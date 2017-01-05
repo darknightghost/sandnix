@@ -53,3 +53,6 @@ typedef	struct	_except_obj {
 #include "./eperm_except_defs.h"
 #include "./enoent_except_defs.h"
 #include "./ediv_except_defs.h"
+#include "./eunknowint_except_defs.h"
+#include "./ebreakpoint_except_defs.h"
+#include "./eundefined_except_defs.h"
