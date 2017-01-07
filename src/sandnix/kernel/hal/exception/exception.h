@@ -44,9 +44,10 @@ void	hal_exception_panic(
 const char*	hal_exception_get_err_name(kstatus_t error_code);
 
 //Raise ecxeption
-void hal_exception_raise(pexcept_obj_t p_exception);
+void hal_exception_raise(pexcept_obj_t p_exception, char* file, u32 line,
+                         char* comment);
 
-#define	RAISE(e) hal_exception_raise(e)
+#define	RAISE(e, comment) hal_exception_raise((e),__FILE__,__LINE__,(comment))
 
 #define	PANIC(error_code, fmt, ...)	hal_exception_panic(__FILE__, __LINE__, \
         (error_code), (fmt), ##__VA_ARGS__);

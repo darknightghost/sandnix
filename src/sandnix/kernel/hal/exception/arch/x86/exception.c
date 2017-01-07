@@ -35,3 +35,9 @@ void die()
 
     return;
 }
+void do_raise(pexcept_obj_t p_exception, char* file, u32 line, char* comment,
+              pcontext_t p_context)
+{
+    p_exception->raise(p_exception, p_context, file, line, comment);
+    return;
+}

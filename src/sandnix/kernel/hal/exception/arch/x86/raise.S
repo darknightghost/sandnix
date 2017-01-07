@@ -20,66 +20,72 @@
 .section	.text
 .global		hal_exception_raise
 
-//void hal_exception_raise(pexcept_obj_t p_exception);
+//void hal_exception_raise(pexcept_obj_t p_exception, char* file, u32 line,
+//                         char* comment);
 hal_exception_raise:
-		//(%esp) : eip
-		//4(%esp) : p_exception
-		//Prepare for iret
-		//%eax : old esp
-		movl	%esp, %eax
+	//Save context
+	pop		%eax
 
-		//%edx : eip
-		popl	%edx
-		pushfl
-		pushl	$SELECTOR_K_CODE
-		pushl	%edx
+	//ecx = esp
+	movl	%esp, %ecx
+	pushal
 
-		pushl	$0
+	//eip
+	push	%eax
 
-		//Push context
-		pushal
+	//cs
+	movl	%cs, %eax
+	push	%eax
 
-		addl	$4, %eax
-		movl	%eax, 16(%esp)	
+	//eflags
+	pushfl
 
-		//%ebx : p_exception
-		movl	(%eax), %ebx
+	//ss
+	movl	%ss, %eax
+	push	%eax
 
-		pushl	%edx
+	//gs
+	movl	%gs, %eax
+	push	%eax
 
-		xorl	%eax, %eax
+	//fs
+	movl	%fs, %eax
+	push	%eax
 
-		//cs
-		movl	$SELECTOR_K_CODE, %eax
-		pushl	%eax
+	//ds
+	movl	%ds, %eax
+	push	%eax
 
-		//eflags
-		pushfl
+	//es
+	movl	%es, %eax
+	push	%eax
 
-		//ss
-		movw	%ss, %ax
-		pushl	%eax
+	//fpu environment
+	subl	$108, %esp
+	fnsave	(%esp)
 
-		//gs
-		movw	%gs, %ax
-		pushl	%eax
+	//Call do_raise
+	//p_context
+	pushl	%esp
 
-		//fs
-		movw	%fs, %ax
-		pushl	%eax
+	//ebx = old esp
+	movl	%ecx, %ebx
 
-		//ds
-		movw	%ds, %ax
-		pushl	%eax
+	//ebx = comment
+	addl	$12, %ebx
+	pushl	(%ebx)
 
-		//es
-		movw	%es, %ax
-		pushl	%eax
+	//line
+	subl	$4, %ebx
+	pushl	(%ebx)
 
-		subl	$108, %esp
-		fnsave	(%esp)
+	//file
+	subl	$4, %ebx
+	pushl	(%ebx)
 
-		movl	%esp, %eax
-		pushl	%ebx
-		pushl	%eax
-		call	core_exception_raise
+	//p_exception
+	subl	$4, %ebx
+	pushl	(%ebx)
+
+	call	do_raise
+
