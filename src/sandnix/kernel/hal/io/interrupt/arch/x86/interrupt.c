@@ -55,123 +55,279 @@ void int_except_dispatcher(u32 int_num, pcontext_t p_context, u32 err_code)
         hndlr(int_num, p_context, err_code);
     }
 
-    pexcept_obj_t p_except;
-
     switch(err_code) {
         case 0x00:
             //DE
-            p_except = (pexcept_obj_t)ediv_except();
-            p_except->raise((pexcept_obj_t)p_except,
-                            p_context,
-                            __FILE__,
-                            __LINE__,
-                            NULL);
+            {
+                pediv_except_t p_except = ediv_except();
+                p_except->except.raise((pexcept_obj_t)p_except,
+                                       p_context,
+                                       __FILE__,
+                                       __LINE__,
+                                       NULL);
+            }
             break;
 
         case 0x01:
             //DB
-            p_except = (pexcept_obj_t)eunknowint_except(0x01, err_code);
-            p_except->raise((pexcept_obj_t)p_except,
-                            p_context,
-                            __FILE__,
-                            __LINE__,
-                            NULL);
+            {
+                peunknowint_except_t p_except = eunknowint_except(0x01,
+                                                err_code);
+                p_except->except.raise((pexcept_obj_t)p_except,
+                                       p_context,
+                                       __FILE__,
+                                       __LINE__,
+                                       NULL);
+            }
             break;
 
         case 0x02:
             //NMI
-            p_except = (pexcept_obj_t)eunknowint_except(0x02, err_code);
-            p_except->raise((pexcept_obj_t)p_except,
-                            p_context,
-                            __FILE__,
-                            __LINE__,
-                            NULL);
+            {
+                peunknowint_except_t p_except = eunknowint_except(0x02,
+                                                err_code);
+                p_except->except.raise((pexcept_obj_t)p_except,
+                                       p_context,
+                                       __FILE__,
+                                       __LINE__,
+                                       NULL);
+            }
             break;
 
         case 0x03:
             //BP
+            {
+                pebreakpoint_except_t p_except = ebreakpoint_except();
+                p_except->except.raise((pexcept_obj_t)p_except,
+                                       p_context,
+                                       __FILE__,
+                                       __LINE__,
+                                       NULL);
+            }
             break;
 
         case 0x04:
             //OF
-            p_except = (pexcept_obj_t)eunknowint_except(0x02, err_code);
-            p_except->raise((pexcept_obj_t)p_except,
-                            p_context,
-                            __FILE__,
-                            __LINE__,
-                            NULL);
+            {
+                peunknowint_except_t p_except = eunknowint_except(0x02,
+                                                err_code);
+                p_except->except.raise((pexcept_obj_t)p_except,
+                                       p_context,
+                                       __FILE__,
+                                       __LINE__,
+                                       NULL);
+            }
             break;
 
         case 0x05:
             //BR
-            p_except = (pexcept_obj_t)ebreakpoint_except();
-            p_except->raise((pexcept_obj_t)p_except,
-                            p_context,
-                            __FILE__,
-                            __LINE__,
-                            NULL);
+            {
+                peunknowint_except_t p_except = eunknowint_except(0x05,
+                                                err_code);
+                p_except->except.raise((pexcept_obj_t)p_except,
+                                       p_context,
+                                       __FILE__,
+                                       __LINE__,
+                                       NULL);
+            }
             break;
 
         case 0x06:
             //UD
-            p_except = (pexcept_obj_t)eundefined_except();
-            p_except->raise((pexcept_obj_t)p_except,
-                            p_context,
-                            __FILE__,
-                            __LINE__,
-                            NULL);
+            {
+                peundefined_except_t p_except = eundefined_except();
+                p_except->except.raise((pexcept_obj_t)p_except,
+                                       p_context,
+                                       __FILE__,
+                                       __LINE__,
+                                       NULL);
+            }
             break;
 
         case 0x07:
             //NM
+            {
+                pefloat_except_t p_except = efloat_except();
+                p_except->except.raise((pexcept_obj_t)p_except,
+                                       p_context,
+                                       __FILE__,
+                                       __LINE__,
+                                       NULL);
+            }
             break;
 
         case 0x08:
             //DF
+            {
+                peunknowint_except_t p_except = eunknowint_except(0x08,
+                                                err_code);
+                p_except->except.raise((pexcept_obj_t)p_except,
+                                       p_context,
+                                       __FILE__,
+                                       __LINE__,
+                                       NULL);
+            }
             break;
 
         case 0x09:
             //Reserve(Coprocessor Segment overrun)
+            {
+                pefloat_except_t p_except = efloat_except();
+                p_except->except.raise((pexcept_obj_t)p_except,
+                                       p_context,
+                                       __FILE__,
+                                       __LINE__,
+                                       NULL);
+            }
             break;
 
         case 0x0A:
             //TS
+            {
+                peunknowint_except_t p_except = eunknowint_except(0x0A,
+                                                err_code);
+                p_except->except.raise((pexcept_obj_t)p_except,
+                                       p_context,
+                                       __FILE__,
+                                       __LINE__,
+                                       NULL);
+            }
             break;
 
         case 0x0B:
             //NP
+            {
+                peunknowint_except_t p_except = eunknowint_except(0x0B,
+                                                err_code);
+                p_except->except.raise((pexcept_obj_t)p_except,
+                                       p_context,
+                                       __FILE__,
+                                       __LINE__,
+                                       NULL);
+            }
             break;
 
         case 0x0C:
             //SS
+            {
+                peunknowint_except_t p_except = eunknowint_except(0x0C,
+                                                err_code);
+                p_except->except.raise((pexcept_obj_t)p_except,
+                                       p_context,
+                                       __FILE__,
+                                       __LINE__,
+                                       NULL);
+            }
             break;
 
         case 0x0D:
             //GP
+            {
+                peprivilege_except_t p_except = eprivilege_except();
+                p_except->except.raise((pexcept_obj_t)p_except,
+                                       p_context,
+                                       __FILE__,
+                                       __LINE__,
+                                       NULL);
+            }
             break;
 
         case 0x0E:
             //PF
+            {
+                //Get address
+                address_t cr2;
+                __asm__ __volatile__(
+                    "movl	%%cr2, %0\n"
+                    :"=r"(cr2)
+                    ::);
+
+                //Get reason
+                ppf_errcode_t p_errcode = (ppf_errcode_t)(err_code);
+
+                if(p_errcode->bits.w_r) {
+                    //Write fault
+                    pepagewrite_except_t p_except = epagewrite_except(cr2);
+                    p_except->except.raise((pexcept_obj_t)p_except,
+                                           p_context,
+                                           __FILE__,
+                                           __LINE__,
+                                           NULL);
+
+                } else {
+                    //Read fault
+                    pepageread_except_t p_except = epageread_except(cr2);
+                    p_except->except.raise((pexcept_obj_t)p_except,
+                                           p_context,
+                                           __FILE__,
+                                           __LINE__,
+                                           NULL);
+                }
+            }
             break;
 
         case 0x0F:
             //Reserved
+            {
+                peunknowint_except_t p_except = eunknowint_except(0x0F,
+                                                err_code);
+                p_except->except.raise((pexcept_obj_t)p_except,
+                                       p_context,
+                                       __FILE__,
+                                       __LINE__,
+                                       NULL);
+            }
             break;
 
         case 0x10:
             //MF
+            {
+                pefloat_except_t p_except = efloat_except();
+                p_except->except.raise((pexcept_obj_t)p_except,
+                                       p_context,
+                                       __FILE__,
+                                       __LINE__,
+                                       NULL);
+            }
             break;
 
         case 0x11:
             //AC
+            {
+                peunknowint_except_t p_except = eunknowint_except(0x11,
+                                                err_code);
+                p_except->except.raise((pexcept_obj_t)p_except,
+                                       p_context,
+                                       __FILE__,
+                                       __LINE__,
+                                       NULL);
+            }
             break;
 
         case 0x12:
             //MC
+            {
+                peunknowint_except_t p_except = eunknowint_except(0x12,
+                                                err_code);
+                p_except->except.raise((pexcept_obj_t)p_except,
+                                       p_context,
+                                       __FILE__,
+                                       __LINE__,
+                                       NULL);
+            }
             break;
 
         case 0x13:
             //XM
+            {
+                peunknowint_except_t p_except = eunknowint_except(0x13,
+                                                err_code);
+                p_except->except.raise((pexcept_obj_t)p_except,
+                                       p_context,
+                                       __FILE__,
+                                       __LINE__,
+                                       NULL);
+            }
             break;
     }
 

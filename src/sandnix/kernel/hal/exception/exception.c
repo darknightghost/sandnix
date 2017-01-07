@@ -184,10 +184,13 @@ static const		char*	errno_tbl[ERRNO_MAX + 1] = {
 
     //Math
     [EDIV] = "Divide error",
-    [EFLOAT] = "No math coprosessor",
+    [EFLOAT] = "Math coprosessor error",
 
     //Opcode
     [EUNDEFINED] = "Undefined opcode",
+
+    //Privilege
+    [EPRIVILEGE] = "Privilege error",
 
     //Others
     [EIRETVAL] = "Illegal return value",

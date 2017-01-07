@@ -177,10 +177,13 @@
 
 //Math
 #define	EDIV				0x130	//Divide error
-#define EFLOAT				0x131	//No math coprosessor
+#define EFLOAT				0x131	//Math coprosessor error
 
 //Opcode
 #define	EUNDEFINED			0x140	//Undefined opcode
+
+//Privilege
+#define	EPRIVILEGE			0x150	//Privilege error
 
 //Others
 #define	EIRETVAL			0x3E0	//Illegal return value
