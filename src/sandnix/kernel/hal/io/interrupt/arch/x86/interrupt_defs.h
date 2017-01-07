@@ -33,3 +33,14 @@
 #define	IRQ_MAX			IRQ(23)
 #define	INT_CLOCK		IRQ(2)
 #define	REQUIRE_EOI_END	IRQ_MAX
+
+typedef	union	_pf_errcode {
+    u32		value;
+    struct {
+        u32		p: 1;
+        u32		w_r: 1;
+        u32		u_s: 1;
+        u32		rsvd: 1;
+        u32		i_d: 1;
+    } __attribute__((packed)) bits;
+} __attribute__((packed)) pf_errcodet, *ppf_errcode_t;

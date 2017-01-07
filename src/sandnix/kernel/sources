@@ -63,6 +63,11 @@ core/exception/except_obj/ediv_except.c
 core/exception/except_obj/eunknowint_except.c
 core/exception/except_obj/ebreakpoint_except.c
 core/exception/except_obj/eundefined_except.c
+core/exception/except_obj/efloat_except.c
+core/exception/except_obj/eprivilege_except.c
+core/exception/except_obj/epageread_except.c
+core/exception/except_obj/epagewrite_except.c
+core/exception/except_obj/epageexec_except.c
 
 ##kconsole
 core/kconsole/kconsole.c

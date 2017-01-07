@@ -16,7 +16,7 @@
             <CFLAGS>-Wall $(ARCHDEF) -Werror-implicit-function-declaration -Wunused-parameter -std=gnu99 -m32 -nostdlib -Werror -mno-sse2 -mno-sse</CFLAGS>
             <CCRULE>$(CC) $(CFLAGS) -c -o $@ $&lt;</CCRULE>
             <AS>gcc</AS>
-            <ASFLAGS>$(ARCHDEF) -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -m32 -nostdlib -Werror</ASFLAGS>
+            <ASFLAGS>$(ARCHDEF) -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=gnu99 -m32 -nostdlib -Werror</ASFLAGS>
             <ASRULE>$(AS) -c $(ASFLAGS) -o $@ $&lt;</ASRULE>
             <LD>ld</LD>
             <LDFLAGS>-m elf_i386 -Ttext 0xc0101000 -e _start --no-omagic -Map $(OUTDIR)/kernel.map</LDFLAGS>
