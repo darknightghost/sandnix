@@ -28,7 +28,7 @@ peprivilege_except_t eprivilege_except()
 {
     peprivilege_except_t p_ret = (peprivilege_except_t)except_obj(
                                      sizeof(eprivilege_except_t),
-                                     EDIV);
+                                     EPRIVILEGE);
 
     if(p_ret != NULL) {
         p_ret->except.obj.class_id = CLASS_EXCEPT(EPRIVILEGE);

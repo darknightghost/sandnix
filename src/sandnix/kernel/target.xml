@@ -21,8 +21,8 @@
             <LD>ld</LD>
             <LDFLAGS>-m elf_i386 -Ttext 0xc0101000 -e _start --no-omagic -Map $(OUTDIR)/kernel.map</LDFLAGS>
             <LDRULE>$(LD) $(LDFLAGS) -o $@ $^</LDRULE>
-			<AR>ar</AR>
-			<ARRULE>$(AR) rcs $@ $^</ARRULE>
+            <AR>ar</AR>
+            <ARRULE>$(AR) rcs $@ $^</ARRULE>
             <AFTER>cp $(LINKED) $(OUTDIR)/$(OUTPUT)</AFTER>
         </arch>
         <arch name="arm.armv7.cortex-a9.samsung_exynos4412.itop_4412">
@@ -50,7 +50,12 @@
     <sub-targets>
     </sub-targets>
     <options>
-        <option name="kernel hacking." type="menu">
+        <option name="Build options." type="menu">
+            <option name="Compile optimization" selected="0" target="CFLAGS|ASFLAGS" type="list">
+                <item name="0" value="-O0"/>
+                <item name="1" value="-O1"/>
+                <item name="2" value="-O2"/>
+            </option>
             <option enable="true" name="Build with symbols." target="CFLAGS|ASFLAGS" type="checkbox" value="-g"/>
         </option>
         <option name="BootLoader." type="menu">

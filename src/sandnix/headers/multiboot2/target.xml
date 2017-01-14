@@ -27,6 +27,7 @@
         </arch>
     </archs>
     <dependencies>
+        <dep depstage="AFTER" path="../../kernel/target.xml"/>
     </dependencies>
     <sub-targets>
     </sub-targets>

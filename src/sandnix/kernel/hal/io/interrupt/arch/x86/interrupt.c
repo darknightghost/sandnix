@@ -55,7 +55,7 @@ void int_except_dispatcher(u32 int_num, pcontext_t p_context, u32 err_code)
         hndlr(int_num, p_context, err_code);
     }
 
-    switch(err_code) {
+    switch(int_num) {
         case 0x00:
             //DE
             {
@@ -243,7 +243,7 @@ void int_except_dispatcher(u32 int_num, pcontext_t p_context, u32 err_code)
                     ::);
 
                 //Get reason
-                ppf_errcode_t p_errcode = (ppf_errcode_t)(err_code);
+                ppf_errcode_t p_errcode = (ppf_errcode_t)(&err_code);
 
                 if(p_errcode->bits.w_r) {
                     //Write fault

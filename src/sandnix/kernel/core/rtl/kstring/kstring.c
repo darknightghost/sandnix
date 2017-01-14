@@ -84,7 +84,7 @@ pkstring_obj_t kstring_fmt(const char* fmt, pheap_t heap, ...)
     core_rtl_vsnprintf(buf, buf_size, fmt, ap);
 
     //Call constructor
-    pkstring_obj_t ret = kstring(fmt, heap);
+    pkstring_obj_t ret = kstring(buf, heap);
 
     //Free buffer
     core_mm_heap_free(buf, heap);

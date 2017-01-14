@@ -35,13 +35,18 @@ class target:
     RESERVE = 1
     CONFLICT = 3
     target_dict = {}
-    def __init__(self, path, actived_arch = None):
+    DEP_PREV = 0
+    DEP_LINK = 1
+    DEP_AFTER = 2
+    def __init__(self, path, actived_arch = None, parent = None, enabled = True):
         self.path = os.path.abspath(path)
         old_path = os.path.abspath(".")
         os.chdir(os.path.dirname(self.path))
         self.file = open(self.path, "r+")
         self.dom = xml.dom.minidom.parse(self.file)
+        self.parent = parent
         self.root = self.dom.documentElement
+        self.enabled = enabled
         if actived_arch == None:
             self.is_root = True
         else:
@@ -72,7 +77,7 @@ class target:
 
         ret = ret + "\n%12s:"%("Dependencies")
         for d in self.dependencies:
-            ret = ret + "\n%12s = \"%s\""%("path", d)
+            ret = ret + "\n%12s = \"%s\""%("path", d[0])
 
         ret = ret + "\n%12s:"%("Options")
         for o in self.options:
@@ -195,6 +200,7 @@ class target:
                 self.actived_arch = actived_arch
         
         #Dependencies
+        #[(dep stage)]
         self.dependencies = []
         try:
             dep_node = get_child_tags_by_name(self.root, "dependencies")[0]
@@ -202,10 +208,28 @@ class target:
             raise MissingTag(self.path, "dependencies")
         for dep in get_child_tags_by_name(dep_node, "dep"):
             try:
+                dep_stage = 0
+                dep_stage_str = dep.getAttribute("depstage").encode('utf-8').decode()
+                if dep_stage_str == "PREV":
+                    dep_stage = target.DEP_PREV
+                    
+                elif dep_stage_str == "LINK":
+                    dep_stage = target.DEP_LINK
+                    
+                elif dep_stage_str == "AFTER":
+                    dep_stage = target.DEP_AFTER
+                    
+                else:
+                    raise ValueError("Unkown deptype \"%s\"."%(dep_stage_str))
+                    
+            except IndexError:
+                raise MissingAttribute(path, "dep", "depstage")
+                
+            try:
                 new_dep = os.path.abspath(os.path.abspath(dep.getAttribute("path").encode('utf-8').decode()))
                 if not os.path.exists(new_dep):
                     raise FileNotFoundError(new_dep)
-                self.dependencies.append(new_dep)
+                self.dependencies.append((new_dep, dep_stage))
             except IndexError:
                 raise MissingAttribute(path, "dep", "path")
 
@@ -217,9 +241,10 @@ class target:
         except IndexError:
             raise MissingTag(self.path, "sub-targets")
         for subtarget in get_child_tags_by_name(subtarget_node, "target"):
+            sub_target_enabled = subtarget.getAttribute("enable").encode('utf-8').decode().lower() == "true"
             self.sub_targets.append([subtarget,
-                target(subtarget.getAttribute("path"), self.actived_arch),
-                subtarget.getAttribute("enable").encode('utf-8').decode().lower() == "true", None])
+                target(subtarget.getAttribute("path"), self.actived_arch, parent = self, enabled = sub_target_enabled),
+                sub_target_enabled, None])
 
         #Options
         self.options = []
@@ -252,7 +277,7 @@ class target:
         #Dependencies
         dep_str = "\nRequired targets:"
         for d in self.dependencies:
-            dep_str = dep_str + "\n    " + target.target_dict[d].name
+            dep_str = dep_str + "\n    " + target.target_dict[d[0]].name
             self.menu.append(["lable", dep_str, None])
         
         self.menu.append(["lable", "", None])
@@ -331,8 +356,10 @@ class target:
                 opt.close_menu()
             
         #sub targets
+        #[node, target, enabled, checkbox]
         for t in self.sub_targets:
             t[2] = t[3][2]
+            t[1].enabled = t[2]
             t[3] = None
             t[1].close_menu()
         
@@ -347,7 +374,24 @@ class target:
         #Options
         for opt in self.options:
             build_dict = opt.configure(build_dict)
+        
+        #[(dep stage)]
+        prev_deps = "PREVDEPS = "
+        link_deps = "LINKDEPS = "
+        after_deps = "AFTERDEPS = "
+        for d in self.dependencies:
+            dep_target = target.target_dict[d[0]]
+            p = os.path.relpath(os.path.dirname(d[0]) + os.sep + dep_target.outdir + os.sep + dep_target.output,
+                                os.path.dirname(self.path))
+            if d[1] == target.DEP_PREV:
+                prev_deps += "\\\n\t" + p
             
+            elif d[1] == target.DEP_LINK:
+                link_deps += "\\\n\t" + p
+            
+            elif d[1] == target.DEP_AFTER:
+                after_deps += "\\\n\t" + p
+                
         ret = ["NAME = " + self.name,
                "ARCH = " + self.arch_name,
                "OUTPUT = " + self.output,
@@ -356,6 +400,10 @@ class target:
         
         for k in arch.tag_list:
             ret.append(k + " = " + build_dict[k])
+            
+        ret.append(prev_deps)
+        ret.append(link_deps)
+        ret.append(after_deps)
         
         return ret
 
@@ -379,7 +427,7 @@ class target:
         ret = []
 
         for p in self.dependencies:
-            ret.append(target.target_dict[p])
+            ret.append(target.target_dict[p[0]])
             
         for t in sub_targets:
             ret = ret + t.get_dependencies()
@@ -389,6 +437,9 @@ class target:
                 ret.remove(d)
         
         return ret
+    
+    def get_dep_stage(self, path):
+        return target.target_dict[os.path.abspath(path)][1]
     
     def check_order(t1, t2):
         t1_deps = t1.get_dependencies()
