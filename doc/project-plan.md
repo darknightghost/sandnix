@@ -193,7 +193,8 @@ target.xml文件结构如下:
     </archs>
     <dependencies>
         <!--依赖的target的列表,填当前target目录的-->
-        <dep path="sub target path" />
+        <!--可选n依赖阶段 : PREV, LINK, AFTER-->
+        <dep path="sub target path" depstage="AFTER"/>
     </dependencies>
     <sub-targets>
         <!--子target列表-->

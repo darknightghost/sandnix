@@ -18,11 +18,19 @@
 #include "main.h"
 #include "../../hal/early_print/early_print.h"
 #include "../kconsole/kconsole.h"
+#include "../exception/exception.h"
 
 void core_main_main()
 {
     core_kconsole_init();
     core_kconsole_print_info("Entering kernel main...\n\n");
+
+    core_kconsole_print_info("Initializing exception handling framework...\n");
+    core_exception_init();
+
+    //Test
+    char *p = (char*)0xFFFFFFFF;
+    *p = 'a';
 
     while(1);
 }

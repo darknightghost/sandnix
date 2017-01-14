@@ -31,12 +31,13 @@ def configure(root_target):
 
     #Get build tree
     print("\nScaning targets...")
-    missing_deps = root_target.get_dependencies()
-    if len(missing_deps) != 0:
-        raise MissingDepecncency(missing_deps)
-    ret = get_build_tree(root_target)
-    
+    deps = root_target.get_dependencies()
+    for t in deps:
+        if not t.enabled:
+            raise MissingDepecncency([t])
+
     #Sort build tree
+    ret = get_build_tree(root_target)
     print("\nComputing build order...")
     sort_build_tree(ret)
 
@@ -86,9 +87,7 @@ def create_makefile(build_tree):
         
         #all
         makefile.write("all : target\n\n")
-        for f in filelist:
-            makefile.write("\trm -f %s\n"%(f[2].strip()))
-        
+
         #clear
         makefile.write("clear : \n")
         if len(build_tree[1]) > 0:
@@ -139,14 +138,13 @@ def create_makefile(build_tree):
         makefile.write("\n")
         
         #target
-        if len(build_tree[1]) > 0:
-            makefile.write("target : subtarget\n")
-        else:
-            makefile.write("target :\n")
+        makefile.write("target : $(PREVDEPS)\n")
         makefile.write("\tmkdir -p $(OUTDIR)\n")
         makefile.write("\t$(PREV)\n")
-        makefile.write("\tmake $(LINKED)\n")
-        makefile.write("\t$(AFTER)\n")
+        makefile.write("\tmake $(OUTDIR)/$(OUTPUT)\n")
+        for f in filelist:
+            makefile.write("\trm -f %s\n"%(f[2].strip()))
+            
         makefile.write("\n")
         
         #subtarget
@@ -156,6 +154,14 @@ def create_makefile(build_tree):
                 cmd = "\tcd " + os.path.dirname(s[0].path) + ";make clean\n"
                 makefile.write(cmd)
             makefile.write("\n")
+            
+        #output
+        if len(build_tree[1]) > 0:
+            makefile.write("$(OUTDIR)/$(OUTPUT) : subtarget $(LINKED) $(AFTERDEPS)\n")
+        else:
+            makefile.write("$(OUTDIR)/$(OUTPUT) : $(LINKED) $(AFTERDEPS)\n")
+        makefile.write("\t$(AFTER)\n")
+        makefile.write("\n")
 
         #link
         link_deps = ""
@@ -165,7 +171,7 @@ def create_makefile(build_tree):
             else:
                 link_deps = link_deps + " \\\n\t" + f[1]
         link_deps = link_deps.strip()
-        makefile.write("$(LINKED) : %s\n"%(link_deps))
+        makefile.write("$(LINKED) : %s $(LINKDEPS)\n"%(link_deps))
         makefile.write("\t$(LDRULE)\n")
         makefile.write("\n")
 

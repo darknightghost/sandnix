@@ -27,7 +27,7 @@
 pefloat_except_t efloat_except()
 {
     pefloat_except_t p_ret = (pefloat_except_t)except_obj(sizeof(efloat_except_t),
-                             EDIV);
+                             EFLOAT);
 
     if(p_ret != NULL) {
         p_ret->except.obj.class_id = CLASS_EXCEPT(EFLOAT);

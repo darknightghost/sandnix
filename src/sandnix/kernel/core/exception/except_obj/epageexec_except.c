@@ -31,7 +31,7 @@ pepageexec_except_t epageexec_except(address_t fault_addr)
 {
     pepageexec_except_t p_ret = (pepageexec_except_t)except_obj(
                                     sizeof(epageexec_except_t),
-                                    EDIV);
+                                    EPAGEEXEC);
 
     if(p_ret != NULL) {
         p_ret->except.obj.class_id = CLASS_EXCEPT(EPAGEEXEC);

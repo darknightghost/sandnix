@@ -8,7 +8,6 @@
     <archs>
     </archs>
     <dependencies>
-        <dep path="../kernel/target.xml"/>
     </dependencies>
     <sub-targets>
         <target enable="true" path="./multiboot2/target.xml"/>
