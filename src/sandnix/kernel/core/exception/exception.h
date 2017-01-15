@@ -47,7 +47,8 @@ void core_exception_remove_hndlr(plist_node_t pos);
 
 //Push exception hndlr of current thread
 //except_ret_stat_t core_exception_push_hndlr(pexcept_hndlr_info_t p_hndlr_info);
-#define core_exception_push_hndlr(p_hndlr_info);
+#define core_exception_push_hndlr(p_hndlr_info)	\
+    hal_exception_hndlr_push_caller((p_hndlr_info))
 
 //Pop exception hndlr of current thread
 pexcept_hndlr_info_t core_exception_pop_hndlr();
