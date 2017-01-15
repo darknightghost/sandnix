@@ -15,18 +15,18 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
-
 #include "../../../../common/common.h"
 
 #include "./thread_except_stat_obj.h"
 #include "../pm/pm.h"
+#include "../mm/mm.h"
+#include "./exception.h"
 
 static	void			destructor(pthread_except_stat_obj_t p_this);
 static	int				compare(pthread_except_stat_obj_t p_this,
                                 pthread_except_stat_obj_t p_1);
-static	pkstring_obj_t				to_string(pthread_ref_obj_t p_this);
-static	pthread_except_stat_obj_t	on_fork(pthread_ref_obj_t p_this,
+static	pkstring_obj_t				to_string(pthread_except_stat_obj_t p_this);
+static	pthread_except_stat_obj_t	on_fork(pthread_except_stat_obj_t p_this,
         u32 thread_id);
 
 extern	pheap_t		p_except_heap;
@@ -34,14 +34,15 @@ extern	pheap_t		p_except_heap;
 pthread_except_stat_obj_t thread_except_stat_obj(u32 thread_id)
 {
     //Create object
-    pthread_except_stat_obj_t p_ret = thread_ref_obj(thread_id,
-                                      CLASS_THRAD_EXPECT_STAT,
-                                      (thread_obj_fork_t)on_fork,
-                                      (destructor_t)destructor,
-                                      (compare_obj_t)compare,
-                                      (to_string_t)to_string,
-                                      p_except_heap,
-                                      sizeof(thread_except_stat_obj_t));
+    pthread_except_stat_obj_t p_ret = (pthread_except_stat_obj_t)thread_ref_obj(
+                                          thread_id,
+                                          CLASS_THRAD_EXPECT_STAT,
+                                          (thread_obj_fork_t)on_fork,
+                                          (destructor_t)destructor,
+                                          (compare_obj_t)compare,
+                                          (to_string_t)to_string,
+                                          p_except_heap,
+                                          sizeof(thread_except_stat_obj_t));
 
     if(p_ret != NULL) {
         p_ret->errno = 0;
@@ -57,7 +58,7 @@ void destructor(pthread_except_stat_obj_t p_this)
     //Unwind all handlers
     while(!core_rtl_stack_empty(&(p_this->hndlr_stack))) {
         pexcept_hndlr_info_t p_info = (pexcept_hndlr_info_t)core_rtl_stack_pop(
-                                          &(p_this->hndlr_stack));
+                                          &(p_this->hndlr_stack), p_except_heap);
         p_info->hndlr(EXCEPT_REASON_UNWIND, NULL);
     }
 
@@ -85,6 +86,6 @@ pkstring_obj_t to_string(pthread_except_stat_obj_t p_this)
 
 pthread_except_stat_obj_t on_fork(pthread_except_stat_obj_t p_this, u32 thread_id)
 {
-    UNREFERRED_PARAMETER(thread_id);
+    UNREFERRED_PARAMETER(p_this);
     return thread_except_stat_obj(thread_id);
 }

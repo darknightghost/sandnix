@@ -30,9 +30,6 @@ void core_exception_init();
 
 pthread_except_stat_obj_t	core_exception_get_0();
 
-//Enable thread exception handlers
-void core_exception_thread_hndlr_enable();
-
 //Set errno
 void core_exception_set_errno(kstatus_t status);
 
@@ -49,7 +46,8 @@ plist_node_t core_exception_add_hndlr(kstatus_t reason, except_hndlr_t hndlr);
 void core_exception_remove_hndlr(plist_node_t pos);
 
 //Push exception hndlr of current thread
-except_ret_stat_t core_exception_push_hndlr(kstatus_t reason, except_hndlr_t hndlr);
+//except_ret_stat_t core_exception_push_hndlr(pexcept_hndlr_info_t p_hndlr_info);
+#define core_exception_push_hndlr(p_hndlr_info);
 
 //Pop exception hndlr of current thread
-except_hndlr_t core_exception_pop_hndlr();
+pexcept_hndlr_info_t core_exception_pop_hndlr();
