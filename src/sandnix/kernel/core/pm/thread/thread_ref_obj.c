@@ -21,8 +21,8 @@
 #include "thread_ref_obj.h"
 
 pthread_ref_obj_t thread_ref_obj(u32 thread_id,
-                                 void (*on_thread_exit)(pthread_ref_obj_t),
                                  u32 class_id,
+                                 thread_obj_fork_t on_fork,
                                  destructor_t destructor,
                                  compare_obj_t compare_func,
                                  to_string_t to_string_func,
@@ -42,7 +42,7 @@ pthread_ref_obj_t thread_ref_obj(u32 thread_id,
 
     //Initialize member functions
     p_ret->thread_id = thread_id;
-    p_ret->on_thread_exit = on_thread_exit;
+    p_ret->fork = on_fork;
 
     return p_ret;
 }

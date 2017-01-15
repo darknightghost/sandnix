@@ -35,6 +35,8 @@ static	u8			except_heap_buf[4096];
 static	bool		thrd_except_hndlr_enabled = false;
 
 static	void		call_globl_hndlrs(pexcept_obj_t except);
+static	spnlck_rw_t	except_info_tbl_lck;
+static	array_t		except_info_tbl;
 
 void core_exception_init()
 {
@@ -52,10 +54,23 @@ void core_exception_init()
 
     //Initialize list
     core_rtl_list_init(&globl_except_hndlr_list);
+    core_rtl_array_init(&except_info_tbl, MAX_PROCESS_NUM, p_except_heap);
     core_pm_spnlck_rw_init(&globl_list_lock);
+    core_pm_spnlck_rw_init(&except_info_tbl_lck);
     initialized = true;
 
+    //Create except infomation struct for thread 0
     return;
+}
+
+pthread_except_stat_obj_t core_exception_get_0()
+{
+    core_pm_spnlck_rw_r_lock(&except_info_tbl_lck);
+    pthread_except_stat_obj_t p_ret = (pthread_except_stat_obj_t)core_rtl_array_get(
+                                          &except_info_tbl, 0);
+    core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
+
+    return p_ret;
 }
 
 void core_exception_thread_hndlr_enable()
