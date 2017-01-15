@@ -25,6 +25,7 @@ hal/cpu/multiprocessor/performance/arch/x86/performance.c
 ##exception
 hal/exception/arch/x86/exception.c
 hal/exception/arch/x86/raise.S
+hal/exception/arch/x86/call_push_hndlr.S
 
 ##debug
 hal/debug/backtrace/arch/x86/backtrace.c
