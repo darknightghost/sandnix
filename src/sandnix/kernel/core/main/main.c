@@ -28,9 +28,6 @@ void core_main_main()
     core_kconsole_print_info("Initializing exception handling framework...\n");
     core_exception_init();
 
-    //Test
-    char *p = (char*)0xFFFFFFFF;
-    *p = 'a';
 
     while(1);
 }

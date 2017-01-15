@@ -24,6 +24,7 @@
 
 typedef	struct	_thread_except_stat_obj {
     thread_ref_obj_t	parent;
+    spnlck_rw_t			lock;
     kstatus_t			errno;			//errno
     stack_t				hndlr_stack;	//Exception handlers
 } thread_except_stat_obj_t, *pthread_except_stat_obj_t;

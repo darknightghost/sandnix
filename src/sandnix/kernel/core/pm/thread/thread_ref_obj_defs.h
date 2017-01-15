@@ -21,11 +21,12 @@
 
 #include "../../rtl/rtl_defs.h"
 
+struct	_thread_ref_obj;
+typedef	struct _thread_ref_obj*		(*thread_obj_fork_t)(struct _thread_ref_obj*, u32);
 
 typedef struct	_thread_ref_obj {
     obj_t		obj;
     u32			thread_id;		//Which thread the object belongs to
 
-    //Called when the thread exit
-    void	(*on_thread_exit)(struct _thread_ref_obj*);
+    thread_obj_fork_t	fork;	//Create a copy of object
 } thread_ref_obj_t, *pthread_ref_obj_t;

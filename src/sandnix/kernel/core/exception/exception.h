@@ -23,9 +23,12 @@
 #include "except_obj/except_obj.h"
 
 #include "./exception_defs.h"
+#include "../../hal/exception/exception.h"
 
 //Initialize module
 void core_exception_init();
+
+pthread_except_stat_obj_t	core_exception_get_0();
 
 //Enable thread exception handlers
 void core_exception_thread_hndlr_enable();
