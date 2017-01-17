@@ -283,6 +283,7 @@ void call_thread_hndlrs(pexcept_obj_t except)
                 }
             }
 
+            p_node = p_node->p_prev;
         } while(p_node != p_stack->p_prev);
 
         core_pm_spnlck_rw_r_unlock(&(p_thread_stat->lock));
@@ -343,6 +344,7 @@ void call_globl_hndlrs(pexcept_obj_t except)
                 }
             }
 
+            p_node = p_node->p_prev;
         } while(p_node != globl_except_hndlr_list->p_prev);
 
         //No handler found. Panic.

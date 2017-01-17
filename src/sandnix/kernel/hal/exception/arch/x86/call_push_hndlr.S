@@ -19,7 +19,7 @@
 #include "../../../../core/exception/exception_defs.h"
 
 .section	.text
-.global		hal_exception_raise
+.global		hal_exception_hndlr_push_caller
 
 //bool hal_exception_hndlr_push_caller(pexcept_hndlr_info_t p_hndlr_info);
 hal_exception_hndlr_push_caller:
@@ -45,19 +45,19 @@ hal_exception_hndlr_push_caller:
 
 	//ss
 	movl	%ss, %eax
-	push	%eax
+	pushl	%eax
 
 	//gs
 	movl	%gs, %eax
-	push	%eax
+	pushl	%eax
 
 	//fs
 	movl	%fs, %eax
-	push	%eax
+	pushl	%eax
 
 	//ds
 	movl	%ds, %eax
-	push	%eax
+	pushl	%eax
 
 	//es
 	movl	%es, %eax
@@ -68,11 +68,12 @@ hal_exception_hndlr_push_caller:
 	fnsave	(%esp)
 
 	//Call core_exception_do_push_hndlr
+	pushl	%ecx
 	//p_context
-	pushl	%esp
+	lea		4(%esp), %eax
+	pushl	%eax
 
 	//p_hndlr_info
-	pushl	%ecx
 	addl	$4, %ecx
 	pushl	(%ecx)
 	call	core_exception_do_push_hndlr
