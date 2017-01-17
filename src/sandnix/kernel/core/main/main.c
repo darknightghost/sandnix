@@ -20,6 +20,7 @@
 #include "../kconsole/kconsole.h"
 #include "../exception/exception.h"
 
+
 void core_main_main()
 {
     core_kconsole_init();
@@ -27,7 +28,6 @@ void core_main_main()
 
     core_kconsole_print_info("Initializing exception handling framework...\n");
     core_exception_init();
-
 
     while(1);
 }

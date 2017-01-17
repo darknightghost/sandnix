@@ -56,7 +56,7 @@
                 <item name="1" value="-O1"/>
                 <item name="2" value="-O2"/>
             </option>
-            <option enable="true" name="Build with symbols." target="CFLAGS|ASFLAGS" type="checkbox" value="-g"/>
+            <option enable="true" name="Build with symbols." target="CFLAGS|ASFLAGS" type="checkbox" value="-ggdb"/>
         </option>
         <option name="BootLoader." type="menu">
             <option name="Bootloader" selected="0" target="CFLAGS|ASFLAGS|DEPFLAGS" type="list">
