@@ -15,35 +15,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
 
 #include "../../../../../common/common.h"
-#include "./page_obj_defs.h"
-#include "../../rtl/rtl_defs.h"
 
-//Page attributes
-#define	PAGE_AVAIL				0x00000001
-
-#define PAGE_READABLE			0x00000002
-#define PAGE_WRITABLE			0x00000004
-#define PAGE_EXECUTABLE			0x00000008
-
-#define PAGE_SWAPPABLE			0x00000010
-
-#define	PAGE_DMA				0x00000020
-
-#define	PAGE_KERNEL				0x80000000
-
-//Page block
-typedef struct	_page_block {
-    address_t		base_addr;
-    size_t			size;
-    bool			allocated;
-    ppage_obj_t		p_pg_obj;
-} page_block_t, *ppage_block_t;
-
-//Page table of process
-typedef	struct	_proc_pg_tbl {
-    u32		id;
-    map_t	mem_map;
-} proc_pg_tbl_t, *proc_pg_tbl;
+#include "./page_obj.h"
+#include "../../rtl/rtl.h"
+#include "../heap/heap.h"

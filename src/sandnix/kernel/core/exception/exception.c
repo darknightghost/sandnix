@@ -89,6 +89,8 @@ void core_exception_raise(pexcept_obj_t except)
         return;
     }
 
+    core_kconsole_print_debug("Exception raised : %k\n", except);
+
     core_pm_spnlck_rw_r_lock(&except_info_tbl_lck);
     pthread_except_stat_obj_t p_ret = (pthread_except_stat_obj_t)core_rtl_array_get(
                                           &except_info_tbl,
