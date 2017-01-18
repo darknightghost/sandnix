@@ -34,16 +34,20 @@
 
 #define	PAGE_KERNEL				0x80000000
 
+#define PAGE_BLOCK_ALLOCATED	0x00000001
+#define PAGE_BLOCK_COMMITED		0x00000002
+
 //Page block
 typedef struct	_page_block {
     address_t		base_addr;
     size_t			size;
-    bool			allocated;
+    u32				status;
     ppage_obj_t		p_pg_obj;
 } page_block_t, *ppage_block_t;
 
 //Page table of process
 typedef	struct	_proc_pg_tbl {
     u32		id;
-    map_t	mem_map;
+    map_t	used_map;
+    map_t	free_map;
 } proc_pg_tbl_t, *proc_pg_tbl;

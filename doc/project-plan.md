@@ -1077,10 +1077,31 @@ void core_mm_switch_to(u32 index);
 u32 core_mm_get_current_pg_tbl_index();
 
 //fork
-u32 core_mm_pg_tbl_fork();
+u32 core_mm_pg_tbl_fork(u32 id);
 
 //释放当前页表
 void core_mm_pg_tbl_release(u32 index);
+
+//申请页
+void* core_mm_pg_alloc(void* base_addr, size_t size, u32 options);
+
+//释放页
+void core_mm_pg_free(void* base_addr);
+
+//获得页对象
+ppage_obj_t core_mm_get_pg_obj(void** p_base_addr, void* addr);
+
+//映射页
+void* core_mm_map(void* addr, ppage_obj_t p_page_obj, u32 options);
+
+//取消映射页
+void core_mm_unmap(void* addr, ppage_obj_t p_page_obj);
+
+//获得页属性
+core_mm_get_pg_attr
+
+//设置页属性
+core_mm_set_pg_attr
 
 //page_obj_t
 //创建页对象
@@ -1093,7 +1114,7 @@ void* page_obj.map(void* base_addr, bool kernel_mem);
 kstatus_t page_obj.unmap(void* addr);
 
 //heap
-//创建堆
+//创建堆/
 pheap_t core_mm_heap_create(
 	u32 attribute,
     size_t scale);
