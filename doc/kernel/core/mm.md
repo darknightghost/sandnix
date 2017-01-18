@@ -1,7 +1,4 @@
 #mm moudule
-<script>
-alert("aaaa");
-</script>
 ##Paging
 ###Summary
 This module does not operarte the page table of platform directly. It keeps an abstract page table which records the relationship among virtual address, `page_block_t`s and `page_object_t`s. `page_object_t`s use the interfaces of mmu module to operate the page table in order to separate policy from mechanism.
@@ -14,26 +11,156 @@ A block of pages. It has 3 status : free, allocated, commited. When it is commit
 3.`page_obj_t`(`src/sandnix/kernel/core/mm/paging/page_object_defs.h`)
 Object of memory. It refers to physical memory pages or swapped pages. And it operates the page table of platform
 ###Interfaces
-`void core_mm_init();`
+####`void core_mm_init();`
+#####Description
+Initialize this module.
+#####Parameters
+None.
+#####Return value
+None.
 
-`void core_mm_core_init(u32 cpuid);`
+####`void core_mm_core_init(u32 cpuid);`
+#####Description
+Initialize datastructures of a new cpu core.
+#####Parameters
+* cpuid
+ID of new cpu core.
 
-`void core_mm_core_release(u32 cpuid);`
+#####Return value
+None
 
-`void core_mm_switch_to(u32 index);`
+####`void core_mm_core_release(u32 cpuid);`
+#####Description
+Releas the datastructures of a cpu core.
+#####Parameters
+* cpuid
+ID of new cpu core.
 
-`u32 core_mm_get_current_pg_tbl_index();`
+#####Return value
+None
 
-`u32 core_mm_pg_tbl_fork(u32 id);`
+####`void core_mm_switch_to(u32 index);`
+#####Description
+Switch to a page table.
+#####Parameters
+* index
+Index of the page table.
 
-`void core_mm_pg_tbl_release(u32 index);`
+#####Return value
+None.
 
-`void* core_mm_pg_alloc(void* base_addr, size_t size, u32 options);`
+####`u32 core_mm_get_current_pg_tbl_index();`
+#####Description
+Get the index of the page table of current process.
+#####Parameters
+None
+#####Return value
+The index of the page thable.
 
-`void core_mm_pg_free(void* base_addr);`
+####`u32 core_mm_pg_tbl_fork(u32 index);`
+#####Description
+Fork the userspace page table of current page table.
+#####Parameters
+* index
+The index of source page table.
 
-`ppage_obj_t core_mm_get_pg_obj(void** p_base_addr, void* addr);`
+#####Return value
+The index of new page table.
 
-`void* core_mm_map(void* addr, ppage_obj_t p_page_obj, u32 options);`
+####`void core_mm_pg_tbl_release(u32 index);`
+#####Description
+Release a page table.
+#####Parameters
+* index
+The index of page table to release.
 
-`void core_mm_unmap(void* addr, ppage_obj_t p_page_obj);`
+#####Return value
+None
+
+####`void* core_mm_pg_alloc(void* base_addr, size_t size, u32 options);`
+#####Description
+Alloc pages.
+#####Parameters
+* base_addr
+The base address of new memory. If NULL, The kernel will choose an address.
+
+* size
+Size of pages. It will be aligned to the size of a page.
+
+* options
+Options of the operation:
+PAGE_OPTION_COMMIT
+PAGE_OPTION_WRITABLE
+PAGR_OPTION_EXECUTABLE
+PAGE_OPTION_SWAPPABLE
+PAGE_OPTION_DMA
+PAGE_OPTION_KERNEL
+
+
+#####Return value
+If succeeded, the beginging adddress of the pages will be returned.
+If failed, NULL will be returned and errno will be set.
+
+####`void core_mm_pg_free(void* base_addr);`
+#####Description
+Free pages.
+#####Parameters
+* base_addr
+The value returned by `core_mm_pg_alloc`.
+
+#####Return value
+None.
+
+####`ppage_obj_t core_mm_get_pg_obj(void** p_base_addr, void* addr);`
+#####Description
+Get page object of the page.
+#####Parameters
+* p_base_addr
+Return the base virtual address of the pages. Must not be NULL.
+
+* addr
+Virtuall address whereyou want to get the page object.
+
+#####Return value
+Pointer to the page object. If failed, returns NULL and errno will be set.
+
+####`void* core_mm_map(void* addr, ppage_obj_t p_page_obj, u32 options);`
+#####Description
+Map page object.
+#####Parameters
+* addr
+The base address to map the page object. If NULL, The kernel will choose an address.
+If not NULL, the status of th address must be uncommited.
+
+* p_page_obj
+The page object to map.
+
+* options
+Options of the operation:
+PAGE_OPTION_WRITABLE
+PAGR_OPTION_EXECUTABLE
+PAGE_OPTION_KERNEL
+
+#####Return value
+If succeeded, the beginging adddress of the pages will be returned.
+If failed, NULL will be returned and errno will be set.
+
+####`void core_mm_commit(void* addr);`
+#####Description
+#####Parameters
+#####Return value
+
+####`void core_mm_uncommit(void* addr);`
+#####Description
+#####Parameters
+#####Return value
+
+####`u32	core_mm_get_pg_attr(void* address);`
+#####Description
+#####Parameters
+#####Return value
+
+####`u32 core_mm_set_pg_attr(void* address, u32 attr);`
+#####Description
+#####Parameters
+#####Return value

@@ -1094,14 +1094,17 @@ ppage_obj_t core_mm_get_pg_obj(void** p_base_addr, void* addr);
 //映射页
 void* core_mm_map(void* addr, ppage_obj_t p_page_obj, u32 options);
 
-//取消映射页
-void core_mm_unmap(void* addr, ppage_obj_t p_page_obj);
+//提交页
+void core_mm_commit(void* addr);
+
+//取消页提交
+void core_mm_uncommit(void* addr);
 
 //获得页属性
-core_mm_get_pg_attr
+u32	core_mm_get_pg_attr(void* address);
 
 //设置页属性
-core_mm_set_pg_attr
+u32 core_mm_set_pg_attr(void* address, u32 attr);
 
 //page_obj_t
 //创建页对象
