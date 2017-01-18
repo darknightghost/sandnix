@@ -62,14 +62,14 @@ The index of the page thable.
 Fork the userspace page table of current page table.
 #####Parameters
 * index
-The index of source page table.
+The index of source page table. If index is illegal, EINVAL will be raised.
 
 #####Return value
 The index of new page table.
 
 ####`void core_mm_pg_tbl_release(u32 index);`
 #####Description
-Release a page table.
+Release a page table. If index is illegal, EINVAL will be raised.
 #####Parameters
 * index
 The index of page table to release.
@@ -147,20 +147,30 @@ If failed, NULL will be returned and errno will be set.
 
 ####`void core_mm_commit(void* addr);`
 #####Description
+Commit pages.
 #####Parameters
+* addr
+Address to commit. If the address has been commited, EINVAL will be raised.
+
 #####Return value
+None.
 
 ####`void core_mm_uncommit(void* addr);`
 #####Description
+Uncommit pages.
 #####Parameters
+* addr
+Address to uncommit. If the address has not been commited, EINVAL will be raised.
+
 #####Return value
+None
 
 ####`u32	core_mm_get_pg_attr(void* address);`
 #####Description
+Get the attribute of the page.
 #####Parameters
-#####Return value
+* address
+Address to get attribute.
 
-####`u32 core_mm_set_pg_attr(void* address, u32 attr);`
-#####Description
-#####Parameters
 #####Return value
+The attribute of page.

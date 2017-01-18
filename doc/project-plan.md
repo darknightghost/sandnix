@@ -1103,9 +1103,6 @@ void core_mm_uncommit(void* addr);
 //获得页属性
 u32	core_mm_get_pg_attr(void* address);
 
-//设置页属性
-u32 core_mm_set_pg_attr(void* address, u32 attr);
-
 //page_obj_t
 //创建页对象
 ppage_obj_t page_obj(u32 attribute, size_t size, address_t align);
