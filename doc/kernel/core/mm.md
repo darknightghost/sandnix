@@ -1,6 +1,5 @@
 #mm moudule
-
-[TOC]
+<div id="index"></div>
 ##Paging
 ###Summary
 This module does not operarte the page table of platform directly. It keeps an abstract page table which records the relationship among virtual address, `page_block_t`s and `page_object_t`s. `page_object_t`s use the interfaces of mmu module to operate the page table in order to separate policy from mechanism.
@@ -37,4 +36,44 @@ Object of memory. It refers to physical memory pages or swapped pages. And it op
 
 `void core_mm_unmap(void* addr, ppage_obj_t p_page_obj);`
 
+<script language="javascript">
+function show_index(level){
+    index_tag = document.getElementById("index");
+    index_str = "";
+    cur_level = 0;
 
+    //Get tags
+    for(i=0; i<document.all.length; i++){
+        tag = document.all[i];
+
+        if(tag instanceof HTMLHeadingElement){
+            //Create index
+            new_level = parseInt(tag.tagName.split("H")[1]);
+            title = tag.innerHTML;
+            id = title + tag.offsetTop;
+            tag.id = id;
+            if(new_level > cur_level){
+                while(cur_level < new_level){
+                    cur_level++;
+                    index_str += "<ul>";
+                }
+            }else if(new_level < cur_level){
+                while(cur_level > new_level){
+                    cur_level--;
+                    index_str += "</ul>\n";
+                }
+            }
+            index_str += "<li><a href=\"#" + id  + "\">" + tag.innerHTML + "</a></li>\n";
+        }
+
+    }
+
+    while(cur_level > 0){
+        cur_level--;
+        index_str += "</ul>\n";
+    }
+
+    index_tag.innerHTML = index_str;
+}
+show_index(3);
+</script>
