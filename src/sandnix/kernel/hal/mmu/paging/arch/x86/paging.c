@@ -348,7 +348,7 @@ void hal_mmu_get_usr_addr_range(void** p_base, size_t* p_size)
     return;
 }
 
-kstatus_t hal_mmu_pg_tbl_create(u32* p_id)
+kstatus_t hal_mmu_pg_tbl_create(u32 id)
 {
     kstatus_t status;
 
@@ -393,8 +393,8 @@ kstatus_t hal_mmu_pg_tbl_create(u32* p_id)
                     sizeof(copy_buf));
 
     //Get index
-    if(!core_rtl_array_get_free_index(&mmu_globl_pg_table, p_id)) {
-        status = ENOMEM;
+    if(core_rtl_array_get(&mmu_globl_pg_table, id) != NULL) {
+        status = EINVAL;
         goto _NO_FREE_ID;
     }
 
@@ -593,7 +593,7 @@ void create_0()
               "Not enough memory for mmu paging managment.");
     }
 
-    core_rtl_memset(page_operate_addr, 0 , 4096);
+    core_rtl_memset(page_operate_addr, 0, 4096);
 
     //Copy init_pte_tbl
     for(u32 i = KERNEL_MEM_BASE / 4096 / 1024;

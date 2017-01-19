@@ -206,7 +206,7 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr, u32 attr)
     if(i % 256 == 0) {
         //Fill the lv1 descriptor
         plv1_pg_desc_t p_lv1_desc = &init_lv1_pg_tbl[i / 256
-                                    + KERNEL_MEM_BASE / 4096 / 256];
+                                      + KERNEL_MEM_BASE / 4096 / 256];
         LV1_DESC_TYPE_SET(p_lv1_desc, MMU_PG_LV2ENT);
         p_lv1_desc->lv2_entry.reserv1 = 0;
         p_lv1_desc->lv2_entry.none_secure = 1;
@@ -272,7 +272,7 @@ void hal_mmu_get_usr_addr_range(void** p_base, size_t* p_size)
     return;
 }
 
-kstatus_t hal_mmu_pg_tbl_create(u32* p_id)
+kstatus_t hal_mmu_pg_tbl_create(u32 proc_id)
 {
     kstatus_t status;
 
@@ -326,8 +326,8 @@ kstatus_t hal_mmu_pg_tbl_create(u32* p_id)
     }
 
     //Get index
-    if(!core_rtl_array_get_free_index(&mmu_globl_pg_table, p_id)) {
-        status = ENOMEM;
+    if(core_rtl_array_get(&mmu_globl_pg_table, proc_id) != NULL) {
+        status = EINVAL;
         goto _NO_FREE_ID;
     }
 
@@ -350,20 +350,20 @@ _ALLOC_FAILED:
 
 }
 
-void hal_mmu_pg_tbl_destroy(u32 id)
+void hal_mmu_pg_tbl_destroy(u32 proc_id)
 {
     //Release page table id
     core_pm_spnlck_rw_w_lock(&lock);
     plv1_tbl_info_t p_lv1_info = core_rtl_array_get(
                                      &mmu_globl_pg_table,
-                                     id);
+                                     proc_id);
 
     if(p_lv1_info == NULL) {
         PANIC(EINVAL,
               "Illegal page table id.");
     }
 
-    core_rtl_array_set(&mmu_globl_pg_table, id, NULL);
+    core_rtl_array_set(&mmu_globl_pg_table, proc_id, NULL);
 
     core_pm_spnlck_rw_w_unlock(&lock);
 
@@ -379,14 +379,14 @@ void hal_mmu_pg_tbl_destroy(u32 id)
     return;
 }
 
-kstatus_t hal_mmu_pg_tbl_set(u32 id, void* virt_addr, u32 attribute,
+kstatus_t hal_mmu_pg_tbl_set(u32 proc_id, void* virt_addr, u32 attribute,
                              void* phy_addr)
 {
     core_pm_spnlck_rw_w_lock(&lock);
 
     //Get page table
     plv1_tbl_info_t p_lv1_info = core_rtl_array_get(&mmu_globl_pg_table,
-                                 id);
+                                 proc_id);
 
     if(p_lv1_info == NULL) {
         PANIC(EINVAL, "Illegal page table id.");
@@ -817,7 +817,7 @@ void create_0()
         p_lv1_desc->lv2_entry.none_secure = 1;
         LV1_LV2ENT_SET_ADDR(p_lv1_desc,
                             (address_t)&init_lv2_pg_tbl[
-                                (i - KERNEL_MEM_BASE / (256 * 4096)) * 256] + load_offset);
+                         (i - KERNEL_MEM_BASE / (256 * 4096)) * 256] + load_offset);
     }
 
     //Set lv2 descriptor

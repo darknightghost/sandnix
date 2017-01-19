@@ -20,3 +20,14 @@
 #include "../../../../../common/common.h"
 
 #include "./paging_defs.h"
+
+//Initialize module
+void	core_mm_paging_init();
+
+//Initialize cpu core
+void	core_mm_paging_cpu_core_init(u32 cpuid);
+
+//Release cpu core
+void	core_mm_paging_cpu_core_release(u32 cpuid);
+
+
