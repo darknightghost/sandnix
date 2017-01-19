@@ -42,7 +42,7 @@ void		hal_mmu_get_usr_addr_range(
 
 //Create page table
 kstatus_t	hal_mmu_pg_tbl_create(
-    u32* p_id);		//Pointer to new page table id
+    u32 id);		//Pointer to new page table id
 
 //Destroy page table
 void		hal_mmu_pg_tbl_destroy(

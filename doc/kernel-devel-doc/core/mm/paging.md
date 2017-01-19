@@ -5,10 +5,11 @@ Never call the methods of page_object_t out of this module.
 ##Importent data structures
 1.`proc_pg_tbl_t`(`src/sandnix/kernel/core/mm/paging/paging_defs.h`)
 User space page table of process. It refers to a number of `page_block_t`.
+The index of page table is the same with process id.
 2.`page_block_t`(`src/sandnix/kernel/core/mm/paging/paging_defs.h`)
 A block of pages. It has 3 status : free, allocated, commited. When it is commited, it refers to a `page_obj_t`.
 3.`page_obj_t`(`src/sandnix/kernel/core/mm/paging/page_object_defs.h`)
-Object of memory. It refers to physical memory pages or swapped pages. And it operates the page table of platform
+Object of memory. It refers to physical memory pages or swapped pages. And it operates the page table of platform.
 ##Interfaces
 ###`void core_mm_switch_to(u32 index);`
 ####Description
@@ -28,17 +29,20 @@ None
 #####Return value
 The index of the page thable.
 
-###`u32 core_mm_pg_tbl_fork(u32 index);`
+###`void core_mm_pg_tbl_fork(u32 src_index, u32 dest_index);`
 ####Description
 Fork the userspace page table of current page table.
 ####Parameters
-* index
+* src_index
 The index of source page table. If index is illegal, EINVAL will be raised.
 
-####Return value
-The index of new page table.
+* dest_index
+The index of destination page table. If index is used, EINVAL will be raised.
 
-###`void core_mm_pg_tbl_release(u32 index);`
+####Return value
+None.
+
+###`void core_mm_pg_tbl_release(u32 src_index);`
 ####Description
 Release a page table. If index is illegal, EINVAL will be raised.
 ####Parameters
@@ -66,7 +70,6 @@ PAGR_OPTION_EXECUTABLE
 PAGE_OPTION_SWAPPABLE
 PAGE_OPTION_DMA
 PAGE_OPTION_KERNEL
-
 
 ####Return value
 If succeeded, the beginging adddress of the pages will be returned.
