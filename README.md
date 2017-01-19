@@ -22,3 +22,4 @@ menuentry 'Sandnix 0.0.2' {
 <br />
 #Something else
 <a href="./doc/project-plan.md" >Project plan</a>
+<a href="./doc/kernel-devel-doc/kernel-devel-doc.md" >Document for kernel developer</a>

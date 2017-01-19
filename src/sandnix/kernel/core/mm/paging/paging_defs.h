@@ -40,6 +40,8 @@
 
 #define PAGE_BLOCK_ALLOCATED	0x00000001
 #define PAGE_BLOCK_COMMITED		0x00000002
+#define	PAGE_BLOCK_WRITEABLE	0x00000004
+#define	PAGE_BLOCK_EXECUTABLE	0x00000008
 
 //Page block
 typedef struct	_page_block {
