@@ -398,7 +398,7 @@ kstatus_t hal_mmu_pg_tbl_create(u32 id)
         goto _NO_FREE_ID;
     }
 
-    if(core_rtl_array_set(&mmu_globl_pg_table, *p_id, p_pgtbl_info) == NULL) {
+    if(core_rtl_array_set(&mmu_globl_pg_table, id, p_pgtbl_info) == NULL) {
         status = ENOMEM;
         goto _ADD_TABLE_FAILED;
     }
@@ -555,6 +555,101 @@ void hal_mmu_pg_tbl_switch(u32 id)
     core_pm_spnlck_rw_r_unlock(&lock);
 
     return;
+}
+
+bool hal_mmu_get_next_mapped_pages(void* prev, void** begin, void** p_phy_begin,
+                                   size_t* p_size, u32* p_attr)
+{
+    core_pm_spnlck_rw_w_lock(&lock);
+
+    //Get page table
+    *p_attr = 0;
+    ppte_tbl_info_t p_pte_info;
+
+    *begin = (ppte_tbl_info_t)core_rtl_map_next(
+                 &mmu_krnl_pte_tbl_map,
+                 (void*)((address_t)prev & 0xFFC00000));
+
+
+    p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
+                     &mmu_krnl_pte_tbl_map,
+                     (void*)((address_t) * begin & 0xFFC00000));
+
+    if(p_pte_info == NULL) {
+        core_pm_spnlck_rw_w_unlock(&lock);
+        return false;
+    }
+
+    //Get page info
+    *p_phy_begin = (void*)(p_pte_info->physical_addr);
+    *p_size = SANDNIX_KERNEL_PAGE_SIZE;
+
+
+    switch_editing_page((void*)(p_pte_info->physical_addr));
+    ppte_t p_pte = (ppte_t)page_operate_addr
+                   + (address_t)(*begin) % (4096 * 1024) / 4096;
+
+    if(p_pte->present == PG_P) {
+        (*p_attr) |= MMU_PAGE_AVAIL;
+
+        if(p_pte->read_write == PG_RW) {
+            (*p_attr) |= MMU_PAGE_WRITABLE;
+        }
+
+        if(p_pte->cache_disabled == PG_ENCACHE) {
+            (*p_attr) |= MMU_PAGE_CACHEABLE;
+        }
+
+        (*p_attr) |= MMU_PAGE_EXECUTABLE;
+    }
+
+    //Search pages
+    address_t base_addr = (address_t)(*begin);
+
+    while(true) {
+        base_addr += SANDNIX_KERNEL_PAGE_SIZE;
+        p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
+                         &mmu_krnl_pte_tbl_map,
+                         (void*)(base_addr & 0xFFC00000));
+
+        if(p_pte_info == NULL) {
+            break;
+        }
+
+        //Get attribute
+        u32 attr = 0;
+        switch_editing_page((void*)(p_pte_info->physical_addr));
+        ppte_t p_pte = (ppte_t)page_operate_addr
+                       + base_addr % (4096 * 1024) / 4096;
+
+        if(p_pte->present == PG_P) {
+            attr |= MMU_PAGE_AVAIL;
+
+            if(p_pte->read_write == PG_RW) {
+                attr |= MMU_PAGE_WRITABLE;
+            }
+
+            if(p_pte->cache_disabled == PG_ENCACHE) {
+                attr |= MMU_PAGE_CACHEABLE;
+            }
+
+            attr |= MMU_PAGE_EXECUTABLE;
+        }
+
+        if(attr != *p_attr) {
+            break;
+        }
+
+        if(base_addr - (address_t)(*begin)
+           != p_pte_info->physical_addr - (address_t)(*p_phy_begin)) {
+            break;
+        }
+
+        (*p_size) += SANDNIX_KERNEL_PAGE_SIZE;
+    }
+
+    core_pm_spnlck_rw_w_unlock(&lock);
+    return true;
 }
 
 address_t get_load_offset()

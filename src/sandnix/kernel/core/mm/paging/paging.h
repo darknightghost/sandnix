@@ -67,4 +67,4 @@ void		core_mm_uncommit(void* addr);
 u32			core_mm_get_pg_attr(void* address);
 
 //Set page attributes
-u32			core_mm_set_pg_attr(void* address, u32 options);
+u32			core_mm_set_pg_attr(void* address, u32 attr);

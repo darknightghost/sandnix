@@ -20,3 +20,21 @@
 #include "./paging/paging.h"
 
 #include "./mm.h"
+
+void core_mm_init()
+{
+    core_mm_paging_init();
+    return;
+}
+
+void core_mm_core_init(u32 cpuid)
+{
+    core_mm_paging_cpu_core_init(cpuid);
+    return;
+}
+
+void core_mm_core_release(u32 cpuid)
+{
+    core_mm_paging_cpu_core_release(cpuid);
+    return;
+}

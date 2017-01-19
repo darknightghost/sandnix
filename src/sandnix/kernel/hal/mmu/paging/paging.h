@@ -69,6 +69,13 @@ void hal_mmu_pg_tbl_refresh(void* virt_addr);
 void		hal_mmu_pg_tbl_switch(
     u32 id);			//Page table id
 
+bool	hal_mmu_get_next_mapped_pages(
+    void*		prev,		//Prev address
+    void**		begin,		//Begining virtual address
+    void**		p_phy_begin,//Pointer to begining physicall address.
+    size_t*		p_size,		//Pointer to size
+    u32*		p_attr);	//Pointer to attribute
+
 void		paging_init();
 address_t	get_load_offset();
 
