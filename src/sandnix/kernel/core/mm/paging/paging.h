@@ -39,5 +39,32 @@ u32 core_mm_get_current_pg_tbl_index();
 //Fork page table
 void	core_mm_pg_tbl_fork(u32 src_index, u32 dest_index);
 
+//Clear user pages
+void	core_mm_pg_tbl_clear(u32 index);
+
 //Release page table
-void	core_mm_pg_tbl_release(u32 src_index);
+void		core_mm_pg_tbl_release(u32 src_index);
+
+//Allocate pages
+void*		core_mm_pg_alloc(void* base_addr, size_t size, u32 options);
+
+//Free pages
+void		core_mm_pg_free(void* base_addr);
+
+//Get page object
+ppage_obj_t	core_mm_get_pg_obj(void** p_base_addr, void* addr);
+
+//Map page object
+void*		core_mm_map(void* addr, ppage_obj_t p_page_obj, u32 options);
+
+//Commit pages
+void		core_mm_commit(void* addr);
+
+//Uncommit pages
+void		core_mm_uncommit(void* addr);
+
+//Get page attributes
+u32			core_mm_get_pg_attr(void* address);
+
+//Set page attributes
+u32			core_mm_set_pg_attr(void* address, u32 options);

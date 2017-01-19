@@ -158,3 +158,19 @@ Address to get attribute.
 
 ####Return value
 The attribute of page.
+
+###`u32	core_mm_set_pg_attr(void* address, u32 attr);`
+####Description
+Set the attribute of the page.
+####Parameters
+* address
+Address to Set attribute.
+
+* attr
+Attribute to set.
+Optional values:
+PAGE_WRITABLE
+PAGE_EXECUTABLE
+
+####Return value
+The new attribute of page.
