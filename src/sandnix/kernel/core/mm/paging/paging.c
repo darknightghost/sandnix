@@ -44,6 +44,8 @@ static	u8				paging_heap_buf[SANDNIX_KERNEL_PAGE_SIZE];
 static	int				compare_pageblock(ppage_block_t p1, ppage_block_t p2);
 static	void			create_krnl();
 static	void			create_0();
+//get_page_block
+//split_page_block
 
 void core_mm_paging_init()
 {
