@@ -19,8 +19,7 @@
 
 #include "../../../../../common/common.h"
 
-#include "../../rtl/rtl_defs.h"
-
+#include "../../rtl/obj/obj_defs.h"
 struct	_thread_ref_obj;
 typedef	struct _thread_ref_obj*		(*thread_obj_fork_t)(struct _thread_ref_obj*, u32);
 

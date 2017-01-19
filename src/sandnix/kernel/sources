@@ -41,6 +41,7 @@ core/pm/lock/spinlock/spnlck_rw.c
 ##mm
 core/mm/mm.c
 core/mm/heap/heap.c
+core/mm/paging/paging.c
 core/mm/paging/page_obj.c
 
 ##rtl

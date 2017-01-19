@@ -18,5 +18,4 @@
 #pragma once
 
 #include "../../../../../common/common.h"
-
 #include "./page_obj_defs.h"

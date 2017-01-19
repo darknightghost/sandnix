@@ -24,5 +24,10 @@
     #include "./phymem/phymem_defs.h"
 #endif
 
-#define	SANDNIX_KERNEL_PAGE_SIZE	4096
+#if defined(X86)
+    #define	SANDNIX_KERNEL_PAGE_SIZE	4096
+#elif defined(ARM)
+    #define	SANDNIX_KERNEL_PAGE_SIZE	4096
+#endif
+
 #define	KERNEL_MAX_SIZE				(16 * 1024 * 1024)

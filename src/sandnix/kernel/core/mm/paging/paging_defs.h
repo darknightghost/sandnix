@@ -18,8 +18,8 @@
 #pragma once
 
 #include "../../../../../common/common.h"
+#include "../../rtl/container/map/map_defs.h"
 #include "./page_obj_defs.h"
-#include "../../rtl/rtl_defs.h"
 
 //Page attributes
 #define	PAGE_OPTION_COMMIT		0x00000001
@@ -46,8 +46,9 @@
 #define	PAGE_BLOCK_EXECUTABLE	0x00000008
 
 //Page block
+typedef struct	_page_obj		page_obj_t, *ppage_obj_t;
 typedef struct	_page_block {
-    address_t		base_addr;
+    address_t		begin;
     size_t			size;
     u32				status;
     ppage_obj_t		p_pg_obj;

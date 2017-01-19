@@ -24,5 +24,9 @@
 #include "./context/context_defs.h"
 #include "./multiprocessor/multiprocessor_defs.h"
 
+#ifndef MAX_CPU_NUM
+    #define	MAX_CPU_NUM		64
+#endif
+
 //Initialize the module
 void hal_cpu_init();

@@ -19,7 +19,7 @@
 
 #include "../../../../../../common/common.h"
 
-#include "../../../mm/mm_defs.h"
+typedef struct _heap_t		heap_t, *pheap_t;
 
 typedef struct	_rbtree_node {
     struct _rbtree_node*	p_parent;
@@ -46,3 +46,5 @@ typedef struct _map {
 //Search key and value
 //int	(*map_search_func_t)(void* p_condition, void* p_key, void* p_value,void* p_arg);
 typedef	int	(*map_search_func_t)(void*, void*, void*, void*);
+
+#include "../../../mm/mm_defs.h"

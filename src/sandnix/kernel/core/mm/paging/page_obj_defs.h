@@ -18,7 +18,7 @@
 #pragma once
 
 #include "../../../../../common/common.h"
-#include "../../rtl/rtl_defs.h"
+#include "../../rtl/container/list/list_defs.h"
 #include "./paging_defs.h"
 
 #define PAGE_OBJ_COPY_ON_WRITE		0x00000001
