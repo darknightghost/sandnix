@@ -15,19 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
-
 #include "../../../../common/common.h"
 #include "./heap/heap.h"
 #include "./paging/paging.h"
 
-#include "./mm_defs.h"
-
-//Initialize module
-void	core_mm_init();
-
-//Initialize cpu core
-void	core_mm_core_init(u32 cpuid);
-
-//Release cpu core
-void	core_mm_core_release(u32 cpuid);
+#include "./mm.h"

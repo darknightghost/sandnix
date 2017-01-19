@@ -17,3 +17,7 @@
 
 #include "paging.h"
 #include "./page_obj.h"
+#include "../../pm/pm.h"
+
+static	map_t			kernel_pg_tbl;
+static	spnlck_rw_t		kernel_pg_tbl_lck;
