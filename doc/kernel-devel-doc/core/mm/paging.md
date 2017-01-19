@@ -42,7 +42,17 @@ The index of destination page table. If index is used, EINVAL will be raised.
 ####Return value
 None.
 
-###`void core_mm_pg_tbl_release(u32 src_index);`
+###`void core_mm_pg_tbl_clear(u32 index);`
+####Description
+Clear the userspace of page table. If index is illegal, EINVAL will be raised.
+####Parameters
+* index
+The index of page table to clear.
+
+####Return value
+None
+
+###`void core_mm_pg_tbl_release(u32 index);`
 ####Description
 Release a page table. If index is illegal, EINVAL will be raised.
 ####Parameters

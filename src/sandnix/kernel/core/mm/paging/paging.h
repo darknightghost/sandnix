@@ -30,4 +30,14 @@ void	core_mm_paging_cpu_core_init(u32 cpuid);
 //Release cpu core
 void	core_mm_paging_cpu_core_release(u32 cpuid);
 
+//Switch to page table
+void	core_mm_switch_to(u32 index);
 
+//Get current page table index
+u32 core_mm_get_current_pg_tbl_index();
+
+//Fork page table
+void	core_mm_pg_tbl_fork(u32 src_index, u32 dest_index);
+
+//Release page table
+void	core_mm_pg_tbl_release(u32 src_index);
