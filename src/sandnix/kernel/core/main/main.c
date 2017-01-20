@@ -19,7 +19,7 @@
 #include "../../hal/early_print/early_print.h"
 #include "../kconsole/kconsole.h"
 #include "../exception/exception.h"
-
+#include "../mm/mm.h"
 
 void core_main_main()
 {

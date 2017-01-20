@@ -26,7 +26,9 @@
 #include "../../kconsole/kconsole.h"
 
 //Kernel page table
-static	map_t			krnl_pg_tbl;
+static	map_t			krnl_pg_addr_map;
+static	map_t			krnl_pg_size_map;
+static	map_t			krnl_pg_used_map;
 static	spnlck_rw_t		krnl_pg_tbl_lck;
 
 //User space page table
@@ -41,11 +43,18 @@ static	pheap_t			paging_heap = NULL;
 static	u8				paging_heap_buf[SANDNIX_KERNEL_PAGE_SIZE];
 
 
-static	int				compare_pageblock(ppage_block_t p1, ppage_block_t p2);
+static	int				compare_pageblock_addr(ppage_block_t p1, ppage_block_t p2);
+static	int				compare_pageblock_size(ppage_block_t p1, ppage_block_t p2);
 static	void			create_krnl();
 static	void			create_0();
-//get_page_block
-//split_page_block
+static	void			collect_fragment(ppage_block_t p_block,
+        pmap_t p_size_map, pmap_t p_addr_map);
+static	ppage_block_t	alloc_page(pmap_t p_size_map, pmap_t p_addr_map,
+                                   pmap_t p_used_map);
+static	void			free_page(ppage_block_t, p_block,
+                                  pmap_t p_size_map,
+                                  pmap_t p_addr_map,
+                                  pmap_t p_used_map);
 
 void core_mm_paging_init()
 {
@@ -66,7 +75,11 @@ void core_mm_paging_init()
 
     //Initialize kernel page table
     core_kconsole_print_info("Creating kernel page table...\n");
-    core_rtl_map_init(&krnl_pg_tbl, (item_compare_t)compare_pageblock,
+    core_rtl_map_init(&krnl_pg_addr_map, (item_compare_t)compare_pageblock_addr,
+                      paging_heap);
+    core_rtl_map_init(&krnl_pg_size_map, (item_compare_t)compare_pageblock_size,
+                      paging_heap);
+    core_rtl_map_init(&krnl_pg_used_map, (item_compare_t)compare_pageblock_addr,
                       paging_heap);
     core_pm_spnlck_rw_init(&krnl_pg_tbl_lck);
     create_krnl();
@@ -109,12 +122,25 @@ void core_mm_uncommit(void* addr);
 u32 core_mm_get_pg_attr(void* address);
 u32 core_mm_set_pg_attr(void* address, u32 attr);
 
-int compare_pageblock(ppage_block_t p1, ppage_block_t p2)
+int compare_pageblock_addr(ppage_block_t p1, ppage_block_t p2)
 {
     if(p1->begin > p2->begin) {
         return 1;
 
     } else if(p1->begin == p2->begin) {
+        return 0;
+
+    } else {
+        return -1;
+    }
+}
+
+int compare_pageblock_size(ppage_block_t p1, ppage_block_t p2)
+{
+    if(p1->size > p2->size) {
+        return 1;
+
+    } else if(p1->size == p2->size) {
         return 0;
 
     } else {
@@ -136,6 +162,29 @@ void create_krnl()
 
     if(p_page_block == NULL) {
         PANIC(ENOMEM, "Failed to create kernel page table.\n");
+    }
+
+    hal_mmu_get_krnl_addr_range(
+        (void**)(&(p_page_block->begin)),
+        &(p_page_block->size));
+
+    p_page_block->p_prev = NULL;
+    p_page_block->p_next = NULL;
+    p_page_block->p_pg_obj = NULL;
+    p_page_block->status = 0;
+
+    if(core_rtl_map_set(
+           &krnl_pg_addr_map,
+           (void*)(p_page_block->begin),
+           p_page_block)) == NULL{
+        PANIC(ENOMEM, "Failed to add first kernel page block.\n");
+    }
+
+    if(core_rtl_map_set(
+           &krnl_pg_size_map,
+           (void*)(p_page_block->size),
+           p_page_block)) == NULL{
+        PANIC(ENOMEM, "Failed to add first kernel page block.\n");
     }
 
     //Scan mmu page table

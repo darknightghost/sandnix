@@ -48,15 +48,18 @@
 //Page block
 typedef struct	_page_obj		page_obj_t, *ppage_obj_t;
 typedef struct	_page_block {
-    address_t		begin;
-    size_t			size;
-    u32				status;
-    ppage_obj_t		p_pg_obj;
+    struct _page_block*	p_prev;		//Prev block
+    struct _page_block*	p_next;		//Next block
+    address_t			begin;		//Base address
+    size_t				size;		//Size
+    u32					status;		//Page status
+    ppage_obj_t			p_pg_obj;	//Page object
 } page_block_t, *ppage_block_t;
 
 //Page table of process
 typedef	struct	_proc_pg_tbl {
-    u32		id;
-    map_t	used_map;
-    map_t	free_map;
+    u32		id;						//Process id(Page table id)
+    map_t	used_map;				//Used page blocks
+    map_t	free_addr_map;			//Free page blocks, sorted by address
+    map_t	free_size_map;			//Free page blocks, sorted by size
 } proc_pg_tbl_t, *proc_pg_tbl;
