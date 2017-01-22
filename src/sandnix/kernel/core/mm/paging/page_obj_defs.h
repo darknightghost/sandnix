@@ -21,10 +21,13 @@
 #include "../../rtl/container/list/list_defs.h"
 #include "./paging_defs.h"
 
-#define PAGE_OBJ_COPY_ON_WRITE		0x00000001
-#define PAGE_OBJ_ALLOC_ON_ACCESS	0x00000002
+#define PAGE_OBJ_ALLOCATED			0x00000001
+#define PAGE_OBJ_COPY_ON_WRITE		0x00000002
+#define PAGE_OBJ_ALLOC_ON_ACCESS	0x00000004
 #define PAGE_OBJ_SWAPPED			0x00000010
 #define PAGE_OBJ_SWAPPABLE			0x00000020
+
+#define	PAGE_OBJ_CREATE_MASK		(PAGE_OBJ_ALLOCATED | PAGE_OBJ_SWAPPABLE)
 
 //Page object attributes
 typedef	struct	_pg_obj_ref_page {

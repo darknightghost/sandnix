@@ -28,3 +28,5 @@
 
 #define		CLASS_EXCEPT_OBJ		0x00020000
 #define		CLASS_EXCEPT(err)		(CLASS_EXCEPT_OBJ + (err))
+
+#define		CLASS_PAGE_OBJECT		0x00030000
