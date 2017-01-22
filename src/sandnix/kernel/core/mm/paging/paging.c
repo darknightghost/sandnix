@@ -176,14 +176,14 @@ void create_krnl()
     if(core_rtl_map_set(
            &krnl_pg_addr_map,
            (void*)(p_page_block->begin),
-           p_page_block)) == NULL{
+           p_page_block) == NULL) {
         PANIC(ENOMEM, "Failed to add first kernel page block.\n");
     }
 
     if(core_rtl_map_set(
            &krnl_pg_size_map,
            (void*)(p_page_block->size),
-           p_page_block)) == NULL{
+           p_page_block) == NULL) {
         PANIC(ENOMEM, "Failed to add first kernel page block.\n");
     }
 
@@ -202,6 +202,17 @@ void create_krnl()
                                   base_addr,
                                   phy_begin,
                                   size);
+        //Get page block
+        p_page_block = alloc_page(
+                           &krnl_pg_size_map,
+                           &krnl_pg_addr_map,
+                           &krnl_pg_used_map);
+
+        if(p_page_block == NULL) {
+            PANIC(ENOMEM, "Failed to get page block.\n");
+        }
+
+        //Create page object
     }
 }
 
