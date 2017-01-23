@@ -27,13 +27,15 @@
 
 static	pheap_t			page_obj_heap = NULL;
 static	u8				page_obj_heap_buf[SANDNIX_KERNEL_PAGE_SIZE];
+static	__attribute__((aligned(SANDNIX_KERNEL_PAGE_SIZE))) u8	page_copy_buf[
+     SANDNIX_KERNEL_PAGE_SIZE];
 
 //Object
 static	void			destructer(ppage_obj_t p_this);
 static	int				compare(ppage_obj_t p_this, ppage_obj_t p_1);
 static	pkstring_obj_t	to_string(ppage_obj_t p_this);
 
-//Metods
+//Methods
 //Swap
 static	void		swap(ppage_obj_t p_this);
 //Unswap page
@@ -52,13 +54,20 @@ static	size_t		get_size(ppage_obj_t p_this);
 static	ppage_obj_t	fork(ppage_obj_t p_this);
 
 //Do copy-on-write
-static	void		copy_on_write(ppage_obj_t p_this);
+static	void		copy_on_write(ppage_obj_t p_this, void* virt_addr,
+                                  u32 attr);
+
+//Map
+static	void		map(ppage_obj_t p_this, void* virt_addr, u32 attr);
+
+//Unmap
+static	void		unmap(ppage_obj_t p_this, void* virt_addr);
 
 //Allocate physical memory
 static	void		alloc(ppage_obj_t p_this);
 
-//Private metho
-static	void		copy_on_write_unref(ppage_obj_t p_this, ppage_obj_t ref);
+//Private methods
+static	void		copy_on_write_unref(ppage_obj_t p_this);
 
 ppage_obj_t page_obj(size_t page_size, u32 attr)
 {
@@ -88,9 +97,10 @@ ppage_obj_t page_obj(size_t page_size, u32 attr)
     }
 
     //Set attributes
-    p_ret->attr = attr & PAGE_OBJ_SWAPPABLE;
+    p_ret->attr = attr & (PAGE_OBJ_SWAPPABLE | PAGE_OBJ_DMA);
     p_ret->size = page_size;
-    core_rtl_list_init(&(p_ret->copy_on_write_lst));
+    p_ret->copy_on_write_ref.p_prev = NULL;
+    p_ret->copy_on_write_ref.p_next = NULL;
 
     //Set methods
     p_ret->swap = swap;
@@ -99,6 +109,8 @@ ppage_obj_t page_obj(size_t page_size, u32 attr)
     p_ret->get_attr = get_attr;
     p_ret->fork = fork;
     p_ret->copy_on_write = copy_on_write;
+    p_ret->map = map;
+    p_ret->unmap = unmap;
     p_ret->alloc = alloc;
 
     return p_ret;
@@ -134,8 +146,9 @@ ppage_obj_t page_obj_on_phymem(address_t phy_base, size_t size)
     //Set attributes
     p_ret->attr = PAGE_OBJ_ALLOCATED;
     p_ret->size = size;
-    core_rtl_list_init(&(p_ret->copy_on_write_lst));
-    p_ret->phy_mem_info.addr = phy_base;
+    p_ret->copy_on_write_ref.p_prev = NULL;
+    p_ret->copy_on_write_ref.p_next = NULL;
+    p_ret->mem_info.phy_mem_info.addr = phy_base;
 
     //Set methods
     p_ret->swap = swap;
@@ -144,6 +157,8 @@ ppage_obj_t page_obj_on_phymem(address_t phy_base, size_t size)
     p_ret->get_attr = get_attr;
     p_ret->fork = fork;
     p_ret->copy_on_write = copy_on_write;
+    p_ret->map = map;
+    p_ret->unmap = unmap;
     p_ret->alloc = alloc;
 
     return p_ret;
@@ -159,11 +174,7 @@ void destructer(ppage_obj_t p_this)
 
             } else {
                 //Unreference memory
-                while(p_this->copy_on_write_lst != NULL) {
-                    copy_on_write_unref(
-                        p_this,
-                        (ppage_obj_t)(p_this->copy_on_write_lst->p_item));
-                }
+                copy_on_write_unref(p_this);
             }
 
         } else {
@@ -171,7 +182,7 @@ void destructer(ppage_obj_t p_this)
                 //TODO:Free swapped memory
             } else {
                 //Free memory
-                hal_mmu_phymem_free((void*)(p_this->phy_mem_info.addr));
+                hal_mmu_phymem_free((void*)(p_this->mem_info.phy_mem_info.addr));
             }
         }
     }
@@ -194,12 +205,163 @@ int compare(ppage_obj_t p_this, ppage_obj_t p_1)
     }
 }
 
-pkstring_obj_t to_string(ppage_obj_t p_this);
-void swap(ppage_obj_t p_this);
-void unswap(ppage_obj_t p_this);
-void set_attr(ppage_obj_t p_this, u32 attr);
-u32 get_attr(ppage_obj_t p_this);
-size_t get_size(ppage_obj_t p_this);
-ppage_obj_t fork(ppage_obj_t p_this);
-void copy_on_write(ppage_obj_t p_this);
+pkstring_obj_t to_string(ppage_obj_t p_this)
+{
+    if(p_this->attr & PAGE_OBJ_ALLOCATED) {
+        char str[64] = {0};
+
+        core_rtl_strncat(str, "\"Allocated\" ", sizeof(str));
+
+        if(p_this->attr & PAGE_OBJ_COPY_ON_WRITE) {
+            core_rtl_strncat(str, "\"Copy on write\" ", sizeof(str));
+        }
+
+        if(p_this->attr & PAGE_OBJ_SWAPPED) {
+            core_rtl_strncat(str, "\"Swapped\" ", sizeof(str));
+
+        } else if(p_this->attr & PAGE_OBJ_SWAPPABLE) {
+            core_rtl_strncat(str, "\"Swappable\" ", sizeof(str));
+        }
+
+        if(p_this->attr & PAGE_OBJ_SWAPPED) {
+            //TODO:
+            NOT_SUPPORT;
+            return NULL;
+
+        } else {
+            return kstring_fmt("Page object at %p\n"
+                               "Size = %p\n"
+                               "Status : %s\n"
+                               "Physical memory address : %p",
+                               p_this->obj.heap,
+                               p_this,
+                               p_this->size,
+                               str,
+                               p_this->mem_info.phy_mem_info.addr);
+        }
+
+    } else {
+        //Not allocated
+        return kstring_fmt("Page object at %p\n"
+                           "Size = %p\n"
+                           "Status : \"Not allocated.\"",
+                           p_this->obj.heap,
+                           p_this,
+                           p_this->size);
+    }
+}
+
+void swap(ppage_obj_t p_this)
+{
+    NOT_SUPPORT;
+    UNREFERRED_PARAMETER(p_this);
+}
+
+void unswap(ppage_obj_t p_this)
+{
+    NOT_SUPPORT;
+    UNREFERRED_PARAMETER(p_this);
+}
+
+void set_attr(ppage_obj_t p_this, u32 attr)
+{
+    p_this->attr = (p_this->attr
+                    & (~PAGE_OBJ_ATTR_MASK))
+                   | (attr & PAGE_OBJ_ATTR_MASK);
+
+    return;
+}
+
+u32 get_attr(ppage_obj_t p_this)
+{
+    return p_this->attr;
+}
+
+size_t get_size(ppage_obj_t p_this)
+{
+    return p_this->size;
+}
+
+ppage_obj_t fork(ppage_obj_t p_this)
+{
+    ppage_obj_t p_ret = (ppage_obj_t)obj(CLASS_PAGE_OBJECT,
+                                         (destructor_t)destructer,
+                                         (compare_obj_t)compare,
+                                         (to_string_t)to_string,
+                                         page_obj_heap,
+                                         sizeof(page_obj_t));
+
+    if(p_ret == NULL) {
+        return NULL;
+    }
+
+
+    //Set attributes
+    p_ret->attr = p_this->attr | PAGE_OBJ_COPY_ON_WRITE;
+    p_this->attr = p_ret->attr;
+    p_ret->size = p_this->size;
+    core_rtl_memcpy(&(p_ret->mem_info), &(p_this->mem_info),
+                    sizeof(p_this->mem_info));
+
+    //Copy on write reference
+    p_ret->copy_on_write_ref.p_next = p_this->copy_on_write_ref.p_next;
+    p_this->copy_on_write_ref.p_next->copy_on_write_ref.p_prev = p_ret;
+    p_this->copy_on_write_ref.p_next = p_ret;
+    p_ret->copy_on_write_ref.p_prev = p_this;
+
+    //Set methods
+    p_ret->swap = swap;
+    p_ret->unswap = unswap;
+    p_ret->set_attr = set_attr;
+    p_ret->get_attr = get_attr;
+    p_ret->fork = fork;
+    p_ret->copy_on_write = copy_on_write;
+    p_ret->map = map;
+    p_ret->unmap = unmap;
+    p_ret->alloc = alloc;
+
+    return p_ret;
+}
+
+void copy_on_write(ppage_obj_t p_this, void* virt_addr, u32 attr)
+{
+    if(p_this->attr & PAGE_OBJ_SWAPPED) {
+        p_this->unswap(p_this);
+    }
+
+    address_t new_phy_addr;
+
+    //Allocate memory
+    while(hal_mmu_phymem_alloc((void**)(&new_phy_addr),
+                               SANDNIX_KERNEL_PAGE_SIZE,
+                               (p_this->attr & PAGE_OBJ_DMA) != 0,
+                               p_this->size / SANDNIX_KERNEL_PAGE_SIZE) != ESUCCESS) {
+        //TODO:Swap
+        NOT_SUPPORT;
+    }
+
+    //Copy memory
+    u32 page_num = p_this->size / SANDNIX_KERNEL_PAGE_SIZE;
+
+    for(u32 i = 0; i < page_num; i++) {
+        hal_mmu_pg_tbl_set(0, page_copy_buf, MMU_PAGE_RW,
+                           (void*)(new_phy_addr + i * SANDNIX_KERNEL_PAGE_SIZE));
+        core_rtl_memcpy(page_copy_buf,
+                        (void*)((address_t)virt_addr + i * SANDNIX_KERNEL_PAGE_SIZE),
+                        SANDNIX_KERNEL_PAGE_SIZE);
+    }
+
+    //Set attributes
+    p_this->mem_info.phy_mem_info.addr = new_phy_addr;
+    copy_on_write_unref(p_this);
+
+    //Remap memory
+    p_this->map(p_this, virt_addr, attr);
+
+    return;
+}
+
+void map(ppage_obj_t p_this, void* virt_addr, u32 attr);
+void unmap(ppage_obj_t p_this, void* virt_addr);
 void alloc(ppage_obj_t p_this);
+void copy_on_write_unref(ppage_obj_t p_this);
