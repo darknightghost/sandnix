@@ -22,6 +22,8 @@
 #include "../../rtl/rtl.h"
 #include "../heap/heap.h"
 
+#include "../../pm/pm.h"
+
 #include "../../../hal/mmu/mmu.h"
 #include "../../../hal/exception/exception.h"
 
@@ -361,7 +363,52 @@ void copy_on_write(ppage_obj_t p_this, void* virt_addr, u32 attr)
     return;
 }
 
-void map(ppage_obj_t p_this, void* virt_addr, u32 attr);
-void unmap(ppage_obj_t p_this, void* virt_addr);
+void map(ppage_obj_t p_this, void* virt_addr, u32 attr)
+{
+    //Get page attributes
+    u32 mmu_attr = 0;
+
+    if(attr & PAGE_WRITABLE) {
+        mmu_attr = MMU_PAGE_RW_NC;
+
+    } else {
+        mmu_attr = MMU_PAGE_RDONLY_NC;
+    }
+
+    if(attr & PAGE_CACHEABLE) {
+        mmu_attr |= MMU_PAGE_CACHEABLE;
+    }
+
+    if(attr & PAGE_EXECUTABLE) {
+        mmu_attr |= MMU_PAGE_EXECUTABLE;
+    }
+
+    //Map pages
+    u32 page_num = p_this->size / SANDNIX_KERNEL_PAGE_SIZE;
+
+    for(u32 i = 0; i < page_num; i++) {
+        hal_mmu_pg_tbl_set(core_pm_get_crrnt_thread_id(),
+                           virt_addr, mmu_attr,
+                           (void*)(p_this->mem_info.phy_mem_info.addr
+                                   + i * SANDNIX_KERNEL_PAGE_SIZE));
+    }
+
+    return;
+}
+
+void unmap(ppage_obj_t p_this, void* virt_addr)
+{
+    //Unmap pages
+    u32 page_num = p_this->size / SANDNIX_KERNEL_PAGE_SIZE;
+
+    for(u32 i = 0; i < page_num; i++) {
+        hal_mmu_pg_tbl_set(core_pm_get_crrnt_thread_id(),
+                           virt_addr, 0,
+                           (void*)(p_this->mem_info.phy_mem_info.addr
+                                   + i * SANDNIX_KERNEL_PAGE_SIZE));
+    }
+
+    return;
+}
 void alloc(ppage_obj_t p_this);
 void copy_on_write_unref(ppage_obj_t p_this);
