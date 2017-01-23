@@ -54,6 +54,9 @@ static	ppage_obj_t	fork(ppage_obj_t p_this);
 //Do copy-on-write
 static	void		copy_on_write(ppage_obj_t p_this);
 
+//Allocate physical memory
+static	void		alloc(ppage_obj_t p_this);
+
 ppage_obj_t page_obj(size_t page_size, u32 attr)
 {
     if(page_obj_heap == NULL) {
@@ -81,6 +84,11 @@ ppage_obj_t page_obj(size_t page_size, u32 attr)
         return NULL;
     }
 
+    //Set attributes
+    p_ret->attr = attr & PAGE_OBJ_SWAPPABLE;
+    p_ret->size = page_size;
+    core_rtl_list_init(&(p_ret->copy_on_write_lst));
+
     //Set methods
     p_ret->swap = swap;
     p_ret->unswap = unswap;
@@ -88,8 +96,65 @@ ppage_obj_t page_obj(size_t page_size, u32 attr)
     p_ret->get_attr = get_attr;
     p_ret->fork = fork;
     p_ret->copy_on_write = copy_on_write;
+    p_ret->alloc = alloc;
 
-
+    return p_ret;
 }
 
-ppage_obj_t page_obj_on_phymem(address_t phy_base, size_t size);
+ppage_obj_t page_obj_on_phymem(address_t phy_base, size_t size)
+{
+    if(page_obj_heap == NULL) {
+        //Initialize heap
+        page_obj_heap = core_mm_heap_create_on_buf(
+                            HEAP_MULITHREAD | HEAP_PREALLOC,
+                            SANDNIX_KERNEL_PAGE_SIZE,
+                            page_obj_heap_buf,
+                            sizeof(page_obj_heap_buf));
+
+        if(page_obj_heap == NULL) {
+            PANIC(ENOMEM,
+                  "Failed to create heap for page objects.");
+        }
+    }
+
+    ppage_obj_t p_ret = (ppage_obj_t)obj(CLASS_PAGE_OBJECT,
+                                         (destructor_t)destructer,
+                                         (compare_obj_t)compare,
+                                         (to_string_t)to_string,
+                                         page_obj_heap,
+                                         sizeof(page_obj_t));
+
+    if(p_ret == NULL) {
+        return NULL;
+    }
+
+    //Set attributes
+    p_ret->attr = PAGE_OBJ_ALLOCATED;
+    p_ret->size = size;
+    core_rtl_list_init(&(p_ret->copy_on_write_lst));
+    p_ret->phy_mem_info.addr = phy_base;
+
+    //Set methods
+    p_ret->swap = swap;
+    p_ret->unswap = unswap;
+    p_ret->set_attr = set_attr;
+    p_ret->get_attr = get_attr;
+    p_ret->fork = fork;
+    p_ret->copy_on_write = copy_on_write;
+    p_ret->alloc = alloc;
+
+    return p_ret;
+}
+
+void destructer(ppage_obj_t p_this);
+int compare(ppage_obj_t p_this, ppage_obj_t p_str);
+pkstring_obj_t to_string(ppage_obj_t p_this);
+
+void swap(ppage_obj_t p_this);
+void unswap(ppage_obj_t p_this);
+void set_attr(ppage_obj_t p_this, u32 attr);
+u32 get_attr(ppage_obj_t p_this);
+size_t get_size(ppage_obj_t p_this);
+ppage_obj_t fork(ppage_obj_t p_this);
+void copy_on_write(ppage_obj_t p_this);
+void alloc(ppage_obj_t p_this);
