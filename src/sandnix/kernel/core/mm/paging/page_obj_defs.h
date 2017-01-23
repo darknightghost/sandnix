@@ -23,11 +23,8 @@
 
 #define PAGE_OBJ_ALLOCATED			0x00000001
 #define PAGE_OBJ_COPY_ON_WRITE		0x00000002
-#define PAGE_OBJ_ALLOC_ON_ACCESS	0x00000004
 #define PAGE_OBJ_SWAPPED			0x00000010
 #define PAGE_OBJ_SWAPPABLE			0x00000020
-
-#define	PAGE_OBJ_CREATE_MASK		(PAGE_OBJ_ALLOCATED | PAGE_OBJ_SWAPPABLE)
 
 //Page object attributes
 typedef	struct	_pg_obj_ref_page {
@@ -61,10 +58,12 @@ typedef struct _page_obj {
 
     //Do copy-on-write
     void	(*copy_on_write)(struct _page_obj* p_this);
+
+    //Allocate physical memory
+    void	(*alloc)(struct _page_obj* p_this);
     union {
         struct {
             address_t	addr;
-            size_t		size;
         } phy_mem_info;
         struct {
         } swapped_mem_info;
