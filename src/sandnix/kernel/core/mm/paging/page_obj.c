@@ -30,7 +30,7 @@ static	u8				page_obj_heap_buf[SANDNIX_KERNEL_PAGE_SIZE];
 
 //Object
 static	void			destructer(ppage_obj_t p_this);
-static	int				compare(ppage_obj_t p_this, ppage_obj_t p_str);
+static	int				compare(ppage_obj_t p_this, ppage_obj_t p_1);
 static	pkstring_obj_t	to_string(ppage_obj_t p_this);
 
 //Metods
@@ -56,6 +56,9 @@ static	void		copy_on_write(ppage_obj_t p_this);
 
 //Allocate physical memory
 static	void		alloc(ppage_obj_t p_this);
+
+//Private metho
+static	void		copy_on_write_unref(ppage_obj_t p_this, ppage_obj_t ref);
 
 ppage_obj_t page_obj(size_t page_size, u32 attr)
 {
@@ -146,10 +149,52 @@ ppage_obj_t page_obj_on_phymem(address_t phy_base, size_t size)
     return p_ret;
 }
 
-void destructer(ppage_obj_t p_this);
-int compare(ppage_obj_t p_this, ppage_obj_t p_str);
-pkstring_obj_t to_string(ppage_obj_t p_this);
+void destructer(ppage_obj_t p_this)
+{
+    if(p_this->attr & PAGE_OBJ_ALLOCATED) {
+        if(p_this->attr & PAGE_OBJ_COPY_ON_WRITE) {
+            if(p_this->attr & PAGE_OBJ_SWAPPED) {
+                //TODO:Decrease swapped memory reference
+                NOT_SUPPORT;
 
+            } else {
+                //Unreference memory
+                while(p_this->copy_on_write_lst != NULL) {
+                    copy_on_write_unref(
+                        p_this,
+                        (ppage_obj_t)(p_this->copy_on_write_lst->p_item));
+                }
+            }
+
+        } else {
+            if(p_this->attr & PAGE_OBJ_SWAPPED) {
+                //TODO:Free swapped memory
+            } else {
+                //Free memory
+                hal_mmu_phymem_free((void*)(p_this->phy_mem_info.addr));
+            }
+        }
+    }
+
+    core_mm_heap_free(p_this, p_this->obj.heap);
+
+    return;
+}
+
+int compare(ppage_obj_t p_this, ppage_obj_t p_1)
+{
+    if(p_this->size > p_1->size) {
+        return 1;
+
+    } else if(p_this->size == p_1->size) {
+        return 0;
+
+    } else {
+        return -1;
+    }
+}
+
+pkstring_obj_t to_string(ppage_obj_t p_this);
 void swap(ppage_obj_t p_this);
 void unswap(ppage_obj_t p_this);
 void set_attr(ppage_obj_t p_this, u32 attr);
