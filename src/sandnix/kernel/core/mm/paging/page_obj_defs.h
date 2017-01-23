@@ -19,6 +19,7 @@
 
 #include "../../../../../common/common.h"
 #include "../../rtl/container/list/list_defs.h"
+#include "../../rtl/obj/obj_defs.h"
 #include "./paging_defs.h"
 
 #define PAGE_OBJ_ALLOCATED			0x00000001
@@ -33,6 +34,7 @@ typedef	struct	_pg_obj_ref_page {
 } pg_obj_ref_page_t, *ppg_obj_ref_page_t;
 
 typedef struct _page_obj {
+    obj_t		obj;
     u32			attr;				//Page object attribute
     size_t		size;				//Size of page
     list_t		copy_on_write_lst;	//List of page object requires to be copied while writting
