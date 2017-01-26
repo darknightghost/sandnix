@@ -193,14 +193,14 @@ void create_krnl()
 
     if(core_rtl_map_set(
            &krnl_pg_addr_map,
-           (void*)(p_page_block->begin),
+           p_page_block,
            p_page_block) == NULL) {
         PANIC(ENOMEM, "Failed to add first kernel page block.\n");
     }
 
     if(core_rtl_map_set(
            &krnl_pg_size_map,
-           (void*)(p_page_block->size),
+           p_page_block,
            p_page_block) == NULL) {
         PANIC(ENOMEM, "Failed to add first kernel page block.\n");
     }
@@ -300,14 +300,14 @@ void create_0()
 
     if(core_rtl_map_set(
            &(p_page_tbl_0->free_addr_map),
-           (void*)(p_page_block->begin),
+           p_page_block,
            p_page_block) == NULL) {
         PANIC(ENOMEM, "Failed to add first user page block.\n");
     }
 
     if(core_rtl_map_set(
            &(p_page_tbl_0->free_size_map),
-           (void*)(p_page_block->size),
+           p_page_block,
            p_page_block) == NULL) {
         PANIC(ENOMEM, "Failed to add first user page block.\n");
     }
@@ -315,6 +315,48 @@ void create_0()
     //Add page table
     if(core_rtl_array_set(&usr_pg_tbls, 0, p_page_tbl_0) == NULL) {
         PANIC(ENOMEM, "Failed to add page table 0.\n");
+    }
+
+    return;
+}
+
+void collect_fragment(ppage_block_t p_block, pmap_t p_size_map,
+                      pmap_t p_addr_map)
+{
+    //Get position to begin merge
+    while(p_block->p_prev != NULL
+          && !(p_block->p_prev->status & PAGE_ALLOCATED)) {
+        p_block = p_block->p_prev;
+    }
+
+    //Merge blocks
+    //Remove p_block from map
+    core_rtl_map_set(p_size_map, p_block, NULL);
+    core_rtl_map_set(p_addr_map, p_block, NULL);
+
+    while(p_block->p_next != NULL
+          && !(p_block->p_next->status & PAGE_ALLOCATED)) {
+        //Remove next block from map
+        ppage_block_t p_next = p_block->p_next;
+        core_rtl_map_set(p_size_map, p_next, NULL);
+        core_rtl_map_set(p_addr_map, p_next, NULL);
+
+        //Merge block
+        p_block->size += p_next->size;
+        p_next->p_next->p_prev = p_block;
+        p_block->p_next = p_next->p_next;
+
+        //Free block
+        core_mm_heap_free(p_next, paging_heap);
+    }
+
+    //Add p_block
+    if(core_rtl_map_set(p_size_map, p_block, p_block) == NULL) {
+        PANIC(ENOMEM, "Failed to insert memory block");
+    }
+
+    if(core_rtl_map_set(p_addr_map, p_block, p_block) == NULL) {
+        PANIC(ENOMEM, "Failed to insert memory block");
     }
 
     return;
