@@ -73,6 +73,9 @@ typedef struct _page_obj {
 
     //Allocate physical memory
     void	(*alloc)(struct _page_obj* p_this);
+
+    //Check if the memory has been allocated
+    bool	(*is_alloced)(struct _page_obj* p_this);
     union {
         struct {
             address_t	addr;

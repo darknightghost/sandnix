@@ -68,6 +68,9 @@ static	void		unmap(ppage_obj_t p_this, void* virt_addr);
 //Allocate physical memory
 static	void		alloc(ppage_obj_t p_this);
 
+//Check if the page object has been allocated
+static	bool		is_alloced(ppage_obj_t p_this);
+
 //Private methods
 static	void		copy_on_write_unref(ppage_obj_t p_this);
 
@@ -114,6 +117,7 @@ ppage_obj_t page_obj(size_t page_size, u32 attr)
     p_ret->map = map;
     p_ret->unmap = unmap;
     p_ret->alloc = alloc;
+    p_ret->is_alloced = is_alloced;
 
     return p_ret;
 }
@@ -162,6 +166,7 @@ ppage_obj_t page_obj_on_phymem(address_t phy_base, size_t size)
     p_ret->map = map;
     p_ret->unmap = unmap;
     p_ret->alloc = alloc;
+    p_ret->is_alloced = is_alloced;
 
     return p_ret;
 }
@@ -299,17 +304,28 @@ ppage_obj_t fork(ppage_obj_t p_this)
 
 
     //Set attributes
-    p_ret->attr = p_this->attr | PAGE_OBJ_COPY_ON_WRITE;
-    p_this->attr = p_ret->attr;
-    p_ret->size = p_this->size;
-    core_rtl_memcpy(&(p_ret->mem_info), &(p_this->mem_info),
-                    sizeof(p_this->mem_info));
+    if(p_ret->attr & PAGE_OBJ_ALLOCATED) {
+        //Allocated
+        p_ret->attr = p_this->attr | PAGE_OBJ_COPY_ON_WRITE;
+        p_this->attr = p_ret->attr;
+        p_ret->size = p_this->size;
+        core_rtl_memcpy(&(p_ret->mem_info), &(p_this->mem_info),
+                        sizeof(p_this->mem_info));
 
-    //Copy on write reference
-    p_ret->copy_on_write_ref.p_next = p_this->copy_on_write_ref.p_next;
-    p_this->copy_on_write_ref.p_next->copy_on_write_ref.p_prev = p_ret;
-    p_this->copy_on_write_ref.p_next = p_ret;
-    p_ret->copy_on_write_ref.p_prev = p_this;
+        //Copy on write reference
+        p_ret->copy_on_write_ref.p_next = p_this->copy_on_write_ref.p_next;
+        p_this->copy_on_write_ref.p_next->copy_on_write_ref.p_prev = p_ret;
+        p_this->copy_on_write_ref.p_next = p_ret;
+        p_ret->copy_on_write_ref.p_prev = p_this;
+
+    } else {
+        //Not allocated
+        p_ret->attr = p_this->attr;
+        p_ret->size = p_this->size;
+        core_rtl_memset(&(p_this->mem_info), 0, sizeof(p_this->mem_info));
+        p_ret->copy_on_write_ref.p_prev = NULL;
+        p_ret->copy_on_write_ref.p_next = NULL;
+    }
 
     //Set methods
     p_ret->swap = swap;
@@ -321,6 +337,7 @@ ppage_obj_t fork(ppage_obj_t p_this)
     p_ret->map = map;
     p_ret->unmap = unmap;
     p_ret->alloc = alloc;
+    p_ret->is_alloced = is_alloced;
 
     return p_ret;
 }
@@ -365,6 +382,11 @@ void copy_on_write(ppage_obj_t p_this, void* virt_addr, u32 attr)
 
 void map(ppage_obj_t p_this, void* virt_addr, u32 attr)
 {
+    //Check attribute
+    if((p_this->attr & PAGE_OBJ_ALLOCATED) == 0) {
+        PANIC(EINVAL, "Cannot map memory whitch is not allocated.");
+    }
+
     //Get page attributes
     u32 mmu_attr = 0;
 
@@ -398,6 +420,11 @@ void map(ppage_obj_t p_this, void* virt_addr, u32 attr)
 
 void unmap(ppage_obj_t p_this, void* virt_addr)
 {
+    //Check attribute
+    if((p_this->attr & PAGE_OBJ_ALLOCATED) == 0) {
+        PANIC(EINVAL, "Cannot map memory whitch is not allocated.");
+    }
+
     //Unmap pages
     u32 page_num = p_this->size / SANDNIX_KERNEL_PAGE_SIZE;
 
@@ -410,5 +437,38 @@ void unmap(ppage_obj_t p_this, void* virt_addr)
 
     return;
 }
-void alloc(ppage_obj_t p_this);
-void copy_on_write_unref(ppage_obj_t p_this);
+
+void alloc(ppage_obj_t p_this)
+{
+    //Check attribute
+    if(p_this->attr & PAGE_OBJ_ALLOCATED) {
+        PANIC(EINVAL, "Cannot allocate memoy for an allocated memory.");
+    }
+
+    address_t p_new_phy_mem;
+}
+
+bool is_alloced(ppage_obj_t p_this)
+{
+    if(p_this->attr & PAGE_OBJ_ALLOCATED) {
+        return true;
+
+    } else {
+        return false;
+    }
+}
+
+void copy_on_write_unref(ppage_obj_t p_this)
+{
+    if(p_this->copy_on_write_ref.p_prev != NULL) {
+        p_this->copy_on_write_ref.p_prev->copy_on_write_ref.p_next
+            = p_this->copy_on_write_ref.p_next;
+    }
+
+    if(p_this->copy_on_write_ref.p_next != NULL) {
+        p_this->copy_on_write_ref.p_next->copy_on_write_ref.p_prev
+            = p_this->copy_on_write_ref.p_prev;
+    }
+
+    return;
+}
