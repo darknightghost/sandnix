@@ -56,6 +56,10 @@ static	void			free_page(ppage_block_t p_block,
                                   pmap_t p_size_map,
                                   pmap_t p_addr_map,
                                   pmap_t p_used_map);
+static	int				search_size(size_t size, void* p_key,
+                                    void* p_value, void* p_args);
+
+
 
 //Exception handlers
 static	except_stat_t page_read_except_hndlr(
@@ -361,3 +365,17 @@ void collect_fragment(ppage_block_t p_block, pmap_t p_size_map,
 
     return;
 }
+
+ppage_block_t alloc_page(pmap_t p_size_map, pmap_t p_addr_map,
+                         pmap_t p_used_map, void* base_addr, size_t size);
+void free_page(ppage_block_t p_block, pmap_t p_size_map, pmap_t p_addr_map,
+               pmap_t p_used_map);
+
+int	search_size(size_t size, void* p_key, void* p_value, void* p_args);
+
+except_stat_t page_read_except_hndlr(except_reason_t reason,
+                                     pepageread_except_t p_except);
+except_stat_t page_write_except_hndlr(except_reason_t reason,
+                                      pepagewrite_except_t p_except);
+except_stat_t page_exec_except_hndlr(except_reason_t reason,
+                                     pepageexec_except_t p_except);
