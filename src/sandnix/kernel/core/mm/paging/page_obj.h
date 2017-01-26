@@ -24,4 +24,4 @@
 ppage_obj_t		page_obj(size_t page_size, u32 attr);
 
 //Create page object on allocated physical memory, only used while initializing
-ppage_obj_t 	page_obj_on_phymem(address_t phy_base, size_t size);
+ppage_obj_t 	page_obj_on_phymem(address_t phy_base, size_t size, bool cacheable);
