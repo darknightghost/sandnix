@@ -41,12 +41,11 @@
 
 #define	PAGE_DMA				0x00000020
 
-#define	PAGE_CACHEABLE			0x00000040
-
 #define PAGE_BLOCK_ALLOCATED	0x00000001
 #define PAGE_BLOCK_COMMITED		0x00000002
 #define	PAGE_BLOCK_WRITEABLE	0x00000004
 #define	PAGE_BLOCK_EXECUTABLE	0x00000008
+#define	PAGE_BLOCK_SHARED		0x00000010
 
 //Page block
 typedef struct	_page_obj		page_obj_t, *ppage_obj_t;
@@ -65,4 +64,4 @@ typedef	struct	_proc_pg_tbl {
     map_t	used_map;				//Used page blocks
     map_t	free_addr_map;			//Free page blocks, sorted by address
     map_t	free_size_map;			//Free page blocks, sorted by size
-} proc_pg_tbl_t, *proc_pg_tbl;
+} proc_pg_tbl_t, *pproc_pg_tbl_t;

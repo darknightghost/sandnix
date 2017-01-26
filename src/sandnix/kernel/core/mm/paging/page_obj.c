@@ -102,7 +102,8 @@ ppage_obj_t page_obj(size_t page_size, u32 attr)
     }
 
     //Set attributes
-    p_ret->attr = attr & (PAGE_OBJ_SWAPPABLE | PAGE_OBJ_DMA);
+    p_ret->attr = attr & (PAGE_OBJ_SWAPPABLE | PAGE_OBJ_DMA
+                          | PAGE_OBJ_CAHCEABLE);
     p_ret->size = page_size;
     p_ret->copy_on_write_ref.p_prev = NULL;
     p_ret->copy_on_write_ref.p_next = NULL;
@@ -122,7 +123,7 @@ ppage_obj_t page_obj(size_t page_size, u32 attr)
     return p_ret;
 }
 
-ppage_obj_t page_obj_on_phymem(address_t phy_base, size_t size)
+ppage_obj_t page_obj_on_phymem(address_t phy_base, size_t size, bool cacheable)
 {
     if(page_obj_heap == NULL) {
         //Initialize heap
@@ -151,6 +152,11 @@ ppage_obj_t page_obj_on_phymem(address_t phy_base, size_t size)
 
     //Set attributes
     p_ret->attr = PAGE_OBJ_ALLOCATED;
+
+    if(cacheable) {
+        p_ret->attr |= PAGE_OBJ_CAHCEABLE;
+    }
+
     p_ret->size = size;
     p_ret->copy_on_write_ref.p_prev = NULL;
     p_ret->copy_on_write_ref.p_next = NULL;
@@ -390,14 +396,15 @@ void map(ppage_obj_t p_this, void* virt_addr, u32 attr)
     //Get page attributes
     u32 mmu_attr = 0;
 
-    if(attr & PAGE_WRITABLE) {
+    if((attr & PAGE_WRITABLE)
+       && !(p_this->attr & PAGE_OBJ_COPY_ON_WRITE)) {
         mmu_attr = MMU_PAGE_RW_NC;
 
     } else {
         mmu_attr = MMU_PAGE_RDONLY_NC;
     }
 
-    if(attr & PAGE_CACHEABLE) {
+    if(p_this->attr & PAGE_OBJ_CAHCEABLE) {
         mmu_attr |= MMU_PAGE_CACHEABLE;
     }
 

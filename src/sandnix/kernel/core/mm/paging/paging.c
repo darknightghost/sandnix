@@ -50,11 +50,23 @@ static	void			create_0();
 static	void			collect_fragment(ppage_block_t p_block,
         pmap_t p_size_map, pmap_t p_addr_map);
 static	ppage_block_t	alloc_page(pmap_t p_size_map, pmap_t p_addr_map,
-                                   pmap_t p_used_map);
-static	void			free_page(ppage_block_t, p_block,
+                                   pmap_t p_used_map, void* base_addr,
+                                   size_t size);
+static	void			free_page(ppage_block_t p_block,
                                   pmap_t p_size_map,
                                   pmap_t p_addr_map,
                                   pmap_t p_used_map);
+
+//Exception handlers
+static	except_stat_t page_read_except_hndlr(
+    except_reason_t reason,
+    pepageread_except_t p_except);
+static	except_stat_t page_write_except_hndlr(
+    except_reason_t reason,
+    pepagewrite_except_t p_except);
+static	except_stat_t page_exec_except_hndlr(
+    except_reason_t reason,
+    pepageexec_except_t p_except);
 
 void core_mm_paging_init()
 {
@@ -84,7 +96,6 @@ void core_mm_paging_init()
     core_pm_spnlck_rw_init(&krnl_pg_tbl_lck);
     create_krnl();
 
-
     //Initialize userspace page table
     core_kconsole_print_info("Creating page table 0...\n");
     core_rtl_array_init(&usr_pg_tbls, MAX_PROCESS_NUM, paging_heap);
@@ -93,6 +104,13 @@ void core_mm_paging_init()
     //Create page table 0
     create_0();
 
+    //Regist global page fault handlers
+    core_exception_add_hndlr(EPAGEREAD,
+                             (except_hndlr_t)page_read_except_hndlr);
+    core_exception_add_hndlr(EPAGEWRITE,
+                             (except_hndlr_t)page_write_except_hndlr);
+    core_exception_add_hndlr(EPAGEEXEC,
+                             (except_hndlr_t)page_exec_except_hndlr);
     return;
 }
 
@@ -206,14 +224,98 @@ void create_krnl()
         p_page_block = alloc_page(
                            &krnl_pg_size_map,
                            &krnl_pg_addr_map,
-                           &krnl_pg_used_map);
+                           &krnl_pg_used_map,
+                           (void*)base_addr,
+                           size);
 
         if(p_page_block == NULL) {
             PANIC(ENOMEM, "Failed to get page block.\n");
         }
 
         //Create page object
+        p_page_block->p_pg_obj = page_obj_on_phymem(phy_begin, size,
+                                 TO_BOOL(attr & MMU_PAGE_CACHEABLE));
+
+        if(p_page_block->p_pg_obj == NULL) {
+            PANIC(ENOMEM, "Failed to create page object.\n");
+        }
+
+        //Set page attribute
+        p_page_block->status |= PAGE_AVAIL;
+
+        if(attr & MMU_PAGE_WRITABLE) {
+            p_page_block->status |= MMU_PAGE_WRITABLE;
+
+        } else if(attr & MMU_PAGE_EXECUTABLE) {
+            p_page_block->status |= MMU_PAGE_EXECUTABLE;
+        }
     }
+
+    return;
 }
 
-void create_0();
+void create_0()
+{
+    void* usr_mem_base;
+    size_t usr_mem_size;
+
+    //Get memory range
+    hal_mmu_get_usr_addr_range(&usr_mem_base, &usr_mem_size);
+
+    //Create maps
+    pproc_pg_tbl_t p_page_tbl_0 = core_mm_heap_alloc(
+                                      sizeof(proc_pg_tbl_t),
+                                      paging_heap);
+
+    if(p_page_tbl_0 == NULL) {
+        PANIC(ENOMEM, "Failed to create page table 0.\n");
+    }
+
+    p_page_tbl_0->id = 0;
+    core_rtl_map_init(&(p_page_tbl_0->used_map),
+                      (item_compare_t)compare_pageblock_addr,
+                      paging_heap);
+    core_rtl_map_init(&(p_page_tbl_0->free_addr_map),
+                      (item_compare_t)compare_pageblock_addr,
+                      paging_heap);
+    core_rtl_map_init(&(p_page_tbl_0->free_size_map),
+                      (item_compare_t)compare_pageblock_size,
+                      paging_heap);
+
+    //Add page block
+    ppage_block_t p_page_block = core_mm_heap_alloc(
+                                     sizeof(page_block_t),
+                                     paging_heap);
+
+    if(p_page_block == NULL) {
+        PANIC(ENOMEM, "Failed to create page table 0.\n");
+    }
+
+    p_page_block->begin = (address_t)usr_mem_base;
+    p_page_block->size = usr_mem_size;
+    p_page_block->p_prev = NULL;
+    p_page_block->p_next = NULL;
+    p_page_block->p_pg_obj = NULL;
+    p_page_block->status = 0;
+
+    if(core_rtl_map_set(
+           &(p_page_tbl_0->free_addr_map),
+           (void*)(p_page_block->begin),
+           p_page_block) == NULL) {
+        PANIC(ENOMEM, "Failed to add first user page block.\n");
+    }
+
+    if(core_rtl_map_set(
+           &(p_page_tbl_0->free_size_map),
+           (void*)(p_page_block->size),
+           p_page_block) == NULL) {
+        PANIC(ENOMEM, "Failed to add first user page block.\n");
+    }
+
+    //Add page table
+    if(core_rtl_array_set(&usr_pg_tbls, 0, p_page_tbl_0) == NULL) {
+        PANIC(ENOMEM, "Failed to add page table 0.\n");
+    }
+
+    return;
+}

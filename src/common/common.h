@@ -26,6 +26,7 @@
 
     #define	UNREFERRED_PARAMETER(x)		((void)(x))
     #define MEM_BLOCK					__asm__ __volatile__ ("":::"memory");
+    #define	TO_BOOL(exp)				((exp) ? true : false)
 
 #endif
 
