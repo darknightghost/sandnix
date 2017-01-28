@@ -660,8 +660,112 @@ EXCEPT_OCCURED:
 
 except_stat_t page_write_except_hndlr(except_reason_t reason,
                                       pepagewrite_except_t p_except);
+
 except_stat_t page_exec_except_hndlr(except_reason_t reason,
-                                     pepageexec_except_t p_except);
+                                     pepageexec_except_t p_except)
+{
+    //Push dead lock handler
+    except_hndlr_info_t dead_lck_hndlr_info = {
+        .hndlr = (except_hndlr_t)deadlock_except_hndlr,
+        .reason = EDEADLOCK
+    };
+
+    if(core_exception_push_hndlr(&dead_lck_hndlr_info) == EXCEPT_RET_UNWIND) {
+        //EDEADLOCK occured, page fault in paging module
+        pepfinpaging_except_t p_new_except = epfinpaging_except(
+                p_except->fault_addr);
+        p_new_except->except.raise((pexcept_obj_t)p_new_except,
+                                   p_except->except.p_context,
+                                   __FILE__, __LINE__, NULL);
+    }
+
+    //Check if the address is in kernel memory or user memory.
+    address_t usr_base;
+    size_t usr_mem_size;
+
+    hal_mmu_get_usr_addr_range((void**)(&usr_base),
+                               &usr_mem_size);
+
+    pspnlck_t p_lock;
+    pmap_t p_used_map;
+
+    if(p_except->fault_addr > usr_base
+       && p_except->fault_addr < usr_base + usr_mem_size) {
+        //User memory
+        p_lock = &usr_pg_tbls_lck;
+        core_pm_spnlck_lock(p_lock);
+        pproc_pg_tbl_t p_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
+                                      &usr_pg_tbls,
+                                      core_pm_get_crrnt_thread_id());
+        p_used_map = &(p_pg_tbl->used_map);
+
+    } else {
+        //Kernel memory
+        p_lock = &krnl_pg_tbl_lck;
+        core_pm_spnlck_lock(p_lock);
+        p_used_map = &krnl_pg_used_map;
+    }
+
+    //Search page block
+    ppage_block_t p_page_block = core_rtl_map_search(
+                                     p_used_map,
+                                     (void*)(p_except->fault_addr),
+                                     (map_search_func_t)search_addr,
+                                     NULL);
+
+    if(p_page_block == NULL) {
+        goto EXCEPT_OCCURED;
+    }
+
+    //Check if the page block has been commited
+    if(p_page_block->status & PAGE_BLOCK_COMMITED) {
+        //Check if the page can be executed
+        if(!(p_page_block->status & PAGE_BLOCK_EXECUTABLE)) {
+            goto EXCEPT_OCCURED;
+        }
+
+        //Check page object attributes
+        ppage_obj_t p_pg_obj = p_page_block->p_pg_obj;
+        u32 attr = p_pg_obj->get_attr(p_pg_obj);
+
+        if(!(attr & PAGE_OBJ_ALLOCATED)) {
+            //Allocate page
+            p_pg_obj->alloc(p_pg_obj);
+            p_pg_obj->map(p_pg_obj, (void*)(p_page_block->begin),
+                          p_page_block->status);
+
+        } else if(!(attr & PAGE_OBJ_SWAPPED)) {
+            //Unswap page
+            p_pg_obj->unswap(p_pg_obj);
+            p_pg_obj->map(p_pg_obj, (void*)(p_page_block->begin),
+                          p_page_block->status);
+
+        } else if(p_page_block->status & PAGE_BLOCK_SHARED) {
+            //Map page object
+            p_pg_obj->map(p_pg_obj, (void*)(p_page_block->begin),
+                          p_page_block->status);
+
+        } else {
+            goto EXCEPT_OCCURED;
+        }
+
+    } else {
+        goto EXCEPT_OCCURED;
+    }
+
+    core_pm_spnlck_unlock(p_lock);
+    core_exception_pop_hndlr();
+
+    return EXCEPT_STATUS_CONTINUE_EXEC;
+
+    //Exception
+EXCEPT_OCCURED:
+    core_pm_spnlck_unlock(p_lock);
+    core_exception_pop_hndlr();
+    return EXCEPT_STATUS_CONTINUE_SEARCH;
+
+    UNREFERRED_PARAMETER(reason);
+}
 
 except_stat_t deadlock_except_hndlr(except_reason_t reason,
                                     pedeadlock_except_t p_except)
