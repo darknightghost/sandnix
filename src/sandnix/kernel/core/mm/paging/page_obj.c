@@ -357,29 +357,38 @@ void copy_on_write(ppage_obj_t p_this, void* virt_addr, u32 attr)
 
     address_t new_phy_addr;
 
-    //Allocate memory
-    while(hal_mmu_phymem_alloc((void**)(&new_phy_addr),
-                               SANDNIX_KERNEL_PAGE_SIZE,
-                               (p_this->attr & PAGE_OBJ_DMA) != 0,
-                               p_this->size / SANDNIX_KERNEL_PAGE_SIZE) != ESUCCESS) {
-        //TODO:Swap
-        NOT_SUPPORT;
+    if(p_this->copy_on_write_ref.p_prev == NULL
+       && p_this->copy_on_write_ref.p_next == NULL) {
+        p_this->attr &= ~PAGE_OBJ_COPY_ON_WRITE;
+
+    } else {
+
+        //Allocate memory
+        while(hal_mmu_phymem_alloc((void**)(&new_phy_addr),
+                                   SANDNIX_KERNEL_PAGE_SIZE,
+                                   (p_this->attr & PAGE_OBJ_DMA) != 0,
+                                   p_this->size / SANDNIX_KERNEL_PAGE_SIZE) != ESUCCESS) {
+            //TODO:Swap
+            NOT_SUPPORT;
+        }
+
+        //Copy memory
+        u32 page_num = p_this->size / SANDNIX_KERNEL_PAGE_SIZE;
+
+        for(u32 i = 0; i < page_num; i++) {
+            hal_mmu_pg_tbl_set(0, page_copy_buf, MMU_PAGE_RW,
+                               (void*)(new_phy_addr + i * SANDNIX_KERNEL_PAGE_SIZE));
+            core_rtl_memcpy(page_copy_buf,
+                            (void*)((address_t)virt_addr + i * SANDNIX_KERNEL_PAGE_SIZE),
+                            SANDNIX_KERNEL_PAGE_SIZE);
+        }
+
+        //Set attributes
+        p_this->mem_info.phy_mem_info.addr = new_phy_addr;
+        copy_on_write_unref(p_this);
+        p_this->attr &= ~PAGE_OBJ_COPY_ON_WRITE;
     }
 
-    //Copy memory
-    u32 page_num = p_this->size / SANDNIX_KERNEL_PAGE_SIZE;
-
-    for(u32 i = 0; i < page_num; i++) {
-        hal_mmu_pg_tbl_set(0, page_copy_buf, MMU_PAGE_RW,
-                           (void*)(new_phy_addr + i * SANDNIX_KERNEL_PAGE_SIZE));
-        core_rtl_memcpy(page_copy_buf,
-                        (void*)((address_t)virt_addr + i * SANDNIX_KERNEL_PAGE_SIZE),
-                        SANDNIX_KERNEL_PAGE_SIZE);
-    }
-
-    //Set attributes
-    p_this->mem_info.phy_mem_info.addr = new_phy_addr;
-    copy_on_write_unref(p_this);
 
     //Remap memory
     p_this->map(p_this, virt_addr, attr);
