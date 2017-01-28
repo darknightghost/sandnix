@@ -103,6 +103,15 @@ void core_exception_raise(pexcept_obj_t except)
 
     //Call global exception handlers
     call_globl_hndlrs(except);
+
+    //No handler found.
+    if(hal_cpu_is_kernel_context(except->p_context)) {
+        //IP is in kernel memory panic
+        except->panic(except);
+
+    } else {
+        //IP is in user memory, kill process
+    }
 }
 
 plist_node_t core_exception_add_hndlr(kstatus_t reason, except_hndlr_t hndlr)
@@ -349,8 +358,6 @@ void call_globl_hndlrs(pexcept_obj_t except)
             p_node = p_node->p_prev;
         } while(p_node != globl_except_hndlr_list->p_prev);
 
-        //No handler found. Panic.
         core_pm_spnlck_rw_r_unlock(&globl_list_lock);
-        except->panic(except);
     }
 }

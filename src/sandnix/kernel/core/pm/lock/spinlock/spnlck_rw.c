@@ -19,6 +19,7 @@
 #include "../../thread/thread.h"
 #include "../../../../hal/rtl/rtl.h"
 #include "../../../../hal/exception/exception.h"
+#include "../../../rtl/rtl.h"
 
 void core_pm_spnlck_rw_init(pspnlck_rw_t p_lock)
 {

@@ -21,6 +21,7 @@
 #include "./context_defs.h"
 #include "../../../../init/init_defs.h"
 #include "../../../../../core/rtl/rtl.h"
+#include "../../../../mmu/mmu_defs.h"
 
 /*
 	ATTENTION!!! Before using this function, make sure there is enough free
@@ -77,3 +78,5 @@
 #define hal_cpu_context_save_call(dest_func)
 
 #define	hal_cpu_get_stack_base(buff, size)	((void*)((address_t)(buff) + (size)))
+
+#define hal_cpu_is_kernel_context(p_context) ((p_context)->eip > (address_t)KERNEL_MEM_BASE)

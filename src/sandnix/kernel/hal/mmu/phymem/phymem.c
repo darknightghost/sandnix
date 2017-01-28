@@ -218,14 +218,14 @@ kstatus_t hal_mmu_phymem_alloc(void** p_addr, address_t align, bool is_dma, size
     core_pm_spnlck_rw_w_lock(&lock);
 
     //Search for memory block
-    psearch_size_info_t p_search_info;
-    p_search_info->align = align;
-    p_search_info->ret = NULL;
+    search_size_info_t search_info;
+    search_info.align = align;
+    search_info.ret = NULL;
     core_rtl_map_search(p_free_map,
                         (void*)(page_num * SANDNIX_KERNEL_PAGE_SIZE),
                         (map_search_func_t)search_size_func,
-                        (void*)p_search_info);
-    pphysical_memory_info_t p_memblock = p_search_info->ret;
+                        (void*)(&search_info));
+    pphysical_memory_info_t p_memblock = search_info.ret;
 
     if(p_memblock == NULL) {
         status = ENOMEM;

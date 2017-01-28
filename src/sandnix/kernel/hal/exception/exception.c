@@ -181,6 +181,7 @@ static const		char*	errno_tbl[ERRNO_MAX + 1] = {
     [EPAGEREAD] = "Page cannot be read",
     [EPAGEWRITE] = "Page cannot be write",
     [EPAGEEXEC] = "Page cannot be executed",
+    [EPFINPAGING] = "Page fault in paging module",
 
     //Math
     [EDIV] = "Divide error",

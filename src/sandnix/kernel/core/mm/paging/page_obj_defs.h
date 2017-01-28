@@ -31,12 +31,6 @@
 
 #define	PAGE_OBJ_ATTR_MASK			PAGE_OBJ_SWAPPABLE
 
-//Page object attributes
-typedef	struct	_pg_obj_ref_page {
-    u32			index;			//Index of page table
-    address_t	base_addr;		//Base virtual address
-} pg_obj_ref_page_t, *ppg_obj_ref_page_t;
-
 typedef struct _page_obj {
     obj_t		obj;
     u32			attr;				//Page object attribute

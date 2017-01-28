@@ -15,18 +15,24 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "../../../hal/exception/exception.h"
 
-#include "../../../../../../common/common.h"
+#include "../../rtl/rtl.h"
+#include "../../mm/mm.h"
+#include "../../pm/pm.h"
 
-typedef struct _spnlck_t {
-    union {
-        volatile u32		lock;
-        struct {
-            volatile u16		ticket;
-            volatile u16		owner;
-        } __attribute__((aligned(1)));
-    };
-    volatile u32		priority;
-    volatile u32		owner_thread;
-} spnlck_t, *pspnlck_t;
+#include "./edeadlock_except.h"
+#include "../exception.h"
+
+pedeadlock_except_t  edeadlock_except()
+{
+    pedeadlock_except_t p_ret
+        = (pedeadlock_except_t)except_obj(sizeof(edeadlock_except_t),
+                                          EDEADLOCK);
+
+    if(p_ret != NULL) {
+        p_ret->except.obj.class_id = CLASS_EXCEPT(EDEADLOCK);
+    }
+
+    return p_ret;
+}

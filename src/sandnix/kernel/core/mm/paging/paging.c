@@ -35,11 +35,11 @@
 static	map_t			krnl_pg_addr_map;
 static	map_t			krnl_pg_size_map;
 static	map_t			krnl_pg_used_map;
-static	spnlck_rw_t		krnl_pg_tbl_lck;
+static	spnlck_t		krnl_pg_tbl_lck;
 
 //User space page table
 static	array_t			usr_pg_tbls;
-static	spnlck_rw_t		usr_pg_tbls_lck;
+static	spnlck_t		usr_pg_tbls_lck;
 
 //Current page tables
 static	u32				current_pg_tbl[MAX_CPU_NUM];
@@ -82,6 +82,9 @@ static	except_stat_t page_write_except_hndlr(
 static	except_stat_t page_exec_except_hndlr(
     except_reason_t reason,
     pepageexec_except_t p_except);
+static	except_stat_t deadlock_except_hndlr(
+    except_reason_t reason,
+    pedeadlock_except_t p_except);
 
 void core_mm_paging_init()
 {
@@ -108,13 +111,13 @@ void core_mm_paging_init()
                       paging_heap);
     core_rtl_map_init(&krnl_pg_used_map, (item_compare_t)compare_pageblock_addr,
                       paging_heap);
-    core_pm_spnlck_rw_init(&krnl_pg_tbl_lck);
+    core_pm_spnlck_init(&krnl_pg_tbl_lck);
     create_krnl();
 
     //Initialize userspace page table
     core_kconsole_print_info("Creating page table 0...\n");
     core_rtl_array_init(&usr_pg_tbls, MAX_PROCESS_NUM, paging_heap);
-    core_pm_spnlck_rw_init(&usr_pg_tbls_lck);
+    core_pm_spnlck_init(&usr_pg_tbls_lck);
 
     //Create page table 0
     create_0();
@@ -256,7 +259,7 @@ void create_krnl()
         }
 
         //Set page attribute
-        p_page_block->status |= PAGE_AVAIL;
+        p_page_block->status |= PAGE_BLOCK_COMMITED;
 
         if(attr & MMU_PAGE_WRITABLE) {
             p_page_block->status |= PAGE_WRITABLE;
@@ -340,7 +343,7 @@ void collect_fragment(ppage_block_t p_block, pmap_t p_size_map,
 {
     //Get position to begin merge
     while(p_block->p_prev != NULL
-          && !(p_block->p_prev->status & PAGE_ALLOCATED)) {
+          && !(p_block->p_prev->status & PAGE_BLOCK_ALLOCATED)) {
         p_block = p_block->p_prev;
     }
 
@@ -350,7 +353,7 @@ void collect_fragment(ppage_block_t p_block, pmap_t p_size_map,
     core_rtl_map_set(p_addr_map, p_block, NULL);
 
     while(p_block->p_next != NULL
-          && !(p_block->p_next->status & PAGE_ALLOCATED)) {
+          && !(p_block->p_next->status & PAGE_BLOCK_ALLOCATED)) {
         //Remove next block from map
         ppage_block_t p_next = p_block->p_next;
         core_rtl_map_set(p_size_map, p_next, NULL);
@@ -480,7 +483,7 @@ ppage_block_t alloc_page(pmap_t p_size_map, pmap_t p_addr_map,
     }
 
     //Add to map
-    p_page_block->status |= PAGE_ALLOCATED;
+    p_page_block->status |= PAGE_BLOCK_ALLOCATED;
     core_rtl_map_set(p_used_map, p_page_block, p_page_block);
 
     return p_page_block;
@@ -533,6 +536,8 @@ int	search_size(size_t size, ppage_block_t p_key, ppage_block_t p_value,
         *p_p_prev = p_page_block;
         return 0;
     }
+
+    UNREFERRED_PARAMETER(p_key);
 }
 
 int search_addr(address_t address, ppage_block_t p_key, ppage_block_t p_value,
@@ -547,11 +552,122 @@ int search_addr(address_t address, ppage_block_t p_key, ppage_block_t p_value,
     } else {
         return 0;
     }
+
+    UNREFERRED_PARAMETER(p_value);
+    UNREFERRED_PARAMETER(p_args);
 }
 
 except_stat_t page_read_except_hndlr(except_reason_t reason,
-                                     pepageread_except_t p_except);
+                                     pepageread_except_t p_except)
+{
+    //Push dead lock handler
+    except_hndlr_info_t dead_lck_hndlr_info = {
+        .hndlr = (except_hndlr_t)deadlock_except_hndlr,
+        .reason = EDEADLOCK
+    };
+
+    if(core_exception_push_hndlr(&dead_lck_hndlr_info) == EXCEPT_RET_UNWIND) {
+        //EDEADLOCK occured, page fault in paging module
+        pepfinpaging_except_t p_new_except = epfinpaging_except(
+                p_except->fault_addr);
+        p_new_except->except.raise((pexcept_obj_t)p_new_except,
+                                   p_except->except.p_context,
+                                   __FILE__, __LINE__, NULL);
+    }
+
+    //Check if the address is in kernel memory or user memory.
+    address_t usr_base;
+    size_t usr_mem_size;
+
+    hal_mmu_get_usr_addr_range((void**)(&usr_base),
+                               &usr_mem_size);
+
+    pspnlck_t p_lock;
+    pmap_t p_used_map;
+
+    if(p_except->fault_addr > usr_base
+       && p_except->fault_addr < usr_base + usr_mem_size) {
+        //User memory
+        p_lock = &usr_pg_tbls_lck;
+        core_pm_spnlck_lock(p_lock);
+        pproc_pg_tbl_t p_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
+                                      &usr_pg_tbls,
+                                      core_pm_get_crrnt_thread_id());
+        p_used_map = &(p_pg_tbl->used_map);
+
+    } else {
+        //Kernel memory
+        p_lock = &krnl_pg_tbl_lck;
+        core_pm_spnlck_lock(p_lock);
+        p_used_map = &krnl_pg_used_map;
+    }
+
+    //Search page block
+    ppage_block_t p_page_block = core_rtl_map_search(
+                                     p_used_map,
+                                     (void*)(p_except->fault_addr),
+                                     (map_search_func_t)search_addr,
+                                     NULL);
+
+    if(p_page_block == NULL) {
+        goto EXCEPT_OCCURED;
+    }
+
+    //Check if the page block has been commited
+    if(p_page_block->status & PAGE_BLOCK_COMMITED) {
+        //Check page object attributes
+        ppage_obj_t p_pg_obj = p_page_block->p_pg_obj;
+        u32 attr = p_pg_obj->get_attr(p_pg_obj);
+
+        if(!(attr & PAGE_OBJ_ALLOCATED)) {
+            //Allocate page
+            p_pg_obj->alloc(p_pg_obj);
+            p_pg_obj->map(p_pg_obj, (void*)(p_page_block->begin),
+                          p_page_block->status);
+
+        } else if(!(attr & PAGE_OBJ_SWAPPED)) {
+            //Unswap page
+            p_pg_obj->unswap(p_pg_obj);
+            p_pg_obj->map(p_pg_obj, (void*)(p_page_block->begin),
+                          p_page_block->status);
+
+        } else if(p_page_block->status & PAGE_BLOCK_SHARED) {
+            //Map page object
+            p_pg_obj->map(p_pg_obj, (void*)(p_page_block->begin),
+                          p_page_block->status);
+
+        } else {
+            goto EXCEPT_OCCURED;
+        }
+
+    } else {
+        goto EXCEPT_OCCURED;
+    }
+
+    core_pm_spnlck_unlock(p_lock);
+    core_exception_pop_hndlr();
+
+    return EXCEPT_STATUS_CONTINUE_EXEC;
+
+    //Exception
+EXCEPT_OCCURED:
+    core_pm_spnlck_unlock(p_lock);
+    core_exception_pop_hndlr();
+    return EXCEPT_STATUS_CONTINUE_SEARCH;
+
+    UNREFERRED_PARAMETER(reason);
+}
+
 except_stat_t page_write_except_hndlr(except_reason_t reason,
                                       pepagewrite_except_t p_except);
 except_stat_t page_exec_except_hndlr(except_reason_t reason,
                                      pepageexec_except_t p_except);
+
+except_stat_t deadlock_except_hndlr(except_reason_t reason,
+                                    pedeadlock_except_t p_except)
+{
+    UNREFERRED_PARAMETER(reason);
+    UNREFERRED_PARAMETER(p_except);
+
+    return EXCEPT_STATUS_UNWIND;
+}
