@@ -25,6 +25,12 @@
 #include "../../rtl/rtl.h"
 #include "../../kconsole/kconsole.h"
 
+#define PAGE_SIZE_ALIGN(size)		((((size) / SANDNIX_KERNEL_PAGE_SIZE) \
+                                      + ((size) % SANDNIX_KERNEL_PAGE_SIZE \
+                                              ? 1 \
+                                              : 0)) \
+                                     * SANDNIX_KERNEL_PAGE_SIZE)
+
 //Kernel page table
 static	map_t			krnl_pg_addr_map;
 static	map_t			krnl_pg_size_map;
@@ -56,7 +62,12 @@ static	void			free_page(ppage_block_t p_block,
                                   pmap_t p_size_map,
                                   pmap_t p_addr_map,
                                   pmap_t p_used_map);
+
+//Search function
 static	int				search_size(size_t size, void* p_key,
+                                    void* p_value, void* p_args);
+
+static	int				search_addr(address_t address, void* p_key,
                                     void* p_value, void* p_args);
 
 
@@ -163,7 +174,7 @@ int compare_pageblock_size(ppage_block_t p1, ppage_block_t p2)
         return 1;
 
     } else if(p1->size == p2->size) {
-        return 0;
+        return compare_pageblock_addr(p1, p2);
 
     } else {
         return -1;
@@ -248,10 +259,10 @@ void create_krnl()
         p_page_block->status |= PAGE_AVAIL;
 
         if(attr & MMU_PAGE_WRITABLE) {
-            p_page_block->status |= MMU_PAGE_WRITABLE;
+            p_page_block->status |= PAGE_WRITABLE;
 
         } else if(attr & MMU_PAGE_EXECUTABLE) {
-            p_page_block->status |= MMU_PAGE_EXECUTABLE;
+            p_page_block->status |= PAGE_EXECUTABLE;
         }
     }
 
@@ -367,11 +378,147 @@ void collect_fragment(ppage_block_t p_block, pmap_t p_size_map,
 }
 
 ppage_block_t alloc_page(pmap_t p_size_map, pmap_t p_addr_map,
-                         pmap_t p_used_map, void* base_addr, size_t size);
+                         pmap_t p_used_map, void* base_addr, size_t size)
+{
+    ppage_block_t p_page_block;
+
+    //Get page block
+    if(base_addr == NULL) {
+        //Search by size
+        p_page_block = core_rtl_map_search(
+                           p_size_map,
+                           (void*)size,
+                           (map_search_func_t)search_size,
+                           NULL);
+
+    } else {
+        //Search by addr
+        p_page_block = core_rtl_map_search(
+                           p_addr_map,
+                           (void*)base_addr,
+                           (map_search_func_t)search_addr,
+                           NULL);
+
+        if(p_page_block != NULL) {
+            if(p_page_block->begin + p_page_block->size
+               < (address_t)base_addr + size) {
+                p_page_block = NULL;
+            }
+        }
+    }
+
+    if(p_page_block == NULL) {
+        return NULL;
+    }
+
+    //Remove page block
+    core_rtl_map_set(p_size_map, p_page_block, NULL);
+    core_rtl_map_set(p_addr_map, p_page_block, NULL);
+
+    //Split page block
+    if(base_addr != NULL
+       && (address_t)base_addr != p_page_block->begin) {
+        //Split prev block
+        ppage_block_t p_prev_block = core_mm_heap_alloc(sizeof(page_block_t),
+                                     paging_heap);
+
+        if(p_prev_block == NULL) {
+            goto ALLOC_PREV_BLOCK_FAILED;
+        }
+
+        p_prev_block->status = 0;
+        p_prev_block->begin = p_page_block->begin;
+        p_prev_block->p_pg_obj = NULL;
+        p_prev_block->size = (address_t)base_addr - p_page_block->begin;
+        p_prev_block->begin = p_page_block->begin;
+        p_page_block->begin += size;
+        p_page_block->size -= size;
+
+        //Insert to page block list
+        p_prev_block->p_prev = p_page_block->p_prev;
+
+        if(p_page_block->p_prev != NULL) {
+            p_page_block->p_prev->p_next = p_prev_block;
+        }
+
+        p_page_block->p_prev = p_prev_block;
+        p_prev_block->p_next = p_page_block;
+
+        //Add to map
+        core_rtl_map_set(p_size_map, p_prev_block, p_prev_block);
+        core_rtl_map_set(p_addr_map, p_prev_block, p_prev_block);
+    }
+
+    if(p_page_block->size > size) {
+        //Split next page block
+        ppage_block_t p_next_block = core_mm_heap_alloc(sizeof(page_block_t),
+                                     paging_heap);
+
+        if(p_next_block == NULL) {
+            goto ALLOC_NEXT_BLOCK_FAILED;
+        }
+
+        p_next_block->status = 0;
+        p_next_block->begin = p_page_block->begin + size;
+        p_next_block->size = p_page_block->size - size;
+        p_next_block->p_pg_obj = NULL;
+        p_page_block->size = size;
+
+        //Insert to page block list
+        p_next_block->p_next = p_page_block->p_next;
+
+        if(p_page_block->p_next != NULL) {
+            p_page_block->p_next->p_prev = p_next_block;
+        }
+
+        p_next_block->p_prev = p_page_block;
+        p_page_block->p_next = p_next_block;
+
+        //Add to map
+        core_rtl_map_set(p_size_map, p_next_block, p_next_block);
+        core_rtl_map_set(p_addr_map, p_next_block, p_next_block);
+    }
+
+    //Add to map
+    p_page_block->status |= PAGE_ALLOCATED;
+    core_rtl_map_set(p_used_map, p_page_block, p_page_block);
+
+    return p_page_block;
+
+    //Exception handlers
+ALLOC_NEXT_BLOCK_FAILED:
+ALLOC_PREV_BLOCK_FAILED:
+    core_rtl_map_set(p_size_map, p_page_block, p_page_block);
+    core_rtl_map_set(p_addr_map, p_page_block, p_page_block);
+    collect_fragment(p_page_block, p_size_map, p_addr_map);
+    return NULL;
+}
+
 void free_page(ppage_block_t p_block, pmap_t p_size_map, pmap_t p_addr_map,
-               pmap_t p_used_map);
+               pmap_t p_used_map)
+{
+    //Remove for used map
+    core_rtl_map_set(p_used_map, p_block, NULL);
+
+    //Free page object
+    if(p_block->p_pg_obj != NULL) {
+        DEC_REF(p_block->p_pg_obj);
+        p_block->p_pg_obj = NULL;
+    }
+
+    //Insert to free map
+    p_block->status = 0;
+    core_rtl_map_set(p_size_map, p_block, p_block);
+    core_rtl_map_set(p_addr_map, p_block, p_block);
+
+    //Collect fragments
+    collect_fragment(p_block, p_size_map, p_addr_map);
+
+    return;
+}
 
 int	search_size(size_t size, void* p_key, void* p_value, void* p_args);
+int search_addr(address_t address, void* p_key, void* p_value, void* p_args);
 
 except_stat_t page_read_except_hndlr(except_reason_t reason,
                                      pepageread_except_t p_except);
