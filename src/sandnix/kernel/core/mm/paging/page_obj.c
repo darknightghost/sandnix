@@ -114,6 +114,7 @@ ppage_obj_t page_obj(size_t page_size, u32 attr)
     p_ret->unswap = unswap;
     p_ret->set_attr = set_attr;
     p_ret->get_attr = get_attr;
+    p_ret->get_size = get_size;
     p_ret->fork = fork;
     p_ret->copy_on_write = copy_on_write;
     p_ret->map = map;
@@ -168,6 +169,7 @@ ppage_obj_t page_obj_on_phymem(address_t phy_base, size_t size, bool cacheable)
     p_ret->unswap = unswap;
     p_ret->set_attr = set_attr;
     p_ret->get_attr = get_attr;
+    p_ret->get_size = get_size;
     p_ret->fork = fork;
     p_ret->copy_on_write = copy_on_write;
     p_ret->map = map;
@@ -339,6 +341,7 @@ ppage_obj_t fork(ppage_obj_t p_this)
     p_ret->unswap = unswap;
     p_ret->set_attr = set_attr;
     p_ret->get_attr = get_attr;
+    p_ret->get_size = get_size;
     p_ret->fork = fork;
     p_ret->copy_on_write = copy_on_write;
     p_ret->map = map;
@@ -462,7 +465,20 @@ void alloc(ppage_obj_t p_this)
         PANIC(EINVAL, "Cannot allocate memoy for an allocated memory.");
     }
 
-    address_t p_new_phy_mem;
+    void* new_phy_addr;
+
+    while(hal_mmu_phymem_alloc(&new_phy_addr,
+                               SANDNIX_KERNEL_PAGE_SIZE,
+                               (p_this->attr & PAGE_OBJ_DMA) != 0,
+                               p_this->size / SANDNIX_KERNEL_PAGE_SIZE) != ESUCCESS) {
+        //TODO:Swap
+        NOT_SUPPORT;
+    }
+
+    p_this->attr |= PAGE_OBJ_ALLOCATED;
+    p_this->mem_info.phy_mem_info.addr = (address_t)new_phy_addr;
+
+    return;
 }
 
 bool is_alloced(ppage_obj_t p_this)
