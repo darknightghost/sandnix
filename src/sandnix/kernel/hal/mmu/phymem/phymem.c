@@ -30,6 +30,11 @@
 
 #define	IN_RANGE(n, start, size) ((n) >= (start) && (n) < (start) + (size))
 
+typedef struct _search_size_info {
+    size_t		align;
+    pphysical_memory_info_t	ret;
+} search_size_info_t, *psearch_size_info_t;
+
 static	map_t			free_map;
 static	map_t			index_map;
 #ifdef	RESERVE_DMA
@@ -59,7 +64,7 @@ static	int				search_addr_func(address_t base_address,
 static	int				search_size_func(size_t size,
         pphysical_memory_info_t p_key,
         pphysical_memory_info_t p_value,
-        size_t align);
+        psearch_size_info_t p_info);
 static	void			collect_fregments(pphysical_memory_info_t p_memblock,
         pmap_t p_free_map);
 
@@ -213,10 +218,14 @@ kstatus_t hal_mmu_phymem_alloc(void** p_addr, address_t align, bool is_dma, size
     core_pm_spnlck_rw_w_lock(&lock);
 
     //Search for memory block
-    pphysical_memory_info_t p_memblock = core_rtl_map_search(p_free_map,
-                                         (void*)(page_num * SANDNIX_KERNEL_PAGE_SIZE),
-                                         (map_search_func_t)search_size_func,
-                                         (void*)align);
+    psearch_size_info_t p_search_info;
+    p_search_info->align = align;
+    p_search_info->ret = NULL;
+    core_rtl_map_search(p_free_map,
+                        (void*)(page_num * SANDNIX_KERNEL_PAGE_SIZE),
+                        (map_search_func_t)search_size_func,
+                        (void*)p_search_info);
+    pphysical_memory_info_t p_memblock = p_search_info->ret;
 
     if(p_memblock == NULL) {
         status = ENOMEM;
@@ -823,14 +832,20 @@ int search_addr_func(address_t base_address, pphysical_memory_info_t p_key,
 }
 
 int search_size_func(size_t size, pphysical_memory_info_t p_key,
-                     pphysical_memory_info_t p_value, address_t align)
+                     pphysical_memory_info_t p_value, psearch_size_info_t p_info)
 {
-    size += (size_t)hal_rtl_math_mod64(p_key->begin, align);
+    size += (size_t)hal_rtl_math_mod64(p_key->begin, p_info->align);
 
     if(size > p_key->size) {
+        p_info->ret = p_value;
         return 1;
 
-    }  else {
+    } else if(size < p_key->size) {
+        return -1;
+
+    } else {
+        p_info->ret = p_value;
+
         return 0;
     }
 

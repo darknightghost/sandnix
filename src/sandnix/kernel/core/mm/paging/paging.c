@@ -64,11 +64,11 @@ static	void			free_page(ppage_block_t p_block,
                                   pmap_t p_used_map);
 
 //Search function
-static	int				search_size(size_t size, void* p_key,
-                                    void* p_value, void* p_args);
+static	int				search_size(size_t size, ppage_block_t p_key,
+                                    ppage_block_t p_value, ppage_block_t* p_p_prev);
 
-static	int				search_addr(address_t address, void* p_key,
-                                    void* p_value, void* p_args);
+static	int				search_addr(address_t address, ppage_block_t p_key,
+                                    ppage_block_t p_value, void* p_args);
 
 
 
@@ -380,16 +380,16 @@ void collect_fragment(ppage_block_t p_block, pmap_t p_size_map,
 ppage_block_t alloc_page(pmap_t p_size_map, pmap_t p_addr_map,
                          pmap_t p_used_map, void* base_addr, size_t size)
 {
-    ppage_block_t p_page_block;
+    ppage_block_t p_page_block = NULL;
 
     //Get page block
     if(base_addr == NULL) {
         //Search by size
-        p_page_block = core_rtl_map_search(
-                           p_size_map,
-                           (void*)size,
-                           (map_search_func_t)search_size,
-                           NULL);
+        core_rtl_map_search(
+            p_size_map,
+            (void*)size,
+            (map_search_func_t)search_size,
+            &p_page_block);
 
     } else {
         //Search by addr
@@ -517,8 +517,37 @@ void free_page(ppage_block_t p_block, pmap_t p_size_map, pmap_t p_addr_map,
     return;
 }
 
-int	search_size(size_t size, void* p_key, void* p_value, void* p_args);
-int search_addr(address_t address, void* p_key, void* p_value, void* p_args);
+int	search_size(size_t size, ppage_block_t p_key, ppage_block_t p_value,
+                ppage_block_t* p_p_prev)
+{
+    ppage_block_t p_page_block = (ppage_block_t)p_value;
+
+    if(size > p_page_block->size) {
+        *p_p_prev = p_page_block;
+        return 1;
+
+    } else if(size < p_page_block->size) {
+        return -1;
+
+    } else {
+        *p_p_prev = p_page_block;
+        return 0;
+    }
+}
+
+int search_addr(address_t address, ppage_block_t p_key, ppage_block_t p_value,
+                void* p_args)
+{
+    if(address < p_key->begin) {
+        return -1;
+
+    } else if(address >= p_key->begin + p_key->size) {
+        return 1;
+
+    } else {
+        return 0;
+    }
+}
 
 except_stat_t page_read_except_hndlr(except_reason_t reason,
                                      pepageread_except_t p_except);
