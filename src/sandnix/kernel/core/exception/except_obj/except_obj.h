@@ -42,3 +42,5 @@ extern	pheap_t	p_except_obj_heap;
 #include "./epageread_except.h"
 #include "./epagewrite_except.h"
 #include "./epageexec_except.h"
+#include "./edeadlock_except.h"
+#include "./epfinpaging_except.h"

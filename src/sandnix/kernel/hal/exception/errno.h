@@ -77,7 +77,7 @@
 #define	ENOANO			55		//No anode
 #define	EBADRQC			56		//Invalid request code
 #define	EBADSLT			57		//Invalid slot
-#define	EDEADLOCK		58		//Resource deadlock would occur
+#define	EDEADLOCK		EDEADLK	//Resource deadlock would occur
 #define	EBFONT			59		//Bad font file format
 #define	ENOSTR			60		//Device not a stream
 #define	ENODATA			61		//No data available
@@ -174,6 +174,7 @@
 #define EPAGEREAD			0x121	//Page cannot be read
 #define EPAGEWRITE			0x122	//Page cannot be write
 #define	EPAGEEXEC			0x123	//Page cannot be executed
+#define	EPFINPAGING			0x124	//Page fault in paging module
 
 //Math
 #define	EDIV				0x130	//Divide error

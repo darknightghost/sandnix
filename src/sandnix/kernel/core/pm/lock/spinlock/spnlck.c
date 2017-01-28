@@ -19,6 +19,8 @@
 #include "../../thread/thread.h"
 #include "../../../../hal/rtl/rtl.h"
 #include "../../../../hal/exception/exception.h"
+#include "../../../exception/exception.h"
+#include "../../pm.h"
 
 void core_pm_spnlck_init(pspnlck_t p_lock)
 {
@@ -48,10 +50,17 @@ void core_pm_spnlck_lock(pspnlck_t p_lock)
     }
 
     while(p_lock->owner != ticket) {
+        if(p_lock->owner_thread == core_pm_get_crrnt_thread_id()) {
+            //Dead lock, raise exception
+            pedeadlock_except_t p_except = edeadlock_except();
+            RAISE(p_except, "Trying to get a spinlock whitch has been got.");
+        }
+
         MEM_BLOCK;
     }
 
     p_lock->priority = priority;
+    p_lock->owner_thread = core_pm_get_crrnt_thread_id();
 
     return;
 }

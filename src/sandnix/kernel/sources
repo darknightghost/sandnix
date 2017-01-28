@@ -72,6 +72,8 @@ core/exception/except_obj/eprivilege_except.c
 core/exception/except_obj/epageread_except.c
 core/exception/except_obj/epagewrite_except.c
 core/exception/except_obj/epageexec_except.c
+core/exception/except_obj/edeadlock_except.c
+core/exception/except_obj/epfinpaging_except.c
 
 ##kconsole
 core/kconsole/kconsole.c

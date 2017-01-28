@@ -17,16 +17,9 @@
 
 #pragma once
 
-#include "../../../../../../common/common.h"
+#include "../../../../../common/common.h"
+#include "./except_obj.h"
 
-typedef struct _spnlck_t {
-    union {
-        volatile u32		lock;
-        struct {
-            volatile u16		ticket;
-            volatile u16		owner;
-        } __attribute__((aligned(1)));
-    };
-    volatile u32		priority;
-    volatile u32		owner_thread;
-} spnlck_t, *pspnlck_t;
+#include "./epfinpaging_except_defs.h"
+
+pepfinpaging_except_t	epfinpaging_except(address_t fault_addr);

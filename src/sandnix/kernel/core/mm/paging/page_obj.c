@@ -19,6 +19,7 @@
 #include "../../../../../common/common.h"
 
 #include "./page_obj.h"
+#include "./paging.h"
 #include "../../rtl/rtl.h"
 #include "../heap/heap.h"
 
@@ -396,7 +397,7 @@ void map(ppage_obj_t p_this, void* virt_addr, u32 attr)
     //Get page attributes
     u32 mmu_attr = 0;
 
-    if((attr & PAGE_WRITABLE)
+    if((attr & PAGE_BLOCK_WRITABLE)
        && !(p_this->attr & PAGE_OBJ_COPY_ON_WRITE)) {
         mmu_attr = MMU_PAGE_RW_NC;
 
@@ -408,7 +409,7 @@ void map(ppage_obj_t p_this, void* virt_addr, u32 attr)
         mmu_attr |= MMU_PAGE_CACHEABLE;
     }
 
-    if(attr & PAGE_EXECUTABLE) {
+    if(attr & PAGE_BLOCK_EXECUTABLE) {
         mmu_attr |= MMU_PAGE_EXECUTABLE;
     }
 
