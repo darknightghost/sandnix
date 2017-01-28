@@ -129,6 +129,7 @@ void core_mm_paging_init()
                              (except_hndlr_t)page_write_except_hndlr);
     core_exception_add_hndlr(EPAGEEXEC,
                              (except_hndlr_t)page_exec_except_hndlr);
+    UNREFERRED_PARAMETER(free_page);
     return;
 }
 
