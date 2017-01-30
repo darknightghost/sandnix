@@ -70,7 +70,7 @@ void		hal_mmu_pg_tbl_switch(
     u32 id);			//Page table id
 
 bool	hal_mmu_get_next_mapped_pages(
-    void*		prev,		//Prev address
+    void*		start_addr,	//Address begin search
     void**		begin,		//Begining virtual address
     void**		p_phy_begin,//Pointer to begining physicall address.
     size_t*		p_size,		//Pointer to size

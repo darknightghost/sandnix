@@ -129,7 +129,6 @@ void core_mm_paging_init()
                              (except_hndlr_t)page_write_except_hndlr);
     core_exception_add_hndlr(EPAGEEXEC,
                              (except_hndlr_t)page_exec_except_hndlr);
-    UNREFERRED_PARAMETER(free_page);
     return;
 }
 
@@ -151,7 +150,14 @@ void core_mm_pg_tbl_fork(u32 src_index, u32 dest_index);
 void core_mm_pg_tbl_clear(u32 index);
 void core_mm_pg_tbl_release(u32 src_index);
 void* core_mm_pg_alloc(void* base_addr, size_t size, u32 options);
-void core_mm_pg_free(void* base_addr);
+
+void core_mm_pg_free(void* base_addr)
+{
+    UNREFERRED_PARAMETER(free_page);
+    UNREFERRED_PARAMETER(base_addr);
+    return;
+}
+
 ppage_obj_t core_mm_get_pg_obj(void** p_base_addr, void* addr);
 void* core_mm_map(void* addr, ppage_obj_t p_page_obj, u32 options);
 void core_mm_commit(void* addr);
@@ -226,16 +232,16 @@ void create_krnl()
 
     //Scan mmu page table
     core_kconsole_print_debug("Memory info:\n"
-                              "%-16s%-16s%-10s\n",
+                              "%-16s|%-16s|%-10s\n",
                               "Virtual address",
                               "Physical address",
-                              "size");
+                              "Size");
 
     while(hal_mmu_get_next_mapped_pages((void*)base_addr,
                                         (void**)(&base_addr),
                                         (void**)(&phy_begin),
                                         &size, &attr)) {
-        core_kconsole_print_debug("%-16p%-16p%-10p\n",
+        core_kconsole_print_debug("%-16p|%-16p|%-10p\n",
                                   base_addr,
                                   phy_begin,
                                   size);
@@ -268,6 +274,8 @@ void create_krnl()
         } else if(attr & MMU_PAGE_EXECUTABLE) {
             p_page_block->status |= PAGE_EXECUTABLE;
         }
+
+        base_addr = (address_t)base_addr + size;
     }
 
     return;
@@ -404,8 +412,9 @@ ppage_block_t alloc_page(pmap_t p_size_map, pmap_t p_addr_map,
                            NULL);
 
         if(p_page_block != NULL) {
-            if(p_page_block->begin + p_page_block->size
-               < (address_t)base_addr + size) {
+            if(p_page_block->size < size
+               || p_page_block->size - size
+               < (address_t)base_addr - p_page_block->begin) {
                 p_page_block = NULL;
             }
         }
@@ -527,10 +536,10 @@ int	search_size(size_t size, ppage_block_t p_key, ppage_block_t p_value,
     ppage_block_t p_page_block = (ppage_block_t)p_value;
 
     if(size > p_page_block->size) {
-        *p_p_prev = p_page_block;
         return 1;
 
     } else if(size < p_page_block->size) {
+        *p_p_prev = p_page_block;
         return -1;
 
     } else {
@@ -547,7 +556,7 @@ int search_addr(address_t address, ppage_block_t p_key, ppage_block_t p_value,
     if(address < p_key->begin) {
         return -1;
 
-    } else if(address >= p_key->begin + p_key->size) {
+    } else if(address - p_key->begin >= p_key->size) {
         return 1;
 
     } else {

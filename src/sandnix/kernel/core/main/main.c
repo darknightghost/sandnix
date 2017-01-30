@@ -24,10 +24,13 @@
 void core_main_main()
 {
     core_kconsole_init();
-    core_kconsole_print_info("Entering kernel main...\n\n");
+    core_kconsole_print_info("Entering kernel main...\n");
 
-    core_kconsole_print_info("Initializing exception handling framework...\n");
+    core_kconsole_print_info("\nInitializing exception handling framework...\n");
     core_exception_init();
+
+    core_kconsole_print_info("\nInitializing mm module...\n");
+    core_mm_init();
 
     while(1);
 }
