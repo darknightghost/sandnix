@@ -557,7 +557,7 @@ void hal_mmu_pg_tbl_switch(u32 id)
     return;
 }
 
-bool hal_mmu_get_next_mapped_pages(void* prev, void** begin, void** p_phy_begin,
+bool hal_mmu_get_next_mapped_pages(void* start_addr, void** begin, void** p_phy_begin,
                                    size_t* p_size, u32* p_attr)
 {
     core_pm_spnlck_rw_w_lock(&lock);
@@ -565,29 +565,66 @@ bool hal_mmu_get_next_mapped_pages(void* prev, void** begin, void** p_phy_begin,
     //Get page table
     *p_attr = 0;
     ppte_tbl_info_t p_pte_info;
+    ppte_t p_pte;
 
-    *begin = (ppte_tbl_info_t)core_rtl_map_next(
-                 &mmu_krnl_pte_tbl_map,
-                 (void*)((address_t)prev & 0xFFC00000));
+    u32 index = (address_t)(start_addr) % (4096 * 1024) / 4096;
 
-
-    p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
+    //The first 4KB virtual memory should never be mapped, because of NULL.
+    if(core_rtl_map_get(&mmu_krnl_pte_tbl_map,
+                        (void*)((address_t)start_addr & 0xFFC00000)) == NULL) {
+        *begin = core_rtl_map_next(
                      &mmu_krnl_pte_tbl_map,
-                     (void*)((address_t) * begin & 0xFFC00000));
-
-    if(p_pte_info == NULL) {
-        core_pm_spnlck_rw_w_unlock(&lock);
-        return false;
+                     (void*)((address_t)start_addr & 0xFFC00000));
+        index = 0;
     }
 
-    //Get page info
-    *p_phy_begin = (void*)(p_pte_info->physical_addr);
-    *p_size = SANDNIX_KERNEL_PAGE_SIZE;
 
+    while(true) {
+        if(*begin == NULL) {
+            core_pm_spnlck_rw_w_unlock(&lock);
+            return false;
+        }
 
-    switch_editing_page((void*)(p_pte_info->physical_addr));
-    ppte_t p_pte = (ppte_t)page_operate_addr
-                   + (address_t)(*begin) % (4096 * 1024) / 4096;
+        p_pte_info = (ppte_tbl_info_t)core_rtl_map_get(
+                         &mmu_krnl_pte_tbl_map,
+                         (void*)((address_t) * begin & 0xFFC00000));
+
+        if(p_pte_info == NULL) {
+            *begin = core_rtl_map_next(
+                         &mmu_krnl_pte_tbl_map,
+                         (void*)((address_t)(*begin) & 0xFFC00000));
+            index = 0;
+            continue;
+        }
+
+        //Get page info
+        switch_editing_page((void*)(p_pte_info->physical_addr));
+
+        //Search page
+        for(; index < 1024; index++) {
+            p_pte = (ppte_t)page_operate_addr
+                    + index;
+
+            if(p_pte->present) {
+                break;
+            }
+        }
+
+        if(index < 1024) {
+            //Found page
+            *p_phy_begin = (void*)((address_t)(p_pte->page_base_addr) << 12);
+            *((address_t*)begin) = ((address_t)(*begin) & 0xFFC00000)
+                                   + index * SANDNIX_KERNEL_PAGE_SIZE;
+            *p_size = SANDNIX_KERNEL_PAGE_SIZE;
+            break;
+        }
+
+        //Goto next page table
+        *begin = core_rtl_map_next(
+                     &mmu_krnl_pte_tbl_map,
+                     (void*)((address_t)(*begin) & 0xFFC00000));
+        index = 0;
+    }
 
     if(p_pte->present == PG_P) {
         (*p_attr) |= MMU_PAGE_AVAIL;
@@ -640,8 +677,10 @@ bool hal_mmu_get_next_mapped_pages(void* prev, void** begin, void** p_phy_begin,
             break;
         }
 
+        address_t phy_addr = p_pte->page_base_addr << 12;
+
         if(base_addr - (address_t)(*begin)
-           != p_pte_info->physical_addr - (address_t)(*p_phy_begin)) {
+           != phy_addr - (address_t)(*p_phy_begin)) {
             break;
         }
 

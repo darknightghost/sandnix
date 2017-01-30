@@ -28,7 +28,7 @@
 
 #include "../mmu.h"
 
-#define	IN_RANGE(n, start, size) ((n) >= (start) && (n) < (start) + (size))
+#define	IN_RANGE(n, start, size) ((n) >= (start) && (n) - (start) < (size))
 
 typedef struct _search_size_info {
     size_t		align;
@@ -837,10 +837,10 @@ int search_size_func(size_t size, pphysical_memory_info_t p_key,
     size += (size_t)hal_rtl_math_mod64(p_key->begin, p_info->align);
 
     if(size > p_key->size) {
-        p_info->ret = p_value;
         return 1;
 
     } else if(size < p_key->size) {
+        p_info->ret = p_value;
         return -1;
 
     } else {
