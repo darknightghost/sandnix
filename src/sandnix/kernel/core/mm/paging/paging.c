@@ -46,7 +46,7 @@ static	u32				current_pg_tbl[MAX_CPU_NUM];
 
 //Heap
 static	pheap_t			paging_heap = NULL;
-static	u8				paging_heap_buf[SANDNIX_KERNEL_PAGE_SIZE];
+static	u8				paging_heap_buf[SANDNIX_KERNEL_PAGE_SIZE * 2];
 
 
 static	int				compare_pageblock_addr(ppage_block_t p1, ppage_block_t p2);
@@ -232,7 +232,7 @@ void create_krnl()
 
     //Scan mmu page table
     core_kconsole_print_debug("Memory info:\n"
-                              "%-16s|%-16s|%-10s\n",
+                              "%-16s | %-16s | %-10s\n",
                               "Virtual address",
                               "Physical address",
                               "Size");
@@ -241,7 +241,7 @@ void create_krnl()
                                         (void**)(&base_addr),
                                         (void**)(&phy_begin),
                                         &size, &attr)) {
-        core_kconsole_print_debug("%-16p|%-16p|%-10p\n",
+        core_kconsole_print_debug("%-16p | %-16p | %-10p\n",
                                   base_addr,
                                   phy_begin,
                                   size);
@@ -325,12 +325,16 @@ void create_0()
     p_page_block->p_pg_obj = NULL;
     p_page_block->status = 0;
 
+    HEAP_CHECK(paging_heap);
+
     if(core_rtl_map_set(
            &(p_page_tbl_0->free_addr_map),
            p_page_block,
            p_page_block) == NULL) {
         PANIC(ENOMEM, "Failed to add first user page block.\n");
     }
+
+    HEAP_CHECK(paging_heap);
 
     if(core_rtl_map_set(
            &(p_page_tbl_0->free_size_map),
@@ -340,6 +344,8 @@ void create_0()
     }
 
     //Add page table
+    HEAP_CHECK(paging_heap);
+
     if(core_rtl_array_set(&usr_pg_tbls, 0, p_page_tbl_0) == NULL) {
         PANIC(ENOMEM, "Failed to add page table 0.\n");
     }
