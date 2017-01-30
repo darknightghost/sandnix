@@ -125,7 +125,7 @@ pheap_t core_mm_heap_create_on_buf(
 
     INIT_MEMBLOCK(p_mem_block, init_buf_size
                   - HEAP_PG_BLCK_SZ,
-                  (pheap_pg_blck_t)init_buf , ret);
+                  (pheap_pg_blck_t)init_buf, ret);
 
     ret->p_empty_block_tree = p_mem_block;
 
@@ -376,7 +376,7 @@ void init_default_heap()
 
     INIT_MEMBLOCK(p_mem_block, DEFAULT_HEAP_SCALE
                   - HEAP_PG_BLCK_SZ,
-                  (pheap_pg_blck_t)default_heap_pg_block , &default_heap);
+                  (pheap_pg_blck_t)default_heap_pg_block, &default_heap);
 
     default_heap.p_empty_block_tree = p_mem_block;
     is_default_heap_ready = true;
@@ -416,8 +416,8 @@ pheap_mem_blck_t get_free_mem_block(pheap_t p_heap, size_t size)
 
         } else {
             if(p_block->p_rchild == NULL) {
-                while(p_block->size < size
-                      && p_block != NULL) {
+                while(p_block != NULL && p_block->size < size
+                     ) {
                     p_block = p_block->p_parent;
                 }
 

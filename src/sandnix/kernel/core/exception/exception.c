@@ -31,7 +31,7 @@ pheap_t		p_except_heap = NULL;
 static	bool		initialized = false;
 static	spnlck_rw_t	globl_list_lock;
 static	list_t		globl_except_hndlr_list;
-static	u8			except_heap_buf[4096];
+static	u8			except_heap_buf[4096 * 4];
 
 static	void		call_thread_hndlrs(pexcept_obj_t except);
 static	void		call_globl_hndlrs(pexcept_obj_t except);
@@ -44,7 +44,7 @@ void core_exception_init()
 
     //Initialize heap
     p_except_heap = core_mm_heap_create_on_buf(HEAP_PREALLOC | HEAP_MULITHREAD,
-                    4096,
+                    SANDNIX_KERNEL_PAGE_SIZE,
                     except_heap_buf,
                     sizeof(except_heap_buf));
 
