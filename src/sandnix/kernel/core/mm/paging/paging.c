@@ -276,8 +276,74 @@ EXCEPT_CHECK_ADDR:
 
 void core_mm_pg_free(void* base_addr)
 {
-    UNREFERRED_PARAMETER(free_page);
-    UNREFERRED_PARAMETER(base_addr);
+    address_t kernel_mem_base;
+    size_t kernel_mem_size;
+    address_t usr_mem_base;
+    address_t usr_mem_size;
+
+    //Get map
+    hal_mmu_get_krnl_addr_range(
+        (void**)(&kernel_mem_base),
+        &kernel_mem_size);
+    hal_mmu_get_usr_addr_range(
+        (void**)(&usr_mem_base),
+        &usr_mem_size);
+
+    pmap_t p_addr_map;
+    pmap_t p_used_map;
+    pmap_t p_size_map;
+    pspnlck_t p_lock;
+
+    if((address_t)base_addr < kernel_mem_base
+       || (address_t)base_addr - kernel_mem_base
+       >= kernel_mem_size) {
+        //Kernel memory
+        p_lock = &krnl_pg_tbl_lck;
+        p_addr_map = &krnl_pg_addr_map;
+        p_size_map = &krnl_pg_size_map;
+        p_used_map = &krnl_pg_used_map;
+
+        core_pm_spnlck_lock(p_lock);
+
+    } else if((address_t)base_addr < usr_mem_base
+              || (address_t)base_addr - usr_mem_base
+              >= usr_mem_size) {
+        //User memory
+        p_lock = &usr_pg_tbls_lck;
+        u32 current_proc = core_pm_get_crrnt_proc_id();
+        core_pm_spnlck_lock(p_lock);
+        pproc_pg_tbl_t p_proc_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
+                                           &usr_pg_tbls,
+                                           current_proc);
+        p_addr_map = &(p_proc_pg_tbl->free_addr_map);
+        p_size_map = &(p_proc_pg_tbl->free_size_map);
+        p_used_map = &(p_proc_pg_tbl->used_map);
+    }
+
+    //Look for page block
+    ppage_block_t p_page_block = core_rtl_map_search(
+                                     p_used_map,
+                                     (void*)base_addr,
+                                     (map_search_func_t)search_addr,
+                                     NULL);
+
+    if(p_page_block == NULL) {
+        core_pm_spnlck_unlock(p_lock);
+
+        //Raise exception
+        char comment[64];
+        core_rtl_snprintf(comment, sizeof(comment),
+                          "Unable to free pages at %p, this address is not a "
+                          "base address for an allocated page block.",
+                          base_addr);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, comment);
+    }
+
+    //Free page block
+    free_page(p_page_block, p_size_map, p_addr_map, p_used_map);
+
+    core_pm_spnlck_unlock(p_lock);
     return;
 }
 
