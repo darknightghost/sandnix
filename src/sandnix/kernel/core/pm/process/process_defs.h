@@ -17,17 +17,4 @@
 
 #pragma once
 
-#include "../../../../common/common.h"
-
-//Spinlock
-#include "./lock/spinlock/spnlck.h"
-#include "./lock/spinlock/spnlck_rw.h"
-
-//Thread
-#include "./thread/thread.h"
-
-//Process
-#include "./process/process.h"
-
-#include "./pm_defs.h"
-
+#include "../../../../../common/common.h"

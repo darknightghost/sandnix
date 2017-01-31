@@ -15,19 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "./process.h"
 
-#include "../../../../common/common.h"
 
-//Spinlock
-#include "./lock/spinlock/spnlck.h"
-#include "./lock/spinlock/spnlck_rw.h"
-
-//Thread
-#include "./thread/thread.h"
-
-//Process
-#include "./process/process.h"
-
-#include "./pm_defs.h"
-
+u32 core_pm_get_crrnt_proc_id()
+{
+    return 0;
+}

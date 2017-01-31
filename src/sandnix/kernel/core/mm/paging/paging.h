@@ -25,10 +25,10 @@
 void	core_mm_paging_init();
 
 //Initialize cpu core
-void	core_mm_paging_cpu_core_init(u32 cpuid);
+void	core_mm_paging_cpu_core_init(u32 cpu_index);
 
 //Release cpu core
-void	core_mm_paging_cpu_core_release(u32 cpuid);
+void	core_mm_paging_cpu_core_release(u32 cpu_index);
 
 //Switch to page table
 void	core_mm_switch_to(u32 index);
@@ -58,7 +58,7 @@ ppage_obj_t	core_mm_get_pg_obj(void** p_base_addr, void* addr);
 void*		core_mm_map(void* addr, ppage_obj_t p_page_obj, u32 options);
 
 //Commit pages
-void		core_mm_commit(void* addr);
+void		core_mm_commit(void* addr, u32 options);
 
 //Uncommit pages
 void		core_mm_uncommit(void* addr);
