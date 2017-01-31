@@ -15,33 +15,24 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "../../../hal/exception/exception.h"
 
-#define CORE_EXCEPTION_EXPORT
+#include "../../rtl/rtl.h"
+#include "../../mm/mm.h"
+#include "../../pm/pm.h"
 
-#include "../../../../../common/common.h"
-
-#include "../../rtl/rtl_defs.h"
-
-#include "../../../hal/cpu/cpu_defs.h"
-
-#include "./except_obj_defs.h"
-
-pexcept_obj_t	except_obj(size_t size, kstatus_t reason);
-
-extern	pheap_t	p_except_obj_heap;
-
-#include "./eperm_except.h"
-#include "./enoent_except.h"
-#include "./ediv_except.h"
-#include "./eunknowint_except.h"
-#include "./ebreakpoint_except.h"
-#include "./eundefined_except.h"
-#include "./efloat_except.h"
-#include "./eprivilege_except.h"
-#include "./epageread_except.h"
-#include "./epagewrite_except.h"
-#include "./epageexec_except.h"
-#include "./edeadlock_except.h"
-#include "./epfinpaging_except.h"
 #include "./einval_except.h"
+#include "../exception.h"
+
+peinval_except_t  einval_except()
+{
+    peinval_except_t p_ret
+        = (peinval_except_t)except_obj(sizeof(einval_except_t),
+                                       EINVAL);
+
+    if(p_ret != NULL) {
+        p_ret->except.obj.class_id = CLASS_EXCEPT(EINVAL);
+    }
+
+    return p_ret;
+}
