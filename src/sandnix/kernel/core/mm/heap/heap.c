@@ -150,11 +150,15 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
         p_heap = heap;
     }
 
+    size = (size % 8 ? (size / 8 + 1) * 8 : size);
+
+    if(size + HEAP_MEM_BLCK_SZ > p_heap->scale) {
+        return NULL;
+    }
+
     if(p_heap->type & HEAP_MULITHREAD) {
         core_pm_spnlck_lock(&(p_heap->lock));
     }
-
-    size = (size % 8 ? (size / 8 + 1) * 8 : size);
 
     //Get mem block
     p_mem_block = get_free_mem_block(p_heap, size);

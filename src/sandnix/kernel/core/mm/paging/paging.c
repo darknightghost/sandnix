@@ -58,6 +58,7 @@ static	void			collect_fragment(ppage_block_t p_block,
 static	ppage_block_t	alloc_page(pmap_t p_size_map, pmap_t p_addr_map,
                                    pmap_t p_used_map, void* base_addr,
                                    size_t size);
+static	bool			commit_page(ppage_block_t p_page_block, u32 options);
 static	void			free_page(ppage_block_t p_block,
                                   pmap_t p_size_map,
                                   pmap_t p_addr_map,
@@ -132,24 +133,146 @@ void core_mm_paging_init()
     return;
 }
 
-void core_mm_paging_cpu_core_init(u32 cpuid)
+void core_mm_paging_cpu_core_init(u32 cpu_index)
 {
-    current_pg_tbl[cpuid] = 0;
+    current_pg_tbl[cpu_index] = 0;
     return;
 }
 
-void core_mm_paging_cpu_core_release(u32 cpuid)
+void core_mm_paging_cpu_core_release(u32 cpu_index)
 {
-    current_pg_tbl[cpuid] = 0;
+    current_pg_tbl[cpu_index] = 0;
     return;
 }
 
-void core_mm_switch_to(u32 index);
-u32 core_mm_get_current_pg_tbl_index();
+void core_mm_switch_to(u32 index)
+{
+    u32 cpu_index = hal_cpu_get_cpu_index();
+
+    if(current_pg_tbl[cpu_index] != index) {
+        //Switch page table
+        current_pg_tbl[cpu_index] = index;
+        hal_mmu_pg_tbl_switch(index);
+    }
+
+    return;
+}
+
+u32 core_mm_get_current_pg_tbl_index()
+{
+    u32 cpu_index = hal_cpu_get_cpu_index();
+
+    return current_pg_tbl[cpu_index];
+}
+
 void core_mm_pg_tbl_fork(u32 src_index, u32 dest_index);
 void core_mm_pg_tbl_clear(u32 index);
 void core_mm_pg_tbl_release(u32 src_index);
-void* core_mm_pg_alloc(void* base_addr, size_t size, u32 options);
+
+void* core_mm_pg_alloc(void* base_addr, size_t size, u32 options)
+{
+    address_t kernel_mem_base;
+    size_t kernel_mem_size;
+    address_t usr_mem_base;
+    address_t usr_mem_size;
+
+    size = PAGE_SIZE_ALIGN(size);
+
+    if(base_addr != NULL) {
+        //Check address
+        hal_mmu_get_krnl_addr_range(
+            (void**)(&kernel_mem_base),
+            &kernel_mem_size);
+        hal_mmu_get_usr_addr_range(
+            (void**)(&usr_mem_base),
+            &usr_mem_size);
+
+        if(options & PAGE_OPTION_KERNEL) {
+            if((address_t)base_addr < kernel_mem_base
+               || (address_t)base_addr + size - kernel_mem_base
+               >= kernel_mem_size) {
+                goto EXCEPT_CHECK_ADDR;
+            }
+
+        } else {
+            if((address_t)base_addr < usr_mem_base
+               || (address_t)base_addr + size - usr_mem_base
+               >= usr_mem_size) {
+                goto EXCEPT_CHECK_ADDR;
+            }
+        }
+    }
+
+    //Get map
+    pmap_t p_addr_map;
+    pmap_t p_used_map;
+    pmap_t p_size_map;
+    pspnlck_t p_lock;
+
+    if(options & PAGE_OPTION_KERNEL) {
+        //Kernel memory
+        p_lock = &krnl_pg_tbl_lck;
+        p_addr_map = &krnl_pg_addr_map;
+        p_size_map = &krnl_pg_size_map;
+        p_used_map = &krnl_pg_used_map;
+
+        core_pm_spnlck_lock(p_lock);
+
+    } else {
+        //User memory
+        p_lock = &usr_pg_tbls_lck;
+        u32 current_proc = core_pm_get_crrnt_proc_id();
+        core_pm_spnlck_lock(p_lock);
+        pproc_pg_tbl_t p_proc_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
+                                           &usr_pg_tbls,
+                                           current_proc);
+        p_addr_map = &(p_proc_pg_tbl->free_addr_map);
+        p_size_map = &(p_proc_pg_tbl->free_size_map);
+        p_used_map = &(p_proc_pg_tbl->used_map);
+    }
+
+    //Allocate page
+    ppage_block_t p_page_block = alloc_page(
+                                     p_size_map,
+                                     p_addr_map,
+                                     p_used_map,
+                                     base_addr,
+                                     size);
+
+    if(p_page_block == NULL) {
+        goto EXCEPT_ALLOC;
+    }
+
+    if(options & PAGE_OPTION_WRITABLE) {
+        p_page_block->status |= PAGE_BLOCK_WRITABLE;
+    }
+
+    if(options & PAGE_OPTION_EXECUTABLE) {
+        p_page_block->status |= PAGE_BLOCK_EXECUTABLE;
+    }
+
+    if(options & PAGE_OPTION_SHARED) {
+        p_page_block->status |= PAGE_BLOCK_SHARED;
+    }
+
+    if(options & PAGE_OPTION_COMMIT) {
+        //Commit page
+        if(!commit_page(p_page_block, options)) {
+            goto EXCEPT_COMMIT;
+        }
+    }
+
+    core_pm_spnlck_unlock(p_lock);
+    return (void*)p_page_block->begin;
+EXCEPT_COMMIT:
+    free_page(p_page_block, p_size_map, p_addr_map, p_used_map);
+
+EXCEPT_ALLOC:
+    core_pm_spnlck_unlock(p_lock);
+
+EXCEPT_CHECK_ADDR:
+    return NULL;
+}
 
 void core_mm_pg_free(void* base_addr)
 {
@@ -160,7 +283,7 @@ void core_mm_pg_free(void* base_addr)
 
 ppage_obj_t core_mm_get_pg_obj(void** p_base_addr, void* addr);
 void* core_mm_map(void* addr, ppage_obj_t p_page_obj, u32 options);
-void core_mm_commit(void* addr);
+void core_mm_commit(void* addr, u32 options);
 void core_mm_uncommit(void* addr);
 u32 core_mm_get_pg_attr(void* address);
 u32 core_mm_set_pg_attr(void* address, u32 attr);
@@ -499,7 +622,7 @@ ppage_block_t alloc_page(pmap_t p_size_map, pmap_t p_addr_map,
     }
 
     //Add to map
-    p_page_block->status |= PAGE_BLOCK_ALLOCATED;
+    p_page_block->status = PAGE_BLOCK_ALLOCATED;
     core_rtl_map_set(p_used_map, p_page_block, p_page_block);
 
     return p_page_block;
@@ -511,6 +634,37 @@ ALLOC_PREV_BLOCK_FAILED:
     core_rtl_map_set(p_addr_map, p_page_block, p_page_block);
     collect_fragment(p_page_block, p_size_map, p_addr_map);
     return NULL;
+}
+
+bool commit_page(ppage_block_t p_page_block, u32 options)
+{
+    u32 attr = 0;
+
+    //Get page attributes
+    if(options & PAGE_OPTION_DMA) {
+        attr |= PAGE_OBJ_DMA;
+    }
+
+    if(options & PAGE_OPTION_CACHEABLE) {
+        attr |= PAGE_OPTION_CACHEABLE;
+    }
+
+    if(options & PAGE_OPTION_SWAPPABLE) {
+        attr |= PAGE_OPTION_SWAPPABLE;
+    }
+
+    //Create page object
+    ppage_obj_t p_page_obj = page_obj(p_page_block->size,
+                                      attr);
+
+    if(p_page_obj == NULL) {
+        return false;
+    }
+
+    p_page_block->p_pg_obj = p_page_obj;
+    p_page_block->status |= PAGE_BLOCK_COMMITED;
+
+    return true;
 }
 
 void free_page(ppage_block_t p_block, pmap_t p_size_map, pmap_t p_addr_map,
