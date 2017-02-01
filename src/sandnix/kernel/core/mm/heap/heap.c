@@ -19,6 +19,7 @@
 
 #include "../../rtl/rtl.h"
 #include "../../pm/pm.h"
+#include "../paging/paging.h"
 
 #include "heap.h"
 
@@ -164,12 +165,57 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
     p_mem_block = get_free_mem_block(p_heap, size);
 
     if(p_mem_block == NULL) {
-        //TODO:Allocate more pages
-        NOT_SUPPORT;
-    }
+        if(p_heap->type & HEAP_PREALLOC) {
+            if(p_heap->type & HEAP_MULITHREAD) {
+                core_pm_spnlck_unlock(&(p_heap->lock));
+            }
 
-    remove_node(&(p_heap->p_empty_block_tree),
-                p_mem_block);
+            return NULL;
+
+        } else {
+            //Allocate more pages
+            pheap_pg_blck_t p_new_pg_block = (pheap_pg_blck_t)core_mm_pg_alloc(
+                                                 NULL,
+                                                 p_heap->scale,
+                                                 PAGE_OPTION_COMMIT
+                                                 | PAGE_OPTION_KERNEL
+                                                 | PAGE_OPTION_WRITABLE
+                                                 | PAGE_OPTION_CACHEABLE
+                                                 | PAGE_OPTION_SWAPPABLE);
+
+            if(p_new_pg_block == NULL) {
+                if(p_heap->type & HEAP_MULITHREAD) {
+                    core_pm_spnlck_unlock(&(p_heap->lock));
+                }
+
+                return NULL;
+            }
+
+            //Initialize new page block
+            INIT_PG_BLOCK(p_new_pg_block, 0, p_heap->scale, p_heap);
+
+            //Initialize new memblock
+            p_mem_block = (pheap_mem_blck_t)((address_t)p_new_pg_block
+                                             + HEAP_PG_BLCK_SZ);
+            INIT_MEMBLOCK(p_mem_block, p_heap->scale
+                          - HEAP_PG_BLCK_SZ,
+                          p_new_pg_block, p_heap);
+
+            //Add page block to heap
+            for(pheap_pg_blck_t p_node = p_heap->p_pg_block_list;
+                ; p_node = p_node->p_next) {
+                if(p_node->p_next == NULL) {
+                    p_node->p_next = p_new_pg_block;
+                    p_new_pg_block->p_prev = p_node;
+                    break;
+                }
+            }
+        }
+
+    } else {
+        remove_node(&(p_heap->p_empty_block_tree),
+                    p_mem_block);
+    }
 
     if(p_mem_block->size > size + HEAP_MEM_BLCK_SZ * 2 + 8) {
         //Split the block
@@ -239,46 +285,71 @@ void core_mm_heap_free(
     p_mem_block->allocated = false;
     (p_mem_block->p_pg_block->ref)--;
 
-    //Release page
     if(p_mem_block->p_pg_block->ref == 0
        && (!(p_mem_block->p_pg_block->attr & HEAP_PAGEBLOCK_FIX))) {
-        //TODO:Release page
-        NOT_SUPPORT;
-    }
+        //Release page
+        //Remove memblocks from the tree
+        pheap_pg_blck_t p_pg_block = p_mem_block->p_pg_block;
 
-    //Join memory blocks
-    //Prev block
-    p_prev_mem_block = p_mem_block->p_prev;
-
-    if(p_prev_mem_block != NULL
-       && !p_prev_mem_block->allocated) {
-        remove_node(&(p_heap->p_empty_block_tree), p_prev_mem_block);
-        p_prev_mem_block->size += p_mem_block->size;
-        p_prev_mem_block->p_next = p_mem_block->p_next;
-
-        if(p_mem_block->p_next != NULL) {
-
-            p_mem_block->p_next->p_prev = p_prev_mem_block;
+        if(p_mem_block->p_prev != NULL) {
+            remove_node(&(p_heap->p_empty_block_tree), p_mem_block->p_prev);
         }
 
-        p_mem_block = p_prev_mem_block;
-    }
-
-    //Next block
-    p_next_mem_block = p_mem_block->p_next;
-
-    if(p_next_mem_block != NULL
-       && !p_next_mem_block->allocated) {
-        remove_node(&(p_heap->p_empty_block_tree), p_next_mem_block);
-        p_mem_block->size += p_next_mem_block->size;
-        p_mem_block->p_next = p_next_mem_block->p_next;
-
         if(p_mem_block->p_next != NULL) {
-            p_mem_block->p_next->p_prev = p_mem_block;
+            remove_node(&(p_heap->p_empty_block_tree), p_mem_block->p_next);
         }
-    }
 
-    insert_node(&(p_heap->p_empty_block_tree), p_mem_block);
+        //Remove page block from list
+        if(p_pg_block->p_prev != NULL) {
+            p_pg_block->p_prev->p_next = p_pg_block->p_next;
+        }
+
+        if(p_pg_block->p_next != NULL) {
+            p_pg_block->p_next->p_prev = p_pg_block->p_prev;
+        }
+
+        if(p_pg_block->p_prev == NULL) {
+            p_heap->p_pg_block_list = p_pg_block->p_next;
+        }
+
+        //Free pages
+        core_mm_pg_free(p_pg_block);
+
+    } else {
+        //Join memory blocks
+        //Prev block
+        p_prev_mem_block = p_mem_block->p_prev;
+
+        if(p_prev_mem_block != NULL
+           && !p_prev_mem_block->allocated) {
+            remove_node(&(p_heap->p_empty_block_tree), p_prev_mem_block);
+            p_prev_mem_block->size += p_mem_block->size;
+            p_prev_mem_block->p_next = p_mem_block->p_next;
+
+            if(p_mem_block->p_next != NULL) {
+
+                p_mem_block->p_next->p_prev = p_prev_mem_block;
+            }
+
+            p_mem_block = p_prev_mem_block;
+        }
+
+        //Next block
+        p_next_mem_block = p_mem_block->p_next;
+
+        if(p_next_mem_block != NULL
+           && !p_next_mem_block->allocated) {
+            remove_node(&(p_heap->p_empty_block_tree), p_next_mem_block);
+            p_mem_block->size += p_next_mem_block->size;
+            p_mem_block->p_next = p_next_mem_block->p_next;
+
+            if(p_mem_block->p_next != NULL) {
+                p_mem_block->p_next->p_prev = p_mem_block;
+            }
+        }
+
+        insert_node(&(p_heap->p_empty_block_tree), p_mem_block);
+    }
 
     if(p_heap->type & HEAP_MULITHREAD) {
         core_pm_spnlck_unlock(&(p_heap->lock));
