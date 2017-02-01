@@ -64,3 +64,4 @@ typedef	struct	_except_obj {
 #include "./edeadlock_except_defs.h"
 #include "./epfinpaging_except_defs.h"
 #include "./einval_except_defs.h"
+#include "./ehpcorruption_except_defs.h"

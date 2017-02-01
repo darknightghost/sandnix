@@ -15,11 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../../../hal/exception/exception.h"
-
 #include "../../rtl/rtl.h"
 #include "../../pm/pm.h"
 #include "../paging/paging.h"
+#include "../../exception/exception.h"
 
 #include "heap.h"
 
@@ -77,18 +76,23 @@ static	heap_t							default_heap;
 static	void				init_default_heap();
 static	pheap_mem_blck_t	get_free_mem_block(pheap_t p_heap, size_t size);
 static	void				insert_node(php_mem_blck_tree p_tree,
-                                        pheap_mem_blck_t p_node);
+                                        pheap_mem_blck_t p_node,
+                                        pheap_t p_heap);
 static	void				remove_node(php_mem_blck_tree p_tree,
-                                        pheap_mem_blck_t p_node);
+                                        pheap_mem_blck_t p_node,
+                                        pheap_t p_heap);
 static	pheap_mem_blck_t	l_rotate(php_mem_blck_tree p_tree,
-                                     pheap_mem_blck_t p_node);
+                                     pheap_mem_blck_t p_node,
+                                     pheap_t p_heap);
 static	pheap_mem_blck_t	r_rotate(php_mem_blck_tree p_tree,
-                                     pheap_mem_blck_t p_node);
+                                     pheap_mem_blck_t p_node,
+                                     pheap_t p_heap);
 static	void				remove_rebalance(php_mem_blck_tree p_tree,
-        pheap_mem_blck_t p_node, pheap_mem_blck_t p_parent);
-static	void				check_tree(php_mem_blck_tree p_tree);
+        pheap_mem_blck_t p_node, pheap_mem_blck_t p_parent,
+        pheap_t p_heap);
+static	void				check_tree(php_mem_blck_tree p_tree, pheap_t p_heap);
 static	void				check_node(pheap_mem_blck_t p_node, long* p_num,
-                                       long count);
+                                       long count, pheap_t p_heap);
 static	int					compare_node(pheap_mem_blck_t p1, pheap_mem_blck_t p2);
 static	void				swap_node(pheap_mem_blck_t p1, pheap_mem_blck_t p2,
                                       php_mem_blck_tree p_tree);
@@ -214,7 +218,7 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
 
     } else {
         remove_node(&(p_heap->p_empty_block_tree),
-                    p_mem_block);
+                    p_mem_block, p_heap);
     }
 
     if(p_mem_block->size > size + HEAP_MEM_BLCK_SZ * 2 + 8) {
@@ -227,7 +231,7 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
                       p_mem_block->p_heap);
         p_mem_block->size = size + HEAP_MEM_BLCK_SZ;
         insert_node(&(p_heap->p_empty_block_tree),
-                    p_new_mem_block);
+                    p_new_mem_block, p_heap);
         p_new_mem_block->p_next = p_mem_block->p_next;
         p_new_mem_block->p_prev = p_mem_block;
         p_mem_block->p_next = p_new_mem_block;
@@ -239,7 +243,7 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
     }
 
     insert_node(&(p_heap->p_used_block_tree),
-                p_mem_block);
+                p_mem_block, p_heap);
     p_mem_block->allocated = true;
     (p_mem_block->p_pg_block->ref)++;
 
@@ -281,7 +285,7 @@ void core_mm_heap_free(
     //Release memory block
     p_mem_block = (pheap_mem_blck_t)((address_t)p_mem - HEAP_MEM_BLCK_SZ);
     remove_node(&(p_heap->p_used_block_tree),
-                p_mem_block);
+                p_mem_block, p_heap);
     p_mem_block->allocated = false;
     (p_mem_block->p_pg_block->ref)--;
 
@@ -292,11 +296,11 @@ void core_mm_heap_free(
         pheap_pg_blck_t p_pg_block = p_mem_block->p_pg_block;
 
         if(p_mem_block->p_prev != NULL) {
-            remove_node(&(p_heap->p_empty_block_tree), p_mem_block->p_prev);
+            remove_node(&(p_heap->p_empty_block_tree), p_mem_block->p_prev, p_heap);
         }
 
         if(p_mem_block->p_next != NULL) {
-            remove_node(&(p_heap->p_empty_block_tree), p_mem_block->p_next);
+            remove_node(&(p_heap->p_empty_block_tree), p_mem_block->p_next, p_heap);
         }
 
         //Remove page block from list
@@ -322,7 +326,7 @@ void core_mm_heap_free(
 
         if(p_prev_mem_block != NULL
            && !p_prev_mem_block->allocated) {
-            remove_node(&(p_heap->p_empty_block_tree), p_prev_mem_block);
+            remove_node(&(p_heap->p_empty_block_tree), p_prev_mem_block, p_heap);
             p_prev_mem_block->size += p_mem_block->size;
             p_prev_mem_block->p_next = p_mem_block->p_next;
 
@@ -339,7 +343,7 @@ void core_mm_heap_free(
 
         if(p_next_mem_block != NULL
            && !p_next_mem_block->allocated) {
-            remove_node(&(p_heap->p_empty_block_tree), p_next_mem_block);
+            remove_node(&(p_heap->p_empty_block_tree), p_next_mem_block, p_heap);
             p_mem_block->size += p_next_mem_block->size;
             p_mem_block->p_next = p_next_mem_block->p_next;
 
@@ -348,7 +352,7 @@ void core_mm_heap_free(
             }
         }
 
-        insert_node(&(p_heap->p_empty_block_tree), p_mem_block);
+        insert_node(&(p_heap->p_empty_block_tree), p_mem_block, p_heap);
     }
 
     if(p_heap->type & HEAP_MULITHREAD) {
@@ -390,40 +394,40 @@ void core_mm_heap_chk(pheap_t heap)
             p_mem_blk != NULL;
             p_mem_blk = p_mem_blk->p_next) {
             if(p_mem_blk->magic != HEAP_MEMBLOCK_MAGIC) {
-                PANIC(EHPCORRUPTION,
-                      "Corruption has been detected in heap %p.",
-                      p_heap);
+                pehpcorruption_except_t p_except
+                    = ehpcorruption_except(p_heap);
+                RAISE(p_except, NULL);
             }
 
             if(p_mem_blk->p_parent == NULL) {
                 if(p_mem_blk->allocated
                    && p_mem_blk != p_heap->p_used_block_tree) {
-                    PANIC(EHPCORRUPTION,
-                          "Corruption has been detected in heap %p.",
-                          p_heap);
+                    pehpcorruption_except_t p_except
+                        = ehpcorruption_except(p_heap);
+                    RAISE(p_except, NULL);
 
                 } else if((!p_mem_blk->allocated)
                           && p_mem_blk != p_heap->p_empty_block_tree) {
-                    PANIC(EHPCORRUPTION,
-                          "Corruption has been detected in heap %p.",
-                          p_heap);
+                    pehpcorruption_except_t p_except
+                        = ehpcorruption_except(p_heap);
+                    RAISE(p_except, NULL);
                 }
 
             } else {
                 if(p_mem_blk != p_mem_blk->p_parent->p_lchild
                    && p_mem_blk != p_mem_blk->p_parent->p_rchild) {
-                    PANIC(EHPCORRUPTION,
-                          "Corruption has been detected in heap %p.",
-                          p_heap);
+                    pehpcorruption_except_t p_except
+                        = ehpcorruption_except(p_heap);
+                    RAISE(p_except, NULL);
                 }
             }
         }
     }
 
     //Check trees
-    check_tree(&(p_heap->p_empty_block_tree));
+    check_tree(&(p_heap->p_empty_block_tree), p_heap);
 
-    check_tree(&(p_heap->p_used_block_tree));
+    check_tree(&(p_heap->p_used_block_tree), p_heap);
 
     if(p_heap->type & HEAP_MULITHREAD) {
         core_pm_spnlck_unlock(&(p_heap->lock));
@@ -506,7 +510,7 @@ pheap_mem_blck_t get_free_mem_block(pheap_t p_heap, size_t size)
 }
 
 void insert_node(php_mem_blck_tree p_tree,
-                 pheap_mem_blck_t p_node)
+                 pheap_mem_blck_t p_node, pheap_t p_heap)
 {
     pheap_mem_blck_t p_insert_node;
     pheap_mem_blck_t p_z;
@@ -572,7 +576,7 @@ void insert_node(php_mem_blck_tree p_tree,
                 } else if(p_z == p_z->p_parent->p_rchild) {
                     //Case 3
                     p_z = p_z->p_parent;
-                    l_rotate(p_tree, p_z);
+                    l_rotate(p_tree, p_z, p_heap);
                 }
 
                 if(p_z->p_parent != NULL
@@ -580,7 +584,7 @@ void insert_node(php_mem_blck_tree p_tree,
                     //Case 2
                     p_z->p_parent->color = HEAP_MEMBLOCK_BLACK;
                     p_z->p_parent->p_parent->color = HEAP_MEMBLOCK_RED;
-                    r_rotate(p_tree, p_z->p_parent->p_parent);
+                    r_rotate(p_tree, p_z->p_parent->p_parent, p_heap);
                     break;
                 }
 
@@ -598,7 +602,7 @@ void insert_node(php_mem_blck_tree p_tree,
                 } else if(p_z == p_z->p_parent->p_lchild) {
                     //Case 3
                     p_z = p_z->p_parent;
-                    r_rotate(p_tree, p_z);
+                    r_rotate(p_tree, p_z, p_heap);
                 }
 
                 if(p_z->p_parent != NULL
@@ -606,7 +610,7 @@ void insert_node(php_mem_blck_tree p_tree,
                     //Case 2
                     p_z->p_parent->color = HEAP_MEMBLOCK_BLACK;
                     p_z->p_parent->p_parent->color = HEAP_MEMBLOCK_RED;
-                    l_rotate(p_tree, p_z->p_parent->p_parent);
+                    l_rotate(p_tree, p_z->p_parent->p_parent, p_heap);
                     break;
                 }
             }
@@ -616,14 +620,15 @@ void insert_node(php_mem_blck_tree p_tree,
     }
 
     if(hal_debug_is_on_dbg()) {
-        check_tree(p_tree);
+        check_tree(p_tree, p_heap);
     }
 
     return;
 }
 
 void remove_node(php_mem_blck_tree p_tree,
-                 pheap_mem_blck_t p_node)
+                 pheap_mem_blck_t p_node,
+                 pheap_t p_heap)
 {
     pheap_mem_blck_t p_tmp_node;
     pheap_mem_blck_t p_x;
@@ -722,26 +727,27 @@ void remove_node(php_mem_blck_tree p_tree,
                 p_parent = p_node->p_parent;
             }
 
-            remove_rebalance(p_tree, p_x, p_parent);
+            remove_rebalance(p_tree, p_x, p_parent, p_heap);
         }
     }
 
     if(hal_debug_is_on_dbg()) {
-        check_tree(p_tree);
+        check_tree(p_tree, p_heap);
     }
 
     return;
 }
 
 pheap_mem_blck_t l_rotate(php_mem_blck_tree p_tree,
-                          pheap_mem_blck_t p_node)
+                          pheap_mem_blck_t p_node,
+                          pheap_t p_heap)
 {
     pheap_mem_blck_t p_new_parent;
 
     if(p_node->p_rchild == NULL) {
-        PANIC(EHPCORRUPTION,
-              "Corruption has been detected in memory block %p.",
-              p_node);
+        pehpcorruption_except_t p_except
+            = ehpcorruption_except(p_heap);
+        RAISE(p_except, NULL);
     }
 
     p_new_parent = p_node->p_rchild;
@@ -773,14 +779,15 @@ pheap_mem_blck_t l_rotate(php_mem_blck_tree p_tree,
 }
 
 pheap_mem_blck_t r_rotate(php_mem_blck_tree p_tree,
-                          pheap_mem_blck_t p_node)
+                          pheap_mem_blck_t p_node,
+                          pheap_t p_heap)
 {
     pheap_mem_blck_t p_new_parent;
 
     if(p_node->p_lchild == NULL) {
-        PANIC(EHPCORRUPTION,
-              "Corruption has been detected in memory block %p.",
-              p_node);
+        pehpcorruption_except_t p_except
+            = ehpcorruption_except(p_heap);
+        RAISE(p_except, NULL);
     }
 
     p_new_parent = p_node->p_lchild;
@@ -812,7 +819,8 @@ pheap_mem_blck_t r_rotate(php_mem_blck_tree p_tree,
 }
 
 void remove_rebalance(php_mem_blck_tree p_tree,
-                      pheap_mem_blck_t p_node, pheap_mem_blck_t p_parent)
+                      pheap_mem_blck_t p_node, pheap_mem_blck_t p_parent,
+                      pheap_t p_heap)
 {
     pheap_mem_blck_t p_sibling;
 
@@ -840,7 +848,7 @@ void remove_rebalance(php_mem_blck_tree p_tree,
             if(p_sibling->color == HEAP_MEMBLOCK_RED) {
                 p_sibling->color = HEAP_MEMBLOCK_BLACK;
                 p_parent->color = HEAP_MEMBLOCK_RED;
-                l_rotate(p_tree, p_parent);
+                l_rotate(p_tree, p_parent, p_heap);
             }
 
             p_sibling = p_parent->p_rchild;
@@ -859,14 +867,14 @@ void remove_rebalance(php_mem_blck_tree p_tree,
                && color(p_sibling->p_lchild) == HEAP_MEMBLOCK_RED) {
                 p_sibling->color = HEAP_MEMBLOCK_RED;
                 p_sibling->p_lchild->color = HEAP_MEMBLOCK_BLACK;
-                r_rotate(p_tree, p_sibling);
+                r_rotate(p_tree, p_sibling, p_heap);
                 p_sibling = p_parent->p_rchild;
             }
 
             //Case 4:
             if(color(p_sibling) == HEAP_MEMBLOCK_BLACK
                && color(p_sibling->p_rchild) == HEAP_MEMBLOCK_RED) {
-                l_rotate(p_tree, p_parent);
+                l_rotate(p_tree, p_parent, p_heap);
                 p_sibling->color = p_parent->color;
 
                 if(p_sibling->p_lchild != NULL) {
@@ -887,7 +895,7 @@ void remove_rebalance(php_mem_blck_tree p_tree,
             if(p_sibling->color == HEAP_MEMBLOCK_RED) {
                 p_sibling->color = HEAP_MEMBLOCK_BLACK;
                 p_parent->color = HEAP_MEMBLOCK_RED;
-                r_rotate(p_tree, p_parent);
+                r_rotate(p_tree, p_parent, p_heap);
             }
 
             p_sibling = p_parent->p_lchild;
@@ -906,14 +914,14 @@ void remove_rebalance(php_mem_blck_tree p_tree,
                && color(p_sibling->p_rchild) == HEAP_MEMBLOCK_RED) {
                 p_sibling->color = HEAP_MEMBLOCK_RED;
                 p_sibling->p_rchild->color = HEAP_MEMBLOCK_BLACK;
-                l_rotate(p_tree, p_sibling);
+                l_rotate(p_tree, p_sibling, p_heap);
                 p_sibling = p_parent->p_lchild;
             }
 
             //Case 4:
             if(color(p_sibling) == HEAP_MEMBLOCK_BLACK
                && color(p_sibling->p_lchild) == HEAP_MEMBLOCK_RED) {
-                r_rotate(p_tree, p_parent);
+                r_rotate(p_tree, p_parent, p_heap);
                 p_sibling->color = p_parent->color;
 
                 if(p_sibling->p_lchild != NULL) {
@@ -932,7 +940,7 @@ void remove_rebalance(php_mem_blck_tree p_tree,
     return;
 }
 
-void check_tree(php_mem_blck_tree p_tree)
+void check_tree(php_mem_blck_tree p_tree, pheap_t p_heap)
 {
     long num;
 
@@ -940,18 +948,18 @@ void check_tree(php_mem_blck_tree p_tree)
         return;
 
     } else if((*p_tree)->color == HEAP_MEMBLOCK_RED) {
-        PANIC(EHPCORRUPTION,
-              "Corruption has been detected in memory block %p.",
-              p_tree);
+        pehpcorruption_except_t p_except
+            = ehpcorruption_except(p_heap);
+        RAISE(p_except, NULL);
     }
 
     num = -1;
-    check_node(*p_tree, &num, 0);
+    check_node(*p_tree, &num, 0, p_heap);
 
     return;
 }
 
-void check_node(pheap_mem_blck_t p_node, long * p_num, long count)
+void check_node(pheap_mem_blck_t p_node, long * p_num, long count, pheap_t p_heap)
 {
 #define	CHECK_COUNT(p_num, count) { \
         do { \
@@ -964,18 +972,18 @@ void check_node(pheap_mem_blck_t p_node, long * p_num, long count)
     }
 
     if(p_node->magic != HEAP_MEMBLOCK_MAGIC) {
-        PANIC(EHPCORRUPTION,
-              "Corruption has been detected in memory block %p.",
-              p_node);
+        pehpcorruption_except_t p_except
+            = ehpcorruption_except(p_heap);
+        RAISE(p_except, NULL);
     }
 
     if(p_node->color == HEAP_MEMBLOCK_RED) {
         if(IS_RED(p_node->p_parent)
            || IS_RED(p_node->p_lchild)
            || IS_RED(p_node->p_rchild)) {
-            PANIC(EHPCORRUPTION,
-                  "Corruption has been detected in memory block %p.",
-                  p_node);
+            pehpcorruption_except_t p_except
+                = ehpcorruption_except(p_heap);
+            RAISE(p_except, NULL);
         }
 
         if(p_node->p_lchild == NULL) {
@@ -983,12 +991,12 @@ void check_node(pheap_mem_blck_t p_node, long * p_num, long count)
 
         } else {
             if(p_node->p_lchild->p_parent != p_node) {
-                PANIC(EHPCORRUPTION,
-                      "Corruption has been detected in memory block %p.",
-                      p_node);
+                pehpcorruption_except_t p_except
+                    = ehpcorruption_except(p_heap);
+                RAISE(p_except, NULL);
             }
 
-            check_node(p_node->p_lchild, p_num, count);
+            check_node(p_node->p_lchild, p_num, count, p_heap);
         }
 
         if(p_node->p_rchild == NULL) {
@@ -996,12 +1004,12 @@ void check_node(pheap_mem_blck_t p_node, long * p_num, long count)
 
         } else {
             if(p_node->p_rchild->p_parent != p_node) {
-                PANIC(EHPCORRUPTION,
-                      "Corruption has been detected in memory block %p.",
-                      p_node);
+                pehpcorruption_except_t p_except
+                    = ehpcorruption_except(p_heap);
+                RAISE(p_except, NULL);
             }
 
-            check_node(p_node->p_rchild, p_num, count);
+            check_node(p_node->p_rchild, p_num, count, p_heap);
         }
 
     } else if(p_node->color == HEAP_MEMBLOCK_BLACK) {
@@ -1010,12 +1018,12 @@ void check_node(pheap_mem_blck_t p_node, long * p_num, long count)
 
         } else {
             if(p_node->p_lchild->p_parent != p_node) {
-                PANIC(EHPCORRUPTION,
-                      "Corruption has been detected in memory block %p.",
-                      p_node);
+                pehpcorruption_except_t p_except
+                    = ehpcorruption_except(p_heap);
+                RAISE(p_except, NULL);
             }
 
-            check_node(p_node->p_lchild, p_num, count + 1);
+            check_node(p_node->p_lchild, p_num, count + 1, p_heap);
         }
 
         if(p_node->p_rchild == NULL) {
@@ -1023,18 +1031,18 @@ void check_node(pheap_mem_blck_t p_node, long * p_num, long count)
 
         } else {
             if(p_node->p_rchild->p_parent != p_node) {
-                PANIC(EHPCORRUPTION,
-                      "Corruption has been detected in memory block %p.",
-                      p_node);
+                pehpcorruption_except_t p_except
+                    = ehpcorruption_except(p_heap);
+                RAISE(p_except, NULL);
             }
 
-            check_node(p_node->p_rchild, p_num, count + 1);
+            check_node(p_node->p_rchild, p_num, count + 1, p_heap);
         }
 
     } else {
-        PANIC(EHPCORRUPTION,
-              "Corruption has been detected in memory block %p.",
-              p_node);
+        pehpcorruption_except_t p_except
+            = ehpcorruption_except(p_heap);
+        RAISE(p_except, NULL);
     }
 
     return;
