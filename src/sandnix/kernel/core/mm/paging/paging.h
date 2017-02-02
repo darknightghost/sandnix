@@ -55,7 +55,7 @@ void		core_mm_pg_free(void* base_addr);
 ppage_obj_t	core_mm_get_pg_obj(void** p_base_addr, void* addr);
 
 //Map page object
-void*		core_mm_map(void* addr, ppage_obj_t p_page_obj, u32 options);
+void*		core_mm_map(void* addr, ppage_obj_t p_page_obj);
 
 //Commit pages
 void		core_mm_commit(void* addr, u32 options);
