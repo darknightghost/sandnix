@@ -65,3 +65,4 @@ typedef	struct	_except_obj {
 #include "./epfinpaging_except_defs.h"
 #include "./einval_except_defs.h"
 #include "./ehpcorruption_except_defs.h"
+#include "./enomem_except_defs.h"
