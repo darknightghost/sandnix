@@ -196,6 +196,8 @@ void destructer(ppage_obj_t p_this)
         } else {
             if(p_this->attr & PAGE_OBJ_SWAPPED) {
                 //TODO:Free swapped memory
+                NOT_SUPPORT;
+
             } else {
                 //Free memory
                 hal_mmu_phymem_free((void*)(p_this->mem_info.phy_mem_info.addr));

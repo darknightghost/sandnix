@@ -63,6 +63,7 @@ static	void			free_page(ppage_block_t p_block,
                                   pmap_t p_size_map,
                                   pmap_t p_addr_map,
                                   pmap_t p_used_map);
+static	void			clear_usr_pg_tbl(pproc_pg_tbl_t p_usr_tbl);
 
 //Search function
 static	int				search_size(size_t size, ppage_block_t p_key,
@@ -94,7 +95,7 @@ void core_mm_paging_init()
     //Create heap
     paging_heap = core_mm_heap_create_on_buf(
                       HEAP_MULITHREAD | HEAP_PREALLOC,
-                      SANDNIX_KERNEL_PAGE_SIZE,
+                      sizeof(paging_heap_buf),
                       paging_heap_buf,
                       sizeof(paging_heap_buf));
 
@@ -165,9 +166,201 @@ u32 core_mm_get_current_pg_tbl_index()
     return current_pg_tbl[cpu_index];
 }
 
-void core_mm_pg_tbl_fork(u32 src_index, u32 dest_index);
-void core_mm_pg_tbl_clear(u32 index);
-void core_mm_pg_tbl_release(u32 src_index);
+void core_mm_pg_tbl_fork(u32 src_index, u32 dest_index)
+{
+    core_pm_spnlck_lock(&usr_pg_tbls_lck);
+
+    //Check if the page table has been used
+    if(core_rtl_array_get(&usr_pg_tbls, dest_index) != NULL) {
+        core_pm_spnlck_unlock(&usr_pg_tbls_lck);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Destination page table has been used.");
+        return;
+    }
+
+    //Get source page table
+    pproc_pg_tbl_t p_src_table = (pproc_pg_tbl_t)core_rtl_array_get(
+                                     &usr_pg_tbls,
+                                     src_index);
+
+    if(p_src_table == NULL) {
+        core_pm_spnlck_unlock(&usr_pg_tbls_lck);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Source page table does not exists.");
+        return;
+    }
+
+    //Create mmu page table
+    hal_mmu_pg_tbl_create(dest_index);
+
+    //Create dest page table
+    pproc_pg_tbl_t p_dest_table = core_mm_heap_alloc(
+                                      sizeof(proc_pg_tbl_t),
+                                      paging_heap);
+
+    if(core_rtl_array_set(
+           &usr_pg_tbls,
+           dest_index,
+           p_dest_table) == NULL) {
+        hal_mmu_pg_tbl_destroy(dest_index);
+        core_mm_heap_free(p_dest_table, paging_heap);
+        core_pm_spnlck_unlock(&usr_pg_tbls_lck);
+        penomem_except_t p_except = enomem_except();
+        RAISE(p_except, "Faile to add new page table.");
+        return;
+    }
+
+    //Initialize new page table
+    p_dest_table->id = dest_index;
+    core_rtl_map_init(&(p_dest_table->free_addr_map),
+                      (item_compare_t)compare_pageblock_addr,
+                      paging_heap);
+    core_rtl_map_init(&(p_dest_table->free_size_map),
+                      (item_compare_t)compare_pageblock_size,
+                      paging_heap);
+    core_rtl_map_init(&(p_dest_table->used_map),
+                      (item_compare_t)compare_pageblock_addr,
+                      paging_heap);
+
+    //Fork page blocks
+    //Fork free map
+    for(ppage_block_t p_page_block = core_rtl_map_next(
+                                         &(p_src_table->free_addr_map),
+                                         NULL);
+        p_page_block != NULL;
+        p_page_block = core_rtl_map_next(
+                           &(p_src_table->free_addr_map),
+                           p_page_block)) {
+        //Fork page block
+        ppage_block_t p_new_page_block = core_mm_heap_alloc(
+                                             sizeof(page_block_t),
+                                             paging_heap);
+
+        if(p_new_page_block == NULL) {
+            PANIC(ENOMEM, "Failed to fork page block.");
+        }
+
+        core_rtl_memcpy(&p_new_page_block, &p_page_block, sizeof(page_block_t));
+
+
+        if(core_rtl_map_set(&(p_dest_table->free_addr_map),
+                            p_new_page_block,
+                            p_new_page_block) == NULL) {
+            core_pm_spnlck_unlock(&usr_pg_tbls_lck);
+            PANIC(ENOMEM, "Failed to fork page block.");
+        }
+
+        if(core_rtl_map_set(&(p_dest_table->free_size_map),
+                            p_new_page_block,
+                            p_new_page_block) == NULL) {
+            core_pm_spnlck_unlock(&usr_pg_tbls_lck);
+            PANIC(ENOMEM, "Failed to fork page block.");
+        }
+    }
+
+    //Fork used map
+    for(ppage_block_t p_page_block = core_rtl_map_next(
+                                         &(p_src_table->used_map),
+                                         NULL);
+        p_page_block != NULL;
+        p_page_block = core_rtl_map_next(
+                           &(p_src_table->used_map),
+                           p_page_block)) {
+        //Fork page block
+        ppage_block_t p_new_page_block = core_mm_heap_alloc(
+                                             sizeof(page_block_t),
+                                             paging_heap);
+
+        if(p_new_page_block == NULL) {
+            core_pm_spnlck_unlock(&usr_pg_tbls_lck);
+            PANIC(ENOMEM, "Failed to fork page block.");
+        }
+
+        core_rtl_memcpy(&p_new_page_block, &p_page_block, sizeof(page_block_t));
+
+        if(p_new_page_block->status & PAGE_BLOCK_COMMITED) {
+            if(p_new_page_block->status & PAGE_BLOCK_SHARED) {
+                //Increase reference
+                INC_REF(p_new_page_block->p_pg_obj);
+
+            } else {
+                //Fork page object
+                p_new_page_block->p_pg_obj =
+                    p_new_page_block->p_pg_obj->fork(p_new_page_block->p_pg_obj);
+            }
+        }
+
+        if(core_rtl_map_set(&(p_dest_table->used_map),
+                            p_new_page_block,
+                            p_new_page_block) == NULL) {
+            core_pm_spnlck_unlock(&usr_pg_tbls_lck);
+            PANIC(ENOMEM, "Failed to fork page block.");
+        }
+    }
+
+    core_pm_spnlck_unlock(&usr_pg_tbls_lck);
+    return;
+}
+
+void core_mm_pg_tbl_clear(u32 index)
+{
+    core_pm_spnlck_lock(&usr_pg_tbls_lck);
+
+    //Get page table
+    pproc_pg_tbl_t p_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
+                                  &usr_pg_tbls,
+                                  index);
+
+    if(p_pg_tbl == NULL) {
+        core_pm_spnlck_unlock(&usr_pg_tbls_lck);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Page table does not exists.");
+        return;
+    }
+
+    //Clear page table
+    clear_usr_pg_tbl(p_pg_tbl);
+
+    core_pm_spnlck_unlock(&usr_pg_tbls_lck);
+    return;
+}
+
+void core_mm_pg_tbl_release(u32 index)
+{
+    core_pm_spnlck_lock(&usr_pg_tbls_lck);
+
+    //Get page table
+    pproc_pg_tbl_t p_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
+                                  &usr_pg_tbls,
+                                  index);
+
+    if(p_pg_tbl == NULL) {
+        core_pm_spnlck_unlock(&usr_pg_tbls_lck);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Page table does not exists.");
+        return;
+    }
+
+    //Clear page table
+    clear_usr_pg_tbl(p_pg_tbl);
+
+    //Free memory
+    ppage_block_t p_free_block;
+
+    while((p_free_block = (ppage_block_t)core_rtl_map_next(
+                              &(p_pg_tbl->free_size_map),
+                              NULL)) != NULL) {
+        core_rtl_map_set(&(p_pg_tbl->free_size_map), p_free_block, NULL);
+        core_rtl_map_set(&(p_pg_tbl->free_addr_map), p_free_block, NULL);
+        core_mm_heap_free(p_free_block, paging_heap);
+    }
+
+    core_mm_heap_free(p_pg_tbl, paging_heap);
+    core_rtl_array_set(&usr_pg_tbls, index, NULL);
+
+    core_pm_spnlck_unlock(&usr_pg_tbls_lck);
+    return;
+}
 
 void* core_mm_pg_alloc(void* base_addr, size_t size, u32 options)
 {
@@ -1230,6 +1423,24 @@ void free_page(ppage_block_t p_block, pmap_t p_size_map, pmap_t p_addr_map,
     return;
 }
 
+void clear_usr_pg_tbl(pproc_pg_tbl_t p_usr_tbl)
+{
+    for(ppage_block_t p_pg_blk = core_rtl_map_next(
+                                     &(p_usr_tbl->used_map),
+                                     NULL);
+        p_pg_blk != NULL;
+        p_pg_blk = core_rtl_map_next(
+                       &(p_usr_tbl->used_map),
+                       NULL)) {
+        free_page(p_pg_blk,
+                  &(p_usr_tbl->free_size_map),
+                  &(p_usr_tbl->free_addr_map),
+                  &(p_usr_tbl->used_map));
+    }
+
+    return;
+}
+
 int	search_size(size_t size, ppage_block_t p_key, ppage_block_t p_value,
                 ppage_block_t* p_p_prev)
 {
@@ -1341,13 +1552,11 @@ except_stat_t page_read_except_hndlr(except_reason_t reason,
             p_pg_obj->map(p_pg_obj, (void*)(p_page_block->begin),
                           p_page_block->status);
 
-        } else if(p_page_block->status & PAGE_BLOCK_SHARED) {
+        } else {
             //Map page object
             p_pg_obj->map(p_pg_obj, (void*)(p_page_block->begin),
                           p_page_block->status);
 
-        } else {
-            goto EXCEPT_OCCURED;
         }
 
     } else {
@@ -1452,13 +1661,11 @@ except_stat_t page_write_except_hndlr(except_reason_t reason,
             p_pg_obj->map(p_pg_obj, (void*)(p_page_block->begin),
                           p_page_block->status);
 
-        } else if(p_page_block->status & PAGE_BLOCK_SHARED) {
+        } else {
             //Map page object
             p_pg_obj->map(p_pg_obj, (void*)(p_page_block->begin),
                           p_page_block->status);
 
-        } else {
-            goto EXCEPT_OCCURED;
         }
 
     } else {
@@ -1558,13 +1765,10 @@ except_stat_t page_exec_except_hndlr(except_reason_t reason,
             p_pg_obj->map(p_pg_obj, (void*)(p_page_block->begin),
                           p_page_block->status);
 
-        } else if(p_page_block->status & PAGE_BLOCK_SHARED) {
+        } else {
             //Map page object
             p_pg_obj->map(p_pg_obj, (void*)(p_page_block->begin),
                           p_page_block->status);
-
-        } else {
-            goto EXCEPT_OCCURED;
         }
 
     } else {

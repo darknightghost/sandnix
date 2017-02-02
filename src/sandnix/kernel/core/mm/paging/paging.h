@@ -43,7 +43,7 @@ void	core_mm_pg_tbl_fork(u32 src_index, u32 dest_index);
 void	core_mm_pg_tbl_clear(u32 index);
 
 //Release page table
-void		core_mm_pg_tbl_release(u32 src_index);
+void		core_mm_pg_tbl_release(u32 index);
 
 //Allocate pages
 void*		core_mm_pg_alloc(void* base_addr, size_t size, u32 options);
