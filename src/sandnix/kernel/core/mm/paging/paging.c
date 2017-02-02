@@ -347,12 +347,484 @@ void core_mm_pg_free(void* base_addr)
     return;
 }
 
-ppage_obj_t core_mm_get_pg_obj(void** p_base_addr, void* addr);
-void* core_mm_map(void* addr, ppage_obj_t p_page_obj, u32 options);
-void core_mm_commit(void* addr, u32 options);
-void core_mm_uncommit(void* addr);
-u32 core_mm_get_pg_attr(void* address);
-u32 core_mm_set_pg_attr(void* address, u32 attr);
+ppage_obj_t core_mm_get_pg_obj(void** p_base_addr, void* addr)
+{
+    address_t kernel_mem_base;
+    size_t kernel_mem_size;
+    address_t usr_mem_base;
+    address_t usr_mem_size;
+
+    //Get map
+    hal_mmu_get_krnl_addr_range(
+        (void**)(&kernel_mem_base),
+        &kernel_mem_size);
+    hal_mmu_get_usr_addr_range(
+        (void**)(&usr_mem_base),
+        &usr_mem_size);
+
+    pmap_t p_used_map;
+    pspnlck_t p_lock;
+
+    if((address_t)addr < kernel_mem_base
+       || (address_t)addr - kernel_mem_base
+       >= kernel_mem_size) {
+        //Kernel memory
+        p_lock = &krnl_pg_tbl_lck;
+        p_used_map = &krnl_pg_used_map;
+
+        core_pm_spnlck_lock(p_lock);
+
+    } else if((address_t)addr < usr_mem_base
+              || (address_t)addr - usr_mem_base
+              >= usr_mem_size) {
+        //User memory
+        p_lock = &usr_pg_tbls_lck;
+        u32 current_proc = core_pm_get_crrnt_proc_id();
+        core_pm_spnlck_lock(p_lock);
+        pproc_pg_tbl_t p_proc_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
+                                           &usr_pg_tbls,
+                                           current_proc);
+        p_used_map = &(p_proc_pg_tbl->used_map);
+    }
+
+    //Look for page block
+    ppage_block_t p_page_block = core_rtl_map_search(
+                                     p_used_map,
+                                     (void*)addr,
+                                     (map_search_func_t)search_addr,
+                                     NULL);
+
+    if(p_page_block == NULL) {
+        core_pm_spnlck_unlock(p_lock);
+        return NULL;
+    }
+
+    *p_base_addr = (void*)(p_page_block->begin);
+
+    ppage_obj_t p_ret = p_page_block->p_pg_obj;
+
+    if(p_ret != NULL) {
+        INC_REF(p_ret);
+    }
+
+    core_pm_spnlck_unlock(p_lock);
+    return p_ret;
+}
+
+void* core_mm_map(void* addr, ppage_obj_t p_page_obj)
+{
+    address_t kernel_mem_base;
+    size_t kernel_mem_size;
+    address_t usr_mem_base;
+    address_t usr_mem_size;
+
+    //Get map
+    hal_mmu_get_krnl_addr_range(
+        (void**)(&kernel_mem_base),
+        &kernel_mem_size);
+    hal_mmu_get_usr_addr_range(
+        (void**)(&usr_mem_base),
+        &usr_mem_size);
+
+    pmap_t p_used_map;
+    pspnlck_t p_lock;
+
+    if((address_t)addr < kernel_mem_base
+       || (address_t)addr - kernel_mem_base
+       >= kernel_mem_size) {
+        //Kernel memory
+        p_lock = &krnl_pg_tbl_lck;
+        p_used_map = &krnl_pg_used_map;
+
+        core_pm_spnlck_lock(p_lock);
+
+    } else if((address_t)addr < usr_mem_base
+              || (address_t)addr - usr_mem_base
+              >= usr_mem_size) {
+        //User memory
+        p_lock = &usr_pg_tbls_lck;
+        u32 current_proc = core_pm_get_crrnt_proc_id();
+        core_pm_spnlck_lock(p_lock);
+        pproc_pg_tbl_t p_proc_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
+                                           &usr_pg_tbls,
+                                           current_proc);
+        p_used_map = &(p_proc_pg_tbl->used_map);
+    }
+
+    //Look for page block
+    ppage_block_t p_page_block = core_rtl_map_search(
+                                     p_used_map,
+                                     (void*)addr,
+                                     (map_search_func_t)search_addr,
+                                     NULL);
+
+    if(p_page_block == NULL
+       || p_page_block->begin != (address_t)addr
+       || p_page_block->size != p_page_obj->get_size(p_page_obj)
+       || p_page_block->status & PAGE_BLOCK_COMMITED) {
+        core_pm_spnlck_unlock(p_lock);
+        //Raise exception
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, NULL);
+        return NULL;
+    }
+
+    //Commit page
+    p_page_block->status |= PAGE_BLOCK_COMMITED;
+    p_page_block->p_pg_obj = p_page_obj;
+
+    u32 page_obj_attr = p_page_obj->get_attr(p_page_obj);
+
+    if(page_obj_attr & PAGE_OBJ_ALLOCATED
+       && page_obj_attr & PAGE_OBJ_SWAPPED) {
+        p_page_obj->map(p_page_obj,
+                        (void*)(p_page_block->begin),
+                        p_page_block->status);
+    }
+
+    core_pm_spnlck_unlock(p_lock);
+    return (void*)(p_page_block->begin);
+}
+
+void core_mm_commit(void* addr, u32 options)
+{
+    address_t kernel_mem_base;
+    size_t kernel_mem_size;
+    address_t usr_mem_base;
+    address_t usr_mem_size;
+
+    //Get map
+    hal_mmu_get_krnl_addr_range(
+        (void**)(&kernel_mem_base),
+        &kernel_mem_size);
+    hal_mmu_get_usr_addr_range(
+        (void**)(&usr_mem_base),
+        &usr_mem_size);
+
+    pmap_t p_used_map;
+    pspnlck_t p_lock;
+
+    if((address_t)addr < kernel_mem_base
+       || (address_t)addr - kernel_mem_base
+       >= kernel_mem_size) {
+        //Kernel memory
+        p_lock = &krnl_pg_tbl_lck;
+        p_used_map = &krnl_pg_used_map;
+
+        core_pm_spnlck_lock(p_lock);
+
+    } else if((address_t)addr < usr_mem_base
+              || (address_t)addr - usr_mem_base
+              >= usr_mem_size) {
+        //User memory
+        p_lock = &usr_pg_tbls_lck;
+        u32 current_proc = core_pm_get_crrnt_proc_id();
+        core_pm_spnlck_lock(p_lock);
+        pproc_pg_tbl_t p_proc_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
+                                           &usr_pg_tbls,
+                                           current_proc);
+        p_used_map = &(p_proc_pg_tbl->used_map);
+    }
+
+    //Look for page block
+    ppage_block_t p_page_block = core_rtl_map_search(
+                                     p_used_map,
+                                     (void*)addr,
+                                     (map_search_func_t)search_addr,
+                                     NULL);
+
+    if(p_page_block == NULL
+       || p_page_block->begin != (address_t)addr
+       || p_page_block->status & PAGE_BLOCK_COMMITED) {
+        core_pm_spnlck_unlock(p_lock);
+        //Raise exception
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, NULL);
+        return;
+    }
+
+    if(!commit_page(p_page_block, options)) {
+        core_pm_spnlck_unlock(p_lock);
+        //Raise exception
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, NULL);
+        return;
+    }
+
+    core_pm_spnlck_unlock(p_lock);
+    return;
+}
+
+void core_mm_uncommit(void* addr)
+{
+    address_t kernel_mem_base;
+    size_t kernel_mem_size;
+    address_t usr_mem_base;
+    address_t usr_mem_size;
+
+    //Get map
+    hal_mmu_get_krnl_addr_range(
+        (void**)(&kernel_mem_base),
+        &kernel_mem_size);
+    hal_mmu_get_usr_addr_range(
+        (void**)(&usr_mem_base),
+        &usr_mem_size);
+
+    pmap_t p_used_map;
+    pspnlck_t p_lock;
+
+    if((address_t)addr < kernel_mem_base
+       || (address_t)addr - kernel_mem_base
+       >= kernel_mem_size) {
+        //Kernel memory
+        p_lock = &krnl_pg_tbl_lck;
+        p_used_map = &krnl_pg_used_map;
+
+        core_pm_spnlck_lock(p_lock);
+
+    } else if((address_t)addr < usr_mem_base
+              || (address_t)addr - usr_mem_base
+              >= usr_mem_size) {
+        //User memory
+        p_lock = &usr_pg_tbls_lck;
+        u32 current_proc = core_pm_get_crrnt_proc_id();
+        core_pm_spnlck_lock(p_lock);
+        pproc_pg_tbl_t p_proc_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
+                                           &usr_pg_tbls,
+                                           current_proc);
+        p_used_map = &(p_proc_pg_tbl->used_map);
+    }
+
+    //Look for page block
+    ppage_block_t p_page_block = core_rtl_map_search(
+                                     p_used_map,
+                                     (void*)addr,
+                                     (map_search_func_t)search_addr,
+                                     NULL);
+
+    if(p_page_block == NULL
+       || p_page_block->begin != (address_t)addr
+       || !(p_page_block->status & PAGE_BLOCK_COMMITED)) {
+        core_pm_spnlck_unlock(p_lock);
+        //Raise exception
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, NULL);
+        return;
+    }
+
+    //Uncommit page block
+    p_page_block->p_pg_obj->unmap(
+        p_page_block->p_pg_obj,
+        addr);
+    DEC_REF(p_page_block->p_pg_obj);
+    p_page_block->p_pg_obj = NULL;
+    p_page_block->status &= ~PAGE_BLOCK_COMMITED;
+
+    core_pm_spnlck_unlock(p_lock);
+    return;
+}
+
+u32 core_mm_get_pg_attr(void* address)
+{
+    u32 ret = 0;
+
+    address_t kernel_mem_base;
+    size_t kernel_mem_size;
+    address_t usr_mem_base;
+    address_t usr_mem_size;
+
+    //Get map
+    hal_mmu_get_krnl_addr_range(
+        (void**)(&kernel_mem_base),
+        &kernel_mem_size);
+    hal_mmu_get_usr_addr_range(
+        (void**)(&usr_mem_base),
+        &usr_mem_size);
+
+    pmap_t p_used_map;
+    pspnlck_t p_lock;
+
+    if((address_t)address < kernel_mem_base
+       || (address_t)address - kernel_mem_base
+       >= kernel_mem_size) {
+        //Kernel memory
+        p_lock = &krnl_pg_tbl_lck;
+        p_used_map = &krnl_pg_used_map;
+
+        core_pm_spnlck_lock(p_lock);
+        ret |= PAGE_OPTION_KERNEL;
+
+    } else if((address_t)address < usr_mem_base
+              || (address_t)address - usr_mem_base
+              >= usr_mem_size) {
+        //User memory
+        p_lock = &usr_pg_tbls_lck;
+        u32 current_proc = core_pm_get_crrnt_proc_id();
+        core_pm_spnlck_lock(p_lock);
+        pproc_pg_tbl_t p_proc_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
+                                           &usr_pg_tbls,
+                                           current_proc);
+        p_used_map = &(p_proc_pg_tbl->used_map);
+    }
+
+    //Look for page block
+    ppage_block_t p_page_block = core_rtl_map_search(
+                                     p_used_map,
+                                     (void*)address,
+                                     (map_search_func_t)search_addr,
+                                     NULL);
+
+    if(p_page_block == NULL) {
+        core_pm_spnlck_unlock(p_lock);
+        return ret;
+    }
+
+    //Get page block attributes
+    if(p_page_block->status & PAGE_BLOCK_WRITABLE) {
+        ret |= PAGE_OPTION_WRITABLE;
+    }
+
+    if(p_page_block->status & PAGE_BLOCK_EXECUTABLE) {
+        ret |= PAGE_OPTION_EXECUTABLE;
+    }
+
+    if(p_page_block->status & PAGE_BLOCK_SHARED) {
+        ret |= PAGE_OPTION_SHARED;
+    }
+
+    if(p_page_block->status & PAGE_BLOCK_COMMITED) {
+        ret |= PAGE_OPTION_COMMIT;
+        //Get page oject attributes
+        ppage_obj_t p_page_obj = p_page_block->p_pg_obj;
+        u32 attr = p_page_obj->get_attr(p_page_obj);
+
+        if(attr & PAGE_OBJ_SWAPPABLE) {
+            ret |= PAGE_OPTION_SWAPPABLE;
+        }
+
+        if(attr & PAGE_OBJ_DMA) {
+            ret |= PAGE_OPTION_DMA;
+        }
+
+        if(attr & PAGE_OBJ_CAHCEABLE) {
+            ret |= PAGE_OPTION_CACHEABLE;
+        }
+    }
+
+    core_pm_spnlck_unlock(p_lock);
+    return ret;
+}
+
+u32 core_mm_set_pg_attr(void* address, u32 attr)
+{
+    u32 ret = 0;
+
+    address_t kernel_mem_base;
+    size_t kernel_mem_size;
+    address_t usr_mem_base;
+    address_t usr_mem_size;
+
+    //Get map
+    hal_mmu_get_krnl_addr_range(
+        (void**)(&kernel_mem_base),
+        &kernel_mem_size);
+    hal_mmu_get_usr_addr_range(
+        (void**)(&usr_mem_base),
+        &usr_mem_size);
+
+    pmap_t p_used_map;
+    pspnlck_t p_lock;
+
+    if((address_t)address < kernel_mem_base
+       || (address_t)address - kernel_mem_base
+       >= kernel_mem_size) {
+        //Kernel memory
+        p_lock = &krnl_pg_tbl_lck;
+        p_used_map = &krnl_pg_used_map;
+
+        core_pm_spnlck_lock(p_lock);
+        ret |= PAGE_OPTION_KERNEL;
+
+    } else if((address_t)address < usr_mem_base
+              || (address_t)address - usr_mem_base
+              >= usr_mem_size) {
+        //User memory
+        p_lock = &usr_pg_tbls_lck;
+        u32 current_proc = core_pm_get_crrnt_proc_id();
+        core_pm_spnlck_lock(p_lock);
+        pproc_pg_tbl_t p_proc_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
+                                           &usr_pg_tbls,
+                                           current_proc);
+        p_used_map = &(p_proc_pg_tbl->used_map);
+    }
+
+    //Look for page block
+    ppage_block_t p_page_block = core_rtl_map_search(
+                                     p_used_map,
+                                     (void*)address,
+                                     (map_search_func_t)search_addr,
+                                     NULL);
+
+    if(p_page_block == NULL) {
+        core_pm_spnlck_unlock(p_lock);
+        return ret;
+    }
+
+    //Set attribute
+    if(attr & PAGE_OPTION_WRITABLE) {
+        p_page_block->status |= PAGE_BLOCK_WRITABLE;
+
+    } else {
+        p_page_block->status &= ~PAGE_BLOCK_WRITABLE;
+    }
+
+    if(attr & PAGE_OPTION_EXECUTABLE) {
+        p_page_block->status |= PAGE_BLOCK_EXECUTABLE;
+
+    } else {
+        p_page_block->status &= ~PAGE_BLOCK_EXECUTABLE;
+    }
+
+    p_page_block->p_pg_obj->map(
+        p_page_block->p_pg_obj,
+        (void*)(p_page_block->begin),
+        p_page_block->status);
+
+    //Get page block attributes
+    if(p_page_block->status & PAGE_BLOCK_WRITABLE) {
+        ret |= PAGE_OPTION_WRITABLE;
+    }
+
+    if(p_page_block->status & PAGE_BLOCK_EXECUTABLE) {
+        ret |= PAGE_OPTION_EXECUTABLE;
+    }
+
+    if(p_page_block->status & PAGE_BLOCK_SHARED) {
+        ret |= PAGE_OPTION_SHARED;
+    }
+
+    if(p_page_block->status & PAGE_BLOCK_COMMITED) {
+        ret |= PAGE_OPTION_COMMIT;
+        //Get page oject attributes
+        ppage_obj_t p_page_obj = p_page_block->p_pg_obj;
+        u32 obj_attr = p_page_obj->get_attr(p_page_obj);
+
+        if(obj_attr & PAGE_OBJ_SWAPPABLE) {
+            ret |= PAGE_OPTION_SWAPPABLE;
+        }
+
+        if(obj_attr & PAGE_OBJ_DMA) {
+            ret |= PAGE_OPTION_DMA;
+        }
+
+        if(obj_attr & PAGE_OBJ_CAHCEABLE) {
+            ret |= PAGE_OPTION_CACHEABLE;
+        }
+    }
+
+    core_pm_spnlck_unlock(p_lock);
+    return ret;
+}
 
 int compare_pageblock_addr(ppage_block_t p1, ppage_block_t p2)
 {
@@ -741,6 +1213,8 @@ void free_page(ppage_block_t p_block, pmap_t p_size_map, pmap_t p_addr_map,
 
     //Free page object
     if(p_block->p_pg_obj != NULL) {
+        p_block->p_pg_obj->unmap(p_block->p_pg_obj,
+                                 (void*)p_block->begin);
         DEC_REF(p_block->p_pg_obj);
         p_block->p_pg_obj = NULL;
     }

@@ -103,7 +103,7 @@ Get page object of the page.
 Return the base virtual address of the pages. Must not be NULL.
 
 * addr
-Virtuall address whereyou want to get the page object.
+Virtuall address where you want to get the page object.
 
 ####Return value
 Pointer to the page object. If failed, returns NULL and errno will be set.
