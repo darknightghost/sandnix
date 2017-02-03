@@ -138,7 +138,7 @@ void panic(pexcept_obj_t p_this)
         hal_exception_panic(p_this->file->buf,
                             p_this->line,
                             p_this->reason,
-                            "%k\nCall stact:%k",
+                            "%k\nCall stack:%k",
                             p_this->comment,
                             p_str_bt);
     }

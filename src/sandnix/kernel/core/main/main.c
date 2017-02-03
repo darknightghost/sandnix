@@ -32,11 +32,25 @@ void core_main_main()
     core_kconsole_print_info("\nInitializing mm module...\n");
     core_mm_init();
 
-    core_kconsole_print_debug("\nDebug.\n");
-    char* p_mem = core_mm_pg_alloc(NULL, 4096,
-                                   PAGE_ACCESS_ALL | PAGE_OPTION_KERNEL);
-    core_rtl_strncpy(p_mem, "abcdefghijk", 4096);
-    core_mm_pg_free(p_mem);
+    void test();
+    test();
 
     while(1);
+}
+
+void test()
+{
+    core_kconsole_print_debug("\nTest.\n");
+    char* p_mem1 = core_mm_pg_alloc((void*)0xD0000000, 8192,
+                                    PAGE_ACCESS_ALL | PAGE_OPTION_KERNEL);
+    char* p_mem2 = core_mm_pg_alloc(NULL, 1,
+                                    PAGE_ACCESS_ALL | PAGE_OPTION_KERNEL);
+    char* p_mem3 = core_mm_pg_alloc(NULL, 10,
+                                    PAGE_ACCESS_ALL | PAGE_OPTION_KERNEL);
+    core_rtl_strncpy(p_mem1, "abcdefghijk", 4096);
+    core_rtl_strncpy(p_mem2, "hijklmn", 4096);
+    core_rtl_strncpy(p_mem3, "0123456789", 4096);
+    core_mm_pg_free(p_mem1);
+    core_mm_pg_free(p_mem3);
+    core_mm_pg_free(p_mem2);
 }
