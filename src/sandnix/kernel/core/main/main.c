@@ -32,5 +32,11 @@ void core_main_main()
     core_kconsole_print_info("\nInitializing mm module...\n");
     core_mm_init();
 
+    core_kconsole_print_debug("\nDebug.\n");
+    char* p_mem = core_mm_pg_alloc(NULL, 4096,
+                                   PAGE_ACCESS_ALL | PAGE_OPTION_KERNEL);
+    core_rtl_strncpy(p_mem, "abcdefghijk", 4096);
+    core_mm_pg_free(p_mem);
+
     while(1);
 }
