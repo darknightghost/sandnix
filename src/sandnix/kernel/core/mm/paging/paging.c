@@ -369,7 +369,11 @@ void* core_mm_pg_alloc(void* base_addr, size_t size, u32 options)
     address_t usr_mem_base;
     address_t usr_mem_size;
 
-    size = PAGE_SIZE_ALIGN(size);
+    size = PAGE_SIZE_ALIGN(size +
+                           ((address_t)base_addr - (address_t)base_addr
+                            / SANDNIX_KERNEL_PAGE_SIZE * SANDNIX_KERNEL_PAGE_SIZE));
+    base_addr = (void*)((address_t)base_addr
+                        / SANDNIX_KERNEL_PAGE_SIZE * SANDNIX_KERNEL_PAGE_SIZE);
 
     if(base_addr != NULL) {
         //Check address
@@ -1350,8 +1354,8 @@ ppage_block_t alloc_page(pmap_t p_size_map, pmap_t p_addr_map,
         p_prev_block->p_pg_obj = NULL;
         p_prev_block->size = (address_t)base_addr - p_page_block->begin;
         p_prev_block->begin = p_page_block->begin;
-        p_page_block->begin += size;
-        p_page_block->size -= size;
+        p_page_block->begin += p_prev_block->size;
+        p_page_block->size -= p_prev_block->size;
 
         //Insert to page block list
         p_prev_block->p_prev = p_page_block->p_prev;
@@ -1440,6 +1444,13 @@ bool commit_page(ppage_block_t p_page_block, u32 options)
 
     p_page_block->p_pg_obj = p_page_obj;
     p_page_block->status |= PAGE_BLOCK_COMMITED;
+
+    if(options & PAGE_OPTION_ALLOCWHENCOMMIT) {
+        p_page_obj->alloc(p_page_obj);
+        p_page_obj->map(p_page_obj,
+                        (void*)p_page_block->begin,
+                        p_page_block->status);
+    }
 
     return true;
 }
