@@ -25,9 +25,14 @@
 
 typedef	struct _thread_obj {
     obj_t		obj;
+
     //Basical info
     u32			thread_id;			//Thread id
     u32			status;				//Thread status
+    address_t	k_stack_addr;		//Kernel stack address
+    size_t		k_stack_size;		//Kernel stack size
+    address_t	u_stack_addr;		//User stack address
+    size_t		u_stack_size;		//User stack size
 
     //Process info
     u32			process_id;			//ID of the process of the thread
@@ -45,5 +50,10 @@ typedef	struct _thread_obj {
     } status_info;
 
     //Referenced objects
-    list_t		ref_objs;			//Referenced objects
+    map_t		ref_objects;		//Referenced objects
+
+    //Methods
+    //Add referenced objects
+    //plist_node_t	add_ref(pthread_obj_t p_this, pthread_ref_obj_t p_obj);
+    plist_node_t	(*add_ref)(struct _thread_obj*, pthread_ref_obj_t);
 } thread_obj_t, *pthread_obj_t;
