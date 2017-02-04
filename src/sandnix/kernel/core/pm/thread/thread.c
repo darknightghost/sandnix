@@ -16,6 +16,7 @@
 */
 
 #include "thread.h"
+#include "./thread_obj.h"
 
 static int tmp_priority = PRIORITY_DISPATCH;
 
