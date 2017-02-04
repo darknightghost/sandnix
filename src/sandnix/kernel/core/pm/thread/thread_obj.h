@@ -19,3 +19,5 @@
 
 #include "../../../../../common/common.h"
 #include "./thread_obj_defs.h"
+
+pthread_obj_t		thread_obj();
