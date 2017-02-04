@@ -45,7 +45,7 @@ typedef	struct _thread_obj {
             u32			time_slices;		//Number of time slices
         } runing;
         struct {
-            u32			awake_tickcount;	//Time to awake
+            u64			awake_tickcount;	//Time to awake
         } sleep;
     } status_info;
 
@@ -64,4 +64,8 @@ typedef	struct _thread_obj {
     //Die
     //void			die(pthread_obj_t p_this);
     void	(*die)(struct _thread_obj*);
+
+    //Compute sleep time
+    //void			set_sleep_time(pthread_obj_t p_this, u64* p_ns);
+    void	(*set_sleep_time)(struct _thread_obj, u64*);
 } thread_obj_t, *pthread_obj_t;
