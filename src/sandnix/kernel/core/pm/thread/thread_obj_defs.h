@@ -67,5 +67,5 @@ typedef	struct _thread_obj {
 
     //Compute sleep time
     //void			set_sleep_time(pthread_obj_t p_this, u64* p_ns);
-    void	(*set_sleep_time)(struct _thread_obj, u64*);
+    void	(*set_sleep_time)(struct _thread_obj*, u64*);
 } thread_obj_t, *pthread_obj_t;

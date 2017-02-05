@@ -18,8 +18,10 @@
 #pragma once
 
 #include "../../../../../common/common.h"
+#include "../../../hal/rtl/math/math.h"
 
 #define	MAX(a, b)	((a) > (b) ? (a) : (b))
 #define	MIN(a, b)	((a) < (b) ? (a) : (b))
-
+#define	ALIGN(num, align)	(((num) / (align) + ((num) % (align) ? 1 : 0)) \
+                             * (align))
 
