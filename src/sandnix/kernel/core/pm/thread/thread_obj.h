@@ -20,4 +20,13 @@
 #include "../../../../../common/common.h"
 #include "./thread_obj_defs.h"
 
-pthread_obj_t		thread_obj();
+//Create new thread object
+pthread_obj_t		thread_obj(
+    u32 thread_id,					//Thread id
+    u32 process_id,					//Process id
+    size_t kernel_stack_size,		//Size of new kernel stack
+    size_t usr_stack_size,			//Size of new user stack
+    u32 priority);
+
+//Create thread object for thread 0.
+pthread_obj_t		thread_obj_0();

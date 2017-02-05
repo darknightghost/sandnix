@@ -99,7 +99,22 @@ static	void				swap_node(pheap_mem_blck_t p1, pheap_mem_blck_t p2,
 
 pheap_t core_mm_heap_create(
     u32 attribute,
-    size_t scale);
+    size_t scale)
+{
+    pheap_t ret;
+    pheap_mem_blck_t p_mem_block;
+
+    ret = core_mm_heap_alloc(sizeof(heap_t), NULL);
+
+    if(ret == NULL) {
+        return NULL;
+    }
+
+    //Initialize heap
+    INIT_HEAP(ret, scale, attribute);
+
+    return ret;
+}
 
 pheap_t core_mm_heap_create_on_buf(
     u32 attribute,
@@ -206,12 +221,19 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
                           p_new_pg_block, p_heap);
 
             //Add page block to heap
-            for(pheap_pg_blck_t p_node = p_heap->p_pg_block_list;
-                ; p_node = p_node->p_next) {
-                if(p_node->p_next == NULL) {
-                    p_node->p_next = p_new_pg_block;
-                    p_new_pg_block->p_prev = p_node;
-                    break;
+            if(p_heap->p_pg_block_list == NULL) {
+                p_new_pg_block->p_next = NULL;
+                p_new_pg_block->p_prev = NULL;
+                p_heap->p_pg_block_list = p_new_pg_block;
+
+            } else {
+                for(pheap_pg_blck_t p_node = p_heap->p_pg_block_list;
+                    ; p_node = p_node->p_next) {
+                    if(p_node->p_next == NULL) {
+                        p_node->p_next = p_new_pg_block;
+                        p_new_pg_block->p_prev = p_node;
+                        break;
+                    }
                 }
             }
         }
