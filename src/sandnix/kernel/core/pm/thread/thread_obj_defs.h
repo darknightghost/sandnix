@@ -45,7 +45,8 @@ typedef	struct _thread_obj {
             u32			time_slices;		//Number of time slices
         } runing;
         struct {
-            u64			awake_tickcount;	//Time to awake
+            u64			awake_time;	//Time to awake
+            u64*		p_ns;		//Nanoseconds left
         } sleep;
         struct {
             void*		retval;				//Return value
@@ -65,8 +66,8 @@ typedef	struct _thread_obj {
     void	(*remove_ref)(struct _thread_obj*, pthread_ref_obj_t);
 
     //Fork
-    //void	fork(pthread_obj_t p_this);
-    void	(*fork)(struct _thread_obj*);
+    //pthread_obj_t	fork(pthread_obj_t p_this, u32 new_thread_id, u32 new_proc_id);
+    struct _thread_obj*	(*fork)(struct _thread_obj*, u32, u32);
 
     //Die
     //void			die(pthread_obj_t p_this);
