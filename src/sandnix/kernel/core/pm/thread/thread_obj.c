@@ -33,7 +33,7 @@ static	void				destructor(pthread_obj_t p_this);
 //Thread object methods
 static	void*			add_ref(pthread_obj_t p_this, pthread_ref_obj_t p_obj);
 static	void			remove_ref(pthread_obj_t p_this, pthread_ref_obj_t p_obj);
-static	void			fork(pthread_obj_t p_this);
+static	pthread_obj_t	fork(pthread_obj_t p_this, u32 new_thread_id, u32 new_proc_id);
 static	void			thread_die(pthread_obj_t p_this);
 static	void			set_sleep_time(pthread_obj_t p_this, u64* p_ns);
 
@@ -238,9 +238,45 @@ void destructor(pthread_obj_t p_this)
     return;
 }
 
-void* add_ref(pthread_obj_t p_this, pthread_ref_obj_t p_obj);
-void remove_ref(pthread_obj_t p_this, pthread_ref_obj_t p_obj);
-void fork(pthread_obj_t p_this);
+void* add_ref(pthread_obj_t p_this, pthread_ref_obj_t p_obj)
+{
+    return core_rtl_map_set(&(p_this->ref_objects),
+                            p_obj,
+                            p_obj);
+}
+
+void remove_ref(pthread_obj_t p_this, pthread_ref_obj_t p_obj)
+{
+    core_rtl_map_set(&(p_this->ref_objects),
+                     p_obj,
+                     NULL);
+    DEC_REF(p_obj);
+    return;
+}
+
+pthread_obj_t fork(pthread_obj_t p_this, u32 new_thread_id, u32 new_proc_id)
+{
+    pthread_obj_t p_ret = thread_obj(new_thread_id, new_proc_id,
+                                     p_this->k_stack_size, 0,
+                                     p_this->priority);
+
+    if(p_ret == NULL) {
+        return NULL;
+    }
+
+    p_ret->u_stack_addr = p_this->u_stack_addr;
+    p_ret->u_stack_size = p_this->u_stack_size;
+
+    //Fork objects
+    for(pthread_ref_obj_t p_ref = core_rtl_map_next(&(p_this->ref_objects), NULL);
+        p_ref != NULL;
+        p_ref = core_rtl_map_next(&(p_this->ref_objects), p_ref)) {
+        pthread_ref_obj_t p_new_ref = p_ref->fork(p_ref, new_thread_id);
+        p_ret->add_ref(p_ret, p_new_ref);
+    }
+
+    return p_ret;
+}
 
 void thread_die(pthread_obj_t p_this)
 {
@@ -263,7 +299,13 @@ void thread_die(pthread_obj_t p_this)
     return;
 }
 
-void set_sleep_time(pthread_obj_t p_this, u64* p_ns);
+void set_sleep_time(pthread_obj_t p_this, u64* p_ns)
+{
+    //TODO:
+    UNREFERRED_PARAMETER(p_this);
+    UNREFERRED_PARAMETER(p_ns);
+    return;
+}
 
 int compare_addr(address_t p_item1, address_t p_item2)
 {
