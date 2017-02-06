@@ -102,7 +102,6 @@ pheap_t core_mm_heap_create(
     size_t scale)
 {
     pheap_t ret;
-    pheap_mem_blck_t p_mem_block;
 
     ret = core_mm_heap_alloc(sizeof(heap_t), NULL);
 

@@ -47,6 +47,9 @@ typedef	struct _thread_obj {
         struct {
             u64			awake_tickcount;	//Time to awake
         } sleep;
+        struct {
+            void*		retval;				//Return value
+        } zombie;
     } status_info;
 
     //Referenced objects
@@ -55,11 +58,15 @@ typedef	struct _thread_obj {
     //Methods
     //Add referenced objects
     //plist_node_t	add_ref(pthread_obj_t p_this, pthread_ref_obj_t p_obj);
-    plist_node_t	(*add_ref)(struct _thread_obj*, pthread_ref_obj_t);
+    void*			(*add_ref)(struct _thread_obj*, pthread_ref_obj_t);
 
     //Remove referenced objects
     //plist_node_t	remove_ref(pthread_obj_t p_this, pthread_ref_obj_t p_obj);
-    plist_node_t	(*remove_ref)(struct _thread_obj*, pthread_ref_obj_t);
+    void	(*remove_ref)(struct _thread_obj*, pthread_ref_obj_t);
+
+    //Fork
+    //void	fork(pthread_obj_t p_this);
+    void	(*fork)(struct _thread_obj*);
 
     //Die
     //void			die(pthread_obj_t p_this);
