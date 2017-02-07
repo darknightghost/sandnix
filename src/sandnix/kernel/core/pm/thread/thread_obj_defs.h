@@ -45,8 +45,9 @@ typedef	struct _thread_obj {
             u32			time_slices;		//Number of time slices
         } runing;
         struct {
-            u64			awake_time;	//Time to awake
-            u64*		p_ns;		//Nanoseconds left
+            u64			sleep_begin_ms;		//Time begins to sleep
+            u64			awake_ms;			//Time to awake
+            u64*		p_ns;				//Nanoseconds left
         } sleep;
         struct {
             void*		retval;				//Return value
