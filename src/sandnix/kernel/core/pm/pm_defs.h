@@ -22,6 +22,7 @@
 #ifndef MAX_PROCESS_NUM
     #define	MAX_PROCESS_NUM			65535
 #endif
+#define	MAX_THREAD_NUM				(MAX_PROCESS_NUM * 2)
 
 //Spinlock
 #include "./lock/spinlock/spnlck_defs.h"
