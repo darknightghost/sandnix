@@ -24,6 +24,9 @@
 #include "../../../hal/io/io.h"
 #include "../pm.h"
 
+//Flag
+static	bool				initialized = false;
+
 //Heap
 static	pheap_t				sched_heap;
 
@@ -40,6 +43,9 @@ static	spnlck_rw_t			thread_table_lock;
 
 static int tmp_priority = PRIORITY_DISPATCH;
 
+static	void				on_tick(u32 int_num, pcontext_t p_context,
+                                    u32 err_code);
+
 void core_pm_thread_init()
 {
     //Initialize heap
@@ -54,8 +60,8 @@ void core_pm_thread_init()
     core_pm_spnlck_rw_init(&thread_table_lock);
 
     //Create thread 0
-    core_pm_thread_core_init();
     pthread_obj_t p_thread_obj = thread_obj_0();
+    p_thread_obj->status = TASK_RUNNING;
 
     if(p_thread_obj == NULL) {
         PANIC(ENOMEM, "Faile to create thread object for thread 0.");
@@ -63,10 +69,24 @@ void core_pm_thread_init()
 
     core_rtl_array_set(&thread_table, 0, p_thread_obj);
 
+    pcore_sched_info_t p_info = &cpu_infos[0];
+    p_info->cpu_use_stat_l = 0;
+    p_info->cpu_use_stat_h = 0;
+    p_info->tick_count = 0;
+    p_info->current_node = (plist_node_t)core_mm_heap_alloc(sizeof(list_node_t),
+                           sched_heap);
+    p_info->current_node->p_item = p_thread_obj;
+    core_pm_spnlck_init(&(p_info->lock));
+
     //Initialize schedule list
     core_rtl_memset(sched_lists, 0, sizeof(sched_lists));
     core_rtl_memset(cpu_infos, 0, sizeof(cpu_infos));
     core_pm_spnlck_init(&sched_list_lock);
+
+    //Set schedule callback
+    hal_io_int_callback_set(INT_TICK, on_tick);
+    initialized = true;
+    return;
 }
 
 void core_pm_thread_core_init()
