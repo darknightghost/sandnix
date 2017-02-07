@@ -60,7 +60,7 @@ typedef	struct _thread_obj {
     //Methods
     //Add referenced objects
     //plist_node_t	add_ref(pthread_obj_t p_this, pthread_ref_obj_t p_obj);
-    void*			(*add_ref)(struct _thread_obj*, pthread_ref_obj_t);
+    void*	(*add_ref)(struct _thread_obj*, pthread_ref_obj_t);
 
     //Remove referenced objects
     //plist_node_t	remove_ref(pthread_obj_t p_this, pthread_ref_obj_t p_obj);
@@ -77,4 +77,12 @@ typedef	struct _thread_obj {
     //Compute sleep time
     //void			set_sleep_time(pthread_obj_t p_this, u64* p_ns);
     void	(*set_sleep_time)(struct _thread_obj*, u64*);
+
+    //Test if the thread can run
+    //bool			can_run(pthread_obj_t p_this);
+    bool	(*can_run)(struct _thread_obj*);
+
+    //Reset time slice num
+    //void			reset_timeslice(pthread_obj_t p_this);
+    void	(*reset_timeslice)(struct _thread_obj*);
 } thread_obj_t, *pthread_obj_t;

@@ -20,6 +20,8 @@
 #include "../../../../../common/common.h"
 #include "thread_ref_obj_defs.h"
 
+#define	MAX_TIME_SLICE_NUM		8
+
 #define PRIORITY_HIGHEST		0x000000FF
 #define PRIORITY_LOWEST			0x00000000
 
