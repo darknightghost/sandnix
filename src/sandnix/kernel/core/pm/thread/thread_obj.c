@@ -20,8 +20,10 @@
 #include "../../mm/mm.h"
 #include "../../exception/exception.h"
 #include "../../rtl/rtl.h"
+#include "../../kclock/kclock.h"
 
 #include "../../../hal/init/init.h"
+#include "../../../hal/rtl/rtl.h"
 
 static	pheap_t	thread_obj_heap = NULL;
 
@@ -301,9 +303,10 @@ void thread_die(pthread_obj_t p_this)
 
 void set_sleep_time(pthread_obj_t p_this, u64* p_ns)
 {
-    //TODO:
-    UNREFERRED_PARAMETER(p_this);
-    UNREFERRED_PARAMETER(p_ns);
+    p_this->status_info.sleep.p_ns = p_ns;
+    p_this->status_info.sleep.sleep_begin_ms = core_kclock_get_ms();
+    p_this->status_info.sleep.awake_ms = p_this->status_info.sleep.sleep_begin_ms
+                                         + hal_rtl_math_div64(*p_ns, 1000);
     return;
 }
 
