@@ -76,7 +76,7 @@ pthread_obj_t thread_obj(u32 thread_id, u32 process_id, size_t kernel_stack_size
 
     //Initialize vatiables
     p_ret->thread_id = thread_id;
-    p_ret->status = TASK_READY;
+    p_ret->status = TASK_SUSPEND;
     p_ret->process_id = process_id;
     p_ret->priority = priority;
     p_ret->p_context = NULL;
@@ -149,7 +149,7 @@ pthread_obj_t thread_obj_0()
 
     //Initialize vatiables
     p_ret->thread_id = 0;
-    p_ret->status = TASK_READY;
+    p_ret->status = TASK_SUSPEND;
     p_ret->process_id = 0;
     p_ret->priority = PRIORITY_DISPATCH;
     p_ret->p_context = NULL;
@@ -273,6 +273,7 @@ pthread_obj_t fork(pthread_obj_t p_this, u32 new_thread_id, u32 new_proc_id)
 
     p_ret->u_stack_addr = p_this->u_stack_addr;
     p_ret->u_stack_size = p_this->u_stack_size;
+    p_ret->status = TASK_SUSPEND;
 
     //Fork objects
     for(pthread_ref_obj_t p_ref = core_rtl_map_next(&(p_this->ref_objects), NULL);

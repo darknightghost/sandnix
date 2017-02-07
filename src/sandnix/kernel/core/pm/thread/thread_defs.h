@@ -18,7 +18,11 @@
 #pragma once
 
 #include "../../../../../common/common.h"
+#include "../../rtl/rtl.h"
+
 #include "thread_ref_obj_defs.h"
+
+#include "../lock/spinlock/spnlck.h"
 
 #define	MAX_TIME_SLICE_NUM		8
 
@@ -45,3 +49,11 @@
 
 //void thread_func(u32 thread_id, void* p_arg);
 typedef	void	(*thread_func_t)(u32, void*);
+
+typedef	struct	_core_sched_info {
+    spnlck_t		lock;
+    volatile u32	tick_count;
+    volatile u64	cpu_use_stat_h;
+    volatile u64	cpu_use_stat_l;
+    plist_node_t	current_node;
+} core_sched_info_t, *pcore_sched_info_t;
