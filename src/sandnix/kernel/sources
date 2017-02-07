@@ -32,6 +32,9 @@ hal/cpu/multiprocessor/IPI/ipi.c
 ##main
 core/main/main.c
 
+##kclock
+core/kclock/kclock.c
+
 ##pm
 core/pm/thread/thread.c
 core/pm/thread/thread_obj.c

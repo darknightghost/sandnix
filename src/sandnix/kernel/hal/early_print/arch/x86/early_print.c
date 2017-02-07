@@ -215,6 +215,7 @@ void hal_early_print_puts(const char* str)
                 case	0x0D:
                     current_cursor_row = 0;
                     update_cursor();
+                    break;
 
                 case	0x0E:
                 case	0x0F:
