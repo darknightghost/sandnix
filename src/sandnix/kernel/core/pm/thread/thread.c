@@ -269,6 +269,8 @@ void next_task(pcore_sched_info_t p_info)
                     p_node->p_next->p_prev = p_node->p_prev;
                     sched_lists[pri] = p_node->p_next;
                 }
+
+                break;
             }
         }
 
@@ -280,13 +282,29 @@ void next_task(pcore_sched_info_t p_info)
         if(p_node == NULL) {
         }
 
+        if(p_node != NULL) {
+            //Change current thread
+            plist_node_t p_old_node = p_info->current_node;
+
+            if(sched_lists[p_thread_obj->priority] == NULL) {
+                sched_lists[p_thread_obj->priority] = p_old_node;
+                p_old_node->p_prev = p_old_node;
+                p_old_node->p_next = p_old_node;
+
+            } else {
+                p_old_node->p_prev = sched_lists[p_thread_obj->priority]->p_prev;
+                p_old_node->p_next = sched_lists[p_thread_obj->priority];
+                p_old_node->p_prev->p_next = p_old_node;
+                p_old_node->p_next->p_prev = p_old_node;
+                sched_lists[p_thread_obj->priority] = p_old_node;
+            }
+        }
+
         core_pm_spnlck_unlock(&sched_list_lock);
 
     } else {
         //Look for a thread to run
     }
-
-    p_info->current_node = p_node;
 
     return;
 }
@@ -297,9 +315,11 @@ void switch_task(pcore_sched_info_t p_info)
 
     if(p_info->current_node == NULL) {
         p_thread_obj = p_info->p_idle_thread;
+        add_use_count(p_info, false);
 
     } else {
         p_thread_obj = (pthread_obj_t)(p_info->current_node->p_item);
+        add_use_count(p_info, true);
     }
 
     p_info->priority = p_thread_obj->priority;
