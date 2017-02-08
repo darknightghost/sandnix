@@ -46,6 +46,11 @@ static int tmp_priority = PRIORITY_DISPATCH;
 static	void				on_tick(u32 int_num, pcontext_t p_context,
                                     u32 err_code);
 
+static	void				add_use_count(pcore_sched_info_t p_info,
+        bool is_busy);
+static inline void			switch_task(pcore_sched_info_t p_info,
+                                        plist_node_t p_node);
+
 void core_pm_thread_init()
 {
     //Initialize heap
@@ -72,10 +77,11 @@ void core_pm_thread_init()
     pcore_sched_info_t p_info = &cpu_infos[0];
     p_info->cpu_use_stat_l = 0;
     p_info->cpu_use_stat_h = 0;
-    p_info->tick_count = 0;
     p_info->current_node = (plist_node_t)core_mm_heap_alloc(sizeof(list_node_t),
                            sched_heap);
     p_info->current_node->p_item = p_thread_obj;
+    p_info->priority = PRIORITY_DISPATCH;
+    p_info->idle_thread_id = 0;
     core_pm_spnlck_init(&(p_info->lock));
 
     //Initialize schedule list
@@ -95,15 +101,51 @@ void core_pm_thread_core_init()
     pcore_sched_info_t p_info = &cpu_infos[cpu_index];
     p_info->cpu_use_stat_l = 0;
     p_info->cpu_use_stat_h = 0;
-    p_info->tick_count = 0;
     p_info->current_node = NULL;
     core_pm_spnlck_init(&(p_info->lock));
+    p_info->enabled = true;
 
     return;
 }
 
 void core_pm_thread_core_release()
 {
+    u32 cpu_index = hal_cpu_get_cpu_index();
+    pcore_sched_info_t p_info = &cpu_infos[cpu_index];
+    core_pm_spnlck_lock(&(p_info->lock));
+    p_info->enabled = false;
+
+    if(p_info->current_node != NULL) {
+        //Get node
+        plist_node_t p_node = p_info->current_node;
+        p_info->current_node = NULL;
+        core_pm_spnlck_unlock(&(p_info->lock));
+
+        //Add Task to schedule list
+        core_pm_spnlck_lock(&sched_list_lock);
+        pthread_obj_t p_obj = (pthread_obj_t)(p_node->p_item);
+        plist_t p_list = &sched_lists[p_obj->priority];
+
+        if(*p_list == NULL) {
+            *p_list = p_node;
+            p_node->p_prev = p_node;
+            p_node->p_next = p_node;
+
+        } else {
+            p_node->p_prev = (*p_list)->p_prev;
+            p_node->p_next = (*p_list);
+            (*p_list)->p_prev->p_next = p_node;
+            (*p_list)->p_next->p_prev = p_node;
+            *p_list = p_node;
+        }
+
+        core_pm_spnlck_unlock(&sched_list_lock);
+
+    } else {
+        core_pm_spnlck_unlock(&(p_info->lock));
+    }
+
+    return;
 }
 
 u32 core_pm_get_crrnt_thread_id()
@@ -124,3 +166,76 @@ void core_pm_set_thrd_priority(u32 thrd_id, u32 priority)
     return;
 }
 
+void on_tick(u32 int_num, pcontext_t p_context, u32 err_code)
+{
+    //Get schedule info
+    u32 cpu_index = hal_cpu_get_cpu_index();
+    pcore_sched_info_t p_info = &cpu_infos[cpu_index];
+
+    if(!p_info->enabled || p_info->priority == PRIORITY_HIGHEST) {
+        hal_io_irq_send_eoi();
+        hal_cpu_context_load(p_context);
+    }
+
+    pthread_obj_t p_thread_obj = NULL;
+
+    if(p_info->current_node != NULL) {
+        p_thread_obj = (pthread_obj_t)(p_info->current_node->p_item);
+    }
+
+    p_thread_obj->p_context = p_context;
+
+
+    UNREFERRED_PARAMETER(int_num);
+    UNREFERRED_PARAMETER(err_code);
+    return;
+}
+
+void add_use_count(pcore_sched_info_t p_info, bool is_busy)
+{
+    core_pm_spnlck_raw_lock(&(p_info->lock));
+    p_info->cpu_use_stat_h <<= 1;
+
+    if(p_info->cpu_use_stat_l & 0x8000000000000000) {
+        p_info->cpu_use_stat_h += 0x01;
+    }
+
+    p_info->cpu_use_stat_l <<= 1;
+
+    if(is_busy) {
+        p_info->cpu_use_stat_l += 1;
+    }
+
+    core_pm_spnlck_raw_unlock(&(p_info->lock));
+    return;
+}
+
+void switch_task(pcore_sched_info_t p_info, plist_node_t p_node)
+{
+    //Add current thread to schedule list
+    if(p_info->current_node != NULL) {
+        if(sched_lists[p_info->priority] == NULL) {
+            p_info->current_node->p_prev = NULL;
+            p_info->current_node->p_next = NULL;
+            sched_lists[p_info->priority] = NULL;
+
+        } else {
+            p_info->current_node->p_prev = sched_lists[p_info->priority]
+                                           ->p_prev;
+            p_info->current_node->p_next = sched_lists[p_info->priority];
+            p_info->current_node->p_prev->p_next = p_info->current_node;
+            p_info->current_node->p_next->p_prev = p_info->current_node;
+        }
+    }
+
+    //Switch task
+    p_info->current_node = p_node;
+
+    pthread_obj_t p_thread_obj = (pthread_obj_t)(p_info->current_node->p_item);
+    p_info->priority = p_thread_obj->priority;
+
+    //Load context
+    hal_cpu_context_load(p_thread_obj->p_context);
+
+    return;
+}

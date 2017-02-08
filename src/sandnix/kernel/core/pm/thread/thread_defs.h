@@ -30,6 +30,7 @@
 #define PRIORITY_LOWEST			0x00000000
 
 #define PRIORITY_IDLE			0x00000000
+#define PRIORITY_IDLE_TASK		0x00000001
 #define PRIORITY_USER_NORMAL	0x00000014
 #define PRIORITY_USER_HIGHEST	0x00000028
 
@@ -51,9 +52,11 @@
 typedef	void	(*thread_func_t)(u32, void*);
 
 typedef	struct	_core_sched_info {
+    bool			enabled;
     spnlck_t		lock;
-    volatile u32	tick_count;
+    u32				priority;
     volatile u64	cpu_use_stat_h;
     volatile u64	cpu_use_stat_l;
+    u32				idle_thread_id;
     plist_node_t	current_node;
 } core_sched_info_t, *pcore_sched_info_t;
