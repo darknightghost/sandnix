@@ -82,9 +82,9 @@ typedef	struct _thread_obj {
     //bool			can_run(pthread_obj_t p_this);
     bool	(*can_run)(struct _thread_obj*);
 
-    //Select thread to run
+    //Resume thread to run
     //void			select(pthread_obj_t p_this);
-    void	(*select)(struct _thread_obj*);
+    void	(*resume)(struct _thread_obj*);
 
     //Reset time slice num
     //void			reset_timeslice(pthread_obj_t p_this);

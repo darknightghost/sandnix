@@ -21,6 +21,7 @@
 #include "../../rtl/rtl.h"
 
 #include "thread_ref_obj_defs.h"
+#include "thread_obj_defs.h"
 
 #include "../lock/spinlock/spnlck.h"
 
@@ -57,6 +58,6 @@ typedef	struct	_core_sched_info {
     u32				priority;
     volatile u64	cpu_use_stat_h;
     volatile u64	cpu_use_stat_l;
-    u32				idle_thread_id;
     plist_node_t	current_node;
+    pthread_obj_t	p_idle_thread;
 } core_sched_info_t, *pcore_sched_info_t;

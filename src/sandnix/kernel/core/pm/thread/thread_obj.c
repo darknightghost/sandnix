@@ -24,6 +24,7 @@
 
 #include "../../../hal/init/init.h"
 #include "../../../hal/rtl/rtl.h"
+#include "../../../hal/cpu/cpu.h"
 
 static	pheap_t	thread_obj_heap = NULL;
 
@@ -39,7 +40,7 @@ static	pthread_obj_t	fork(pthread_obj_t p_this, u32 new_thread_id, u32 new_proc_
 static	void			thread_die(pthread_obj_t p_this);
 static	void			set_sleep_time(pthread_obj_t p_this, u64* p_ns);
 static	bool			can_run(pthread_obj_t p_this);
-static	void			select(pthread_obj_t p_this);
+static	void			resume(pthread_obj_t p_this);
 static	void			reset_timeslice(pthread_obj_t p_this);
 
 static	int				compare_addr(address_t p_item1, address_t p_item2);
@@ -92,7 +93,7 @@ pthread_obj_t thread_obj(u32 thread_id, u32 process_id, size_t kernel_stack_size
     p_ret->die = thread_die;
     p_ret->set_sleep_time = set_sleep_time;
     p_ret->can_run = can_run;
-    p_ret->select = select;
+    p_ret->resume = resume;
     p_ret->reset_timeslice = reset_timeslice;
 
     //Allocate stack
@@ -166,7 +167,7 @@ pthread_obj_t thread_obj_0()
     p_ret->die = thread_die;
     p_ret->set_sleep_time = set_sleep_time;
     p_ret->can_run = can_run;
-    p_ret->select = select;
+    p_ret->resume = resume;
     p_ret->reset_timeslice = reset_timeslice;
 
     //Kernel stack
@@ -372,7 +373,7 @@ bool can_run(pthread_obj_t p_this)
     }
 }
 
-void select(pthread_obj_t p_this)
+void resume(pthread_obj_t p_this)
 {
     if(p_this->status == TASK_READY) {
         p_this->status = TASK_RUNNING;
@@ -383,6 +384,7 @@ void select(pthread_obj_t p_this)
         (p_this->status_info.runing.time_slices)--;
     }
 
+    hal_cpu_context_load(p_this->p_context);
     return;
 }
 
