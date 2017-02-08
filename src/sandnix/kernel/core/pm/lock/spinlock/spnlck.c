@@ -16,9 +16,9 @@
 */
 
 #include "spnlck.h"
-#include "../../thread/thread.h"
 #include "../../../../hal/rtl/rtl.h"
 #include "../../../../hal/exception/exception.h"
+#include "../../../../hal/cpu/cpu.h"
 #include "../../../exception/exception.h"
 #include "../../pm.h"
 
@@ -45,12 +45,12 @@ void core_pm_spnlck_lock(pspnlck_t p_lock)
     //Get lock
     priority = core_pm_get_thrd_priority(thrd_id);
 
-    if(priority < PRIORITY_DISPATCH) {
-        core_pm_set_thrd_priority(thrd_id, PRIORITY_DISPATCH);
+    if(priority < PRIORITY_HIGHEST) {
+        core_pm_set_thrd_priority(thrd_id, PRIORITY_HIGHEST);
     }
 
     while(p_lock->owner != ticket) {
-        if(p_lock->owner_thread == core_pm_get_crrnt_thread_id()) {
+        if(p_lock->cpu_index == hal_cpu_get_cpu_index()) {
             //Dead lock, raise exception
             pedeadlock_except_t p_except = edeadlock_except();
             RAISE(p_except, "Trying to get a spinlock whitch has been got.");
@@ -60,7 +60,7 @@ void core_pm_spnlck_lock(pspnlck_t p_lock)
     }
 
     p_lock->priority = priority;
-    p_lock->owner_thread = core_pm_get_crrnt_thread_id();
+    p_lock->cpu_index = hal_cpu_get_cpu_index();
 
     return;
 }
@@ -78,7 +78,7 @@ void core_pm_spnlck_raw_lock(pspnlck_t p_lock)
         MEM_BLOCK;
     }
 
-
+    p_lock->cpu_index = hal_cpu_get_cpu_index();
     return;
 }
 
@@ -90,11 +90,10 @@ kstatus_t core_pm_spnlck_trylock(pspnlck_t p_lock)
     u32 new_lock;
     u32 result;
 
-    thrd_id = core_pm_get_crrnt_thread_id();
     priority = core_pm_get_thrd_priority(thrd_id);
 
-    if(priority < PRIORITY_DISPATCH) {
-        core_pm_set_thrd_priority(thrd_id, PRIORITY_DISPATCH);
+    if(priority < PRIORITY_HIGHEST) {
+        core_pm_set_thrd_priority(thrd_id, PRIORITY_HIGHEST);
     }
 
     old_lock = p_lock->lock;
@@ -112,6 +111,7 @@ kstatus_t core_pm_spnlck_trylock(pspnlck_t p_lock)
 
     } else {
         p_lock->priority = priority;
+        p_lock->cpu_index = hal_cpu_get_cpu_index();
         return ESUCCESS;
     }
 }
@@ -135,6 +135,7 @@ kstatus_t core_pm_spnlck_raw_trylock(pspnlck_t p_lock)
         return EAGAIN;
 
     } else {
+        p_lock->cpu_index = hal_cpu_get_cpu_index();
         return ESUCCESS;
     }
 }

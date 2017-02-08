@@ -28,5 +28,5 @@ typedef struct _spnlck_t {
         } __attribute__((aligned(1)));
     };
     volatile u32		priority;
-    volatile u32		owner_thread;
+    volatile u32		cpu_index;
 } spnlck_t, *pspnlck_t;
