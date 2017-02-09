@@ -241,7 +241,7 @@ void next_task(pcore_sched_info_t p_info)
 
     //Get current thread object
     if(p_info->current_node != NULL) {
-        pthread_obj_t p_thread_obj = (pthread_obj_t)(p_info->current_node->p_item);
+        p_thread_obj = (pthread_obj_t)(p_info->current_node->p_item);
     }
 
     //Search for next task

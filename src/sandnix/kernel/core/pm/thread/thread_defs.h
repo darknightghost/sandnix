@@ -21,7 +21,6 @@
 #include "../../rtl/rtl.h"
 
 #include "thread_ref_obj_defs.h"
-#include "thread_obj_defs.h"
 
 #include "../lock/spinlock/spnlck.h"
 
@@ -52,6 +51,8 @@
 //void thread_func(u32 thread_id, void* p_arg);
 typedef	void	(*thread_func_t)(u32, void*);
 
+#include "thread_obj_defs.h"
+typedef	struct _thread_obj		thread_obj_t, *pthread_obj_t;
 typedef	struct	_core_sched_info {
     bool			enabled;
     spnlck_t		lock;

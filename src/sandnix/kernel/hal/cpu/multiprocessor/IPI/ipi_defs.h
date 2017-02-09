@@ -20,7 +20,7 @@
 #include "../../context/context.h"
 
 #include "../../../../core/pm/pm_defs.h"
-#include "../../../../core/rtl/rtl_defs.h"
+#include "../../../../core/rtl/container/queue/queue_defs.h"
 
 #define	MAX_IPI_MSG_NUM		0x10
 

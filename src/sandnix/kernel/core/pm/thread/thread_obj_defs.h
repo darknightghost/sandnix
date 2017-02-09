@@ -18,10 +18,9 @@
 #pragma once
 
 #include "../../../../../common/common.h"
-#include "../../../hal/cpu/cpu_defs.h"
+#include "../../../hal/cpu/context/context_defs.h"
 #include "../../rtl/rtl_defs.h"
 #include "thread_ref_obj_defs.h"
-#include "./thread_defs.h"
 
 typedef	struct _thread_obj {
     obj_t		obj;

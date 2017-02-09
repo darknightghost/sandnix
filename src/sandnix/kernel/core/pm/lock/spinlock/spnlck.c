@@ -90,6 +90,7 @@ kstatus_t core_pm_spnlck_trylock(pspnlck_t p_lock)
     u32 new_lock;
     u32 result;
 
+    thrd_id = core_pm_get_crrnt_thread_id();
     priority = core_pm_get_thrd_priority(thrd_id);
 
     if(priority < PRIORITY_HIGHEST) {
