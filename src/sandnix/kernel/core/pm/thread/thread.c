@@ -67,6 +67,7 @@ void core_pm_thread_init()
 
     //Create thread 0
     pthread_obj_t p_thread_obj = thread_obj_0();
+    p_thread_obj->p_node = NULL;
     p_thread_obj->status = TASK_RUNNING;
 
     if(p_thread_obj == NULL) {
@@ -198,8 +199,35 @@ void core_pm_resume(u32 thread_id)
 
     } else if(p_thread_obj->status == TASK_SLEEP) {
         //Sleeping
+        core_pm_spnlck_lock(&sched_list_lock);
+
+        //Wakeup thread
+        p_thread_obj->wakeup(p_thread_obj);
+
+        if(p_thread_obj->p_node != NULL) {
+            if(sched_lists[p_thread_obj->priority]
+               != p_thread_obj->p_node) {
+                //Move the task to the top of schedule list
+                plist_node_t p_node = p_thread_obj->p_node;
+
+                p_node->p_prev->p_next = p_node->p_next;
+                p_node->p_next->p_prev = p_node->p_prev;
+
+                p_node->p_prev = sched_lists[p_thread_obj->priority]->p_prev;
+                p_node->p_next = sched_lists[p_thread_obj->priority];
+                p_node->p_prev->p_next = p_node;
+                p_node->p_next->p_prev = p_node;
+
+                sched_lists[p_thread_obj->priority] = p_node;
+            }
+        }
+
+        core_pm_spnlck_unlock(&sched_list_lock);
+
     } else if(p_thread_obj->status == TASK_SUSPEND) {
         //Suspended
+        core_pm_spnlck_lock(&sched_list_lock);
+        core_pm_spnlck_unlock(&sched_list_lock);
     }
 
     return;
