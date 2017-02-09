@@ -45,9 +45,9 @@ typedef	struct _thread_obj {
             u32			cpu_index;			//Whitch cpu the thread is running on
         } runing;
         struct {
-            u64			sleep_begin_ms;		//Time begins to sleep
-            u64			awake_ms;			//Time to awake
-            u64*		p_ns;				//Nanoseconds left
+            u64			sleep_begin_micro_sec;	//Time begins to sleep
+            u64			awake_micro_sec;		//Time to awake
+            u64*		p_ns;					//Nanoseconds left
         } sleep;
         struct {
             void*		retval;				//Return value
@@ -77,6 +77,10 @@ typedef	struct _thread_obj {
     //Compute sleep time
     //void			set_sleep_time(pthread_obj_t p_this, u64* p_ns);
     void	(*set_sleep_time)(struct _thread_obj*, u64*);
+
+    //Wakeup a sleeping thread
+    //void			wakeup(pthread_obj_t p_this);
+    void	(*wakeup)(struct _thread_obj*);
 
     //Test if the thread can run
     //bool			can_run(pthread_obj_t p_this);

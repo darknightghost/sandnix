@@ -25,7 +25,7 @@
 void	core_kclock_init();
 
 //How many microseconds the system has be runing.
-u64		core_kclock_get_ms();
+u64		core_kclock_get_micro_sec();
 
 //The interval of clock.
 void	core_kclock_set_interval(u32 microseconds);

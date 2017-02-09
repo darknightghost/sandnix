@@ -39,6 +39,7 @@ static	void			remove_ref(pthread_obj_t p_this, pthread_ref_obj_t p_obj);
 static	pthread_obj_t	fork(pthread_obj_t p_this, u32 new_thread_id, u32 new_proc_id);
 static	void			thread_die(pthread_obj_t p_this);
 static	void			set_sleep_time(pthread_obj_t p_this, u64* p_ns);
+static	void			wakeup(pthread_obj_t p_this);
 static	bool			can_run(pthread_obj_t p_this);
 static	void			resume(pthread_obj_t p_this, u32 cpu_index);
 static	void			reset_timeslice(pthread_obj_t p_this);
@@ -91,6 +92,7 @@ pthread_obj_t thread_obj(u32 thread_id, u32 process_id, size_t kernel_stack_size
     p_ret->remove_ref = remove_ref;
     p_ret->fork = fork;
     p_ret->die = thread_die;
+    p_ret->wakeup = wakeup;
     p_ret->set_sleep_time = set_sleep_time;
     p_ret->can_run = can_run;
     p_ret->resume = resume;
@@ -152,6 +154,7 @@ pthread_obj_t thread_obj_0()
     p_ret->remove_ref = remove_ref;
     p_ret->fork = fork;
     p_ret->die = thread_die;
+    p_ret->wakeup = wakeup;
     p_ret->set_sleep_time = set_sleep_time;
     p_ret->can_run = can_run;
     p_ret->resume = resume;
@@ -302,9 +305,22 @@ void thread_die(pthread_obj_t p_this)
 void set_sleep_time(pthread_obj_t p_this, u64* p_ns)
 {
     p_this->status_info.sleep.p_ns = p_ns;
-    p_this->status_info.sleep.sleep_begin_ms = core_kclock_get_ms();
-    p_this->status_info.sleep.awake_ms = p_this->status_info.sleep.sleep_begin_ms
-                                         + hal_rtl_math_div64(*p_ns, 1000);
+    p_this->status_info.sleep.sleep_begin_micro_sec = core_kclock_get_micro_sec();
+    p_this->status_info.sleep.awake_micro_sec = p_this->status_info.sleep.sleep_begin_micro_sec
+            + hal_rtl_math_div64(*p_ns, 1000);
+    return;
+}
+
+void wakeup(pthread_obj_t p_this)
+{
+    if(!p_this->can_run(p_this) && p_this->status == TASK_SLEEP) {
+        *(p_this->status_info.sleep.p_ns) = (p_this->status_info.sleep.awake_micro_sec
+                                             - core_kclock_get_micro_sec()) * 1000;
+        p_this->status = TASK_READY;
+        p_this->status_info.runing.time_slices = 0;
+        p_this->reset_timeslice(p_this);
+    }
+
     return;
 }
 
@@ -326,13 +342,14 @@ bool can_run(pthread_obj_t p_this)
         return true;
 
     } else if(p_this->status == TASK_SLEEP) {
-        u64 current_ms = core_kclock_get_ms();
+        u64 current_micro_sec = core_kclock_get_micro_sec();
 
-        if(p_this->status_info.sleep.awake_ms
-           > p_this->status_info.sleep.sleep_begin_ms) {
-            if(current_ms >= p_this->status_info.sleep.awake_ms
-               || current_ms < p_this->status_info.sleep.sleep_begin_ms) {
+        if(p_this->status_info.sleep.awake_micro_sec
+           > p_this->status_info.sleep.sleep_begin_micro_sec) {
+            if(current_micro_sec >= p_this->status_info.sleep.awake_micro_sec
+               || current_micro_sec < p_this->status_info.sleep.sleep_begin_micro_sec) {
                 //Awake thread
+                *p_this->status_info.sleep.p_ns = 0;
                 p_this->status = TASK_READY;
                 p_this->status_info.runing.time_slices = 0;
                 p_this->reset_timeslice(p_this);
@@ -343,9 +360,10 @@ bool can_run(pthread_obj_t p_this)
             }
 
         } else {
-            if(current_ms >= p_this->status_info.sleep.awake_ms
-               && current_ms < p_this->status_info.sleep.sleep_begin_ms) {
+            if(current_micro_sec >= p_this->status_info.sleep.awake_micro_sec
+               && current_micro_sec < p_this->status_info.sleep.sleep_begin_micro_sec) {
                 //Awake thread
+                *p_this->status_info.sleep.p_ns = 0;
                 p_this->status = TASK_READY;
                 p_this->status_info.runing.time_slices = 0;
                 p_this->reset_timeslice(p_this);
