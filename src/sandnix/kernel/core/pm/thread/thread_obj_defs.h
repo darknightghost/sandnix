@@ -39,6 +39,7 @@ typedef	struct _thread_obj {
     //Schedule info
     u32			priority;			//Thread priority
     pcontext_t	p_context;			//Context
+    plist_node_t	p_node;			//Node in shedule list
     union {
         struct {
             u32			time_slices;		//Number of time slices
