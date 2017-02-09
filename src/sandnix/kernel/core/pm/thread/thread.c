@@ -160,10 +160,15 @@ void core_pm_thread_core_release()
 }
 
 u32			core_pm_thread_create(thread_func_t thread_func, void* p_arg);
-void		core_pm_exit(u32 exit_code);
-u32			core_pm_join(bool wait_threadid, u32 thread_id);
+void		core_pm_exit(void* retval)
+{
+    UNREFERRED_PARAMETER(retval);
+}
+
+u32			core_pm_join(bool wait_threadid, u32 thread_id, void** p_retval);
 void		core_pm_suspend(u32 thread_id);
 void		core_pm_resume(u32 thread_id);
+
 u32 core_pm_get_currnt_thread_id()
 {
     if(!initialized) {
