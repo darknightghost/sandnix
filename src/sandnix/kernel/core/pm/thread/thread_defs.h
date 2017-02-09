@@ -48,8 +48,8 @@
 #define TASK_SLEEP				0x00000003
 #define TASK_ZOMBIE				0x00000004
 
-//void thread_func(u32 thread_id, void* p_arg);
-typedef	void	(*thread_func_t)(u32, void*);
+//void* thread_func(u32 thread_id, void* p_arg);
+typedef	void*	(*thread_func_t)(u32, void*);
 
 #include "thread_obj_defs.h"
 typedef	struct _thread_obj		thread_obj_t, *pthread_obj_t;

@@ -80,3 +80,6 @@
 #define	hal_cpu_get_stack_base(buff, size)	((void*)((address_t)(buff) + (size)))
 
 #define hal_cpu_is_kernel_context(p_context) ((p_context)->eip > (address_t)KERNEL_MEM_BASE)
+
+pcontext_t	hal_cpu_get_init_kernel_context(void* k_stack, size_t k_stack_size,
+        void* entry, u32 thread_id, void* p_args);
