@@ -33,20 +33,17 @@ void core_pm_spnlck_init(pspnlck_t p_lock)
 void core_pm_spnlck_lock(pspnlck_t p_lock)
 {
     u16 ticket;
-    u32 thrd_id;
     u32 priority;
-
-    thrd_id = core_pm_get_crrnt_thread_id();
 
     //Get ticket
     ticket = 1;
     hal_rtl_atomic_xaddw(p_lock->ticket, ticket);
 
     //Get lock
-    priority = core_pm_get_thrd_priority(thrd_id);
+    priority = core_pm_get_currnt_thrd_priority();
 
     if(priority < PRIORITY_HIGHEST) {
-        core_pm_set_thrd_priority(thrd_id, PRIORITY_HIGHEST);
+        core_pm_set_currnt_thrd_priority(PRIORITY_HIGHEST);
     }
 
     while(p_lock->owner != ticket) {
@@ -84,17 +81,15 @@ void core_pm_spnlck_raw_lock(pspnlck_t p_lock)
 
 kstatus_t core_pm_spnlck_trylock(pspnlck_t p_lock)
 {
-    u32 thrd_id;
     u32 priority;
     u32 old_lock;
     u32 new_lock;
     u32 result;
 
-    thrd_id = core_pm_get_crrnt_thread_id();
-    priority = core_pm_get_thrd_priority(thrd_id);
+    priority = core_pm_get_currnt_thrd_priority();
 
     if(priority < PRIORITY_HIGHEST) {
-        core_pm_set_thrd_priority(thrd_id, PRIORITY_HIGHEST);
+        core_pm_set_currnt_thrd_priority(PRIORITY_HIGHEST);
     }
 
     old_lock = p_lock->lock;
@@ -107,7 +102,7 @@ kstatus_t core_pm_spnlck_trylock(pspnlck_t p_lock)
     hal_rtl_atomic_cmpxchgl(p_lock->lock, new_lock, old_lock, result);
 
     if(!result) {
-        core_pm_set_thrd_priority(thrd_id, priority);
+        core_pm_set_currnt_thrd_priority(priority);
         return EAGAIN;
 
     } else {
@@ -143,15 +138,13 @@ kstatus_t core_pm_spnlck_raw_trylock(pspnlck_t p_lock)
 
 void core_pm_spnlck_unlock(pspnlck_t p_lock)
 {
-    u32 thrd_id;
     u32 priority;
 
-    thrd_id = core_pm_get_crrnt_thread_id();
     priority = p_lock->priority;
 
     (p_lock->owner)++;
 
-    core_pm_set_thrd_priority(thrd_id, priority);
+    core_pm_set_currnt_thrd_priority(priority);
     return;
 }
 

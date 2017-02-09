@@ -42,15 +42,13 @@ static	core_sched_info_t	cpu_infos[MAX_CPU_NUM];
 static	array_t				thread_table;
 static	spnlck_rw_t			thread_table_lock;
 
-static int tmp_priority = PRIORITY_DISPATCH;
-
 static	void				on_tick(u32 int_num, pcontext_t p_context,
                                     u32 err_code);
 
 static	void				add_use_count(pcore_sched_info_t p_info,
         bool is_busy);
 static inline void			next_task(pcore_sched_info_t p_info);
-static inline void			switch_task(pcore_sched_info_t p_info);
+static inline void			switch_task(pcore_sched_info_t p_info, u32 cpu_index);
 static inline void			reset_timeslices();
 static inline void			reset_idle_timeslices();
 
@@ -161,23 +159,88 @@ void core_pm_thread_core_release()
     return;
 }
 
-u32 core_pm_get_crrnt_thread_id()
+u32			core_pm_thread_create(thread_func_t thread_func, void* p_arg);
+void		core_pm_exit(u32 exit_code);
+u32			core_pm_join(bool wait_threadid, u32 thread_id);
+void		core_pm_suspend(u32 thread_id);
+void		core_pm_resume(u32 thread_id);
+u32 core_pm_get_currnt_thread_id()
 {
-    return 0;
+    if(!initialized) {
+        return 0;
+    }
+
+    //Get thread obj
+    u32 cpu_index = hal_cpu_get_cpu_index();
+    pcore_sched_info_t p_info = &cpu_infos[cpu_index];
+
+    pthread_obj_t p_thread_obj;
+
+    if(p_info->current_node == NULL) {
+        p_thread_obj = p_info->p_idle_thread;
+
+    } else {
+        p_thread_obj = (pthread_obj_t)(p_info->current_node->p_item);
+    }
+
+    return p_thread_obj->thread_id;
 }
 
-u32 core_pm_get_thrd_priority(u32 thrd_id)
+static int tmp_priority = PRIORITY_DISPATCH;
+
+u32 core_pm_get_currnt_thrd_priority()
 {
-    UNREFERRED_PARAMETER(thrd_id);
-    return tmp_priority;
+    if(!initialized) {
+        return tmp_priority;
+    }
+
+    //Get thread obj
+    u32 cpu_index = hal_cpu_get_cpu_index();
+    pcore_sched_info_t p_info = &cpu_infos[cpu_index];
+
+    pthread_obj_t p_thread_obj;
+
+    if(p_info->current_node == NULL) {
+        p_thread_obj = p_info->p_idle_thread;
+
+    } else {
+        p_thread_obj = (pthread_obj_t)(p_info->current_node->p_item);
+    }
+
+    return p_thread_obj->priority;
 }
 
-void core_pm_set_thrd_priority(u32 thrd_id, u32 priority)
+void core_pm_set_currnt_thrd_priority(u32 priority)
 {
-    UNREFERRED_PARAMETER(thrd_id);
-    tmp_priority = priority;
+    if(!initialized) {
+        tmp_priority = priority;
+        return;
+    }
+
+    //Get thread obj
+    u32 cpu_index = hal_cpu_get_cpu_index();
+    pcore_sched_info_t p_info = &cpu_infos[cpu_index];
+
+    pthread_obj_t p_thread_obj;
+
+    if(p_info->current_node == NULL) {
+        p_thread_obj = p_info->p_idle_thread;
+
+    } else {
+        p_thread_obj = (pthread_obj_t)(p_info->current_node->p_item);
+    }
+
+    //Set priority
+    p_thread_obj->priority = priority;
+    p_info->priority = priority;
+
     return;
 }
+
+u32			core_pm_get_thrd_priority(u32 thrd_id);
+void		core_pm_set_thrd_priority(u32 thrd_id, u32 priority);
+void        core_pm_schedule();
+void		core_pm_idle();
 
 void on_tick(u32 int_num, pcontext_t p_context, u32 err_code)
 {
@@ -209,7 +272,7 @@ void on_tick(u32 int_num, pcontext_t p_context, u32 err_code)
     //Switch task
     next_task(p_info);
     core_pm_spnlck_raw_unlock(&sched_lock);
-    switch_task(p_info);
+    switch_task(p_info, cpu_index);
 
     UNREFERRED_PARAMETER(int_num);
     UNREFERRED_PARAMETER(err_code);
@@ -482,7 +545,7 @@ void next_task(pcore_sched_info_t p_info)
     return;
 }
 
-void switch_task(pcore_sched_info_t p_info)
+void switch_task(pcore_sched_info_t p_info, u32 cpu_index)
 {
     pthread_obj_t p_thread_obj;
 
@@ -497,7 +560,7 @@ void switch_task(pcore_sched_info_t p_info)
     }
 
     p_info->priority = p_thread_obj->priority;
-    p_thread_obj->resume(p_thread_obj);
+    p_thread_obj->resume(p_thread_obj, cpu_index);
 
     return;
 }

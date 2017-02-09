@@ -42,6 +42,7 @@ typedef	struct _thread_obj {
     union {
         struct {
             u32			time_slices;		//Number of time slices
+            u32			cpu_index;			//Whitch cpu the thread is running on
         } runing;
         struct {
             u64			sleep_begin_ms;		//Time begins to sleep
@@ -82,10 +83,14 @@ typedef	struct _thread_obj {
     bool	(*can_run)(struct _thread_obj*);
 
     //Resume thread to run
-    //void			select(pthread_obj_t p_this);
-    void	(*resume)(struct _thread_obj*);
+    //void			resume(pthread_obj_t p_this, u32 cpu_index);
+    void	(*resume)(struct _thread_obj*, u32);
 
     //Reset time slice num
     //void			reset_timeslice(pthread_obj_t p_this);
     void	(*reset_timeslice)(struct _thread_obj*);
+
+    //Alloc user stack
+    //void			alloc_usr_stack(pthread_obj_t p_this, size_t stack_size);
+    void	(*alloc_usr_stack)(struct _thread_obj*, size_t);
 } thread_obj_t, *pthread_obj_t;

@@ -40,21 +40,21 @@ static	pthread_obj_t	fork(pthread_obj_t p_this, u32 new_thread_id, u32 new_proc_
 static	void			thread_die(pthread_obj_t p_this);
 static	void			set_sleep_time(pthread_obj_t p_this, u64* p_ns);
 static	bool			can_run(pthread_obj_t p_this);
-static	void			resume(pthread_obj_t p_this);
+static	void			resume(pthread_obj_t p_this, u32 cpu_index);
 static	void			reset_timeslice(pthread_obj_t p_this);
+static	void			alloc_usr_stack(pthread_obj_t p_this, size_t stack_size);
 
 static	int				compare_addr(address_t p_item1, address_t p_item2);
 static	void			dec_ref_count(pthread_ref_obj_t p_item, void* p_arg);
 
 pthread_obj_t thread_obj(u32 thread_id, u32 process_id, size_t kernel_stack_size,
-                         size_t usr_stack_size, u32 priority)
+                         u32 priority)
 {
     if(kernel_stack_size == 0) {
         return NULL;
     }
 
     kernel_stack_size = ALIGN(kernel_stack_size, SANDNIX_KERNEL_PAGE_SIZE);
-    usr_stack_size = ALIGN(usr_stack_size, SANDNIX_KERNEL_PAGE_SIZE);
 
     if(thread_obj_heap == NULL) {
         //Create heap
@@ -95,6 +95,7 @@ pthread_obj_t thread_obj(u32 thread_id, u32 process_id, size_t kernel_stack_size
     p_ret->can_run = can_run;
     p_ret->resume = resume;
     p_ret->reset_timeslice = reset_timeslice;
+    p_ret->alloc_usr_stack = alloc_usr_stack;
 
     //Allocate stack
     //Kernel stack
@@ -108,22 +109,8 @@ pthread_obj_t thread_obj(u32 thread_id, u32 process_id, size_t kernel_stack_size
     }
 
     //User stack
-    p_ret->u_stack_size = usr_stack_size;
-
-    if(usr_stack_size == 0) {
-        p_ret->u_stack_addr = (address_t)NULL;
-
-    } else {
-        p_ret->u_stack_addr = (address_t)core_mm_pg_alloc(NULL, usr_stack_size,
-                              PAGE_ACCESS_RDWR | PAGE_OPTION_KERNEL);
-
-        if(p_ret->u_stack_addr == (address_t)NULL) {
-            core_mm_pg_free((void*)(p_ret->k_stack_addr));
-            core_mm_heap_free(p_ret, thread_obj_heap);
-            return NULL;
-        }
-    }
-
+    p_ret->u_stack_size = 0;
+    p_ret->u_stack_addr = (address_t)NULL;
 
     return p_ret;
 }
@@ -169,6 +156,7 @@ pthread_obj_t thread_obj_0()
     p_ret->can_run = can_run;
     p_ret->resume = resume;
     p_ret->reset_timeslice = reset_timeslice;
+    p_ret->alloc_usr_stack = alloc_usr_stack;
 
     //Kernel stack
     p_ret->k_stack_size = DEFAULT_STACK_SIZE;
@@ -268,7 +256,7 @@ void remove_ref(pthread_obj_t p_this, pthread_ref_obj_t p_obj)
 pthread_obj_t fork(pthread_obj_t p_this, u32 new_thread_id, u32 new_proc_id)
 {
     pthread_obj_t p_ret = thread_obj(new_thread_id, new_proc_id,
-                                     p_this->k_stack_size, 0,
+                                     p_this->k_stack_size,
                                      p_this->priority);
 
     if(p_ret == NULL) {
@@ -373,7 +361,7 @@ bool can_run(pthread_obj_t p_this)
     }
 }
 
-void resume(pthread_obj_t p_this)
+void resume(pthread_obj_t p_this, u32 cpu_index)
 {
     if(p_this->status == TASK_READY) {
         p_this->status = TASK_RUNNING;
@@ -385,6 +373,7 @@ void resume(pthread_obj_t p_this)
         (p_this->status_info.runing.time_slices)--;
     }
 
+    p_this->status_info.runing.cpu_index = cpu_index;
     hal_cpu_context_load(p_this->p_context);
     return;
 }
@@ -400,6 +389,24 @@ void reset_timeslice(pthread_obj_t p_this)
     }
 
     return;
+}
+
+void alloc_usr_stack(pthread_obj_t p_this, size_t stack_size)
+{
+    if(stack_size == 0) {
+        return;
+    }
+
+    stack_size = ALIGN(stack_size, SANDNIX_KERNEL_PAGE_SIZE);
+
+    if(p_this->u_stack_addr == (address_t)NULL) {
+        p_this->u_stack_addr = (address_t)core_mm_pg_alloc(NULL, stack_size,
+                               PAGE_ACCESS_RDWR);
+
+        if(p_this->u_stack_addr != (address_t)NULL) {
+            p_this->u_stack_size = stack_size;
+        }
+    }
 }
 
 int compare_addr(address_t p_item1, address_t p_item2)
