@@ -31,8 +31,7 @@ typedef struct	_rbtree_node {
 } rbtree_node_t, *prbtree_node_t, *rbtree_t, **prbtree_t;
 
 typedef struct _heap_t	heap_t, *pheap_t;
-
-#include "../container_defs.h"
+typedef int (*item_compare_t)(void*, void*);
 
 typedef struct _map {
     rbtree_t		p_tree;
@@ -48,3 +47,4 @@ typedef struct _map {
 typedef	int	(*map_search_func_t)(void*, void*, void*, void*);
 
 #include "../../../mm/mm_defs.h"
+#include "../container_defs.h"

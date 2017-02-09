@@ -16,14 +16,16 @@
 */
 
 #include "paging.h"
+#include "../../rtl/rtl.h"
+#include "../../pm/pm.h"
+#include "../../exception/exception.h"
+#include "../../kconsole/kconsole.h"
+
+#include "../../../hal/cpu/cpu.h"
+#include "../../../hal/mmu/mmu.h"
+
 #include "./page_obj.h"
 #include "../heap/heap.h"
-#include "../../pm/pm.h"
-#include "../../../hal/cpu/cpu.h"
-#include "../../exception/exception.h"
-#include "../../../hal/mmu/mmu.h"
-#include "../../rtl/rtl.h"
-#include "../../kconsole/kconsole.h"
 
 #define PAGE_SIZE_ALIGN(size)		((((size) / SANDNIX_KERNEL_PAGE_SIZE) \
                                       + ((size) % SANDNIX_KERNEL_PAGE_SIZE \
