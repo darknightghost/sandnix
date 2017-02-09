@@ -33,6 +33,7 @@ static	pheap_t				sched_heap;
 //Schedule list
 static	list_t				sched_lists[PRIORITY_HIGHEST + 1];
 static	spnlck_t			sched_list_lock;
+static	spnlck_t			sched_lock;
 
 //CPU status
 static	core_sched_info_t	cpu_infos[MAX_CPU_NUM];
@@ -50,6 +51,8 @@ static	void				add_use_count(pcore_sched_info_t p_info,
         bool is_busy);
 static inline void			next_task(pcore_sched_info_t p_info);
 static inline void			switch_task(pcore_sched_info_t p_info);
+static inline void			reset_timeslices();
+static inline void			reset_idle_timeslices();
 
 void core_pm_thread_init()
 {
@@ -87,6 +90,7 @@ void core_pm_thread_init()
     core_rtl_memset(sched_lists, 0, sizeof(sched_lists));
     core_rtl_memset(cpu_infos, 0, sizeof(cpu_infos));
     core_pm_spnlck_init(&sched_list_lock);
+    core_pm_spnlck_init(&sched_lock);
 
     //Set schedule callback
     hal_io_int_callback_set(INT_TICK, on_tick);
@@ -181,7 +185,10 @@ void on_tick(u32 int_num, pcontext_t p_context, u32 err_code)
     u32 cpu_index = hal_cpu_get_cpu_index();
     pcore_sched_info_t p_info = &cpu_infos[cpu_index];
 
+    core_pm_spnlck_raw_lock(&sched_lock);
+
     if(!p_info->enabled || p_info->priority == PRIORITY_HIGHEST) {
+        core_pm_spnlck_raw_unlock(&sched_lock);
         hal_io_irq_send_eoi();
         hal_cpu_context_load(p_context);
     }
@@ -197,9 +204,11 @@ void on_tick(u32 int_num, pcontext_t p_context, u32 err_code)
     }
 
     p_thread_obj->p_context = p_context;
+    p_thread_obj->status = TASK_READY;
 
     //Switch task
     next_task(p_info);
+    core_pm_spnlck_raw_unlock(&sched_lock);
     switch_task(p_info);
 
     UNREFERRED_PARAMETER(int_num);
@@ -248,15 +257,14 @@ void next_task(pcore_sched_info_t p_info)
         }
 
         //Realtime tasks
-        core_pm_spnlck_lock(&sched_list_lock);
-        u32 end_priority = MAX(p_info->priority, PRIORITY_DISPATCH);
+        core_pm_spnlck_raw_lock(&sched_list_lock);
+
+        //Traverse schedule lists
+        u32 end_priority = MAX(p_info->priority, PRIORITY_DISPATCH - 1);
 
         for(u32 pri = PRIORITY_HIGHEST;
-            pri >= end_priority;
+            pri > end_priority;
             pri--) {
-            if(pri == p_info->priority) {
-                continue;
-            }
 
             if(sched_lists[pri] != NULL) {
                 p_node = sched_lists[pri];
@@ -276,10 +284,46 @@ void next_task(pcore_sched_info_t p_info)
 
         //Normal tasks
         if(p_node == NULL) {
-        }
+            //Traverse schedule lists
+            end_priority = MAX(p_info->priority, PRIORITY_IDLE_TASK);
+            core_pm_spnlck_raw_lock(&sched_list_lock);
 
-        //IDLE tasks
-        if(p_node == NULL) {
+            for(u32 pri = PRIORITY_DISPATCH - 1;
+                pri > end_priority;
+                pri--) {
+                if(sched_lists[pri] != NULL) {
+                    //Traverse schedule list
+                    plist_node_t p_begin_node = sched_lists[pri];
+
+                    do {
+                        pthread_obj_t p_thread_obj = (pthread_obj_t)(
+                                                         sched_lists[pri]->p_item);
+
+                        if(p_thread_obj->can_run(p_thread_obj)) {
+                            p_node = sched_lists[pri];
+
+                            if(p_node->p_prev == p_node) {
+                                sched_lists[pri] = NULL;
+
+                            } else {
+                                p_node->p_prev->p_next = p_node->p_next;
+                                p_node->p_next->p_prev = p_node->p_prev;
+                                sched_lists[pri] = p_node->p_next;
+                            }
+
+                            break;
+                        }
+
+                        sched_lists[pri] = sched_lists[pri]->p_next;
+                    } while(sched_lists[pri] != p_begin_node);
+
+                    if(p_node != NULL) {
+                        break;
+                    }
+                }
+            }
+
+            core_pm_spnlck_raw_unlock(&sched_list_lock);
         }
 
         if(p_node != NULL) {
@@ -298,12 +342,141 @@ void next_task(pcore_sched_info_t p_info)
                 p_old_node->p_next->p_prev = p_old_node;
                 sched_lists[p_thread_obj->priority] = p_old_node;
             }
+
+            p_info->current_node = p_node;
         }
 
-        core_pm_spnlck_unlock(&sched_list_lock);
+        core_pm_spnlck_raw_unlock(&sched_list_lock);
 
     } else {
+        core_pm_spnlck_raw_lock(&sched_list_lock);
+
+        //Add current thread to schedule list
+        plist_node_t p_old_node = p_info->current_node;
+
+        if(p_old_node != NULL) {
+            if(sched_lists[p_thread_obj->priority] == NULL) {
+                sched_lists[p_thread_obj->priority] = p_old_node;
+                p_old_node->p_prev = p_old_node;
+                p_old_node->p_next = p_old_node;
+
+            } else {
+                p_old_node->p_prev = sched_lists[p_thread_obj->priority]->p_prev;
+                p_old_node->p_next = sched_lists[p_thread_obj->priority];
+                p_old_node->p_prev->p_next = p_old_node;
+                p_old_node->p_next->p_prev = p_old_node;
+            }
+        }
+
         //Look for a thread to run
+        for(int i = 0; i < 2; i++) {
+
+            //Realtime tasks
+            for(u32 pri = PRIORITY_HIGHEST;
+                pri >= PRIORITY_DISPATCH;
+                pri--) {
+                if(sched_lists[pri] != NULL) {
+                    p_node = sched_lists[pri];
+
+                    if(p_node->p_prev == p_node) {
+                        sched_lists[pri] = NULL;
+
+                    } else {
+                        p_node->p_prev->p_next = p_node->p_next;
+                        p_node->p_next->p_prev = p_node->p_prev;
+                        sched_lists[pri] = p_node->p_next;
+                    }
+
+                    break;
+                }
+            }
+
+            if(p_node != NULL) {
+                break;
+            }
+
+            //Normal tasks
+            for(u32 pri = PRIORITY_DISPATCH;
+                pri >= PRIORITY_IDLE_TASK + 1;
+                pri--) {
+                if(sched_lists[pri] != NULL) {
+                    //Traverse schedule list
+                    plist_node_t p_begin_node = sched_lists[pri];
+
+                    do {
+                        pthread_obj_t p_thread_obj = (pthread_obj_t)(
+                                                         sched_lists[pri]->p_item);
+
+                        if(p_thread_obj->can_run(p_thread_obj)) {
+                            p_node = sched_lists[pri];
+
+                            if(p_node->p_prev == p_node) {
+                                sched_lists[pri] = NULL;
+
+                            } else {
+                                p_node->p_prev->p_next = p_node->p_next;
+                                p_node->p_next->p_prev = p_node->p_prev;
+                                sched_lists[pri] = p_node->p_next;
+                            }
+
+                            break;
+                        }
+
+                        sched_lists[pri] = sched_lists[pri]->p_next;
+                    } while(sched_lists[pri] != p_begin_node);
+
+                    if(p_node != NULL) {
+                        break;
+                    }
+                }
+            }
+
+            if(p_node != NULL) {
+                break;
+
+            } else if(i == 0) {
+                reset_timeslices();
+            }
+        }
+
+        //IDLE tasks
+        if(sched_lists[PRIORITY_IDLE_TASK] != NULL) {
+            for(int i = 0; i < 2; i++) {
+                plist_node_t p_begin_node = sched_lists[PRIORITY_IDLE_TASK];
+
+                do {
+                    pthread_obj_t p_thread_obj = (pthread_obj_t)(
+                                                     sched_lists[PRIORITY_IDLE_TASK]->p_item);
+
+                    if(p_thread_obj->can_run(p_thread_obj)) {
+                        p_node = sched_lists[PRIORITY_IDLE_TASK];
+
+                        if(p_node->p_prev == p_node) {
+                            sched_lists[PRIORITY_IDLE_TASK] = NULL;
+
+                        } else {
+                            p_node->p_prev->p_next = p_node->p_next;
+                            p_node->p_next->p_prev = p_node->p_prev;
+                            sched_lists[PRIORITY_IDLE_TASK] = p_node->p_next;
+                        }
+
+                        break;
+                    }
+
+                    sched_lists[PRIORITY_IDLE_TASK] = sched_lists[PRIORITY_IDLE_TASK]->p_next;
+                } while(sched_lists[PRIORITY_IDLE_TASK] != p_begin_node);
+
+                if(p_node == NULL && i < 1) {
+                    reset_idle_timeslices();
+
+                } else if(p_node != NULL) {
+                    break;
+                }
+            }
+        }
+
+        p_info->current_node = p_node;
+        core_pm_spnlck_raw_unlock(&sched_list_lock);
     }
 
     return;
@@ -315,6 +488,7 @@ void switch_task(pcore_sched_info_t p_info)
 
     if(p_info->current_node == NULL) {
         p_thread_obj = p_info->p_idle_thread;
+        p_thread_obj->reset_timeslice(p_thread_obj);
         add_use_count(p_info, false);
 
     } else {
@@ -324,6 +498,45 @@ void switch_task(pcore_sched_info_t p_info)
 
     p_info->priority = p_thread_obj->priority;
     p_thread_obj->resume(p_thread_obj);
+
+    return;
+}
+
+void reset_timeslices()
+{
+    for(u32 pri = PRIORITY_DISPATCH - 1;
+        pri > PRIORITY_IDLE_TASK;
+        pri--) {
+
+        //Traverse schedule list
+        plist_node_t p_node = sched_lists[pri];
+
+        if(p_node != NULL) {
+            do {
+                pthread_obj_t p_thread_obj = (pthread_obj_t)(
+                                                 p_node->p_item);
+                p_thread_obj->reset_timeslice(p_thread_obj);
+                p_node = p_node->p_next;
+            } while(sched_lists[pri] != p_node);
+        }
+    }
+
+    return;
+}
+
+void reset_idle_timeslices()
+{
+    //Traverse schedule list
+    plist_node_t p_node = sched_lists[PRIORITY_IDLE_TASK];
+
+    if(p_node != NULL) {
+        do {
+            pthread_obj_t p_thread_obj = (pthread_obj_t)(
+                                             p_node->p_item);
+            p_thread_obj->reset_timeslice(p_thread_obj);
+            p_node = p_node->p_next;
+        } while(sched_lists[PRIORITY_IDLE_TASK] != p_node);
+    }
 
     return;
 }

@@ -322,10 +322,7 @@ void set_sleep_time(pthread_obj_t p_this, u64* p_ns)
 
 bool can_run(pthread_obj_t p_this)
 {
-    if(p_this->status == TASK_READY) {
-        return true;
-
-    } else if(p_this->status == TASK_RUNNING) {
+    if(p_this->status == TASK_RUNNING || p_this->status == TASK_READY) {
         if(p_this->priority >= PRIORITY_DISPATCH) {
             return true;
 
@@ -334,7 +331,6 @@ bool can_run(pthread_obj_t p_this)
                 return true;
 
             } else {
-                p_this->status = TASK_READY;
                 return false;
             }
         }
@@ -350,6 +346,8 @@ bool can_run(pthread_obj_t p_this)
                || current_ms < p_this->status_info.sleep.sleep_begin_ms) {
                 //Awake thread
                 p_this->status = TASK_READY;
+                p_this->status_info.runing.time_slices = 0;
+                p_this->reset_timeslice(p_this);
                 return true;
 
             } else {
@@ -361,6 +359,8 @@ bool can_run(pthread_obj_t p_this)
                && current_ms < p_this->status_info.sleep.sleep_begin_ms) {
                 //Awake thread
                 p_this->status = TASK_READY;
+                p_this->status_info.runing.time_slices = 0;
+                p_this->reset_timeslice(p_this);
                 return true;
 
             } else {
@@ -377,6 +377,7 @@ void resume(pthread_obj_t p_this)
 {
     if(p_this->status == TASK_READY) {
         p_this->status = TASK_RUNNING;
+        p_this->status_info.runing.time_slices = 0;
         p_this->reset_timeslice(p_this);
     }
 
@@ -390,7 +391,10 @@ void resume(pthread_obj_t p_this)
 
 void reset_timeslice(pthread_obj_t p_this)
 {
-    if(p_this->priority < PRIORITY_DISPATCH) {
+    if(p_this->priority < PRIORITY_DISPATCH
+       && (p_this->status = TASK_READY
+                            || p_this->status == TASK_RUNNING)
+       && p_this->status_info.runing.time_slices == 0) {
         p_this->status_info.runing.time_slices
             = MAX_TIME_SLICE_NUM * p_this->priority / PRIORITY_DISPATCH + 1;
     }
