@@ -41,7 +41,7 @@ void core_kclock_init()
     return;
 }
 
-u64 core_kclock_get_ms()
+u64 core_kclock_get_micro_sec()
 {
     return microseconds;
 }
