@@ -1572,7 +1572,7 @@ except_stat_t page_read_except_hndlr(except_reason_t reason,
         core_pm_spnlck_lock(p_lock);
         pproc_pg_tbl_t p_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
                                       &usr_pg_tbls,
-                                      core_pm_get_crrnt_thread_id());
+                                      core_pm_get_currnt_thread_id());
         p_used_map = &(p_pg_tbl->used_map);
 
     } else {
@@ -1671,7 +1671,7 @@ except_stat_t page_write_except_hndlr(except_reason_t reason,
         core_pm_spnlck_lock(p_lock);
         pproc_pg_tbl_t p_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
                                       &usr_pg_tbls,
-                                      core_pm_get_crrnt_thread_id());
+                                      core_pm_get_currnt_thread_id());
         p_used_map = &(p_pg_tbl->used_map);
 
     } else {
@@ -1780,7 +1780,7 @@ except_stat_t page_exec_except_hndlr(except_reason_t reason,
         core_pm_spnlck_lock(p_lock);
         pproc_pg_tbl_t p_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
                                       &usr_pg_tbls,
-                                      core_pm_get_crrnt_thread_id());
+                                      core_pm_get_currnt_thread_id());
         p_used_map = &(p_pg_tbl->used_map);
 
     } else {

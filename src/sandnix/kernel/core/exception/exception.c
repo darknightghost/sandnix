@@ -92,7 +92,7 @@ void core_exception_raise(pexcept_obj_t except)
     core_pm_spnlck_rw_r_lock(&except_info_tbl_lck);
     pthread_except_stat_obj_t p_ret = (pthread_except_stat_obj_t)core_rtl_array_get(
                                           &except_info_tbl,
-                                          core_pm_get_crrnt_thread_id());
+                                          core_pm_get_currnt_thread_id());
     p_ret->errno = except->reason;
     core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
 
@@ -161,7 +161,7 @@ except_ret_stat_t core_exception_do_push_hndlr(pexcept_hndlr_info_t p_hndlr_info
     //Get handler stack
     core_pm_spnlck_rw_r_lock(&except_info_tbl_lck);
     pthread_except_stat_obj_t p_thread_stat = (pthread_except_stat_obj_t)core_rtl_array_get(
-                &except_info_tbl, core_pm_get_crrnt_thread_id());
+                &except_info_tbl, core_pm_get_currnt_thread_id());
 
     if(p_thread_stat == NULL) {
         core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
@@ -194,7 +194,7 @@ pexcept_hndlr_info_t core_exception_pop_hndlr()
     //Get handler stack
     core_pm_spnlck_rw_r_lock(&except_info_tbl_lck);
     pthread_except_stat_obj_t p_thread_stat = (pthread_except_stat_obj_t)core_rtl_array_get(
-                &except_info_tbl, core_pm_get_crrnt_thread_id());
+                &except_info_tbl, core_pm_get_currnt_thread_id());
 
     if(p_thread_stat == NULL) {
         core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
@@ -223,7 +223,7 @@ void call_thread_hndlrs(pexcept_obj_t except)
     //Get handler stack
     core_pm_spnlck_rw_r_lock(&except_info_tbl_lck);
     pthread_except_stat_obj_t p_thread_stat = (pthread_except_stat_obj_t)core_rtl_array_get(
-                &except_info_tbl, core_pm_get_crrnt_thread_id());
+                &except_info_tbl, core_pm_get_currnt_thread_id());
     INC_REF(p_thread_stat);
     core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
 
