@@ -51,6 +51,9 @@
 //void* thread_func(u32 thread_id, void* p_arg);
 typedef	void*	(*thread_func_t)(u32, void*);
 
+//pthread_ref_obj_t	thread_ref_call_back(u32 thread_id);
+typedef	pthread_ref_obj_t	(*thread_ref_call_back_t)(u32);
+
 #include "thread_obj_defs.h"
 typedef	struct _thread_obj		thread_obj_t, *pthread_obj_t;
 typedef	struct	_core_sched_info {
