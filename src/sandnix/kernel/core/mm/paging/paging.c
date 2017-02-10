@@ -420,7 +420,7 @@ void* core_mm_pg_alloc(void* base_addr, size_t size, u32 options)
     } else {
         //User memory
         p_lock = &usr_pg_tbls_lck;
-        u32 current_proc = core_pm_get_crrnt_proc_id();
+        u32 current_proc = core_pm_get_currnt_proc_id();
         core_pm_spnlck_lock(p_lock);
         pproc_pg_tbl_t p_proc_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
                                            &usr_pg_tbls,
@@ -509,7 +509,7 @@ void core_mm_pg_free(void* base_addr)
               < usr_mem_size) {
         //User memory
         p_lock = &usr_pg_tbls_lck;
-        u32 current_proc = core_pm_get_crrnt_proc_id();
+        u32 current_proc = core_pm_get_currnt_proc_id();
         core_pm_spnlck_lock(p_lock);
         pproc_pg_tbl_t p_proc_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
                                            &usr_pg_tbls,
@@ -592,7 +592,7 @@ ppage_obj_t core_mm_get_pg_obj(void** p_base_addr, void* addr)
               < usr_mem_size) {
         //User memory
         p_lock = &usr_pg_tbls_lck;
-        u32 current_proc = core_pm_get_crrnt_proc_id();
+        u32 current_proc = core_pm_get_currnt_proc_id();
         core_pm_spnlck_lock(p_lock);
         pproc_pg_tbl_t p_proc_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
                                            &usr_pg_tbls,
@@ -659,7 +659,7 @@ void* core_mm_map(void* addr, ppage_obj_t p_page_obj)
               < usr_mem_size) {
         //User memory
         p_lock = &usr_pg_tbls_lck;
-        u32 current_proc = core_pm_get_crrnt_proc_id();
+        u32 current_proc = core_pm_get_currnt_proc_id();
         core_pm_spnlck_lock(p_lock);
         pproc_pg_tbl_t p_proc_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
                                            &usr_pg_tbls,
@@ -740,7 +740,7 @@ void core_mm_commit(void* addr, u32 options)
               < usr_mem_size) {
         //User memory
         p_lock = &usr_pg_tbls_lck;
-        u32 current_proc = core_pm_get_crrnt_proc_id();
+        u32 current_proc = core_pm_get_currnt_proc_id();
         core_pm_spnlck_lock(p_lock);
         pproc_pg_tbl_t p_proc_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
                                            &usr_pg_tbls,
@@ -816,7 +816,7 @@ void core_mm_uncommit(void* addr)
               < usr_mem_size) {
         //User memory
         p_lock = &usr_pg_tbls_lck;
-        u32 current_proc = core_pm_get_crrnt_proc_id();
+        u32 current_proc = core_pm_get_currnt_proc_id();
         core_pm_spnlck_lock(p_lock);
         pproc_pg_tbl_t p_proc_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
                                            &usr_pg_tbls,
@@ -894,7 +894,7 @@ u32 core_mm_get_pg_attr(void* address)
               < usr_mem_size) {
         //User memory
         p_lock = &usr_pg_tbls_lck;
-        u32 current_proc = core_pm_get_crrnt_proc_id();
+        u32 current_proc = core_pm_get_currnt_proc_id();
         core_pm_spnlck_lock(p_lock);
         pproc_pg_tbl_t p_proc_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
                                            &usr_pg_tbls,
@@ -988,7 +988,7 @@ u32 core_mm_set_pg_attr(void* address, u32 attr)
               < usr_mem_size) {
         //User memory
         p_lock = &usr_pg_tbls_lck;
-        u32 current_proc = core_pm_get_crrnt_proc_id();
+        u32 current_proc = core_pm_get_currnt_proc_id();
         core_pm_spnlck_lock(p_lock);
         pproc_pg_tbl_t p_proc_pg_tbl = (pproc_pg_tbl_t)core_rtl_array_get(
                                            &usr_pg_tbls,

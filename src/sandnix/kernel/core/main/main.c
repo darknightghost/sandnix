@@ -44,11 +44,4 @@ void core_main_main()
 
 void test()
 {
-    core_kconsole_print_debug("\nClock Test.\n");
-
-    while(1) {
-        core_kconsole_print_info("\rSystem seconds : %u.",
-                                 hal_rtl_math_div64(core_kclock_get_ms(),
-                                         1000000));
-    }
 }

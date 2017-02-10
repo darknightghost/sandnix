@@ -22,6 +22,7 @@
 #include "../../exception/exception.h"
 #include "../../../hal/cpu/cpu.h"
 #include "../../../hal/io/io.h"
+#include "../../../hal/init/init.h"
 #include "../pm.h"
 
 //Flag
@@ -160,7 +161,56 @@ void core_pm_thread_core_release()
     return;
 }
 
-u32			core_pm_thread_create(thread_func_t thread_func, void* p_arg);
+u32 core_pm_thread_create(thread_func_t thread_func, u32 k_stack_size,
+                          u32 priority, void* p_arg)
+{
+    u32 process_id = core_pm_get_currnt_proc_id();
+
+    //Allocacate thread id
+    core_pm_spnlck_rw_w_lock(&thread_table_lock);
+
+    u32 new_id;
+
+    if(!core_rtl_array_get_free_index(&thread_table, &new_id)) {
+        core_pm_spnlck_rw_w_unlock(&thread_table_lock);
+        peagain_except_t p_except = eagain_except();
+        RAISE(p_except, "Too many threads exists.");
+        return 0;
+    }
+
+    //Create thread object
+    if(k_stack_size == 0) {
+        k_stack_size = DEFAULT_STACK_SIZE;
+    }
+
+    pthread_obj_t p_thread_obj = thread_obj(new_id, process_id, k_stack_size,
+                                            priority);
+
+    if(p_thread_obj == NULL) {
+        core_pm_spnlck_rw_w_unlock(&thread_table_lock);
+        penomem_except_t p_except = enomem_except();
+        RAISE(p_except, "Failed to create thread object.");
+        return 0;
+    }
+
+    //Add thread to thread table
+    core_rtl_array_set(&thread_table, new_id, p_thread_obj);
+    core_pm_spnlck_rw_w_unlock(&thread_table_lock);
+
+    //TODO:Add new thread to process
+
+    //Prepare context
+    hal_cpu_get_init_kernel_context((void*)(p_thread_obj->k_stack_addr),
+                                    p_thread_obj->k_stack_size,
+                                    thread_func,
+                                    new_id,
+                                    p_arg);
+    //Resume thread
+    core_pm_resume(new_id);
+
+    return new_id;
+}
+
 void		core_pm_exit(void* retval)
 {
     UNREFERRED_PARAMETER(retval);
@@ -341,7 +391,30 @@ void		core_pm_set_thrd_priority(u32 thrd_id, u32 priority);
 void core_pm_schedule()
 {
     //Clear timesclice
+    u32 cpu_index = hal_cpu_get_cpu_index();
+    pcore_sched_info_t p_info = &cpu_infos[cpu_index];
+
+    if(p_info->priority < PRIORITY_DISPATCH) {
+        //Get thread obj
+        pthread_obj_t p_thread_obj;
+
+        if(p_info->current_node == NULL) {
+            p_thread_obj = p_info->p_idle_thread;
+
+        } else {
+            p_thread_obj = (pthread_obj_t)(p_info->current_node->p_item);
+        }
+
+        if(p_thread_obj->status == TASK_READY
+           || p_thread_obj->status == TASK_RUNNING) {
+            p_thread_obj->status_info.runing.time_slices = 0;
+        }
+    }
+
     //Schedule
+    hal_io_int(INT_TICK);
+
+    return;
 }
 
 void		core_pm_idle();

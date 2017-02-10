@@ -95,3 +95,6 @@ void hal_io_send_IPI(u32 target_cpu_id);
 
 //Send EOI(inter-processor information)
 void hal_io_IPI_send_eoi();
+
+//Cause interruption
+void hal_io_int(u32 int_num);
