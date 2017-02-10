@@ -23,6 +23,7 @@
 #include "../../../hal/cpu/cpu.h"
 #include "../../../hal/io/io.h"
 #include "../../../hal/init/init.h"
+#include "../../../hal/rtl/rtl.h"
 #include "../pm.h"
 
 //Flag
@@ -38,10 +39,14 @@ static	spnlck_t			sched_lock;
 
 //CPU status
 static	core_sched_info_t	cpu_infos[MAX_CPU_NUM];
+static	u32					runing_cpu_num ;
 
 //Thread table
 static	array_t				thread_table;
 static	spnlck_rw_t			thread_table_lock;
+
+//Callbacks
+static	list_t				thread_ref_callback_list;
 
 static	void				on_tick(u32 int_num, pcontext_t p_context,
                                     u32 err_code);
@@ -52,6 +57,8 @@ static inline void			next_task(pcore_sched_info_t p_info);
 static inline void			switch_task(pcore_sched_info_t p_info, u32 cpu_index);
 static inline void			reset_timeslices();
 static inline void			reset_idle_timeslices();
+
+static inline void			add_ref_obj(u32 thread_id, thread_ref_call_back_t callback);
 
 void core_pm_thread_init()
 {
@@ -65,6 +72,9 @@ void core_pm_thread_init()
     //Initialize thread table
     core_rtl_array_init(&thread_table, MAX_THREAD_NUM, sched_heap);
     core_pm_spnlck_rw_init(&thread_table_lock);
+    runing_cpu_num = 0;
+
+    core_rtl_list_init(&thread_ref_callback_list);
 
     //Create thread 0
     pthread_obj_t p_thread_obj = thread_obj_0();
@@ -83,7 +93,9 @@ void core_pm_thread_init()
     INC_REF(p_thread_obj);
     p_info->p_idle_thread = p_thread_obj;
     p_info->priority = PRIORITY_DISPATCH;
-    p_info->current_node = NULL;
+    p_info->current_node = core_mm_heap_alloc(sizeof(list_node_t), sched_heap);
+    p_info->current_node->p_item = p_thread_obj;
+    p_thread_obj->p_node = p_info->current_node;
     core_pm_spnlck_init(&(p_info->lock));
 
     //Initialize schedule list
@@ -105,6 +117,7 @@ void core_pm_thread_core_init()
     p_info->cpu_use_stat_l = 0;
     p_info->cpu_use_stat_h = 0;
     p_info->current_node = NULL;
+    hal_rtl_atomic_addl(runing_cpu_num, 1);
 
     //TODO://Create idle thread
     NOT_SUPPORT;
@@ -120,6 +133,7 @@ void core_pm_thread_core_release()
     pcore_sched_info_t p_info = &cpu_infos[cpu_index];
     core_pm_spnlck_lock(&(p_info->lock));
     p_info->enabled = false;
+    hal_rtl_atomic_subl(runing_cpu_num, 1);
 
     if(p_info->current_node != NULL) {
         //Get node
@@ -161,6 +175,26 @@ void core_pm_thread_core_release()
     return;
 }
 
+void core_pm_reg_thread_create_obj(thread_ref_call_back_t callback)
+{
+    core_pm_spnlck_rw_w_lock(&thread_table_lock);
+    //Add callback to list
+    core_rtl_list_insert_after(NULL, &thread_ref_callback_list,
+                               callback, sched_heap);
+
+    //Add objs to existed threads
+    u32 id = 0;
+
+    while(core_rtl_array_get_used_index(&thread_table, id, &id)) {
+        add_ref_obj(id, callback);
+        id += 1;
+    }
+
+    core_pm_spnlck_rw_w_unlock(&thread_table_lock);
+
+    return;
+}
+
 u32 core_pm_thread_create(thread_func_t thread_func, u32 k_stack_size,
                           u32 priority, void* p_arg)
 {
@@ -195,6 +229,17 @@ u32 core_pm_thread_create(thread_func_t thread_func, u32 k_stack_size,
 
     //Add thread to thread table
     core_rtl_array_set(&thread_table, new_id, p_thread_obj);
+
+    //Add referenced objects
+    plist_node_t p_node = thread_ref_callback_list;
+
+    if(p_node != NULL) {
+        do {
+            add_ref_obj(new_id, (thread_ref_call_back_t)(p_node->p_item));
+            p_node = p_node->p_next;
+        } while(p_node != thread_ref_callback_list);
+    }
+
     core_pm_spnlck_rw_w_unlock(&thread_table_lock);
 
     //TODO:Add new thread to process
@@ -205,6 +250,7 @@ u32 core_pm_thread_create(thread_func_t thread_func, u32 k_stack_size,
                                     thread_func,
                                     new_id,
                                     p_arg);
+
     //Resume thread
     core_pm_resume(new_id);
 
@@ -382,6 +428,7 @@ void core_pm_set_currnt_thrd_priority(u32 priority)
     p_thread_obj->priority = priority;
     p_info->priority = priority;
 
+    hal_io_int(INT_TICK);
     return;
 }
 
@@ -417,7 +464,13 @@ void core_pm_schedule()
     return;
 }
 
-void		core_pm_idle();
+void core_pm_idle()
+{
+    core_pm_set_currnt_thrd_priority(PRIORITY_IDLE);
+
+    //Wait for release command
+    while(true);
+}
 
 void on_tick(u32 int_num, pcontext_t p_context, u32 err_code)
 {
@@ -779,4 +832,8 @@ void reset_idle_timeslices()
     }
 
     return;
+}
+
+void add_ref_obj(u32 thread_id, thread_ref_call_back_t callback)
+{
 }
