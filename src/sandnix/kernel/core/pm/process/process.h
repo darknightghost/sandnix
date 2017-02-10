@@ -21,4 +21,4 @@
 
 #include "./process_defs.h"
 
-u32 core_pm_get_crrnt_proc_id();
+u32 core_pm_get_currnt_proc_id();

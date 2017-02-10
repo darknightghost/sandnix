@@ -26,7 +26,8 @@ void		core_pm_thread_init();
 void		core_pm_thread_core_init();
 void		core_pm_thread_core_release();
 
-u32			core_pm_thread_create(thread_func_t thread_func, void* p_arg);
+u32			core_pm_thread_create(thread_func_t thread_func, u32 k_stack_size,
+                                  u32 priority, void* p_arg);
 void		core_pm_exit(void* retval);
 u32			core_pm_join(bool wait_threadid, u32 thread_id, void** p_retval);
 void		core_pm_suspend(u32 thread_id);

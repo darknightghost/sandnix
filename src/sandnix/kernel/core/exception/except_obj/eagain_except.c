@@ -15,10 +15,23 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "./process.h"
+#include "../../../hal/exception/exception.h"
 
+#include "../../rtl/rtl.h"
+#include "../../mm/mm.h"
+#include "../../pm/pm.h"
 
-u32 core_pm_get_currnt_proc_id()
+#include "./eagain_except.h"
+#include "../exception.h"
+
+peagain_except_t eagain_except()
 {
-    return 0;
+    peagain_except_t p_ret = (peagain_except_t)except_obj(sizeof(eagain_except_t),
+                             EAGAIN);
+
+    if(p_ret != NULL) {
+        p_ret->except.obj.class_id = CLASS_EXCEPT(EAGAIN);
+    }
+
+    return p_ret;
 }
