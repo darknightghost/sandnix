@@ -836,4 +836,14 @@ void reset_idle_timeslices()
 
 void add_ref_obj(u32 thread_id, thread_ref_call_back_t callback)
 {
+    //Get thread object
+    pthread_obj_t p_thread_obj = core_rtl_array_get(&thread_table, thread_id);
+
+    //Get reference object
+    pthread_ref_obj_t p_ref = callback(thread_id);
+
+    //Add reference object
+    p_thread_obj->add_ref(p_thread_obj, p_ref);
+
+    return;
 }
