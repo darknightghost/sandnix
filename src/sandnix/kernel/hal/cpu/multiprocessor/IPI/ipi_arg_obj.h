@@ -16,21 +16,9 @@
 */
 
 #pragma once
+#include "../../../../../../common/common.h"
+#include "./ipi_arg_obj_defs.h"
 
-#include "../../../../../common/common.h"
+pipi_arg_obj_t		ipi_arg_obj(size_t size, u32 class_id, u32 src_cpu);
 
-//Runtime
-#define		CLASS_OBJ				0x00000000
-#define		CLASS_KSTRING			0x00000001
-
-#define		CLASS_IPI_ARG(ipi)		(0x00001000 + (ipi))
-
-#define		CLASS_THREAD_OBJ		0x00002000
-#define		CLASS_THREAD_REF_OBJ	0x00002001
-#define		CLASS_THRAD_EXPECT_STAT	0x00002002
-
-#define		CLASS_EXCEPT_OBJ		0x00003000
-#define		CLASS_EXCEPT(err)		(CLASS_EXCEPT_OBJ + (err))
-
-#define		CLASS_PAGE_OBJECT		0x00004000
-
+#include "./ipi_arg_tlb_refresh.h"

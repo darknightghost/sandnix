@@ -352,7 +352,7 @@ void core_pm_resume(u32 thread_id)
         }
 
         //Schedule now
-        core_pm_schedule();
+        hal_io_int(INT_TICK);
     }
 
     return;
@@ -647,7 +647,11 @@ void next_task(pcore_sched_info_t p_info)
         //Add current thread to schedule list
         plist_node_t p_old_node = p_info->current_node;
 
-        if(p_old_node != NULL) {
+        if(p_old_node != NULL
+           && (p_thread_obj->status == TASK_RUNNING
+               || p_thread_obj->status == TASK_READY
+               || p_thread_obj->status == TASK_SLEEP)) {
+
             if(sched_lists[p_thread_obj->priority] == NULL) {
                 sched_lists[p_thread_obj->priority] = p_old_node;
                 p_old_node->p_prev = p_old_node;

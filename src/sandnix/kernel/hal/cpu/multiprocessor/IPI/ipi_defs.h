@@ -26,10 +26,13 @@
 
 #define	IPI_TYPE_DIE			0x00
 #define	IPI_TYPE_TLB_REFRESH	0x01
+#define	IPI_TYPE_PREEMPT		0x02
+
+#include "./ipi_arg_obj_defs.h"
 
 typedef	struct	_ipi_msg {
-    u32		type;
-    void*	p_args;
+    u32				type;
+    pipi_arg_obj_t	p_args;
 } ipi_msg_t, *pipi_msg_t;
 
 typedef	struct	_ipi_queue {
@@ -38,5 +41,6 @@ typedef	struct	_ipi_queue {
     spnlck_t	lock;
 } ipi_queue_t, *pipi_queue_t;
 
-//void	ipi_hndlr(pcontext_t p_context, void* p_args);
-typedef	void	(*ipi_hndlr_t)(pcontext_t, void*);
+//void	ipi_hndlr(pcontext_t p_context, pipi_arg_obj_t p_args);
+typedef	void	(*ipi_hndlr_t)(pcontext_t, pipi_arg_obj_t);
+
