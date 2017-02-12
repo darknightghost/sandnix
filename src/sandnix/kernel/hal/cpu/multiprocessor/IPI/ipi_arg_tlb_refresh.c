@@ -15,22 +15,22 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "./ipi_arg_tlb_refresh.h"
+#include "./ipi_defs.h"
 
-#include "../../../../../common/common.h"
+pipi_arg_tlb_refresh_t ipi_arg_tlb_refresh(u32 src_cpu, u32 process_id,
+        address_t virt_addr, u32 page_count)
+{
+    pipi_arg_tlb_refresh_t p_ret = (pipi_arg_tlb_refresh_t)ipi_arg_obj(
+                                       sizeof(ipi_arg_tlb_refresh_t),
+                                       CLASS_IPI_ARG(IPI_TYPE_TLB_REFRESH),
+                                       src_cpu);
 
-//Runtime
-#define		CLASS_OBJ				0x00000000
-#define		CLASS_KSTRING			0x00000001
+    if(p_ret != NULL) {
+        p_ret->virt_addr = virt_addr;
+        p_ret->page_count = page_count;
+        p_ret->process_id = process_id;
+    }
 
-#define		CLASS_IPI_ARG(ipi)		(0x00001000 + (ipi))
-
-#define		CLASS_THREAD_OBJ		0x00002000
-#define		CLASS_THREAD_REF_OBJ	0x00002001
-#define		CLASS_THRAD_EXPECT_STAT	0x00002002
-
-#define		CLASS_EXCEPT_OBJ		0x00003000
-#define		CLASS_EXCEPT(err)		(CLASS_EXCEPT_OBJ + (err))
-
-#define		CLASS_PAGE_OBJECT		0x00004000
-
+    return p_ret;
+}

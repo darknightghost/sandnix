@@ -25,7 +25,7 @@
 #include "ipi.h"
 
 static	ipi_queue_t		ipi_queue[MAX_CPU_NUM];
-static	pheap_t			ipi_queue_heap;
+pheap_t					ipi_queue_heap;
 static	u8				ipi_queue_heap_buf[4096];
 
 static	ipi_hndlr_t		hndlrs[MAX_IPI_MSG_NUM] = {NULL};
@@ -90,6 +90,10 @@ void hal_cpu_send_IPI(s32 index, u32 type, void* p_args)
                 p_new_msg->type = type;
                 p_new_msg->p_args = p_args;
 
+                if(p_args != NULL) {
+                    INC_REF(p_args);
+                }
+
                 core_pm_spnlck_lock(&(ipi_queue[i].lock));
                 core_rtl_queue_push(&(ipi_queue[i].msg_queue), p_new_msg);
                 core_pm_spnlck_unlock(&(ipi_queue[i].lock));
@@ -109,6 +113,10 @@ void hal_cpu_send_IPI(s32 index, u32 type, void* p_args)
 
         p_new_msg->type = type;
         p_new_msg->p_args = p_args;
+
+        if(p_args != NULL) {
+            INC_REF(p_args);
+        }
 
         core_pm_spnlck_lock(&(ipi_queue[index].lock));
         core_rtl_queue_push(&(ipi_queue[index].msg_queue), p_new_msg);

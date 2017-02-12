@@ -17,20 +17,14 @@
 
 #pragma once
 
-#include "../../../../../common/common.h"
+#include "../../../../../../common/common.h"
+#include "../../../../core/rtl/obj/obj_defs.h"
+#include "./ipi_arg_obj_defs.h"
 
-//Runtime
-#define		CLASS_OBJ				0x00000000
-#define		CLASS_KSTRING			0x00000001
-
-#define		CLASS_IPI_ARG(ipi)		(0x00001000 + (ipi))
-
-#define		CLASS_THREAD_OBJ		0x00002000
-#define		CLASS_THREAD_REF_OBJ	0x00002001
-#define		CLASS_THRAD_EXPECT_STAT	0x00002002
-
-#define		CLASS_EXCEPT_OBJ		0x00003000
-#define		CLASS_EXCEPT(err)		(CLASS_EXCEPT_OBJ + (err))
-
-#define		CLASS_PAGE_OBJECT		0x00004000
+typedef	struct	_ipi_arg_tlb_refresh {
+    ipi_arg_obj_t	base;
+    u32				process_id;
+    address_t		virt_addr;
+    u32				page_count;
+} ipi_arg_tlb_refresh_t, *pipi_arg_tlb_refresh_t;
 

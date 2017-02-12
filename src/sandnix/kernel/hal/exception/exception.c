@@ -202,7 +202,7 @@ static	char	panic_buf[PANIC_BUF_SIZE];
 static	bool	initialized = false;
 
 static	void	lets_die();
-static	void	die_ipi_hndlr(pcontext_t p_context, void* p_args);
+static	void	die_ipi_hndlr(pcontext_t p_context, pipi_arg_obj_t p_args);
 
 void hal_exception_init()
 {
@@ -264,7 +264,7 @@ void lets_die()
     return;
 }
 
-void die_ipi_hndlr(pcontext_t p_context, void* p_args)
+void die_ipi_hndlr(pcontext_t p_context, pipi_arg_obj_t p_args)
 {
     die();
     UNREFERRED_PARAMETER(p_context);

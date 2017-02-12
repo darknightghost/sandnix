@@ -74,8 +74,6 @@ static	int				search_size(size_t size, ppage_block_t p_key,
 static	int				search_addr(address_t address, ppage_block_t p_key,
                                     ppage_block_t p_value, void* p_args);
 
-
-
 //Exception handlers
 static	except_stat_t page_read_except_hndlr(
     except_reason_t reason,
@@ -89,6 +87,10 @@ static	except_stat_t page_exec_except_hndlr(
 static	except_stat_t deadlock_except_hndlr(
     except_reason_t reason,
     pedeadlock_except_t p_except);
+
+//Refresh TLB
+//static	void		ipi_refresh_tlb(pcontext_t p_context,
+//                                    pipi_tlb_refresh_arg_t p_args);
 
 void core_mm_paging_init()
 {

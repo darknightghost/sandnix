@@ -27,6 +27,8 @@ hal/io/io.c
 ##cpu
 hal/cpu/cpu.c
 hal/cpu/multiprocessor/IPI/ipi.c
+hal/cpu/multiprocessor/IPI/ipi_arg_obj.c
+hal/cpu/multiprocessor/IPI/ipi_arg_tlb_refresh.c
 
 #core
 ##main
