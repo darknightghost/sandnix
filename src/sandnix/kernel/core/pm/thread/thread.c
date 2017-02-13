@@ -270,6 +270,31 @@ u32			core_pm_join(bool wait_threadid, u32 thread_id, void** p_retval);
 
 void core_pm_suspend(u32 thread_id)
 {
+    //Get thread obj
+    core_pm_spnlck_rw_r_lock(&thread_table_lock);
+    pthread_obj_t p_thread_obj = core_rtl_array_get(&thread_table, thread_id);
+
+    if(p_thread_obj == NULL) {
+        core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Thread does not exists.");
+        return;
+
+    } else if(p_thread_obj->status == TASK_ZOMBIE) {
+        core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Cannot suspend a zombie thread.");
+        return;
+
+    } else {
+        p_thread_obj->status = TASK_SUSPEND;
+    }
+
+    core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+
+    //Schedule
+    hal_cpu_send_IPI(-1, IPI_TYPE_PREEMPT, NULL);
+    return;
 }
 
 void core_pm_resume(u32 thread_id)
@@ -297,7 +322,7 @@ void core_pm_resume(u32 thread_id)
         //Raise exception
         DEC_REF(p_thread_obj);
         peinval_except_t p_except = einval_except();
-        RAISE(p_except, "Unable to resume an exited thread.");
+        RAISE(p_except, "Unable to resume a zombie thread.");
         return;
 
     } else {
