@@ -25,6 +25,8 @@
 #include "../../../../core/pm/pm_defs.h"
 #include "../../../../core/rtl/rtl_defs.h"
 
+#include "./ipi_arg_obj.h"
+
 void cpu_ipi_init();
 void cpu_ipi_core_init();
 void cpu_ipi_core_release();
