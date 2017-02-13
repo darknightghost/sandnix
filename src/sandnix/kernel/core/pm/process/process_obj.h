@@ -17,7 +17,4 @@
 
 #pragma once
 
-#include "../../../../../common/common.h"
-
-#define	PROCESS_ALIVE		0
-#define	PROCESS_ZOMBIE		1
+#include "./process_obj_defs.h"

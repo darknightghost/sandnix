@@ -15,9 +15,5 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include "./process_obj.h"
 
-#include "../../../../../common/common.h"
-
-#define	PROCESS_ALIVE		0
-#define	PROCESS_ZOMBIE		1

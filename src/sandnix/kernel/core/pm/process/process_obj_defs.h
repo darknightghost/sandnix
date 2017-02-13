@@ -18,6 +18,13 @@
 #pragma once
 
 #include "../../../../../common/common.h"
+#include "./process_defs.h"
+#include "../../rtl/obj/obj_defs.h"
 
-#define	PROCESS_ALIVE		0
-#define	PROCESS_ZOMBIE		1
+typedef	struct	_process_obj {
+    obj_t		obj;
+    u32			process_id;
+    u32			thread_num;
+    list_t		alive_threads;
+    list_t		zombie_threads;
+} process_obj_t, *pprocess_obj_t;
