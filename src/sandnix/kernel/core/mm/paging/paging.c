@@ -89,8 +89,8 @@ static	except_stat_t deadlock_except_hndlr(
     pedeadlock_except_t p_except);
 
 //Refresh TLB
-//static	void		ipi_refresh_tlb(pcontext_t p_context,
-//                                    pipi_tlb_refresh_arg_t p_args);
+static	void		ipi_refresh_tlb(pcontext_t p_context,
+                                    pipi_arg_tlb_refresh_t p_args);
 
 void core_mm_paging_init()
 {
@@ -135,6 +135,10 @@ void core_mm_paging_init()
                              (except_hndlr_t)page_write_except_hndlr);
     core_exception_add_hndlr(EPAGEEXEC,
                              (except_hndlr_t)page_exec_except_hndlr);
+
+    //Regist ipi handler
+    hal_cpu_regist_IPI_hndlr(IPI_TYPE_TLB_REFRESH,
+                             (ipi_hndlr_t)ipi_refresh_tlb);
     return;
 }
 
@@ -699,14 +703,27 @@ void* core_mm_map(void* addr, ppage_obj_t p_page_obj)
 
     u32 page_obj_attr = p_page_obj->get_attr(p_page_obj);
 
-    if(page_obj_attr & PAGE_OBJ_ALLOCATED
-       && page_obj_attr & PAGE_OBJ_SWAPPED) {
+    if((page_obj_attr & PAGE_OBJ_ALLOCATED)
+       && (page_obj_attr & PAGE_OBJ_SWAPPED)) {
         p_page_obj->map(p_page_obj,
                         (void*)(p_page_block->begin),
                         p_page_block->status);
     }
 
     core_pm_spnlck_unlock(p_lock);
+
+    //Refresh page table cache
+    if((page_obj_attr & PAGE_OBJ_ALLOCATED)
+       && (page_obj_attr & PAGE_OBJ_SWAPPED)) {
+        pipi_arg_tlb_refresh_t p_args = ipi_arg_tlb_refresh(
+                                            hal_cpu_get_cpu_index(),
+                                            core_pm_get_currnt_proc_id(),
+                                            p_page_block->begin,
+                                            p_page_block->size / SANDNIX_KERNEL_PAGE_SIZE);
+        hal_cpu_send_IPI(-1, IPI_TYPE_TLB_REFRESH, p_args);
+        DEC_REF(p_args);
+    }
+
     return (void*)(p_page_block->begin);
 }
 
@@ -858,6 +875,16 @@ void core_mm_uncommit(void* addr)
     p_page_block->status &= ~PAGE_BLOCK_COMMITED;
 
     core_pm_spnlck_unlock(p_lock);
+
+    //Refresh page table cache
+    pipi_arg_tlb_refresh_t p_args = ipi_arg_tlb_refresh(
+                                        hal_cpu_get_cpu_index(),
+                                        core_pm_get_currnt_proc_id(),
+                                        p_page_block->begin,
+                                        p_page_block->size / SANDNIX_KERNEL_PAGE_SIZE);
+    hal_cpu_send_IPI(-1, IPI_TYPE_TLB_REFRESH, p_args);
+    DEC_REF(p_args);
+
     return;
 }
 
@@ -1066,6 +1093,14 @@ u32 core_mm_set_pg_attr(void* address, u32 attr)
     }
 
     core_pm_spnlck_unlock(p_lock);
+    //Refresh page table cache
+    pipi_arg_tlb_refresh_t p_args = ipi_arg_tlb_refresh(
+                                        hal_cpu_get_cpu_index(),
+                                        core_pm_get_currnt_proc_id(),
+                                        p_page_block->begin,
+                                        p_page_block->size / SANDNIX_KERNEL_PAGE_SIZE);
+    hal_cpu_send_IPI(-1, IPI_TYPE_TLB_REFRESH, p_args);
+    DEC_REF(p_args);
     return ret;
 }
 
@@ -1454,6 +1489,15 @@ bool commit_page(ppage_block_t p_page_block, u32 options)
         p_page_obj->map(p_page_obj,
                         (void*)p_page_block->begin,
                         p_page_block->status);
+
+        //Refresh page table caches
+        pipi_arg_tlb_refresh_t p_args = ipi_arg_tlb_refresh(
+                                            hal_cpu_get_cpu_index(),
+                                            core_pm_get_currnt_proc_id(),
+                                            p_page_block->begin,
+                                            p_page_block->size / SANDNIX_KERNEL_PAGE_SIZE);
+        hal_cpu_send_IPI(-1, IPI_TYPE_TLB_REFRESH, p_args);
+        DEC_REF(p_args);
     }
 
     return true;
@@ -1471,6 +1515,15 @@ void free_page(ppage_block_t p_block, pmap_t p_size_map, pmap_t p_addr_map,
                                  (void*)p_block->begin);
         DEC_REF(p_block->p_pg_obj);
         p_block->p_pg_obj = NULL;
+
+        //Refresh page table cache
+        pipi_arg_tlb_refresh_t p_args = ipi_arg_tlb_refresh(
+                                            hal_cpu_get_cpu_index(),
+                                            core_pm_get_currnt_proc_id(),
+                                            p_block->begin,
+                                            p_block->size / SANDNIX_KERNEL_PAGE_SIZE);
+        hal_cpu_send_IPI(-1, IPI_TYPE_TLB_REFRESH, p_args);
+        DEC_REF(p_args);
     }
 
     //Insert to free map
@@ -1620,6 +1673,15 @@ except_stat_t page_read_except_hndlr(except_reason_t reason,
 
         }
 
+        //Refresh page table caches
+        pipi_arg_tlb_refresh_t p_args = ipi_arg_tlb_refresh(
+                                            hal_cpu_get_cpu_index(),
+                                            core_pm_get_currnt_proc_id(),
+                                            p_page_block->begin,
+                                            p_page_block->size / SANDNIX_KERNEL_PAGE_SIZE);
+        hal_cpu_send_IPI(-1, IPI_TYPE_TLB_REFRESH, p_args);
+        DEC_REF(p_args);
+
     } else {
         goto EXCEPT_OCCURED;
     }
@@ -1729,6 +1791,15 @@ except_stat_t page_write_except_hndlr(except_reason_t reason,
 
         }
 
+        //Refresh page table caches
+        pipi_arg_tlb_refresh_t p_args = ipi_arg_tlb_refresh(
+                                            hal_cpu_get_cpu_index(),
+                                            core_pm_get_currnt_proc_id(),
+                                            p_page_block->begin,
+                                            p_page_block->size / SANDNIX_KERNEL_PAGE_SIZE);
+        hal_cpu_send_IPI(-1, IPI_TYPE_TLB_REFRESH, p_args);
+        DEC_REF(p_args);
+
     } else {
         goto EXCEPT_OCCURED;
     }
@@ -1832,6 +1903,15 @@ except_stat_t page_exec_except_hndlr(except_reason_t reason,
                           p_page_block->status);
         }
 
+        //Refresh page table caches
+        pipi_arg_tlb_refresh_t p_args = ipi_arg_tlb_refresh(
+                                            hal_cpu_get_cpu_index(),
+                                            core_pm_get_currnt_proc_id(),
+                                            p_page_block->begin,
+                                            p_page_block->size / SANDNIX_KERNEL_PAGE_SIZE);
+        hal_cpu_send_IPI(-1, IPI_TYPE_TLB_REFRESH, p_args);
+        DEC_REF(p_args);
+
     } else {
         goto EXCEPT_OCCURED;
     }
@@ -1857,4 +1937,22 @@ except_stat_t deadlock_except_hndlr(except_reason_t reason,
     UNREFERRED_PARAMETER(p_except);
 
     return EXCEPT_STATUS_UNWIND;
+}
+
+void ipi_refresh_tlb(pcontext_t p_context, pipi_arg_tlb_refresh_t p_args)
+{
+    //Check if cache requires to be refreshed
+    if(p_args->process_id == core_pm_get_currnt_proc_id()
+       && p_args->base.source_cpu != hal_cpu_get_cpu_index()) {
+        //Refresh page table cache
+        for(u32 i = 0; i < p_args->page_count; i++) {
+            hal_mmu_pg_tbl_refresh(
+                (void*)(p_args->virt_addr + SANDNIX_KERNEL_PAGE_SIZE * i));
+        }
+    }
+
+    DEC_REF(p_args);
+    return;
+
+    UNREFERRED_PARAMETER(p_context);
 }
