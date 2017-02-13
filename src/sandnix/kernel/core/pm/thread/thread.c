@@ -60,6 +60,8 @@ static inline void			reset_idle_timeslices();
 
 static inline void			add_ref_obj(u32 thread_id, thread_ref_call_back_t callback);
 
+static void					ipi_preempt(pcontext_t p_context, pipi_arg_obj_t p_null);
+
 void core_pm_thread_init()
 {
     //Initialize heap
@@ -107,6 +109,8 @@ void core_pm_thread_init()
     //Set schedule callback
     hal_io_int_callback_set(INT_TICK, on_tick);
     initialized = true;
+
+    hal_cpu_regist_IPI_hndlr(IPI_TYPE_PREEMPT, ipi_preempt);
     return;
 }
 
@@ -263,7 +267,10 @@ void		core_pm_exit(void* retval)
 }
 
 u32			core_pm_join(bool wait_threadid, u32 thread_id, void** p_retval);
-void		core_pm_suspend(u32 thread_id);
+
+void core_pm_suspend(u32 thread_id)
+{
+}
 
 void core_pm_resume(u32 thread_id)
 {
@@ -352,7 +359,7 @@ void core_pm_resume(u32 thread_id)
         }
 
         //Schedule now
-        hal_io_int(INT_TICK);
+        hal_cpu_send_IPI(-1, IPI_TYPE_PREEMPT, NULL);
     }
 
     return;
@@ -459,7 +466,6 @@ void core_pm_schedule()
     }
 
     //Schedule
-    hal_io_int(INT_TICK);
 
     return;
 }
@@ -530,18 +536,14 @@ void add_use_count(pcore_sched_info_t p_info, bool is_busy)
 
 void next_task(pcore_sched_info_t p_info)
 {
-    pthread_obj_t p_thread_obj = NULL;
-
     //Get current thread object
-    if(p_info->current_node != NULL) {
-        p_thread_obj = (pthread_obj_t)(p_info->current_node->p_item);
-    }
+    pthread_obj_t  p_thread_obj = (pthread_obj_t)(p_info->current_node->p_item);
+    p_thread_obj->status = TASK_READY;
 
     //Search for next task
     plist_node_t p_node = NULL;
 
-    if(p_thread_obj == NULL
-       || !(p_thread_obj->can_run(p_thread_obj))) {
+    if(!(p_thread_obj->can_run(p_thread_obj))) {
         //Check if current thread can be preempted
         if(p_thread_obj->priority == PRIORITY_HIGHEST) {
             //Highest priority, resume current thread
@@ -647,10 +649,9 @@ void next_task(pcore_sched_info_t p_info)
         //Add current thread to schedule list
         plist_node_t p_old_node = p_info->current_node;
 
-        if(p_old_node != NULL
-           && (p_thread_obj->status == TASK_RUNNING
-               || p_thread_obj->status == TASK_READY
-               || p_thread_obj->status == TASK_SLEEP)) {
+        if(p_thread_obj->status == TASK_RUNNING
+           || p_thread_obj->status == TASK_READY
+           || p_thread_obj->status == TASK_SLEEP) {
 
             if(sched_lists[p_thread_obj->priority] == NULL) {
                 sched_lists[p_thread_obj->priority] = p_old_node;
@@ -772,7 +773,13 @@ void next_task(pcore_sched_info_t p_info)
             }
         }
 
-        p_info->current_node = p_node;
+        if(p_node == NULL) {
+            p_info->current_node = p_info->p_idle_thread->p_node;
+
+        } else {
+            p_info->current_node = p_node;
+        }
+
         core_pm_spnlck_raw_unlock(&sched_list_lock);
     }
 
@@ -850,4 +857,11 @@ void add_ref_obj(u32 thread_id, thread_ref_call_back_t callback)
     p_thread_obj->add_ref(p_thread_obj, p_ref);
 
     return;
+}
+
+void ipi_preempt(pcontext_t p_context, pipi_arg_obj_t p_null)
+{
+    hal_io_int(INT_TICK);
+    UNREFERRED_PARAMETER(p_context);
+    UNREFERRED_PARAMETER(p_null);
 }

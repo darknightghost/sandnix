@@ -383,8 +383,6 @@ void resume(pthread_obj_t p_this, u32 cpu_index)
 {
     if(p_this->status == TASK_READY) {
         p_this->status = TASK_RUNNING;
-        p_this->status_info.runing.time_slices = 0;
-        p_this->reset_timeslice(p_this);
     }
 
     if(p_this->priority < PRIORITY_DISPATCH) {
