@@ -55,6 +55,7 @@ typedef	pthread_ref_obj_t	(*thread_ref_call_back_t)(u32);
 typedef	struct _thread_obj		thread_obj_t, *pthread_obj_t;
 typedef	struct	_core_sched_info {
     bool			enabled;
+    bool			enable_sched;
     spnlck_t		lock;
     u32				priority;
     volatile u64	cpu_use_stat_h;

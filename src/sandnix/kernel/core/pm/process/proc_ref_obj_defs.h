@@ -21,11 +21,11 @@
 
 #include "../../rtl/obj/obj_defs.h"
 struct	_proc_ref_obj;
-typedef	struct _proc_ref_obj*		(*proc_fork_t)(struct _proc_ref_obj*, u32);
+typedef	struct _proc_ref_obj*		(*proc_ref_obj_fork_t)(struct _proc_ref_obj*, u32);
 
 typedef struct	_proc_ref_obj {
     obj_t		obj;
     u32			process_id;		//Which thread the object belongs to
 
-    thread_obj_fork_t	fork;	//Create a copy of object
+    struct _proc_ref_obj*	(*fork)(struct _proc_ref_obj*, u32); //Create a copy of object
 } proc_ref_obj_t, *pproc_ref_obj_t;

@@ -18,6 +18,10 @@
 #pragma once
 
 #include "../../../../../common/common.h"
+#include "./proc_ref_obj_defs.h"
 
 #define	PROCESS_ALIVE		0
 #define	PROCESS_ZOMBIE		1
+
+//pthread_ref_obj_t	proc_ref_call_back(u32 process_id);
+typedef	pproc_ref_obj_t	(*proc_ref_call_back_t)(u32);

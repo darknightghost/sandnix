@@ -21,13 +21,41 @@
 #include "./process_defs.h"
 #include "../../rtl/obj/obj_defs.h"
 #include "../../rtl/container/map/map_defs.h"
+#include "../../rtl/container/list/list_defs.h"
 
 typedef	struct	_process_obj {
     obj_t		obj;				//Base object
     u32			process_id;			//Process id
+    u32			parent_id;			//Parent process id
     u32			exit_code;			//Exit code
+
+    //Authority
+    u32			ruid;				//Real user id
+    u32			euid;				//Effective user id
+    u32			suid;				//Saved set-user-id
+    u32			rgid;				//Real group id
+    u32			egid;				//Effective group id
+    u32			sgid;				//Saved set-group-id
+    list_t		griuos;				//Other groups
+
+    //Environment
+    map_t		env_vars;			//Environment variables
+
+    //Threads
     u32			thread_num;			//How many threads does the process have
     map_t		alive_threads;		//Alive threads
     map_t		zombie_threads;		//Zombie threads
     map_t		ref_objs;			//Referenced objects
+
+    //Child processes
+    map_t		alive_cildren;		//Alive child processes
+    map_t		zombie_children;	//Zombie child processes
+
+    //Methods
+    //pprocess_obj_t		fork(pprocess_obj_t p_this);
+    struct _process_obj*	(*fork)(struct _process_obj*);
+
+    //void					add_ref(pprocess_obj_t p_this, pproc_ref_obj_t p_ref_obj);
+    void	(*add_ref_obj)(struct _process_obj*, pproc_ref_obj_t);
+
 } process_obj_t, *pprocess_obj_t;

@@ -19,15 +19,18 @@
 
 #include "../../../../common/common.h"
 
-//Spinlock
-#include "./lock/spinlock/spnlck.h"
-#include "./lock/spinlock/spnlck_rw.h"
-
-//Thread
-#include "./thread/thread.h"
+#include "./pm_defs.h"
 
 //Process
 #include "./process/process.h"
 
-#include "./pm_defs.h"
+//Thread
+#include "./thread/thread.h"
+
+//Spinlock
+#include "./lock/spinlock/spnlck.h"
+#include "./lock/spinlock/spnlck_rw.h"
+
+//Mutex
+#include "./lock/mutex/mutex.h"
 
