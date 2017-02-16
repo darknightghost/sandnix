@@ -72,6 +72,54 @@ void core_exception_init()
     return;
 }
 
+void core_exception_set_errno(kstatus_t status)
+{
+    //Get thread info
+    core_pm_spnlck_rw_r_lock(&except_info_tbl_lck);
+    pthread_except_stat_obj_t p_thread_stat = (pthread_except_stat_obj_t)core_rtl_array_get(
+                &except_info_tbl, core_pm_get_currnt_thread_id());
+
+    if(p_thread_stat == NULL) {
+        core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
+        PANIC(EINVAL, "Failed to get exception status object of curent thread.");
+    }
+
+    INC_REF(p_thread_stat);
+    core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
+
+    //Set errno
+    core_pm_spnlck_rw_w_lock(&(p_thread_stat->lock));
+    p_thread_stat->errno = status;
+    core_pm_spnlck_rw_w_unlock(&(p_thread_stat->lock));
+    DEC_REF(p_thread_stat);
+
+    return;
+}
+
+kstatus_t core_exception_get_errno()
+{
+    //Get thread info
+    core_pm_spnlck_rw_r_lock(&except_info_tbl_lck);
+    pthread_except_stat_obj_t p_thread_stat = (pthread_except_stat_obj_t)core_rtl_array_get(
+                &except_info_tbl, core_pm_get_currnt_thread_id());
+
+    if(p_thread_stat == NULL) {
+        core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
+        PANIC(EINVAL, "Failed to get exception status object of curent thread.");
+    }
+
+    INC_REF(p_thread_stat);
+    core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
+
+    //Get errno
+    core_pm_spnlck_rw_r_lock(&(p_thread_stat->lock));
+    u32 ret = p_thread_stat->errno;
+    core_pm_spnlck_rw_r_unlock(&(p_thread_stat->lock));
+    DEC_REF(p_thread_stat);
+
+    return ret;
+}
+
 pthread_except_stat_obj_t core_exception_get_0()
 {
     core_pm_spnlck_rw_r_lock(&except_info_tbl_lck);
@@ -109,6 +157,7 @@ void core_exception_raise(pexcept_obj_t except)
 
     } else {
         //IP is in user memory, kill process
+        NOT_SUPPORT;
     }
 }
 

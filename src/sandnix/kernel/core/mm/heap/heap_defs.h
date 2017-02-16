@@ -20,7 +20,7 @@
 #include "../../../../../common/common.h"
 
 #include "../../../hal/debug/debug_defs.h"
-#include "../../pm/pm_defs.h"
+#include "../../pm/lock/spinlock/spnlck_defs.h"
 
 //Magic
 #define	HEAP_MEMBLOCK_MAGIC		0xFFF23333

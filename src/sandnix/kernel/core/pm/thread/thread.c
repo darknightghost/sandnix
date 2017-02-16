@@ -92,6 +92,7 @@ void core_pm_thread_init()
     pcore_sched_info_t p_info = &cpu_infos[0];
     p_info->cpu_use_stat_l = 0;
     p_info->cpu_use_stat_h = 0;
+    p_info->enable_sched = true;
     INC_REF(p_thread_obj);
     p_info->p_idle_thread = p_thread_obj;
     p_info->priority = PRIORITY_DISPATCH;
@@ -270,17 +271,32 @@ u32			core_pm_join(bool wait_threadid, u32 thread_id, void** p_retval);
 
 void core_pm_suspend(u32 thread_id)
 {
+    u32 currnt_thread = core_pm_get_currnt_thread_id();
+
     //Get thread obj
     core_pm_spnlck_rw_r_lock(&thread_table_lock);
+
+    if(currnt_thread == thread_id) {
+        core_pm_disable_sched();
+    }
+
     pthread_obj_t p_thread_obj = core_rtl_array_get(&thread_table, thread_id);
 
     if(p_thread_obj == NULL) {
+        if(currnt_thread == thread_id) {
+            core_pm_enable_sched();
+        }
+
         core_pm_spnlck_rw_r_unlock(&thread_table_lock);
         peinval_except_t p_except = einval_except();
         RAISE(p_except, "Thread does not exists.");
         return;
 
     } else if(p_thread_obj->status == TASK_ZOMBIE) {
+        if(currnt_thread == thread_id) {
+            core_pm_enable_sched();
+        }
+
         core_pm_spnlck_rw_r_unlock(&thread_table_lock);
         peinval_except_t p_except = einval_except();
         RAISE(p_except, "Cannot suspend a zombie thread.");
@@ -288,6 +304,10 @@ void core_pm_suspend(u32 thread_id)
 
     } else {
         p_thread_obj->status = TASK_SUSPEND;
+    }
+
+    if(currnt_thread == thread_id) {
+        core_pm_enable_sched();
     }
 
     core_pm_spnlck_rw_r_unlock(&thread_table_lock);
@@ -387,6 +407,32 @@ void core_pm_resume(u32 thread_id)
         hal_cpu_send_IPI(-1, IPI_TYPE_PREEMPT, NULL);
     }
 
+    return;
+}
+
+void core_pm_sleep(u64* p_ns)
+{
+
+    //Get current thread object
+    u32 cpu_index = hal_cpu_get_cpu_index();
+    pcore_sched_info_t p_info = &cpu_infos[cpu_index];
+
+    pthread_obj_t p_thread_obj;
+
+    if(p_info->current_node == NULL) {
+        p_thread_obj = p_info->p_idle_thread;
+
+    } else {
+        p_thread_obj = (pthread_obj_t)(p_info->current_node->p_item);
+    }
+
+    //Sleep thread
+    core_pm_disable_sched();
+    p_thread_obj->status = TASK_SLEEP;
+    p_thread_obj->set_sleep_time(p_thread_obj, p_ns);
+    core_pm_enable_sched();
+
+    hal_io_int(INT_TICK);
     return;
 }
 
@@ -491,7 +537,36 @@ void core_pm_schedule()
     }
 
     //Schedule
+    hal_io_int(INT_TICK);
 
+    return;
+}
+
+void core_pm_disable_sched()
+{
+    if(!initialized) {
+        return;
+    }
+
+    //Get thread obj
+    u32 cpu_index = hal_cpu_get_cpu_index();
+    pcore_sched_info_t p_info = &cpu_infos[cpu_index];
+
+    p_info->enable_sched = false;
+    return;
+}
+
+void core_pm_enable_sched()
+{
+    if(!initialized) {
+        return;
+    }
+
+    //Get thread obj
+    u32 cpu_index = hal_cpu_get_cpu_index();
+    pcore_sched_info_t p_info = &cpu_infos[cpu_index];
+
+    p_info->enable_sched = true;
     return;
 }
 
@@ -508,6 +583,12 @@ void on_tick(u32 int_num, pcontext_t p_context, u32 err_code)
     //Get schedule info
     u32 cpu_index = hal_cpu_get_cpu_index();
     pcore_sched_info_t p_info = &cpu_infos[cpu_index];
+
+    if(!p_info->enable_sched) {
+        hal_io_irq_send_eoi();
+        hal_cpu_context_load(p_context);
+        return;
+    }
 
     core_pm_spnlck_raw_lock(&sched_lock);
 
@@ -826,6 +907,7 @@ void switch_task(pcore_sched_info_t p_info, u32 cpu_index)
     }
 
     p_info->priority = p_thread_obj->priority;
+    hal_io_irq_send_eoi();
     p_thread_obj->resume(p_thread_obj, cpu_index);
 
     return;

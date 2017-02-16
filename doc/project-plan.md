@@ -2617,13 +2617,13 @@ set_errno
 
 //mutex
 //normal
-create_mutex
+mutex_init
 mutex_lock
 mutex_trylock
 mutex_unlock
 
 //r/w lock
-create_mutex_rw
+mutex_rw_init
 mutex_rw_r_lock
 mutex_rw_r_trylock
 mutex_rw_r_unlock
@@ -2632,7 +2632,7 @@ mutex_rw_w_trylock
 mutex_rw_w_unlock
 
 //rcu
-create_mutex_rcu
+mutex_rcu_init
 mutex_rcu_r_lock
 mutex_rcu_r_trylock
 mutex_rcu_r_unlock
@@ -2642,7 +2642,7 @@ mutex_rcu_w_sync
 mutex_rcu_w_unlock
 
 //semaphore
-create_semaphore
+semaphore_init
 semaphore_acquire
 semaphore_tryacquire
 semaphore_release

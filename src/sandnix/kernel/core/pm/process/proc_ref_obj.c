@@ -22,7 +22,7 @@
 
 pproc_ref_obj_t proc_ref_obj(u32 process_id,
                              u32 class_id,
-                             thread_obj_fork_t on_fork,
+                             proc_ref_obj_fork_t on_fork,
                              destructor_t destructor,
                              compare_obj_t compare_func,
                              to_string_t to_string_func,

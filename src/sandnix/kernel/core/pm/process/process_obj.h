@@ -18,3 +18,5 @@
 #pragma once
 
 #include "./process_obj_defs.h"
+
+pprocess_obj_t		process_obj_0();

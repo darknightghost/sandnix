@@ -24,13 +24,17 @@
 #endif
 #define	MAX_THREAD_NUM				(MAX_PROCESS_NUM * 2)
 
-//Spinlock
-#include "./lock/spinlock/spnlck_defs.h"
-#include "./lock/spinlock/spnlck_rw_defs.h"
+
+//Process
+#include "./process/process_defs.h"
 
 //Thread
 #include "./thread/thread_defs.h"
 
-//Process
-#include "./process/process_defs.h"
+//Spinlock
+#include "./lock/spinlock/spnlck_defs.h"
+#include "./lock/spinlock/spnlck_rw_defs.h"
+
+//Mutex
+#include "./lock/mutex/mutex_defs.h"
 
