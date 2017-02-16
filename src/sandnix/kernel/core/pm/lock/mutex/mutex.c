@@ -158,7 +158,6 @@ void core_pm_mutex_release(pmutex_t p_lock)
         core_pm_enable_sched();
     }
 
-
     if(core_rtl_list_empty(&(p_lock->wait_list))) {
         //Set mutex free
         p_lock->lock_flag = false;
