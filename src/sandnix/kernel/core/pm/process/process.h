@@ -21,7 +21,8 @@
 
 #include "./process_defs.h"
 
-void		core_pm_process_init();
+#define	MODULE_NAME		core_pm
+
 u32			core_pm_get_currnt_proc_id();
 void		core_pm_reg_proc_create_obj(proc_ref_call_back_t callback);
 u32			core_pm_fork(void* child_start_address);
@@ -36,3 +37,7 @@ u32			core_pm_get_egid(u32 pid);
 kstatus_t	core_pm_set_egid(u32 pid, u32 egid);
 void		core_pm_set_groups(u32* groupids, size_t size);
 size_t		core_pm_get_groups(u32* buf, size_t buf_size);
+
+void		PRIVATE(process_init)();
+
+#undef	MODULE_NAME

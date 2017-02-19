@@ -26,6 +26,8 @@
 #include "../../../hal/rtl/rtl.h"
 #include "../pm.h"
 
+#define	MODULE_NAME		core_pm
+
 //Flag
 static	bool				initialized = false;
 
@@ -62,7 +64,7 @@ static inline void			add_ref_obj(u32 thread_id, thread_ref_call_back_t callback)
 
 static void					ipi_preempt(pcontext_t p_context, pipi_arg_obj_t p_null);
 
-void core_pm_thread_init()
+void PRIVATE(thread_init)()
 {
     //Initialize heap
     sched_heap = core_mm_heap_create(HEAP_MULITHREAD, SANDNIX_KERNEL_PAGE_SIZE);
@@ -115,7 +117,7 @@ void core_pm_thread_init()
     return;
 }
 
-void core_pm_thread_core_init()
+void PRIVATE(thread_core_init)()
 {
     u32 cpu_index = hal_cpu_get_cpu_index();
     pcore_sched_info_t p_info = &cpu_infos[cpu_index];
@@ -132,7 +134,7 @@ void core_pm_thread_core_init()
     return;
 }
 
-void core_pm_thread_core_release()
+void PRIVATE(thread_core_release)()
 {
     u32 cpu_index = hal_cpu_get_cpu_index();
     pcore_sched_info_t p_info = &cpu_infos[cpu_index];

@@ -15,32 +15,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "./process.h"
-#include "../lock/mutex/mutex.h"
-#include "../../rtl/rtl.h"
+#include "../../../../common/common.h"
+#include "./pm.h"
 
 #define	MODULE_NAME		core_pm
 
-void PRIVATE(process_init)()
+void core_pm_init()
 {
+    PRIVATE(process_init);
+    PRIVATE(thread_init);
     return;
 }
-
-u32 core_pm_get_currnt_proc_id()
-{
-    return 0;
-}
-
-void		core_pm_reg_proc_create_obj(proc_ref_call_back_t callback);
-u32			core_pm_fork(void* child_start_address);
-u32			core_pm_wait(bool wait_pid, u32 process_id);
-u32			core_pm_get_subsys(u32 pid);
-kstatus_t	core_pm_set_subsys(u32 pid, u32 subsys_id);
-u32			core_pm_get_uid(u32 pid);
-u32			core_pm_get_gid(u32 pid);
-u32			core_pm_get_euid(u32 pid);
-kstatus_t	core_pm_set_euid(u32 pid, u32 euid);
-u32			core_pm_get_egid(u32 pid);
-kstatus_t	core_pm_set_egid(u32 pid, u32 egid);
-void		core_pm_set_groups(u32* groupids, size_t size);
-size_t		core_pm_get_groups(u32* buf, size_t buf_size);

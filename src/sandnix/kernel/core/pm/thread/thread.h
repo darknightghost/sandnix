@@ -22,9 +22,7 @@
 
 #include "./thread_defs.h"
 
-void		core_pm_thread_init();
-void		core_pm_thread_core_init();
-void		core_pm_thread_core_release();
+#define	MODULE_NAME		core_pm
 
 void		core_pm_reg_thread_create_obj(thread_ref_call_back_t callback);
 u32			core_pm_thread_create(thread_func_t thread_func, u32 k_stack_size,
@@ -43,3 +41,10 @@ void        core_pm_schedule();
 void		core_pm_disable_sched();
 void		core_pm_enable_sched();
 void		core_pm_idle();
+
+
+void		PRIVATE(thread_init)();
+void		PRIVATE(thread_core_init)();
+void		PRIVATE(thread_core_release)();
+
+#undef	MODULE_NAME

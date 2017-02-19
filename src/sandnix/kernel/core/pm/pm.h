@@ -34,3 +34,4 @@
 //Mutex
 #include "./lock/mutex/mutex.h"
 
+void	core_pm_init();

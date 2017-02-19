@@ -27,6 +27,8 @@
 #include "./page_obj.h"
 #include "../heap/heap.h"
 
+#define MODULE_NAME	core_mm
+
 #define PAGE_SIZE_ALIGN(size)		((((size) / SANDNIX_KERNEL_PAGE_SIZE) \
                                       + ((size) % SANDNIX_KERNEL_PAGE_SIZE \
                                               ? 1 \
@@ -92,7 +94,7 @@ static	except_stat_t deadlock_except_hndlr(
 static	void		ipi_refresh_tlb(pcontext_t p_context,
                                     pipi_arg_tlb_refresh_t p_args);
 
-void core_mm_paging_init()
+void PRIVATE(paging_init)()
 {
     core_kconsole_print_info("Initialize paging...\n");
 
@@ -142,13 +144,13 @@ void core_mm_paging_init()
     return;
 }
 
-void core_mm_paging_cpu_core_init(u32 cpu_index)
+void PRIVATE(paging_cpu_core_init)(u32 cpu_index)
 {
     current_pg_tbl[cpu_index] = 0;
     return;
 }
 
-void core_mm_paging_cpu_core_release(u32 cpu_index)
+void PRIVATE(paging_cpu_core_release)(u32 cpu_index)
 {
     current_pg_tbl[cpu_index] = 0;
     return;
