@@ -23,7 +23,9 @@
 
 #include "./phymem_defs.h"
 
-void	phymem_init();
+#define MODULE_NAME	hal_mmu
+
+void	PRIVATE(phymem_init)();
 
 kstatus_t hal_mmu_phymem_alloc(
     void** p_addr,		//Start address
@@ -39,4 +41,6 @@ size_t hal_mmu_get_phymem_info(
     size_t size);					//Buffer size
 
 //If the platform need to edit the physical memory map, edit this function.
-void	archecture_phyaddr_edit(plist_t p_phy_addr_list);
+void	PRIVATE(archecture_phyaddr_edit)(plist_t p_phy_addr_list);
+
+#undef	MODULE_NAME

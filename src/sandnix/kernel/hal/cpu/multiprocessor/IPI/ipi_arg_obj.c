@@ -19,7 +19,8 @@
 #include "./ipi_arg_obj.h"
 #include "../../../../core/rtl/obj/obj.h"
 
-pheap_t					ipi_queue_heap;
+#define	MODULE_NAME hal_cpu
+extern	pheap_t					PRIVATE(ipi_queue_heap);
 
 static	pkstring_obj_t	to_string(pipi_arg_obj_t p_this);
 static	int				compare(pipi_arg_obj_t p_this, pipi_arg_obj_t p_obj2);
@@ -32,7 +33,7 @@ pipi_arg_obj_t ipi_arg_obj(size_t size, u32 class_id, u32 src_cpu)
                                (destructor_t)destructor,
                                (compare_obj_t)compare,
                                (to_string_t)to_string,
-                               ipi_queue_heap,
+                               PRIVATE(ipi_queue_heap),
                                size);
 
     if(p_ret != NULL) {

@@ -16,6 +16,9 @@
 */
 
 #include "./process.h"
+#include "../lock/mutex/mutex.h"
+#include "../../rtl/rtl.h"
+
 
 
 void core_pm_process_init()

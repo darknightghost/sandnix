@@ -21,6 +21,8 @@
 
 #include "../../../../init/init_defs.h"
 
+#define	MODULE_NAME hal_io
+
 typedef struct {
     u16		limit;
     u32		base;
@@ -56,4 +58,7 @@ typedef	struct	_idt {
         (base)[(num)].attr.p=(s_p); \
     }
 
-#define	SET_NORMAL_IDT(base,num) SET_IDT((base), num, int_##num, SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1)
+#define	SET_NORMAL_IDT(base,num) SET_IDT((base), num, PRIVATE(int_##num), \
+        SELECTOR_K_CODE, TYPE_INTERRUPT, 0, 0, 1)
+
+#undef	MODULE_NAME

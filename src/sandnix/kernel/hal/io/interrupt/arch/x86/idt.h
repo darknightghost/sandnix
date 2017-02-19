@@ -23,4 +23,8 @@
 
 #include "./idt_defs.h"
 
-void	idt_init();
+#define	MODULE_NAME hal_io
+
+void	PRIVATE(idt_init)();
+
+#undef	MODULE_NAME

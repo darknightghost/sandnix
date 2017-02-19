@@ -16,8 +16,10 @@
 */
 
 #include "../../init.h"
+#define	MODULE_NAME		hal_init
 
 .global		_start
+.global		PRIVATE(arch_init)
 .global		gdt
 .global		kernel_header
 .global		tss_desc_table
@@ -143,3 +145,6 @@ _KERNEL_MEM:
 /* Step 3 : Call c code. */
 	//Call c code
 	call	kinit
+
+PRIVATE(arch_init):
+	ret

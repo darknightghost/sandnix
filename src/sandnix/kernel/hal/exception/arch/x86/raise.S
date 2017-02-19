@@ -17,6 +17,8 @@
 
 #include "../../../init/init_defs.h"
 
+#define	MODULE_NAME hal_exception
+
 .section	.text
 .global		hal_exception_raise
 
@@ -87,5 +89,5 @@ hal_exception_raise:
 	subl	$4, %ebx
 	pushl	(%ebx)
 
-	call	do_raise
+	call	PRIVATE(do_raise)
 

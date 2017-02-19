@@ -21,10 +21,12 @@
 #include "./context/context.h"
 #include "./multiprocessor/multiprocessor.h"
 
+#define	MODULE_NAME hal_cpu
+
 void hal_cpu_init()
 {
     hal_early_print_printf("Initializing cpu module...\n");
-    cpuinfo_init();
-    cpu_ipi_init();
+    PRIVATE(cpuinfo_init());
+    PRIVATE(cpu_ipi_init)();
     return;
 }

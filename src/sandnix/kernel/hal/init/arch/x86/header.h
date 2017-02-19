@@ -19,7 +19,8 @@
 #include "../../../../../../common/common.h"
 #include "../../../../core/rtl/rtl_defs.h"
 
-void	analyse_bootloader_info(void* p_info);
+#define	MODULE_NAME		hal_init
+void	PRIVATE(analyse_bootloader_info)(void* p_info);
 
 //Get pyhsical memory map from bootloader
 list_t	hal_init_get_boot_memory_map();
@@ -31,3 +32,5 @@ void	hal_init_get_initrd_addr(
 
 //Get kernel commandline
 char*	hal_init_get_kernel_cmdline();
+
+#undef	MODULE_NAME

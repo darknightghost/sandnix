@@ -24,8 +24,9 @@
 #include "../cpuinfo/cpuinfo.h"
 #include "ipi.h"
 
+#define	MODULE_NAME hal_cpu
 static	ipi_queue_t		ipi_queue[MAX_CPU_NUM];
-pheap_t					ipi_queue_heap;
+pheap_t					PRIVATE(ipi_queue_heap);
 static	u8				ipi_queue_heap_buf[4096];
 
 static	ipi_hndlr_t		hndlrs[MAX_IPI_MSG_NUM] = {NULL};
@@ -36,11 +37,11 @@ static	spnlck_t		send_lock;
 static	void			ipi_int_hndlr(u32 int_num, pcontext_t p_context,
                                       u32 err_code);
 
-void cpu_ipi_init()
+void PRIVATE(cpu_ipi_init)()
 {
     //Initialize heap
-    ipi_queue_heap = core_mm_heap_create_on_buf(HEAP_MULITHREAD | HEAP_PREALLOC,
-                     4096, ipi_queue_heap_buf, sizeof(ipi_queue_heap_buf));
+    PRIVATE(ipi_queue_heap) = core_mm_heap_create_on_buf(HEAP_MULITHREAD | HEAP_PREALLOC,
+                              4096, ipi_queue_heap_buf, sizeof(ipi_queue_heap_buf));
 
     //Initialize queue
     for(u32 i = 0; i > MAX_CPU_NUM; i++) {
@@ -51,14 +52,14 @@ void cpu_ipi_init()
     core_pm_spnlck_init(&(ipi_queue[0].lock));
     core_pm_spnlck_init(&send_lock);
     core_pm_spnlck_rw_init(&hndlrs_lock);
-    core_rtl_queue_init(&(ipi_queue[0].msg_queue), ipi_queue_heap);
+    core_rtl_queue_init(&(ipi_queue[0].msg_queue), PRIVATE(ipi_queue_heap));
 
     hal_io_int_callback_set(INT_IPI, ipi_int_hndlr);
 
     return;
 }
 
-void cpu_ipi_core_init()
+void PRIVATE(cpu_ipi_core_init)()
 {
     u32 cpu_index = hal_cpu_get_cpu_index();
 
@@ -68,7 +69,7 @@ void cpu_ipi_core_init()
     return;
 }
 
-void cpu_ipi_core_release();
+void PRIVATE(cpu_ipi_core_release)();
 
 void hal_cpu_send_IPI(s32 index, u32 type, void* p_args)
 {
@@ -84,7 +85,7 @@ void hal_cpu_send_IPI(s32 index, u32 type, void* p_args)
             if(i != index && ipi_queue[i].initialized) {
                 do {
                     p_new_msg = core_mm_heap_alloc(sizeof(ipi_msg_t),
-                                                   ipi_queue_heap);
+                                                   PRIVATE(ipi_queue_heap));
                 } while(p_new_msg == NULL);
 
                 p_new_msg->type = type;
@@ -108,7 +109,7 @@ void hal_cpu_send_IPI(s32 index, u32 type, void* p_args)
         //Send message
         do {
             p_new_msg = core_mm_heap_alloc(sizeof(ipi_msg_t),
-                                           ipi_queue_heap);
+                                           PRIVATE(ipi_queue_heap));
         } while(p_new_msg == NULL);
 
         p_new_msg->type = type;
@@ -162,7 +163,7 @@ void ipi_int_hndlr(u32 int_num, pcontext_t p_context, u32 err_code)
 
     u32 type = p_msg->type;
     void* p_args = p_msg->p_args;
-    core_mm_heap_free(p_msg, ipi_queue_heap);
+    core_mm_heap_free(p_msg, PRIVATE(ipi_queue_heap));
 
     core_pm_spnlck_rw_r_lock(&hndlrs_lock);
     ipi_hndlr_t hndlr = hndlrs[type];

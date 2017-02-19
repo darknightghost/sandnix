@@ -20,10 +20,14 @@
 
 #include "./apic_defs.h"
 
-void	apic_init();
+#define	MODULE_NAME hal_io
+
+void	PRIVATE(apic_init)();
 
 //Read local APIC register
 u32		hal_io_apic_read32(address_t off);
 
 //Write local APIC register
 void	hal_io_apic_write32(address_t off, u32 data);
+
+#undef	MODULE_NAME

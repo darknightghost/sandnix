@@ -28,6 +28,8 @@
 
 #include "../mmu.h"
 
+#define MODULE_NAME	hal_mmu
+
 #define	IN_RANGE(n, start, size) ((n) >= (start) && (n) - (start) < (size))
 
 typedef struct _search_size_info {
@@ -68,7 +70,7 @@ static	int				search_size_func(size_t size,
 static	void			collect_fregments(pphysical_memory_info_t p_memblock,
         pmap_t p_free_map);
 
-void phymem_init()
+void PRIVATE(phymem_init)()
 {
     list_t info_list;
     plist_node_t p_pos1;
@@ -109,7 +111,7 @@ void phymem_init()
     }
 
     hal_early_print_printf("\nAnalysing...\n");
-    archecture_phyaddr_edit(&info_list);
+    PRIVATE(archecture_phyaddr_edit)(&info_list);
 
     //Kernel
     p_system_info = core_mm_heap_alloc(sizeof(physical_memory_info_t), NULL);
@@ -120,11 +122,12 @@ void phymem_init()
     }
 
     p_system_info->begin = (u64)(address_t)(MIN(kernel_header.code_start,
-                                            kernel_header.data_start) + get_load_offset());
+                                            kernel_header.data_start)
+                                            + PRIVATE(get_load_offset)());
     p_system_info->size = (u64)(address_t)(MAX(kernel_header.code_start
                                            + kernel_header.code_size,
                                            kernel_header.data_start + kernel_header.data_size)
-                                           + get_load_offset() - p_system_info->begin);
+                                           + PRIVATE(get_load_offset)() - p_system_info->begin);
     p_system_info->type = PHYMEM_SYSTEM;
 
     core_rtl_list_insert_after(NULL, &info_list, p_system_info, NULL);

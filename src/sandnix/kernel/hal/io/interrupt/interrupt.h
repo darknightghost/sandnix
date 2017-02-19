@@ -29,14 +29,15 @@
 
 #include "../../cpu/cpu_defs.h"
 
+#define	MODULE_NAME hal_io
 //Initialize
-void interrupt_init();
+void PRIVATE(interrupt_init)();
 
 //Initialize cpu core
-void interrupt_cpu_core_init(u32 cpuid);
+void PRIVATE(interrupt_cpu_core_init)(u32 cpuid);
 
 //Release cpu core
-void interrupt_cpu_core_release(u32 cpuid);
+void PRIVATE(interrupt_cpu_core_release)(u32 cpuid);
 
 //Set kernel stack
 void hal_io_set_krnl_stack(address_t addr);
@@ -98,3 +99,5 @@ void hal_io_IPI_send_eoi();
 
 //Cause interruption
 void hal_io_int(u32 int_num);
+
+#undef	MODULE_NAME

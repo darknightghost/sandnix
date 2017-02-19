@@ -20,10 +20,12 @@
 #include "./paging/paging.h"
 #include "./phymem/phymem.h"
 
+#define MODULE_NAME	hal_mmu
+
 void hal_mmu_init()
 {
     hal_early_print_printf("\nInitializing mmu module...\n");
-    phymem_init();
-    paging_init();
+    PRIVATE(phymem_init)();
+    PRIVATE(paging_init)();
     return;
 }

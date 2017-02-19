@@ -25,16 +25,18 @@
 #include "interrupt.h"
 #include "apic.h"
 
+#define	MODULE_NAME hal_io
+
 static	spnlck_t			lock;
 static	int_callback_t		int_hndlr_table[256] = {NULL};
 
-void interrupt_init()
+void PRIVATE(interrupt_init)()
 {
     hal_early_print_printf("Initializing interrupt...\n");
     core_pm_spnlck_init(&lock);
-    idt_init();
-    tss_init();
-    apic_init();
+    PRIVATE(idt_init)();
+    PRIVATE(tss_init)();
+    PRIVATE(apic_init)();
     return;
 }
 

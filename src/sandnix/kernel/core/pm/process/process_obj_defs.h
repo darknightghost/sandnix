@@ -36,19 +36,21 @@ typedef	struct	_process_obj {
     u32			rgid;				//Real group id
     u32			egid;				//Effective group id
     u32			sgid;				//Saved set-group-id
-    list_t		griuos;				//Other groups
+    list_t		groups;				//Other groups
 
     //Environment
     map_t		env_vars;			//Environment variables
 
     //Threads
-    u32			thread_num;			//How many threads does the process have
+    u32			alive_thread_num;	//How many threads does the process have
     map_t		alive_threads;		//Alive threads
     map_t		zombie_threads;		//Zombie threads
+
+    //Referenced objects
     map_t		ref_objs;			//Referenced objects
 
     //Child processes
-    map_t		alive_cildren;		//Alive child processes
+    map_t		alive_children;		//Alive child processes
     map_t		zombie_children;	//Zombie child processes
 
     //Methods
@@ -57,5 +59,15 @@ typedef	struct	_process_obj {
 
     //void					add_ref(pprocess_obj_t p_this, pproc_ref_obj_t p_ref_obj);
     void	(*add_ref_obj)(struct _process_obj*, pproc_ref_obj_t);
+
+    //void					die(pprocess_obj_t p_this);
+    void	(*die)(struct _process_obj*);
+
+    //void	add_child(pprocess_obj_t p_this, u32 child_id);
+    //void	zombie_child(pprocess_obj_t p_this, u32 child_id);
+    //void	remove_child(pprocess_obj_t p_this, u32 child_id);
+    //void	add_thread(pprocess_obj_t p_this, u32 thread_id);
+    //void	zombie_thread(pprocess_obj_t p_this, u32 thread_id);
+    //void	remove_thread(pprocess_obj_t p_this, u32 thread_id);
 
 } process_obj_t, *pprocess_obj_t;

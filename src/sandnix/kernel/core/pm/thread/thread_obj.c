@@ -52,20 +52,12 @@ pthread_obj_t thread_obj(u32 thread_id, u32 process_id, size_t kernel_stack_size
                          u32 priority)
 {
     if(kernel_stack_size == 0) {
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Size of kernel stack cannot be zero.");
         return NULL;
     }
 
     kernel_stack_size = ALIGN(kernel_stack_size, SANDNIX_KERNEL_PAGE_SIZE);
-
-    if(thread_obj_heap == NULL) {
-        //Create heap
-        thread_obj_heap = core_mm_heap_create(HEAP_MULITHREAD,
-                                              SANDNIX_KERNEL_PAGE_SIZE);
-
-        if(thread_obj_heap == NULL) {
-            PANIC(ENOMEM, "Failed to alloc new heap.");
-        }
-    }
 
     //Create object
     pthread_obj_t p_ret = (pthread_obj_t)obj(
@@ -74,6 +66,8 @@ pthread_obj_t thread_obj(u32 thread_id, u32 process_id, size_t kernel_stack_size
                               thread_obj_heap, sizeof(thread_obj_t));
 
     if(p_ret == NULL) {
+        penomem_except_t p_except = enomem_except();
+        RAISE(p_except, "Failed to create new thread object.");
         return NULL;
     }
 
@@ -107,6 +101,9 @@ pthread_obj_t thread_obj(u32 thread_id, u32 process_id, size_t kernel_stack_size
 
     if(p_ret->k_stack_addr == (address_t)NULL) {
         core_mm_heap_free(p_ret, thread_obj_heap);
+        DEC_REF(p_ret);
+        penomem_except_t p_except = enomem_except();
+        RAISE(p_except, "Failed to allocate stack for new thread object.");
         return NULL;
     }
 
@@ -125,7 +122,9 @@ pthread_obj_t thread_obj_0()
                                               SANDNIX_KERNEL_PAGE_SIZE);
 
         if(thread_obj_heap == NULL) {
-            PANIC(ENOMEM, "Failed to alloc new heap.");
+            penomem_except_t p_except = enomem_except();
+            RAISE(p_except, "Failed to create heap for thread objects.");
+            return NULL;
         }
     }
 
@@ -136,6 +135,8 @@ pthread_obj_t thread_obj_0()
                               thread_obj_heap, sizeof(thread_obj_t));
 
     if(p_ret == NULL) {
+        penomem_except_t p_except = enomem_except();
+        RAISE(p_except, "Failed to create new thread object.");
         return NULL;
     }
 

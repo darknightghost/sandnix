@@ -26,9 +26,11 @@
     #include "arch/arm/armv7/cortex-a9/cpuinfo.h"
 #endif
 
-void cpuinfo_init();
-void cpuinfo_core_init();
-void cpuinfo_core_release();
+#define	MODULE_NAME hal_cpu
+
+void PRIVATE(cpuinfo_init)();
+void PRIVATE(cpuinfo_core_init)();
+void PRIVATE(cpuinfo_core_release)();
 
 //Get current CPU id
 u32	hal_cpu_get_cpu_id();
@@ -44,3 +46,5 @@ u32	hal_cpu_get_cpu_index_by_id(u32 id);
 
 //Get CPU information
 void hal_cpu_get_info(pcpuinfo_t p_ret);
+
+#undef MODULE_NAMEU
