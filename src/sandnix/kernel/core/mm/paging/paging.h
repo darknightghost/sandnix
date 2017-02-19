@@ -21,14 +21,16 @@
 
 #include "./paging_defs.h"
 
+#define MODULE_NAME	core_mm
+
 //Initialize module
-void	core_mm_paging_init();
+void	PRIVATE(paging_init)();
 
 //Initialize cpu core
-void	core_mm_paging_cpu_core_init(u32 cpu_index);
+void	PRIVATE(paging_cpu_core_init)(u32 cpu_index);
 
 //Release cpu core
-void	core_mm_paging_cpu_core_release(u32 cpu_index);
+void	PRIVATE(paging_cpu_core_release)(u32 cpu_index);
 
 //Switch to page table
 void	core_mm_switch_to(u32 index);
@@ -68,3 +70,5 @@ u32			core_mm_get_pg_attr(void* address);
 
 //Set page attributes
 u32			core_mm_set_pg_attr(void* address, u32 attr);
+
+#undef MODULE_NAME

@@ -21,20 +21,22 @@
 
 #include "./mm.h"
 
+#define MODULE_NAME	core_mm
+
 void core_mm_init()
 {
-    core_mm_paging_init();
+    PRIVATE(paging_init)();
     return;
 }
 
 void core_mm_core_init(u32 cpuid)
 {
-    core_mm_paging_cpu_core_init(cpuid);
+    PRIVATE(paging_cpu_core_init)(cpuid);
     return;
 }
 
 void core_mm_core_release(u32 cpuid)
 {
-    core_mm_paging_cpu_core_release(cpuid);
+    PRIVATE(paging_cpu_core_release)(cpuid);
     return;
 }
