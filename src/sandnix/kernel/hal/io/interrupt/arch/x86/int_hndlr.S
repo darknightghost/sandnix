@@ -17,6 +17,8 @@
 
 #include "../../../../init/init.h"
 
+#define	MODULE_NAME hal_io
+
 .section	.text
 //esp = &context
 .macro		PUSH_CONTEXT
@@ -130,8 +132,8 @@
 .endm
 
 .macro		NORMAL_IDT num
-	.global	int_\num
-	int_\num:
+	.global	PRIVATE(int_\num)
+	PRIVATE(int_\num):
 		//Save Registers
 		PUSH_CONTEXT
 
@@ -144,8 +146,8 @@
 .endm
 
 .macro		NORMAL_EXCEPT_IDT num
-	.global	int_\num
-	int_\num:
+	.global	PRIVATE(int_\num)
+	PRIVATE(int_\num):
 		//Save Registers
 		PUSH_CONTEXT
 
@@ -158,8 +160,8 @@
 .endm
 
 .macro		EXCEPT_IDT_WITH_ERRCODE num
-	.global	int_\num
-	int_\num:
+	.global	PRIVATE(int_\num)
+	PRIVATE(int_\num):
 		//Save Registers
 		PUSH_CONTEXT_WITH_ERRCODE
 
@@ -172,9 +174,9 @@
 .endm
 
 .macro		RESERVED_IDT num
-	.global	int_\num
-	int_\num:
-		jmp		int_\num
+	.global	PRIVATE(int_\num)
+	PRIVATE(int_\num):
+		jmp		PRIVATE(int_\num)
 		iret
 .endm
 

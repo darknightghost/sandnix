@@ -23,9 +23,11 @@
 
 #include "tss.h"
 
+#define	MODULE_NAME hal_io
+
 static	tss_t		tss_table[MAX_CPU_NUM];
 
-void tss_init()
+void PRIVATE(tss_init)()
 {
     hal_early_print_printf("Initializing TSS...\n");
     core_rtl_memset(tss_table, 0, sizeof(tss_table));

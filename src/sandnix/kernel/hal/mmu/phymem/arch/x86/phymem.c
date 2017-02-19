@@ -22,7 +22,9 @@
 #include "../../../mmu.h"
 #include "../../../../exception/exception.h"
 
-void archecture_phyaddr_edit(plist_t p_phy_addr_list)
+#define MODULE_NAME	hal_mmu
+
+void PRIVATE(archecture_phyaddr_edit)(plist_t p_phy_addr_list)
 {
     pphysical_memory_info_t p_dma_info;
     plist_node_t p_node;

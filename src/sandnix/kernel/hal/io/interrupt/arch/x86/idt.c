@@ -21,10 +21,12 @@
 #include "int_hndlr.h"
 #include "../../../../early_print/early_print.h"
 
+#define	MODULE_NAME hal_io
+
 static idt_t		idt_table[256];
 static void			fill_idt();
 
-void idt_init()
+void PRIVATE(idt_init)()
 {
     hal_early_print_printf("Initializing IDT...\n");
     fill_idt();
@@ -68,7 +70,8 @@ void fill_idt()
     SET_NORMAL_IDT(idt_table, 0x00);
     SET_NORMAL_IDT(idt_table, 0x01);
     SET_NORMAL_IDT(idt_table, 0x02);
-    SET_IDT(idt_table, 0x03, int_0x03, SELECTOR_K_CODE, TYPE_TRAP, 0, 3, 1);
+    SET_IDT(idt_table, 0x03, PRIVATE(int_0x03), SELECTOR_K_CODE, TYPE_TRAP, 0,
+            3, 1);
     SET_NORMAL_IDT(idt_table, 0x03);
     SET_NORMAL_IDT(idt_table, 0x04);
     SET_NORMAL_IDT(idt_table, 0x05);

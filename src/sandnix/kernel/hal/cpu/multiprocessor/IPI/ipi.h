@@ -27,12 +27,15 @@
 
 #include "./ipi_arg_obj.h"
 
-void cpu_ipi_init();
-void cpu_ipi_core_init();
-void cpu_ipi_core_release();
+#define	MODULE_NAME hal_cpu
+void PRIVATE(cpu_ipi_init)();
+void PRIVATE(cpu_ipi_core_init)();
+void PRIVATE(cpu_ipi_core_release)();
 
 //Send IPI
 void hal_cpu_send_IPI(s32 index, u32 type, void* p_args);
 
 //Regist IPI handler
 ipi_hndlr_t hal_cpu_regist_IPI_hndlr(u32 type, ipi_hndlr_t hndlr);
+
+#undef MODULE_NAME

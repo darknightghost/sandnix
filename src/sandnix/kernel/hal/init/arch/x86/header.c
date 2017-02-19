@@ -23,6 +23,8 @@
 #include "../../../early_print/early_print.h"
 #include "../../../exception/exception.h"
 
+#define	MODULE_NAME		hal_init
+
 static	list_t		boot_mem_map;
 static	void*		initrd_addr;
 static	size_t		initrd_size;
@@ -31,7 +33,7 @@ static	char*		kernel_cmdline;
 #if BOOTLOADER == MULTIBOOT2
 static	void	analyse_map_info(pmultiboot_tag_mmap_t p_mmap_tag);
 
-void analyse_bootloader_info(void* p_info)
+void PRIVATE(analyse_bootloader_info)(void* p_info)
 {
     pmultiboot_tag_t p_tag;
     u32 boot_info_size;

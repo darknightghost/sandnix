@@ -23,4 +23,8 @@
 
 #include "./idt_defs.h"
 
-void	tss_init();
+#define	MODULE_NAME hal_io
+
+void	PRIVATE(tss_init)();
+
+#undef	MODULE_NAME

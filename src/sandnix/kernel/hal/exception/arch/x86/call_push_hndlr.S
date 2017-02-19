@@ -18,6 +18,8 @@
 #include "../../../init/init_defs.h"
 #include "../../../../core/exception/exception_defs.h"
 
+#define	MODULE_NAME hal_exception
+
 .section	.text
 .global		hal_exception_hndlr_push_caller
 

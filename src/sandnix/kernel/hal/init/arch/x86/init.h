@@ -19,11 +19,13 @@
 #include "../../../../../../common/common.h"
 #include "./init_defs.h"
 
-#define arch_init()
+#define	MODULE_NAME		hal_init
 
 #ifndef	_ASM
 
-extern	u64			tss_desc_table[];
-extern	pgdt_t		gdt;
+    void	PRIVATE(arch_init)();
+    extern	u64			tss_desc_table[];
+    extern	pgdt_t		gdt;
 
 #endif
+#undef	MODULE_NAME

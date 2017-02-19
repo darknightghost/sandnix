@@ -16,7 +16,9 @@
 */
 
 #pragma once
-#include "../../../../../../common/common.h"
 
-#define	MODULE_NAME hal_cpu
+#define MODULE_NAME
+#define	MK_P_NAME2(module_name, str, name)	str##_##module_name##_##name
+#define	MK_P_NAME1(module_name, name)		MK_P_NAME2(module_name, private, name)
+#define	PRIVATE(name)						MK_P_NAME1(MODULE_NAME, name)
 #undef	MODULE_NAME

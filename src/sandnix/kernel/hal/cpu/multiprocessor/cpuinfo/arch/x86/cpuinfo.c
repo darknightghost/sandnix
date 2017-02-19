@@ -29,9 +29,11 @@ static	pcpu_id_info_t	cpu_id_infos[MAX_CPU_NUM] = {0};
 static	int			cpuid_cmp(void* cpuid1, void* cpuid2);
 static	spnlck_rw_t	lock;
 
-void cpuinfo_init()
+#define	MODULE_NAME hal_cpu
+
+void PRIVATE(cpuinfo_init)()
 {
-    core_rtl_map_init(&cpuid_map, cpuid_cmp , NULL);
+    core_rtl_map_init(&cpuid_map, cpuid_cmp, NULL);
     core_pm_spnlck_rw_init(&lock);
     pcpu_id_info_t p_info = core_mm_heap_alloc(sizeof(cpu_id_info_t),
                             NULL);
@@ -49,8 +51,8 @@ void cpuinfo_init()
     initialized = true;
 }
 
-void cpu_id_info_core_init();
-void cpu_id_info_core_release();
+void PRIVATE(cpu_id_info_core_init)();
+void PRIVATE(cpu_id_info_core_release)();
 
 u32	hal_cpu_get_cpu_id()
 {

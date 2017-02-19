@@ -21,7 +21,9 @@
 #include "../../../../../../mmu.h"
 #include "../../../../../../../exception/exception.h"
 
-void archecture_phyaddr_edit(plist_t p_phy_addr_list)
+#define MODULE_NAME	hal_mmu
+
+void PRIVATE(archecture_phyaddr_edit)(plist_t p_phy_addr_list)
 {
     pphysical_memory_info_t p_mem_info;
 
@@ -63,19 +65,19 @@ void archecture_phyaddr_edit(plist_t p_phy_addr_list)
     ADD_MEM_BLOCK(0x04000000, 16 * 1024 * 1024, PHYMEM_RESERVED);
 
     //Bank1 of SMC
-    ADD_MEM_BLOCK(0x05000000, 16 * 1024 * 1024 , PHYMEM_RESERVED);
+    ADD_MEM_BLOCK(0x05000000, 16 * 1024 * 1024, PHYMEM_RESERVED);
 
     //Bank2 of SMC
-    ADD_MEM_BLOCK(0x06000000, 16 * 1024 * 1024 , PHYMEM_RESERVED);
+    ADD_MEM_BLOCK(0x06000000, 16 * 1024 * 1024, PHYMEM_RESERVED);
 
     //Bank3 of SMC
-    ADD_MEM_BLOCK(0x08000000, 16 * 1024 * 1024 , PHYMEM_RESERVED);
+    ADD_MEM_BLOCK(0x08000000, 16 * 1024 * 1024, PHYMEM_RESERVED);
 
     //Reserved
-    ADD_MEM_BLOCK(0x08000000, 0x0CD00000 - 0x08000000 , PHYMEM_RESERVED);
+    ADD_MEM_BLOCK(0x08000000, 0x0CD00000 - 0x08000000, PHYMEM_RESERVED);
 
     //SFR region of Nand Flash Controller (NFCON)
-    ADD_MEM_BLOCK(0x0CE00000, 0x0D000000 , PHYMEM_RESERVED);
+    ADD_MEM_BLOCK(0x0CE00000, 0x0D000000, PHYMEM_RESERVED);
 
     //SFR region
     ADD_MEM_BLOCK(0x10000000, 0x14000000 - 0x10000000, PHYMEM_RESERVED);

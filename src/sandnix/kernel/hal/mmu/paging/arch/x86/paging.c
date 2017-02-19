@@ -24,6 +24,8 @@
 #include "../../../../exception/exception.h"
 #include "../../../../early_print/early_print.h"
 
+#define MODULE_NAME	hal_mmu
+
 #if	KERNEL_MEM_BASE % (4096 * 1024) !=0
     #error	"KERNEL_MEM_BASE must be 4MB aligned."
 #endif
@@ -299,7 +301,7 @@ void* hal_mmu_add_early_paging_addr(void* phy_addr, u32 attr)
     return ret;
 }
 
-void paging_init()
+void PRIVATE(paging_init)()
 {
     hal_early_print_printf("\nInitializing paging module of mmu...\n");
     mmu_paging_heap = core_mm_heap_create_on_buf(
@@ -691,7 +693,7 @@ bool hal_mmu_get_next_mapped_pages(void* start_addr, void** begin, void** p_phy_
     return true;
 }
 
-address_t get_load_offset()
+address_t PRIVATE(get_load_offset)()
 {
     return load_offset;
 }

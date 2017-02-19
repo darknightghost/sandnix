@@ -24,6 +24,8 @@
 
 #include "./paging_defs.h"
 
+#define MODULE_NAME	hal_mmu
+
 //Start paging
 void		start_paging();
 
@@ -76,7 +78,9 @@ bool	hal_mmu_get_next_mapped_pages(
     size_t*		p_size,		//Pointer to size
     u32*		p_attr);	//Pointer to attribute
 
-void		paging_init();
-address_t	get_load_offset();
+void		PRIVATE(paging_init)();
+address_t	PRIVATE(get_load_offset)();
+
+#undef	MODULE_NAME
 
 #endif

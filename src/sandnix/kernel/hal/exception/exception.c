@@ -26,6 +26,7 @@
 
 #include "exception.h"
 
+#define	MODULE_NAME hal_exception
 #define PANIC_BUF_SIZE		1024
 
 static const		char*	errno_tbl[ERRNO_MAX + 1] = {
@@ -207,7 +208,7 @@ static	void	die_ipi_hndlr(pcontext_t p_context, pipi_arg_obj_t p_args);
 void hal_exception_init()
 {
     hal_early_print_printf("\nInitializing exception module...\n");
-    hal_exception_arch_init();
+    PRIVATE(hal_exception_arch_init)();
 
     hal_cpu_regist_IPI_hndlr(IPI_TYPE_DIE, die_ipi_hndlr);
     initialized = true;
@@ -252,7 +253,7 @@ void hal_exception_panic(char* file, u32 line, u32 error_code, char* fmt, ...)
     core_rtl_vsnprintf(panic_buf, PANIC_BUF_SIZE, fmt, ap);
     hal_early_print_puts(panic_buf);
 
-    die();
+    PRIVATE(die)();
 
     //Never return
     return;
@@ -266,7 +267,7 @@ void lets_die()
 
 void die_ipi_hndlr(pcontext_t p_context, pipi_arg_obj_t p_args)
 {
-    die();
+    PRIVATE(die)();
     UNREFERRED_PARAMETER(p_context);
     UNREFERRED_PARAMETER(p_args);
     return;

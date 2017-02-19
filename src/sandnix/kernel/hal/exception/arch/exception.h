@@ -18,5 +18,7 @@
 #pragma once
 #include "../../../../../common/common.h"
 
-void	hal_exception_arch_init();
-void	die();
+#define	MODULE_NAME hal_exception
+void	PRIVATE(hal_exception_arch_init)();
+void	PRIVATE(die)();
+#undef	MODULE_NAME

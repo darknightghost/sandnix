@@ -31,3 +31,4 @@
 #endif
 
 #include "version.h"
+#include "module.h"

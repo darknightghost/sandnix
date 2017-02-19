@@ -26,6 +26,8 @@
 #include "apic.h"
 #include "interrupt.h"
 
+#define	MODULE_NAME hal_io
+
 #define	IA32_APIC_BASE	0x1B
 
 static	u32					lvt_entry_num;
@@ -78,7 +80,7 @@ static	inline	u32			lapic_speed();
 static	void				timer_init_int(u32 int_num, pcontext_t p_context,
         u32 err_code);
 
-void apic_init()
+void PRIVATE(apic_init)()
 {
     hal_early_print_printf("Initializing local APIC...\n");
 
