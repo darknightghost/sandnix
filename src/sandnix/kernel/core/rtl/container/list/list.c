@@ -66,6 +66,38 @@ plist_node_t core_rtl_list_insert_before(plist_node_t pos, plist_t p_list,
     return p_new_node;
 }
 
+plist_node_t core_rtl_list_insert_node_before(plist_node_t pos, plist_t p_list,
+        plist_node_t p_node)
+{
+    if(pos == NULL) {
+        //Insert in the front of the list
+        if(*p_list == NULL) {
+            (*p_list) = p_node;
+            p_node->p_prev = p_node;
+            p_node->p_next = p_node;
+
+        } else {
+            p_node->p_prev = (*p_list)->p_prev;
+            (*p_list)->p_prev->p_next = p_node;
+            (*p_list)->p_prev = p_node;
+            p_node->p_next = *p_list;
+            *p_list = p_node;
+        }
+
+    } else {
+        p_node->p_prev = pos->p_prev;
+        pos->p_prev->p_next = p_node;
+        pos->p_prev = p_node;
+        p_node->p_next = pos;
+
+        if(pos == *p_list) {
+            *p_list = p_node;
+        }
+    }
+
+    return p_node;
+}
+
 plist_node_t core_rtl_list_insert_after(plist_node_t pos, plist_t p_list,
                                         void* p_item, pheap_t heap)
 {
@@ -106,6 +138,34 @@ plist_node_t core_rtl_list_insert_after(plist_node_t pos, plist_t p_list,
     return p_new_node;
 }
 
+plist_node_t core_rtl_list_insert_node_after(plist_node_t pos, plist_t p_list,
+        plist_node_t p_node)
+{
+    if(pos == NULL) {
+        //Insert at the end of the list
+        if(*p_list == NULL) {
+            (*p_list) = p_node;
+            p_node->p_prev = p_node;
+            p_node->p_next = p_node;
+
+        } else {
+            p_node->p_prev = (*p_list)->p_prev;
+            (*p_list)->p_prev->p_next = p_node;
+            (*p_list)->p_prev = p_node;
+            p_node->p_next = *p_list;
+        }
+
+    } else {
+        p_node->p_prev = pos;
+        p_node->p_next = pos->p_next;
+        p_node->p_prev->p_next = p_node;
+        p_node->p_next->p_prev = p_node;
+
+    }
+
+    return p_node;
+}
+
 void* core_rtl_list_remove(plist_node_t pos, plist_t p_list, pheap_t heap)
 {
     void* ret;
@@ -129,6 +189,31 @@ void* core_rtl_list_remove(plist_node_t pos, plist_t p_list, pheap_t heap)
     }
 
     core_mm_heap_free(pos, heap);
+
+    return ret;
+}
+
+void* core_rtl_list_node_remove(plist_node_t pos, plist_t p_list)
+{
+    void* ret;
+
+    if(pos == NULL) {
+        return NULL;
+    }
+
+    ret = pos->p_item;
+
+    if(pos->p_prev == pos) {
+        *p_list = NULL;
+
+    } else {
+        if(*p_list == pos) {
+            *p_list = pos->p_next;
+        }
+
+        pos->p_prev->p_next = pos->p_next;
+        pos->p_next->p_prev = pos->p_prev;
+    }
 
     return ret;
 }

@@ -17,27 +17,17 @@
 
 #pragma once
 
-#include "../../../../common/common.h"
+#include "../../../../../../common/common.h"
+#include "./event_defs.h"
 
-#ifndef MAX_PROCESS_NUM
-    #define	MAX_PROCESS_NUM			65535
-#endif
-#define	MAX_THREAD_NUM				(MAX_PROCESS_NUM * 2)
+//Initialize event
+void		core_pm_event_init(pevent_t p_event);
 
+//Wait for event
+kstatus_t	core_pm_event_wait(pevent_t p_event, s32 millisec_timeout);
 
-//Process
-#include "./process/process_defs.h"
+//Set event
+void		core_pm_event_set(pevent_t p_event, bool broadcast);
 
-//Thread
-#include "./thread/thread_defs.h"
-
-//Spinlock
-#include "./lock/spinlock/spnlck_defs.h"
-#include "./lock/spinlock/spnlck_rw_defs.h"
-
-//Mutex
-#include "./lock/mutex/mutex_defs.h"
-
-//Event
-#include "./lock/event/event_defs.h"
-
+//Destroy event
+void		core_pm_event_destroy(pevent_t p_event);

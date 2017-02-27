@@ -22,14 +22,13 @@
 #include "../../../exception/exception.h"
 #include "../../pm.h"
 
-void core_pm_mutex_init(pmutex_t p_lock, pheap_t heap)
+void core_pm_mutex_init(pmutex_t p_lock)
 {
     core_pm_spnlck_init(&(p_lock->lock));
     p_lock->owner = 0;
     p_lock->lock_flag = false;
     p_lock->alive = true;
     core_rtl_list_init(&(p_lock->wait_list));
-    p_lock->heap = heap;
 
     return;
 }
@@ -73,11 +72,12 @@ kstatus_t core_pm_mutex_acquire(pmutex_t p_lock, s32 millisec_timeout)
         }
 
         //Add current thread to wait queue
-        plist_node_t p_node = core_rtl_list_insert_after(
-                                  NULL,
-                                  &(p_lock->wait_list),
-                                  (void*)currnt_thrd,
-                                  p_lock->heap);
+        list_node_t node;
+        node.p_item = (void*)currnt_thrd;
+        core_rtl_list_insert_node_after(
+            NULL,
+            &(p_lock->wait_list),
+            &node);
 
         if(millisec_timeout > 0) {
             //Sleep
@@ -105,7 +105,7 @@ kstatus_t core_pm_mutex_acquire(pmutex_t p_lock, s32 millisec_timeout)
 
             } else {
                 //Remove current thread from list
-                core_rtl_list_remove(p_node, &(p_lock->wait_list), p_lock->heap);
+                core_rtl_list_node_remove(&node, &(p_lock->wait_list));
                 core_pm_spnlck_unlock(&(p_lock->lock));
                 core_exception_set_errno(EAGAIN);
                 return EAGAIN;
@@ -114,7 +114,7 @@ kstatus_t core_pm_mutex_acquire(pmutex_t p_lock, s32 millisec_timeout)
 
         } else {
             //Remove current thread from list
-            core_rtl_list_remove(p_node, &(p_lock->wait_list), p_lock->heap);
+            core_rtl_list_node_remove(&node, &(p_lock->wait_list));
             core_pm_spnlck_unlock(&(p_lock->lock));
             core_exception_set_errno(EOWNERDEAD);
             return EOWNERDEAD;
@@ -165,10 +165,9 @@ void core_pm_mutex_release(pmutex_t p_lock)
     } else {
         //Switch owner to next thread
         u32 next_thread = (u32)(p_lock->wait_list->p_item);
-        core_rtl_list_remove(
+        core_rtl_list_node_remove(
             p_lock->wait_list,
-            &(p_lock->wait_list),
-            p_lock->heap);
+            &(p_lock->wait_list));
         p_lock->owner = next_thread;
         core_pm_resume(p_lock->owner);
 
@@ -186,11 +185,16 @@ void core_pm_mutex_destroy(pmutex_t p_lock)
     core_pm_spnlck_lock(&(p_lock->lock));
     plist_node_t p_node = p_lock->wait_list;
 
+    core_pm_disable_sched();
+
     if(p_node != NULL) {
         do {
             core_pm_resume((u32)(p_lock->wait_list->p_item));
         } while(p_node != p_lock->wait_list);
     }
+
+    core_pm_enable_sched();
+    core_pm_schedule();
 
     core_pm_spnlck_unlock(&(p_lock->lock));
     return;

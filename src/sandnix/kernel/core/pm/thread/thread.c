@@ -156,18 +156,10 @@ void PRIVATE(thread_core_release)()
             pthread_obj_t p_obj = (pthread_obj_t)(p_node->p_item);
             plist_t p_list = &sched_lists[p_obj->priority];
 
-            if(*p_list == NULL) {
-                *p_list = p_node;
-                p_node->p_prev = p_node;
-                p_node->p_next = p_node;
-
-            } else {
-                p_node->p_prev = (*p_list)->p_prev;
-                p_node->p_next = (*p_list);
-                (*p_list)->p_prev->p_next = p_node;
-                (*p_list)->p_next->p_prev = p_node;
-                *p_list = p_node;
-            }
+            core_rtl_list_insert_node_before(
+                NULL,
+                p_list,
+                p_node);
         }
 
         //TODO:Remove idle thread
@@ -182,7 +174,7 @@ void PRIVATE(thread_core_release)()
     return;
 }
 
-void core_pm_reg_thread_create_obj(thread_ref_call_back_t callback)
+void core_pm_reg_thread_ref_obj(thread_ref_call_back_t callback)
 {
     core_pm_spnlck_rw_w_lock(&thread_table_lock);
     //Add callback to list
@@ -361,15 +353,13 @@ void core_pm_resume(u32 thread_id)
                     //Move the task to the top of schedule list
                     plist_node_t p_node = p_thread_obj->p_node;
 
-                    p_node->p_prev->p_next = p_node->p_next;
-                    p_node->p_next->p_prev = p_node->p_prev;
-
-                    p_node->p_prev = sched_lists[p_thread_obj->priority]->p_prev;
-                    p_node->p_next = sched_lists[p_thread_obj->priority];
-                    p_node->p_prev->p_next = p_node;
-                    p_node->p_next->p_prev = p_node;
-
-                    sched_lists[p_thread_obj->priority] = p_node;
+                    core_rtl_list_node_remove(
+                        p_node,
+                        &sched_lists[p_thread_obj->priority]);
+                    core_rtl_list_insert_node_before(
+                        NULL,
+                        &sched_lists[p_thread_obj->priority],
+                        p_node);
                 }
             }
 
@@ -387,19 +377,10 @@ void core_pm_resume(u32 thread_id)
             if(p_thread_obj->p_node != NULL) {
                 plist_node_t p_node = p_thread_obj->p_node;
 
-                if(sched_lists[p_thread_obj->priority] == NULL) {
-                    sched_lists[p_thread_obj->priority] = p_node;
-                    p_node->p_prev = p_node;
-                    p_node->p_next = p_node;
-
-                } else {
-                    p_node->p_prev = sched_lists[p_thread_obj->priority]->p_prev;
-                    p_node->p_next = sched_lists[p_thread_obj->priority];
-                    p_node->p_prev->p_next = p_node;
-                    p_node->p_next->p_prev = p_node;
-
-                    sched_lists[p_thread_obj->priority] = p_node;
-                }
+                core_rtl_list_insert_node_before(
+                    NULL,
+                    &sched_lists[p_thread_obj->priority],
+                    p_node);
             }
 
             core_pm_spnlck_unlock(&sched_list_lock);
@@ -671,15 +652,7 @@ void next_task(pcore_sched_info_t p_info)
 
             if(sched_lists[pri] != NULL) {
                 p_node = sched_lists[pri];
-
-                if(p_node->p_prev == p_node) {
-                    sched_lists[pri] = NULL;
-
-                } else {
-                    p_node->p_prev->p_next = p_node->p_next;
-                    p_node->p_next->p_prev = p_node->p_prev;
-                    sched_lists[pri] = p_node->p_next;
-                }
+                core_rtl_list_node_remove(p_node, &sched_lists[pri]);
 
                 break;
             }
@@ -704,15 +677,7 @@ void next_task(pcore_sched_info_t p_info)
 
                         if(p_thread_obj->can_run(p_thread_obj)) {
                             p_node = sched_lists[pri];
-
-                            if(p_node->p_prev == p_node) {
-                                sched_lists[pri] = NULL;
-
-                            } else {
-                                p_node->p_prev->p_next = p_node->p_next;
-                                p_node->p_next->p_prev = p_node->p_prev;
-                                sched_lists[pri] = p_node->p_next;
-                            }
+                            core_rtl_list_node_remove(p_node, &sched_lists[pri]);
 
                             break;
                         }
@@ -732,19 +697,10 @@ void next_task(pcore_sched_info_t p_info)
         if(p_node != NULL) {
             //Change current thread
             plist_node_t p_old_node = p_info->current_node;
-
-            if(sched_lists[p_thread_obj->priority] == NULL) {
-                sched_lists[p_thread_obj->priority] = p_old_node;
-                p_old_node->p_prev = p_old_node;
-                p_old_node->p_next = p_old_node;
-
-            } else {
-                p_old_node->p_prev = sched_lists[p_thread_obj->priority]->p_prev;
-                p_old_node->p_next = sched_lists[p_thread_obj->priority];
-                p_old_node->p_prev->p_next = p_old_node;
-                p_old_node->p_next->p_prev = p_old_node;
-                sched_lists[p_thread_obj->priority] = p_old_node;
-            }
+            core_rtl_list_insert_node_after(
+                NULL,
+                &sched_lists[p_thread_obj->priority],
+                p_old_node);
 
             p_info->current_node = p_node;
         }
@@ -761,17 +717,10 @@ void next_task(pcore_sched_info_t p_info)
            || p_thread_obj->status == TASK_READY
            || p_thread_obj->status == TASK_SLEEP) {
 
-            if(sched_lists[p_thread_obj->priority] == NULL) {
-                sched_lists[p_thread_obj->priority] = p_old_node;
-                p_old_node->p_prev = p_old_node;
-                p_old_node->p_next = p_old_node;
-
-            } else {
-                p_old_node->p_prev = sched_lists[p_thread_obj->priority]->p_prev;
-                p_old_node->p_next = sched_lists[p_thread_obj->priority];
-                p_old_node->p_prev->p_next = p_old_node;
-                p_old_node->p_next->p_prev = p_old_node;
-            }
+            core_rtl_list_insert_node_after(
+                NULL,
+                &sched_lists[p_thread_obj->priority],
+                p_old_node);
         }
 
         //Look for a thread to run
@@ -783,15 +732,7 @@ void next_task(pcore_sched_info_t p_info)
                 pri--) {
                 if(sched_lists[pri] != NULL) {
                     p_node = sched_lists[pri];
-
-                    if(p_node->p_prev == p_node) {
-                        sched_lists[pri] = NULL;
-
-                    } else {
-                        p_node->p_prev->p_next = p_node->p_next;
-                        p_node->p_next->p_prev = p_node->p_prev;
-                        sched_lists[pri] = p_node->p_next;
-                    }
+                    core_rtl_list_node_remove(p_node, &sched_lists[pri]);
 
                     break;
                 }
@@ -815,15 +756,7 @@ void next_task(pcore_sched_info_t p_info)
 
                         if(p_thread_obj->can_run(p_thread_obj)) {
                             p_node = sched_lists[pri];
-
-                            if(p_node->p_prev == p_node) {
-                                sched_lists[pri] = NULL;
-
-                            } else {
-                                p_node->p_prev->p_next = p_node->p_next;
-                                p_node->p_next->p_prev = p_node->p_prev;
-                                sched_lists[pri] = p_node->p_next;
-                            }
+                            core_rtl_list_node_remove(p_node, &sched_lists[pri]);
 
                             break;
                         }
@@ -856,15 +789,7 @@ void next_task(pcore_sched_info_t p_info)
 
                     if(p_thread_obj->can_run(p_thread_obj)) {
                         p_node = sched_lists[PRIORITY_IDLE_TASK];
-
-                        if(p_node->p_prev == p_node) {
-                            sched_lists[PRIORITY_IDLE_TASK] = NULL;
-
-                        } else {
-                            p_node->p_prev->p_next = p_node->p_next;
-                            p_node->p_next->p_prev = p_node->p_prev;
-                            sched_lists[PRIORITY_IDLE_TASK] = p_node->p_next;
-                        }
+                        core_rtl_list_node_remove(p_node, &(sched_lists[PRIORITY_IDLE_TASK]));
 
                         break;
                     }

@@ -28,5 +28,4 @@ typedef	struct	_mutex {
     bool				lock_flag;
     u32					owner;
     list_t				wait_list;
-    pheap_t				heap;
 } mutex_t, *pmutex_t;
