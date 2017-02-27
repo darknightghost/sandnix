@@ -24,7 +24,7 @@
 #define	MODULE_NAME		core_pm
 
 u32			core_pm_get_currnt_proc_id();
-void		core_pm_reg_proc_create_obj(proc_ref_call_back_t callback);
+void		core_pm_reg_proc_ref_obj(proc_ref_call_back_t callback);
 u32			core_pm_fork(void* child_start_address);
 u32			core_pm_wait(bool wait_pid, u32 process_id);
 u32			core_pm_get_subsys(u32 pid);
@@ -39,5 +39,7 @@ void		core_pm_set_groups(u32* groupids, size_t size);
 size_t		core_pm_get_groups(u32* buf, size_t buf_size);
 
 void		PRIVATE(process_init)();
+void		PRIVATE(zombie_process_thrd)(u32 process_id, u32 thread_id);
+void		PRIVATE(remove_process_thrd)(u32 process_id, u32 thread_id);
 
 #undef	MODULE_NAME

@@ -17,27 +17,21 @@
 
 #pragma once
 
-#include "../../../../common/common.h"
+#include "../../../../../../common/common.h"
 
-#ifndef MAX_PROCESS_NUM
-    #define	MAX_PROCESS_NUM			65535
-#endif
-#define	MAX_THREAD_NUM				(MAX_PROCESS_NUM * 2)
+#include "../spinlock/spnlck_defs.h"
+#include "../../../rtl/container/list/list_defs.h"
+#include "../../../mm/heap/heap_defs.h"
 
+typedef	struct	_event {
+    spnlck_t		lock;
+    u32				ticket;
+    u32				wake_up_before;
+    bool			alive;
+    list_t			wait_list;
+} event_t, *pevent_t;
 
-//Process
-#include "./process/process_defs.h"
-
-//Thread
-#include "./thread/thread_defs.h"
-
-//Spinlock
-#include "./lock/spinlock/spnlck_defs.h"
-#include "./lock/spinlock/spnlck_rw_defs.h"
-
-//Mutex
-#include "./lock/mutex/mutex_defs.h"
-
-//Event
-#include "./lock/event/event_defs.h"
-
+typedef	struct	_event_wait_thrd_info {
+    u32		ticket;
+    u32		thread_id;
+} event_wait_thrd_info_t, *pevent_wait_thrd_info_t;

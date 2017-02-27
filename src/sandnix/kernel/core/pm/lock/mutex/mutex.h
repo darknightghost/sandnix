@@ -21,7 +21,7 @@
 #include "./mutex_defs.h"
 
 //Initialize mutex
-void		core_pm_mutex_init(pmutex_t	p_lock, pheap_t heap);
+void		core_pm_mutex_init(pmutex_t	p_lock);
 
 //Acquire mutex
 kstatus_t	core_pm_mutex_acquire(pmutex_t p_lock, s32 millisec_timeout);

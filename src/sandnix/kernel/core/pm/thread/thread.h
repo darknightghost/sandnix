@@ -24,7 +24,7 @@
 
 #define	MODULE_NAME		core_pm
 
-void		core_pm_reg_thread_create_obj(thread_ref_call_back_t callback);
+void		core_pm_reg_thread_ref_obj(thread_ref_call_back_t callback);
 u32			core_pm_thread_create(thread_func_t thread_func, u32 k_stack_size,
                                   u32 priority, void* p_arg);
 void		core_pm_exit(void* retval);

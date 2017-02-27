@@ -41,6 +41,11 @@ plist_node_t core_rtl_list_insert_before(
     void* p_item,		//Item
     pheap_t heap);		//Heap
 
+plist_node_t core_rtl_list_insert_node_before(
+    plist_node_t pos,		//Position. If NULL, insert in the front of the list.
+    plist_t p_list,			//Link list
+    plist_node_t p_node);	//Node tt insert
+
 //Insert before pos
 //Return the position of the new item
 plist_node_t core_rtl_list_insert_after(
@@ -49,11 +54,20 @@ plist_node_t core_rtl_list_insert_after(
     void* p_item,
     pheap_t heap);
 
+plist_node_t core_rtl_list_insert_node_after(
+    plist_node_t pos,	//If NULL, insert at the end of the list.
+    plist_t p_list,
+    plist_node_t p_node);
+
 //Remove
 void* core_rtl_list_remove(
     plist_node_t pos,	//Position
     plist_t p_list,		//List
     pheap_t heap);		//Heap
+
+void* core_rtl_list_node_remove(
+    plist_node_t pos,	//Position
+    plist_t p_list);	//List
 
 //Destroy
 void core_rtl_list_destroy(

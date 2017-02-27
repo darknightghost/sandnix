@@ -34,4 +34,7 @@
 //Mutex
 #include "./lock/mutex/mutex.h"
 
+//Event
+#include "./lock/event/event.h"
+
 void	core_pm_init();

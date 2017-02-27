@@ -31,7 +31,7 @@ u32 core_pm_get_currnt_proc_id()
     return 0;
 }
 
-void		core_pm_reg_proc_create_obj(proc_ref_call_back_t callback);
+void		core_pm_reg_proc_ref_obj(proc_ref_call_back_t callback);
 u32			core_pm_fork(void* child_start_address);
 u32			core_pm_wait(bool wait_pid, u32 process_id);
 u32			core_pm_get_subsys(u32 pid);
