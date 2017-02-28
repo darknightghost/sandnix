@@ -233,13 +233,29 @@ pprocess_obj_t fork(pprocess_obj_t p_this, u32 new_process_id)
     p_ret->wait_for_zombie_thread = p_this->wait_for_zombie_thread;
     p_ret->wait_for_zombie_child = p_this->wait_for_zombie_child;
 
+    //Fork referenced objects
+    for(pproc_ref_obj_t p_ref = (pproc_ref_obj_t)
+                                core_rtl_map_next(&(p_this->ref_objs), NULL);
+        p_ref != NULL;
+        p_ref = (pproc_ref_obj_t)
+                core_rtl_map_next(&(p_this->ref_objs), p_ref)) {
+        pproc_ref_obj_t p_new_ref = p_ref->fork(p_ref, new_process_id);
+        core_rtl_map_set(&(p_this->ref_objs), p_new_ref, p_new_ref);
+    }
+
     //Fork page table
     core_mm_pg_tbl_fork(p_this->process_id, new_process_id);
 
     return p_ret;
 }
 
-void add_ref_obj(pprocess_obj_t p_this, pproc_ref_obj_t p_ref_obj);
+void add_ref_obj(pprocess_obj_t p_this, pproc_ref_obj_t p_ref_obj)
+{
+    core_rtl_map_set(&(p_this->ref_objs), p_ref_obj, p_ref_obj);
+
+    return;
+}
+
 void die(pprocess_obj_t p_this);
 void add_child(pprocess_obj_t p_this, u32 child_id);
 void zombie_child(pprocess_obj_t p_this, u32 child_id);
