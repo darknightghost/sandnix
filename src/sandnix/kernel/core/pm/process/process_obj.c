@@ -256,7 +256,15 @@ void add_ref_obj(pprocess_obj_t p_this, pproc_ref_obj_t p_ref_obj)
     return;
 }
 
-void die(pprocess_obj_t p_this);
+void die(pprocess_obj_t p_this)
+{
+    //Remove all referenced objects
+    //Add all zombie children to parent
+    //Add all alive children to parent
+    //Zombie current process
+    //Remove all threads
+}
+
 void add_child(pprocess_obj_t p_this, u32 child_id);
 void zombie_child(pprocess_obj_t p_this, u32 child_id);
 void remove_child(pprocess_obj_t p_this, u32 child_id);
