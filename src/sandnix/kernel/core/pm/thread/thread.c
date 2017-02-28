@@ -174,6 +174,14 @@ void PRIVATE(thread_core_release)()
     return;
 }
 
+void PRIVATE(thread_id_release)(u32 id)
+{
+    core_pm_spnlck_rw_w_lock(&thread_table_lock);
+    core_rtl_array_set(&thread_table, id, NULL);
+    core_pm_spnlck_rw_w_unlock(&thread_table_lock);
+    return;
+}
+
 void core_pm_reg_thread_ref_obj(thread_ref_call_back_t callback)
 {
     core_pm_spnlck_rw_w_lock(&thread_table_lock);

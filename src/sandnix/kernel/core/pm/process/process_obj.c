@@ -20,7 +20,8 @@
 #include "../../mm/mm.h"
 #include "../../exception/exception.h"
 
-/*
+#include "../pm.h"
+
 //Heap
 static	pheap_t				proc_obj_heap = NULL;
 
@@ -30,10 +31,23 @@ static	int					compare(pprocess_obj_t p_this, pprocess_obj_t p_obj2);
 static	void				destructor(pprocess_obj_t p_this);
 
 //Process object methods
-pprocess_obj_t		fork(pprocess_obj_t p_this);
-void				add_ref(pprocess_obj_t p_this, pproc_ref_obj_t p_ref_obj);
-void				die(pprocess_obj_t p_this);
+static	pprocess_obj_t		fork(pprocess_obj_t p_this, u32 new_process_id);
+static	void	add_ref_obj(pprocess_obj_t p_this, pproc_ref_obj_t p_ref_obj);
+static	void	die(pprocess_obj_t p_this);
+static	void	add_child(pprocess_obj_t p_this, u32 child_id);
+static	void	zombie_child(pprocess_obj_t p_this, u32 child_id);
+static	void	remove_child(pprocess_obj_t p_this, u32 child_id);
+static	void	add_thread(pprocess_obj_t p_this, u32 thread_id);
+static	void	zombie_thread(pprocess_obj_t p_this, u32 thread_id);
+static	void	remove_thread(pprocess_obj_t p_this, u32 thread_id);
+static	bool	wait_for_zombie_thread(pprocess_obj_t p_this, bool by_id,
+                                       u32* p_thread_id);
+static	bool	wait_for_zombie_child(pprocess_obj_t p_this, bool by_id,
+                                      u32* p_zombie_child_id);
 
+//Others
+static	int				compare_num(u32* p_n1, u32* p_n2);
+static	int				compare_addr(address_t addr1, address_t addr2);
 
 pprocess_obj_t process_obj_0()
 {
@@ -65,6 +79,7 @@ pprocess_obj_t process_obj_0()
     p_ret->process_id = 0;
     p_ret->parent_id = 0;
     p_ret->exit_code = 0;
+    core_pm_spnlck_init(&(p_ret->lock));
 
     //Authority
     p_ret->ruid = 0;
@@ -82,5 +97,60 @@ pprocess_obj_t process_obj_0()
 
     //Threads
     p_ret->alive_thread_num = 0;
+    core_rtl_map_init(&(p_ret->alive_threads),
+                      (item_compare_t)compare_num,
+                      proc_obj_heap);
+    core_rtl_map_init(&(p_ret->zombie_threads),
+                      (item_compare_t)compare_num,
+                      proc_obj_heap);
+    core_pm_event_init(&(p_ret->thrd_wait_event));
+
+    //Referenced objects
+    core_rtl_map_init(&(p_ret->ref_objs),
+                      (item_compare_t)compare_addr,
+                      proc_obj_heap);
+
+    //Child processes
+    core_rtl_map_init(&(p_ret->alive_children),
+                      (item_compare_t)compare_num,
+                      proc_obj_heap);
+    core_rtl_map_init(&(p_ret->zombie_children),
+                      (item_compare_t)compare_num,
+                      proc_obj_heap);
+    core_pm_event_init(&(p_ret->child_wait_event));
+
+    //Methods
+    p_ret->fork = fork;
+    p_ret->add_ref_obj = add_ref_obj;
+    p_ret->die = die;
+    p_ret->add_child = add_child;
+    p_ret->zombie_child = zombie_child;
+    p_ret->remove_child = remove_child;
+    p_ret->add_thread = add_thread;
+    p_ret->zombie_thread = zombie_thread;
+    p_ret->remove_thread = remove_thread;
+    p_ret->wait_for_zombie_thread = wait_for_zombie_thread;
+    p_ret->wait_for_zombie_child = wait_for_zombie_child;
+
+    return p_ret;
 }
-*/
+
+pkstring_obj_t to_string(pprocess_obj_t p_this);
+int compare(pprocess_obj_t p_this, pprocess_obj_t p_obj2);
+void destructor(pprocess_obj_t p_this);
+pprocess_obj_t fork(pprocess_obj_t p_this, u32 new_process_id);
+void add_ref_obj(pprocess_obj_t p_this, pproc_ref_obj_t p_ref_obj);
+void die(pprocess_obj_t p_this);
+void add_child(pprocess_obj_t p_this, u32 child_id);
+void zombie_child(pprocess_obj_t p_this, u32 child_id);
+void remove_child(pprocess_obj_t p_this, u32 child_id);
+void add_thread(pprocess_obj_t p_this, u32 thread_id);
+void zombie_thread(pprocess_obj_t p_this, u32 thread_id);
+void remove_thread(pprocess_obj_t p_this, u32 thread_id);
+bool wait_for_zombie_thread(pprocess_obj_t p_this, bool by_id,
+                            u32* p_thread_id);
+bool wait_for_zombie_child(pprocess_obj_t p_this, bool by_id,
+                           u32* p_zombie_child_id);
+
+
+int compare_num(u32* p_n1, u32* p_n2);

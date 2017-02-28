@@ -25,9 +25,9 @@
 
 typedef	struct	_event {
     spnlck_t		lock;
-    u32				ticket;
-    u32				wake_up_before;
-    bool			alive;
+    volatile u32	ticket;
+    volatile u32	wake_up_before;
+    volatile bool	alive;
     list_t			wait_list;
 } event_t, *pevent_t;
 
