@@ -26,6 +26,10 @@
 #include "../../../hal/rtl/rtl.h"
 #include "../../../hal/cpu/cpu.h"
 
+#include "./thread.h"
+
+#define	MODULE_NAME		core_pm
+
 static	pheap_t	thread_obj_heap = NULL;
 
 //Obj methods
@@ -236,6 +240,7 @@ int compare(pthread_obj_t p_this, pthread_obj_t p_obj2)
 void destructor(pthread_obj_t p_this)
 {
     //Free object
+    PRIVATE(thread_id_release)(p_this->thread_id);
     core_mm_heap_free(p_this, p_this->obj.heap);
 
     return;

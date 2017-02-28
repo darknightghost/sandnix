@@ -22,12 +22,14 @@
 #include "../../rtl/obj/obj_defs.h"
 #include "../../rtl/container/map/map_defs.h"
 #include "../../rtl/container/list/list_defs.h"
+#include "../lock/event/event_defs.h"
 
 typedef	struct	_process_obj {
     obj_t		obj;				//Base object
     u32			process_id;			//Process id
     u32			parent_id;			//Parent process id
     u32			exit_code;			//Exit code
+    spnlck_t	lock;				//Lock
 
     //Authority
     u32			ruid;				//Real user id
@@ -45,6 +47,7 @@ typedef	struct	_process_obj {
     u32			alive_thread_num;	//How many threads does the process have
     map_t		alive_threads;		//Alive threads
     map_t		zombie_threads;		//Zombie threads
+    event_t		thrd_wait_event;
 
     //Referenced objects
     map_t		ref_objs;			//Referenced objects
@@ -52,22 +55,48 @@ typedef	struct	_process_obj {
     //Child processes
     map_t		alive_children;		//Alive child processes
     map_t		zombie_children;	//Zombie child processes
+    event_t		child_wait_event;
 
     //Methods
-    //pprocess_obj_t		fork(pprocess_obj_t p_this);
-    struct _process_obj*	(*fork)(struct _process_obj*);
+    //pprocess_obj_t		fork(pprocess_obj_t p_this, u32 new_process_id);
+    struct _process_obj*	(*fork)(struct _process_obj*, u32);
 
-    //void					add_ref(pprocess_obj_t p_this, pproc_ref_obj_t p_ref_obj);
+    //void					add_ref_obj(pprocess_obj_t p_this, pproc_ref_obj_t p_ref_obj);
     void	(*add_ref_obj)(struct _process_obj*, pproc_ref_obj_t);
 
     //void					die(pprocess_obj_t p_this);
     void	(*die)(struct _process_obj*);
 
     //void	add_child(pprocess_obj_t p_this, u32 child_id);
+    void	(*add_child)(struct _process_obj*, u32);
+
     //void	zombie_child(pprocess_obj_t p_this, u32 child_id);
+    void	(*zombie_child)(struct _process_obj*, u32);
+
     //void	remove_child(pprocess_obj_t p_this, u32 child_id);
+    void	(*remove_child)(struct _process_obj*, u32);
+
     //void	add_thread(pprocess_obj_t p_this, u32 thread_id);
+    void	(*add_thread)(struct _process_obj*, u32);
+
     //void	zombie_thread(pprocess_obj_t p_this, u32 thread_id);
+    void	(*zombie_thread)(struct _process_obj*, u32);
+
     //void	remove_thread(pprocess_obj_t p_this, u32 thread_id);
+    void	(*remove_thread)(struct _process_obj*, u32);
+
+    //bool	wait_for_zombie_thread(pprocess_obj_t p_this, bool by_id,
+    //	u32* p_thread_id);
+    bool	(*wait_for_zombie_thread)(struct _process_obj*, bool, u32*);
+
+    //bool	wait_for_zombie_child(pprocess_obj_t p_this, bool by_id,
+    //	u32* p_zombie_child_id);
+    bool	(*wait_for_zombie_child)(struct _process_obj*, bool, u32*);
 
 } process_obj_t, *pprocess_obj_t;
+
+typedef	struct	_proc_ref_id_t {
+    u32			id;
+    bool		waited;
+    event_t		event;
+} proc_child_info_t, *pproc_child_info_t, proc_thrd_info_t, *pproc_thrd_info_t;

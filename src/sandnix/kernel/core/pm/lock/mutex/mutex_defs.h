@@ -23,9 +23,9 @@
 #include "../../../mm/heap/heap_defs.h"
 
 typedef	struct	_mutex {
-    spnlck_t			lock;
-    bool				alive;
-    bool				lock_flag;
-    u32					owner;
-    list_t				wait_list;
+    spnlck_t		lock;
+    volatile bool	alive;
+    volatile bool	lock_flag;
+    volatile u32	owner;
+    list_t			wait_list;
 } mutex_t, *pmutex_t;
