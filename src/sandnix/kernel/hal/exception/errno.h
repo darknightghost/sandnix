@@ -189,5 +189,6 @@
 //Others
 #define	EIRETVAL			0x3E0	//Illegal return value
 #define EUNKNOWINT			0x3E1	//Unknow interrupt
+#define	EINITEXITED			0x3E2	//Init process has been exited
 
 #define	ERRNO_MAX			0x3FF	//Maxium kernel errno
