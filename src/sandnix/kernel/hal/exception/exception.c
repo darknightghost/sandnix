@@ -196,7 +196,8 @@ static const		char*	errno_tbl[ERRNO_MAX + 1] = {
 
     //Others
     [EIRETVAL] = "Illegal return value",
-    [EUNKNOWINT] = "Unknow interrupt"
+    [EUNKNOWINT] = "Unknow interrupt",
+    [EINITEXITED] = "Init process has been exited"
 };
 
 static	char	panic_buf[PANIC_BUF_SIZE];

@@ -25,11 +25,11 @@
 #include "../lock/event/event_defs.h"
 
 typedef	struct	_process_obj {
-    obj_t		obj;				//Base object
-    u32			process_id;			//Process id
-    u32			parent_id;			//Parent process id
-    u32			exit_code;			//Exit code
-    spnlck_t	lock;				//Lock
+    obj_t					obj;			//Base object
+    u32						process_id;		//Process id
+    struct _process_obj*	p_parent;		//Parent process object
+    u32						status;			//Process status
+    u32						exit_code;		//Exit code
 
     //Authority
     u32			ruid;				//Real user id
@@ -67,15 +67,6 @@ typedef	struct	_process_obj {
     //void					die(pprocess_obj_t p_this);
     void	(*die)(struct _process_obj*);
 
-    //void	add_child(pprocess_obj_t p_this, u32 child_id);
-    void	(*add_child)(struct _process_obj*, u32);
-
-    //void	zombie_child(pprocess_obj_t p_this, u32 child_id);
-    void	(*zombie_child)(struct _process_obj*, u32);
-
-    //void	remove_child(pprocess_obj_t p_this, u32 child_id);
-    void	(*remove_child)(struct _process_obj*, u32);
-
     //void	add_thread(pprocess_obj_t p_this, u32 thread_id);
     void	(*add_thread)(struct _process_obj*, u32);
 
@@ -95,8 +86,15 @@ typedef	struct	_process_obj {
 
 } process_obj_t, *pprocess_obj_t;
 
-typedef	struct	_proc_ref_id_t {
+typedef	struct	_proc_ref_proc_t {
+    pprocess_obj_t	p_process;
+    bool			waited;
+    event_t			event;
+} proc_child_info_t, *pproc_child_info_t;
+
+typedef	struct	_proc_ref_thrd_t {
     u32			id;
     bool		waited;
     event_t		event;
-} proc_child_info_t, *pproc_child_info_t, proc_thrd_info_t, *pproc_thrd_info_t;
+    u32			ref;
+} proc_thrd_info_t, *pproc_thrd_info_t;

@@ -36,9 +36,6 @@ static	void				destructor(pprocess_obj_t p_this);
 static	pprocess_obj_t		fork(pprocess_obj_t p_this, u32 new_process_id);
 static	void	add_ref_obj(pprocess_obj_t p_this, pproc_ref_obj_t p_ref_obj);
 static	void	die(pprocess_obj_t p_this);
-static	void	add_child(pprocess_obj_t p_this, u32 child_id);
-static	void	zombie_child(pprocess_obj_t p_this, u32 child_id);
-static	void	remove_child(pprocess_obj_t p_this, u32 child_id);
 static	void	add_thread(pprocess_obj_t p_this, u32 thread_id);
 static	void	zombie_thread(pprocess_obj_t p_this, u32 thread_id);
 static	void	remove_thread(pprocess_obj_t p_this, u32 thread_id);
@@ -46,6 +43,11 @@ static	bool	wait_for_zombie_thread(pprocess_obj_t p_this, bool by_id,
                                        u32* p_thread_id);
 static	bool	wait_for_zombie_child(pprocess_obj_t p_this, bool by_id,
                                       u32* p_zombie_child_id);
+
+//Private method
+static	void	add_child(pprocess_obj_t p_this, pprocess_obj_t p_child);
+static	void	zombie_child(pprocess_obj_t p_this, u32 child_id);
+static	void	remove_child(pprocess_obj_t p_this, u32 child_id);
 
 //Others
 static	int				compare_num(u32* p_n1, u32* p_n2);
@@ -79,9 +81,9 @@ pprocess_obj_t process_obj_0()
 
     //Member variables
     p_ret->process_id = 0;
-    p_ret->parent_id = 0;
+    p_ret->p_parent = NULL;
+    p_ret->status = PROCESS_ALIVE;
     p_ret->exit_code = 0;
-    core_pm_spnlck_init(&(p_ret->lock));
 
     //Authority
     p_ret->ruid = 0;
@@ -125,9 +127,6 @@ pprocess_obj_t process_obj_0()
     p_ret->fork = fork;
     p_ret->add_ref_obj = add_ref_obj;
     p_ret->die = die;
-    p_ret->add_child = add_child;
-    p_ret->zombie_child = zombie_child;
-    p_ret->remove_child = remove_child;
     p_ret->add_thread = add_thread;
     p_ret->zombie_thread = zombie_thread;
     p_ret->remove_thread = remove_thread;
@@ -158,6 +157,7 @@ int compare(pprocess_obj_t p_this, pprocess_obj_t p_obj2)
 
 void destructor(pprocess_obj_t p_this)
 {
+    remove_child(p_this->p_parent, p_this->process_id);
     PRIVATE(release_proc_id)(p_this->process_id);
     core_mm_heap_free(p_this, p_this->obj.heap);
 
@@ -178,9 +178,9 @@ pprocess_obj_t fork(pprocess_obj_t p_this, u32 new_process_id)
     //Fork variables
     //Member variables
     p_ret->process_id = new_process_id;
-    p_ret->parent_id = p_this->process_id;
+    p_ret->p_parent = p_this;
+    p_ret->status = PROCESS_ALIVE;
     p_ret->exit_code = 0;
-    core_pm_spnlck_init(&(p_ret->lock));
 
     //Authority
     p_ret->ruid = p_this->ruid;
@@ -224,9 +224,6 @@ pprocess_obj_t fork(pprocess_obj_t p_this, u32 new_process_id)
     p_ret->fork = p_this->fork;
     p_ret->add_ref_obj = p_this->add_ref_obj;
     p_ret->die = p_this->die;
-    p_ret->add_child = p_this->add_child;
-    p_ret->zombie_child = p_this->zombie_child;
-    p_ret->remove_child = p_this->remove_child;
     p_ret->add_thread = p_this->add_thread;
     p_ret->zombie_thread = p_this->zombie_thread;
     p_ret->remove_thread = p_this->remove_thread;
@@ -240,11 +237,14 @@ pprocess_obj_t fork(pprocess_obj_t p_this, u32 new_process_id)
         p_ref = (pproc_ref_obj_t)
                 core_rtl_map_next(&(p_this->ref_objs), p_ref)) {
         pproc_ref_obj_t p_new_ref = p_ref->fork(p_ref, new_process_id);
-        core_rtl_map_set(&(p_this->ref_objs), p_new_ref, p_new_ref);
+        core_rtl_map_set(&(p_ret->ref_objs), p_new_ref, p_new_ref);
     }
 
     //Fork page table
     core_mm_pg_tbl_fork(p_this->process_id, new_process_id);
+
+    //Add child
+    add_child(p_this, p_ret);
 
     return p_ret;
 }
@@ -259,24 +259,225 @@ void add_ref_obj(pprocess_obj_t p_this, pproc_ref_obj_t p_ref_obj)
 void die(pprocess_obj_t p_this)
 {
     //Remove all referenced objects
+    for(pproc_ref_obj_t p_ref = (pproc_ref_obj_t)
+                                core_rtl_map_next(&(p_this->ref_objs), NULL);
+        p_ref != NULL;
+        p_ref = (pproc_ref_obj_t)
+                core_rtl_map_next(&(p_this->ref_objs), p_ref)) {
+        core_rtl_map_set(&(p_this->ref_objs), p_ref, NULL);
+        DEC_REF(p_ref);
+    }
+
+    pprocess_obj_t p_parent = p_this->p_parent;
+
+    if(p_parent == NULL) {
+        //Init process exited, kernel panic
+        PANIC(EINITEXITED, "Init process has been exited.");
+    }
+
     //Add all zombie children to parent
+    for(pproc_child_info_t p_ref = (pproc_child_info_t)core_rtl_map_next(
+                                       &(p_this->zombie_children),
+                                       NULL);
+        p_ref != NULL;
+        p_ref = (pproc_child_info_t)core_rtl_map_next(
+                    &(p_this->zombie_children),
+                    p_ref)) {
+        core_rtl_map_set(&(p_this->zombie_children),
+                         &(p_ref->p_process->process_id),
+                         NULL);
+        core_rtl_map_set(&(p_parent->zombie_children),
+                         &(p_ref->p_process->process_id),
+                         p_ref);
+        p_ref->p_process->p_parent = p_parent;
+    }
+
     //Add all alive children to parent
-    //Zombie current process
+    for(pproc_child_info_t p_ref = (pproc_child_info_t)core_rtl_map_next(
+                                       &(p_this->alive_children),
+                                       NULL);
+        p_ref != NULL;
+        p_ref = (pproc_child_info_t)core_rtl_map_next(
+                    &(p_this->alive_children),
+                    p_ref)) {
+        core_rtl_map_set(&(p_this->alive_children),
+                         &(p_ref->p_process->process_id),
+                         NULL);
+        core_rtl_map_set(&(p_parent->alive_children),
+                         &(p_ref->p_process->process_id),
+                         p_ref);
+        p_ref->p_process->p_parent = p_parent;
+    }
+
+    //Zombie process
+    zombie_child(p_this, p_this->process_id);
+
     //Remove all threads
+    for(pproc_thrd_info_t p_ref = (pproc_thrd_info_t)core_rtl_map_next(
+                                      &(p_this->zombie_threads),
+                                      NULL);
+        p_ref != NULL;
+        p_ref = (pproc_thrd_info_t)core_rtl_map_next(
+                    &(p_this->zombie_threads),
+                    p_ref)) {
+        core_rtl_map_set(&(p_parent->zombie_threads),
+                         &(p_ref->id),
+                         NULL);
+        PRIVATE(clean_thread)(p_ref->id);
+        core_mm_heap_free(p_ref, p_this->obj.heap);
+    }
+
+    //Release page table
+    core_mm_pg_tbl_release(p_this->process_id);
+
+    return;
 }
 
-void add_child(pprocess_obj_t p_this, u32 child_id);
-void zombie_child(pprocess_obj_t p_this, u32 child_id);
-void remove_child(pprocess_obj_t p_this, u32 child_id);
-void add_thread(pprocess_obj_t p_this, u32 thread_id);
-void zombie_thread(pprocess_obj_t p_this, u32 thread_id);
-void remove_thread(pprocess_obj_t p_this, u32 thread_id);
-bool wait_for_zombie_thread(pprocess_obj_t p_this, bool by_id,
-                            u32* p_thread_id);
-bool wait_for_zombie_child(pprocess_obj_t p_this, bool by_id,
-                           u32* p_zombie_child_id);
+void add_child(pprocess_obj_t p_this, pprocess_obj_t p_child)
+{
+    //Allocate memory
+    pproc_child_info_t p_ref = NULL;
 
-int compare_num(u32* p_n1, u32* p_n2)
+    while(p_ref == NULL) {
+        p_ref = core_mm_heap_alloc(sizeof(pproc_child_info_t),
+                                   p_this->obj.heap);
+    }
+
+    //Add thread
+    p_ref->p_process = p_child;
+    p_ref->waited = false;
+    core_pm_event_init(&(p_ref->event));
+    core_rtl_map_set(&(p_this->alive_children),
+                     &(p_ref->p_process->process_id),
+                     p_ref);
+
+    return;
+}
+
+void zombie_child(pprocess_obj_t p_this, u32 child_id)
+{
+    //Get child process
+    pproc_child_info_t p_ref = (pproc_child_info_t)core_rtl_map_get(
+                                   &(p_this->alive_children),
+                                   &child_id);
+
+    if(p_ref == NULL) {
+        PANIC(EINVAL, "process %u is not an alive child process of %u.",
+              child_id,
+              p_this->process_id);
+    }
+
+    //Set status to zombie
+    p_ref->p_process->status = PROCESS_ZOMBIE;
+    core_rtl_map_set(&(p_this->alive_children),
+                     &(p_ref->p_process->process_id),
+                     NULL);
+    core_rtl_map_set(&(p_this->zombie_children),
+                     &(p_ref->p_process->process_id),
+                     p_ref);
+
+    //Awake wating threads
+    if(p_ref->waited) {
+        core_pm_event_set(&(p_ref->event), true);
+
+    }
+
+    core_pm_event_set(&(p_this->child_wait_event), true);
+
+    return;
+}
+
+void remove_child(pprocess_obj_t p_this, u32 child_id)
+{
+    core_rtl_map_set(
+        &(p_this->zombie_children),
+        &child_id,
+        NULL);
+
+    return;
+}
+
+void add_thread(pprocess_obj_t p_this, u32 thread_id)
+{
+    //Allocate memory
+    pproc_thrd_info_t p_ref = NULL;
+
+    while(p_ref == NULL) {
+        p_ref = core_mm_heap_alloc(sizeof(pproc_thrd_info_t), p_this->obj.heap);
+    }
+
+    //Add thread
+    p_ref->id = thread_id;
+    core_pm_event_init(&(p_ref->event));
+    p_ref->waited = false;
+    p_ref->ref = 0;
+
+    core_rtl_map_set(&(p_this->alive_threads), &(p_ref->id), p_ref);
+
+    return;
+}
+
+void zombie_thread(pprocess_obj_t p_this, u32 thread_id)
+{
+    //Get thread info
+    pproc_thrd_info_t p_ref = core_rtl_map_get(&(p_this->alive_threads),
+                              &thread_id);
+
+    if(p_ref == NULL) {
+        PANIC(EINVAL, "Thread %u is not an alive child process of %u.",
+              thread_id,
+              p_this->process_id);
+    }
+
+
+    //Move to zombie list
+    core_rtl_map_set(&(p_this->alive_threads),
+                     &thread_id,
+                     NULL);
+    core_rtl_map_set(&(p_this->zombie_threads),
+                     &thread_id,
+                     p_ref);
+
+    //Awake waiting thread
+    if(p_ref->waited) {
+        core_pm_event_set(&(p_ref->event), true);
+
+    }
+
+    core_pm_event_set(&(p_this->thrd_wait_event), true);
+
+    return;
+}
+
+void remove_thread(pprocess_obj_t p_this, u32 thread_id)
+{
+    //Get thread info
+    pproc_thrd_info_t p_ref = core_rtl_map_get(&(p_this->zombie_threads),
+                              &thread_id);
+
+    if(p_ref == NULL) {
+        PANIC(EINVAL, "Thread %u is not an zombie child process of %u.",
+              thread_id,
+              p_this->process_id);
+    }
+
+    //Remove thread
+    core_rtl_map_set(&(p_this->zombie_threads),
+                     &thread_id,
+                     NULL);
+
+    //Free memory
+    core_mm_heap_free(p_ref, p_this->obj.heap);
+
+    return;
+}
+
+bool wait_for_zombie_thread(pprocess_obj_t p_this, bool by_id,
+                            u32 * p_thread_id);
+bool wait_for_zombie_child(pprocess_obj_t p_this, bool by_id,
+                           u32 * p_zombie_child_id);
+
+int compare_num(u32 * p_n1, u32 * p_n2)
 {
     if(*p_n1 > *p_n2) {
         return 1;
