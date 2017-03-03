@@ -39,10 +39,6 @@ static	void	die(pprocess_obj_t p_this);
 static	void	add_thread(pprocess_obj_t p_this, u32 thread_id);
 static	void	zombie_thread(pprocess_obj_t p_this, u32 thread_id);
 static	void	remove_thread(pprocess_obj_t p_this, u32 thread_id);
-static	bool	wait_for_zombie_thread(pprocess_obj_t p_this, bool by_id,
-                                       u32* p_thread_id);
-static	bool	wait_for_zombie_child(pprocess_obj_t p_this, bool by_id,
-                                      u32* p_zombie_child_id);
 
 //Private method
 static	void	add_child(pprocess_obj_t p_this, pprocess_obj_t p_child);
@@ -84,6 +80,7 @@ pprocess_obj_t process_obj_0()
     p_ret->p_parent = NULL;
     p_ret->status = PROCESS_ALIVE;
     p_ret->exit_code = 0;
+    p_ret->cmd_line = kstring("kernel", proc_obj_heap);
 
     //Authority
     p_ret->ruid = 0;
@@ -414,6 +411,8 @@ void add_thread(pprocess_obj_t p_this, u32 thread_id)
 
     core_rtl_map_set(&(p_this->alive_threads), &(p_ref->id), p_ref);
 
+    (p_this->alive_thread_num)++;
+
     return;
 }
 
@@ -446,6 +445,12 @@ void zombie_thread(pprocess_obj_t p_this, u32 thread_id)
 
     core_pm_event_set(&(p_this->thrd_wait_event), true);
 
+    (p_this->alive_thread_num)--;
+
+    if(p_this->alive_thread_num == 0) {
+        p_this->die(p_this);
+    }
+
     return;
 }
 
@@ -471,11 +476,6 @@ void remove_thread(pprocess_obj_t p_this, u32 thread_id)
 
     return;
 }
-
-bool wait_for_zombie_thread(pprocess_obj_t p_this, bool by_id,
-                            u32 * p_thread_id);
-bool wait_for_zombie_child(pprocess_obj_t p_this, bool by_id,
-                           u32 * p_zombie_child_id);
 
 int compare_num(u32 * p_n1, u32 * p_n2)
 {

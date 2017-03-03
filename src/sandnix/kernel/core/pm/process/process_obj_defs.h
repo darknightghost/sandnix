@@ -30,6 +30,7 @@ typedef	struct	_process_obj {
     struct _process_obj*	p_parent;		//Parent process object
     u32						status;			//Process status
     u32						exit_code;		//Exit code
+    pkstring_obj_t			cmd_line;		//Process command line
 
     //Authority
     u32			ruid;				//Real user id
@@ -75,15 +76,6 @@ typedef	struct	_process_obj {
 
     //void	remove_thread(pprocess_obj_t p_this, u32 thread_id);
     void	(*remove_thread)(struct _process_obj*, u32);
-
-    //bool	wait_for_zombie_thread(pprocess_obj_t p_this, bool by_id,
-    //	u32* p_thread_id);
-    bool	(*wait_for_zombie_thread)(struct _process_obj*, bool, u32*);
-
-    //bool	wait_for_zombie_child(pprocess_obj_t p_this, bool by_id,
-    //	u32* p_zombie_child_id);
-    bool	(*wait_for_zombie_child)(struct _process_obj*, bool, u32*);
-
 } process_obj_t, *pprocess_obj_t;
 
 typedef	struct	_proc_ref_proc_t {
