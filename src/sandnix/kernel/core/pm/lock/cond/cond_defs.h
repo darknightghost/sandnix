@@ -18,21 +18,21 @@
 #pragma once
 
 #include "../../../../../../common/common.h"
-#include "./mutex_defs.h"
 
-#define	MODULE_NAME		core_pm
-//Initialize mutex
-void		core_pm_mutex_init(pmutex_t	p_lock);
+#include "../mutex/mutex_defs.h"
+#include "../../../rtl/container/list/list_defs.h"
+#include "../../../mm/heap/heap_defs.h"
 
-//Acquire mutex
-kstatus_t	core_pm_mutex_acquire(pmutex_t p_lock, s32 millisec_timeout);
+typedef	struct	_cond {
+    pmutex_t		p_lock;
+    volatile u32	ticket;
+    volatile u32	wake_up_before;
+    volatile bool	alive;
+    list_t			wait_list;
+} cond_t, *pcond_t;
 
-//Test if current thread got the mutex
-bool		core_pm_mutex_got(pmutex_t p_lock);
+typedef	struct	_cond_wait_thrd_info {
+    u32		ticket;
+    u32		thread_id;
+} cond_wait_thrd_info_t, *pcond_wait_thrd_info_t;
 
-//Release mutex
-void		core_pm_mutex_release(pmutex_t p_lock);
-
-//Destroy mutex
-void		core_pm_mutex_destroy(pmutex_t p_lock);
-#undef	MODULE_NAME

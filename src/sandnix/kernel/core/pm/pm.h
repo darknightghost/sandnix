@@ -37,4 +37,7 @@
 //Event
 #include "./lock/event/event.h"
 
+//Cond
+#include "./lock/cond/cond.h"
+
 void	core_pm_init();

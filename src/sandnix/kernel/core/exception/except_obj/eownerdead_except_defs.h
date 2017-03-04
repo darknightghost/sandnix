@@ -17,22 +17,9 @@
 
 #pragma once
 
-#include "../../../../../../common/common.h"
-#include "./mutex_defs.h"
+#include "../../../../../common/common.h"
+#include "./except_obj_defs.h"
 
-#define	MODULE_NAME		core_pm
-//Initialize mutex
-void		core_pm_mutex_init(pmutex_t	p_lock);
-
-//Acquire mutex
-kstatus_t	core_pm_mutex_acquire(pmutex_t p_lock, s32 millisec_timeout);
-
-//Test if current thread got the mutex
-bool		core_pm_mutex_got(pmutex_t p_lock);
-
-//Release mutex
-void		core_pm_mutex_release(pmutex_t p_lock);
-
-//Destroy mutex
-void		core_pm_mutex_destroy(pmutex_t p_lock);
-#undef	MODULE_NAME
+typedef struct _eownerdead_except {
+    except_obj_t	except;
+} eownerdead_except_t, *peownerdead_except_t;

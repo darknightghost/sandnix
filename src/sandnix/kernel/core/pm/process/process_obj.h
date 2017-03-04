@@ -19,4 +19,4 @@
 
 #include "./process_obj_defs.h"
 
-pprocess_obj_t		process_obj_0();
+pprocess_obj_t		process_obj_0(pmutex_t p_tbl_lck);

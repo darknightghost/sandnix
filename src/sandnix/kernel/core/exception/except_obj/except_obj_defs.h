@@ -67,3 +67,4 @@ typedef	struct	_except_obj {
 #include "./ehpcorruption_except_defs.h"
 #include "./enomem_except_defs.h"
 #include "./eagain_except_defs.h"
+#include "./eownerdead_except_defs.h"
