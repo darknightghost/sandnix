@@ -34,15 +34,15 @@ static	void				destructor(pprocess_obj_t p_this);
 
 //Process object methods
 static	pprocess_obj_t		fork(pprocess_obj_t p_this, u32 new_process_id);
-static	void	add_ref_obj(pprocess_obj_t p_this, pproc_ref_obj_t p_ref_obj);
-static	void	die(pprocess_obj_t p_this);
-static	void	add_thread(pprocess_obj_t p_this, u32 thread_id);
-static	void	zombie_thread(pprocess_obj_t p_this, u32 thread_id);
-static	void	remove_thread(pprocess_obj_t p_this, u32 thread_id);
-static	bool	wait_for_zombie_thread(pprocess_obj_t p_this, bool by_id,
-                                       u32* p_thread_id);
-static	bool	wait_for_zombie_child(pprocess_obj_t p_this, bool by_id,
-                                      u32* p_zombie_child_id);
+static	void		add_ref_obj(pprocess_obj_t p_this, pproc_ref_obj_t p_ref_obj);
+static	void		die(pprocess_obj_t p_this);
+static	void		add_thread(pprocess_obj_t p_this, u32 thread_id);
+static	void		zombie_thread(pprocess_obj_t p_this, u32 thread_id);
+static	void		remove_thread(pprocess_obj_t p_this, u32 thread_id);
+static	kstatus_t	wait_for_zombie_thread(pprocess_obj_t p_this, bool by_id,
+        u32* p_thread_id);
+static	kstatus_t	wait_for_zombie_child(pprocess_obj_t p_this, bool by_id,
+        u32* p_zombie_child_id);
 //Private method
 static	void	add_child(pprocess_obj_t p_this, pprocess_obj_t p_child);
 static	void	zombie_child(pprocess_obj_t p_this, u32 child_id);
@@ -52,7 +52,7 @@ static	void	remove_child(pprocess_obj_t p_this, u32 child_id);
 static	int				compare_num(u32* p_n1, u32* p_n2);
 static	int				compare_addr(address_t addr1, address_t addr2);
 
-pprocess_obj_t process_obj_0()
+pprocess_obj_t process_obj_0(pmutex_t p_tbl_lck)
 {
     //Initialize heap
     proc_obj_heap = core_mm_heap_create(HEAP_MULITHREAD, 4096);
@@ -84,6 +84,7 @@ pprocess_obj_t process_obj_0()
     p_ret->status = PROCESS_ALIVE;
     p_ret->exit_code = 0;
     p_ret->cmd_line = kstring("kernel", proc_obj_heap);
+    p_ret->p_tbl_lock = p_tbl_lck;
 
     //Authority
     p_ret->ruid = 0;
@@ -107,7 +108,7 @@ pprocess_obj_t process_obj_0()
     core_rtl_map_init(&(p_ret->zombie_threads),
                       (item_compare_t)compare_num,
                       proc_obj_heap);
-    core_pm_event_init(&(p_ret->thrd_wait_event));
+    core_pm_cond_init(&(p_ret->thrd_wait_cond), p_ret->p_tbl_lock);
 
     //Referenced objects
     core_rtl_map_init(&(p_ret->ref_objs),
@@ -121,7 +122,7 @@ pprocess_obj_t process_obj_0()
     core_rtl_map_init(&(p_ret->zombie_children),
                       (item_compare_t)compare_num,
                       proc_obj_heap);
-    core_pm_event_init(&(p_ret->child_wait_event));
+    core_pm_cond_init(&(p_ret->child_wait_cond), p_ret->p_tbl_lock);
 
     //Methods
     p_ret->fork = fork;
@@ -181,6 +182,7 @@ pprocess_obj_t fork(pprocess_obj_t p_this, u32 new_process_id)
     p_ret->p_parent = p_this;
     p_ret->status = PROCESS_ALIVE;
     p_ret->exit_code = 0;
+    p_ret->p_tbl_lock = p_this->p_tbl_lock;
 
     //Authority
     p_ret->ruid = p_this->ruid;
@@ -204,7 +206,7 @@ pprocess_obj_t fork(pprocess_obj_t p_this, u32 new_process_id)
     core_rtl_map_init(&(p_ret->zombie_threads),
                       (item_compare_t)compare_num,
                       proc_obj_heap);
-    core_pm_event_init(&(p_ret->thrd_wait_event));
+    core_pm_cond_init(&(p_ret->thrd_wait_cond), p_this->p_tbl_lock);
 
     //Referenced objects
     core_rtl_map_init(&(p_ret->ref_objs),
@@ -218,7 +220,7 @@ pprocess_obj_t fork(pprocess_obj_t p_this, u32 new_process_id)
     core_rtl_map_init(&(p_ret->zombie_children),
                       (item_compare_t)compare_num,
                       proc_obj_heap);
-    core_pm_event_init(&(p_ret->child_wait_event));
+    core_pm_cond_init(&(p_ret->child_wait_cond), p_this->p_tbl_lock);
 
     //Methods
     p_ret->fork = p_this->fork;
@@ -346,7 +348,7 @@ void add_child(pprocess_obj_t p_this, pprocess_obj_t p_child)
     //Add thread
     p_ref->p_process = p_child;
     p_ref->waited = false;
-    core_pm_event_init(&(p_ref->event));
+    core_pm_cond_init(&(p_ref->cond), p_this->p_tbl_lock);
     core_rtl_map_set(&(p_this->alive_children),
                      &(p_ref->p_process->process_id),
                      p_ref);
@@ -378,11 +380,11 @@ void zombie_child(pprocess_obj_t p_this, u32 child_id)
 
     //Awake wating threads
     if(p_ref->waited) {
-        core_pm_event_set(&(p_ref->event), true);
+        core_pm_cond_signal(&(p_ref->cond), true);
 
     }
 
-    core_pm_event_set(&(p_this->child_wait_event), true);
+    core_pm_cond_signal(&(p_this->child_wait_cond), true);
 
     return;
 }
@@ -408,7 +410,7 @@ void add_thread(pprocess_obj_t p_this, u32 thread_id)
 
     //Add thread
     p_ref->id = thread_id;
-    core_pm_event_init(&(p_ref->event));
+    core_pm_cond_init(&(p_ref->cond), p_this->p_tbl_lock);
     p_ref->waited = false;
     p_ref->ref = 0;
 
@@ -442,11 +444,11 @@ void zombie_thread(pprocess_obj_t p_this, u32 thread_id)
 
     //Awake waiting thread
     if(p_ref->waited) {
-        core_pm_event_set(&(p_ref->event), true);
+        core_pm_cond_signal(&(p_ref->cond), true);
 
     }
 
-    core_pm_event_set(&(p_this->thrd_wait_event), true);
+    core_pm_cond_signal(&(p_this->thrd_wait_cond), true);
 
     (p_this->alive_thread_num)--;
 
@@ -478,6 +480,21 @@ void remove_thread(pprocess_obj_t p_this, u32 thread_id)
     core_mm_heap_free(p_ref, p_this->obj.heap);
 
     return;
+}
+
+kstatus_t wait_for_zombie_thread(pprocess_obj_t p_this, bool by_id,
+                                 u32* p_thread_id)
+{
+    kstatus_t status = ESUCCESS;
+
+    if(by_id) {
+    } else {
+    }
+}
+
+kstatus_t wait_for_zombie_child(pprocess_obj_t p_this, bool by_id,
+                                u32* p_zombie_child_id)
+{
 }
 
 int compare_num(u32 * p_n1, u32 * p_n2)

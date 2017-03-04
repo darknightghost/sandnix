@@ -48,3 +48,4 @@ extern	pheap_t	p_except_obj_heap;
 #include "./ehpcorruption_except.h"
 #include "./enomem_except.h"
 #include "./eagain_except.h"
+#include "./eownerdead_except.h"

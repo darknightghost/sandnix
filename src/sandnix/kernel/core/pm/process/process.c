@@ -47,7 +47,7 @@ void PRIVATE(process_init)()
 
     //Create process 0
     core_kconsole_print_info("\nCreating process 0...\n");
-    pprocess_obj_t p_proc_0 = process_obj_0();
+    pprocess_obj_t p_proc_0 = process_obj_0(&process_tbl_lck);
     p_proc_0->add_thread(p_proc_0, 0);
 
     //Add to process table

@@ -22,7 +22,8 @@
 #include "../../rtl/obj/obj_defs.h"
 #include "../../rtl/container/map/map_defs.h"
 #include "../../rtl/container/list/list_defs.h"
-#include "../lock/event/event_defs.h"
+#include "../lock/cond/cond_defs.h"
+#include "../lock/mutex/mutex_defs.h"
 
 typedef	struct	_process_obj {
     obj_t					obj;			//Base object
@@ -31,6 +32,7 @@ typedef	struct	_process_obj {
     u32						status;			//Process status
     u32						exit_code;		//Exit code
     pkstring_obj_t			cmd_line;		//Process command line
+    pmutex_t				p_tbl_lock;		//Process table lock
 
     //Authority
     u32			ruid;				//Real user id
@@ -48,7 +50,7 @@ typedef	struct	_process_obj {
     u32			alive_thread_num;	//How many threads does the process have
     map_t		alive_threads;		//Alive threads
     map_t		zombie_threads;		//Zombie threads
-    event_t		thrd_wait_event;
+    cond_t		thrd_wait_cond;
 
     //Referenced objects
     map_t		ref_objs;			//Referenced objects
@@ -56,7 +58,7 @@ typedef	struct	_process_obj {
     //Child processes
     map_t		alive_children;		//Alive child processes
     map_t		zombie_children;	//Zombie child processes
-    event_t		child_wait_event;
+    cond_t		child_wait_cond;
 
     //Methods
     //pprocess_obj_t		fork(pprocess_obj_t p_this, u32 new_process_id);
@@ -79,23 +81,23 @@ typedef	struct	_process_obj {
 
     //bool	wait_for_zombie_thread(pprocess_obj_t p_this, bool by_id,
     //	u32* p_thread_id);
-    bool	(*wait_for_zombie_thread)(struct _process_obj*, bool, u32*);
+    kstatus_t	(*wait_for_zombie_thread)(struct _process_obj*, bool, u32*);
 
     //bool	wait_for_zombie_child(pprocess_obj_t p_this, bool by_id,
     //	u32* p_zombie_child_id);
-    bool	(*wait_for_zombie_child)(struct _process_obj*, bool, u32*);
+    kstatus_t	(*wait_for_zombie_child)(struct _process_obj*, bool, u32*);
 
 } process_obj_t, *pprocess_obj_t;
 
 typedef	struct	_proc_ref_proc_t {
     pprocess_obj_t	p_process;
     bool			waited;
-    event_t			event;
+    cond_t			cond;
 } proc_child_info_t, *pproc_child_info_t;
 
 typedef	struct	_proc_ref_thrd_t {
     u32			id;
     bool		waited;
-    event_t		event;
+    cond_t		cond;
     u32			ref;
 } proc_thrd_info_t, *pproc_thrd_info_t;
