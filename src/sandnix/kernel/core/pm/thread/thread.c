@@ -20,6 +20,7 @@
 #include "../../rtl/rtl.h"
 #include "../../mm/mm.h"
 #include "../../exception/exception.h"
+#include "../../kconsole/kconsole.h"
 #include "../../../hal/cpu/cpu.h"
 #include "../../../hal/io/io.h"
 #include "../../../hal/init/init.h"
@@ -73,6 +74,8 @@ void PRIVATE(thread_init)()
         PANIC(ENOMEM, "Failed to create schedule heap.");
     }
 
+    core_kconsole_print_info("\nInitializing thread table...\n");
+
     //Initialize thread table
     core_rtl_array_init(&thread_table, MAX_THREAD_NUM, sched_heap);
     core_pm_spnlck_rw_init(&thread_table_lock);
@@ -81,6 +84,7 @@ void PRIVATE(thread_init)()
     core_rtl_list_init(&thread_ref_callback_list);
 
     //Create thread 0
+    core_kconsole_print_info("\nCreating thread 0...\n");
     pthread_obj_t p_thread_obj = thread_obj_0();
     p_thread_obj->p_node = NULL;
     p_thread_obj->status = TASK_RUNNING;
@@ -104,6 +108,7 @@ void PRIVATE(thread_init)()
     core_pm_spnlck_init(&(p_info->lock));
 
     //Initialize schedule list
+    core_kconsole_print_info("\nInitializing schedule...\n");
     core_rtl_memset(sched_lists, 0, sizeof(sched_lists));
     core_rtl_memset(cpu_infos, 0, sizeof(cpu_infos));
     core_pm_spnlck_init(&sched_list_lock);
@@ -447,6 +452,28 @@ u32 core_pm_get_currnt_thread_id()
     }
 
     return p_thread_obj->thread_id;
+}
+
+u32 core_pm_get_currnt_proc_id()
+{
+    if(!initialized) {
+        return 0;
+    }
+
+    //Get thread obj
+    u32 cpu_index = hal_cpu_get_cpu_index();
+    pcore_sched_info_t p_info = &cpu_infos[cpu_index];
+
+    pthread_obj_t p_thread_obj;
+
+    if(p_info->current_node == NULL) {
+        p_thread_obj = p_info->p_idle_thread;
+
+    } else {
+        p_thread_obj = (pthread_obj_t)(p_info->current_node->p_item);
+    }
+
+    return p_thread_obj->process_id;
 }
 
 static int tmp_priority = PRIORITY_DISPATCH;

@@ -39,7 +39,10 @@ static	void	die(pprocess_obj_t p_this);
 static	void	add_thread(pprocess_obj_t p_this, u32 thread_id);
 static	void	zombie_thread(pprocess_obj_t p_this, u32 thread_id);
 static	void	remove_thread(pprocess_obj_t p_this, u32 thread_id);
-
+static	bool	wait_for_zombie_thread(pprocess_obj_t p_this, bool by_id,
+                                       u32* p_thread_id);
+static	bool	wait_for_zombie_child(pprocess_obj_t p_this, bool by_id,
+                                      u32* p_zombie_child_id);
 //Private method
 static	void	add_child(pprocess_obj_t p_this, pprocess_obj_t p_child);
 static	void	zombie_child(pprocess_obj_t p_this, u32 child_id);

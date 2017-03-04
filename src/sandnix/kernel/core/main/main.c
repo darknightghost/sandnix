@@ -21,6 +21,7 @@
 #include "../exception/exception.h"
 #include "../mm/mm.h"
 #include "../kclock/kclock.h"
+#include "../pm/pm.h"
 
 void core_main_main()
 {
@@ -35,6 +36,9 @@ void core_main_main()
 
     core_kconsole_print_info("\nInitializing kernel clock...\n");
     core_kclock_init();
+
+    core_kconsole_print_info("\nInitializing process management...\n");
+    core_pm_init();
 
     void test();
     test();

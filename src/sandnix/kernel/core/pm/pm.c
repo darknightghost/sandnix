@@ -22,7 +22,7 @@
 
 void core_pm_init()
 {
-    PRIVATE(process_init);
-    PRIVATE(thread_init);
+    PRIVATE(thread_init)();
+    PRIVATE(process_init)();
     return;
 }
