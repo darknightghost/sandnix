@@ -16,19 +16,44 @@
 */
 
 #include "./process.h"
+#include "./process_obj.h"
 #include "../lock/mutex/mutex.h"
+#include "../../mm/mm.h"
 #include "../../rtl/rtl.h"
+#include "../../kconsole/kconsole.h"
+#include "../../exception/exception.h"
+#include "../../../hal/mmu/mmu.h"
 
 #define	MODULE_NAME		core_pm
 
+static	array_t			process_tbl;
+static	mutex_t			process_tbl_lck;
+static	pheap_t			proc_tbl_heap;
+
 void PRIVATE(process_init)()
 {
-    return;
-}
+    //Initiale heap
+    proc_tbl_heap = core_mm_heap_create(HEAP_MULITHREAD,
+                                        SANDNIX_KERNEL_PAGE_SIZE);
 
-u32 core_pm_get_currnt_proc_id()
-{
-    return 0;
+    if(proc_tbl_heap == NULL) {
+        PANIC(ENOMEM, "Failed to create process table heap.");
+    }
+
+    //Initialize process table
+    core_kconsole_print_info("\nInitializing process table...\n");
+    core_rtl_array_init(&process_tbl, MAX_PROCESS_NUM, proc_tbl_heap);
+    core_pm_mutex_init(&process_tbl_lck);
+
+    //Create process 0
+    core_kconsole_print_info("\nCreating process 0...\n");
+    pprocess_obj_t p_proc_0 = process_obj_0();
+    p_proc_0->add_thread(p_proc_0, 0);
+
+    //Add to process table
+    core_rtl_array_set(&process_tbl, 0, p_proc_0);
+
+    return;
 }
 
 void		core_pm_reg_proc_ref_obj(proc_ref_call_back_t callback);
