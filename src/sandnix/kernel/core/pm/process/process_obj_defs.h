@@ -51,6 +51,7 @@ typedef	struct	_process_obj {
     map_t		alive_threads;		//Alive threads
     map_t		zombie_threads;		//Zombie threads
     cond_t		thrd_wait_cond;
+    list_t		thrd_wait_list;
 
     //Referenced objects
     map_t		ref_objs;			//Referenced objects
@@ -59,6 +60,7 @@ typedef	struct	_process_obj {
     map_t		alive_children;		//Alive child processes
     map_t		zombie_children;	//Zombie child processes
     cond_t		child_wait_cond;
+    list_t		child_wait_list;
 
     //Methods
     //pprocess_obj_t		fork(pprocess_obj_t p_this, u32 new_process_id);
@@ -85,7 +87,8 @@ typedef	struct	_process_obj {
 
     //bool	wait_for_zombie_child(pprocess_obj_t p_this, bool by_id,
     //	u32* p_zombie_child_id);
-    kstatus_t	(*wait_for_zombie_child)(struct _process_obj*, bool, u32*);
+    kstatus_t	(*wait_for_zombie_child)(struct _process_obj*, bool, u32*,
+                                         struct _process_obj**);
 
 } process_obj_t, *pprocess_obj_t;
 
@@ -93,6 +96,7 @@ typedef	struct	_proc_ref_proc_t {
     pprocess_obj_t	p_process;
     bool			waited;
     cond_t			cond;
+    u32				ref;
 } proc_child_info_t, *pproc_child_info_t;
 
 typedef	struct	_proc_ref_thrd_t {
@@ -101,3 +105,11 @@ typedef	struct	_proc_ref_thrd_t {
     cond_t		cond;
     u32			ref;
 } proc_thrd_info_t, *pproc_thrd_info_t;
+
+typedef	struct	_thrd_wait_info {
+    u32			id;
+} thrd_wait_info_t, *pthrd_wait_info_t;
+
+typedef	struct	_proc_wait_info {
+    pprocess_obj_t	p_proc_obj;
+} proc_wait_info_t, *pproc_wait_info_t;

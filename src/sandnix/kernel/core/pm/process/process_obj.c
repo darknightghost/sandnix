@@ -42,7 +42,7 @@ static	void		remove_thread(pprocess_obj_t p_this, u32 thread_id);
 static	kstatus_t	wait_for_zombie_thread(pprocess_obj_t p_this, bool by_id,
         u32* p_thread_id);
 static	kstatus_t	wait_for_zombie_child(pprocess_obj_t p_this, bool by_id,
-        u32* p_zombie_child_id);
+        u32* p_zombie_child_id, pprocess_obj_t* p_p_proc_obj);
 //Private method
 static	void	add_child(pprocess_obj_t p_this, pprocess_obj_t p_child);
 static	void	zombie_child(pprocess_obj_t p_this, u32 child_id);
@@ -109,6 +109,7 @@ pprocess_obj_t process_obj_0(pmutex_t p_tbl_lck)
                       (item_compare_t)compare_num,
                       proc_obj_heap);
     core_pm_cond_init(&(p_ret->thrd_wait_cond), p_ret->p_tbl_lock);
+    core_rtl_list_init(&p_ret->thrd_wait_list);
 
     //Referenced objects
     core_rtl_map_init(&(p_ret->ref_objs),
@@ -123,6 +124,7 @@ pprocess_obj_t process_obj_0(pmutex_t p_tbl_lck)
                       (item_compare_t)compare_num,
                       proc_obj_heap);
     core_pm_cond_init(&(p_ret->child_wait_cond), p_ret->p_tbl_lock);
+    core_rtl_list_init(&p_ret->child_wait_list);
 
     //Methods
     p_ret->fork = fork;
@@ -207,6 +209,7 @@ pprocess_obj_t fork(pprocess_obj_t p_this, u32 new_process_id)
                       (item_compare_t)compare_num,
                       proc_obj_heap);
     core_pm_cond_init(&(p_ret->thrd_wait_cond), p_this->p_tbl_lock);
+    core_rtl_list_init(&p_ret->thrd_wait_list);
 
     //Referenced objects
     core_rtl_map_init(&(p_ret->ref_objs),
@@ -221,6 +224,7 @@ pprocess_obj_t fork(pprocess_obj_t p_this, u32 new_process_id)
                       (item_compare_t)compare_num,
                       proc_obj_heap);
     core_pm_cond_init(&(p_ret->child_wait_cond), p_this->p_tbl_lock);
+    core_rtl_list_init(&p_ret->child_wait_list);
 
     //Methods
     p_ret->fork = p_this->fork;
@@ -278,13 +282,14 @@ void die(pprocess_obj_t p_this)
     }
 
     //Add all zombie children to parent
-    for(pproc_child_info_t p_ref = (pproc_child_info_t)core_rtl_map_next(
-                                       &(p_this->zombie_children),
-                                       NULL);
-        p_ref != NULL;
-        p_ref = (pproc_child_info_t)core_rtl_map_next(
-                    &(p_this->zombie_children),
-                    p_ref)) {
+    for(u32* p_id = (u32*)core_rtl_map_next(
+                        &(p_this->zombie_children),
+                        NULL);
+        p_id != NULL;
+        p_id = (u32*)core_rtl_map_next(
+                   &(p_this->zombie_children),
+                   p_id)) {
+        pproc_child_info_t p_ref = core_rtl_map_get(&(p_this->zombie_children), p_id);
         core_rtl_map_set(&(p_this->zombie_children),
                          &(p_ref->p_process->process_id),
                          NULL);
@@ -295,13 +300,14 @@ void die(pprocess_obj_t p_this)
     }
 
     //Add all alive children to parent
-    for(pproc_child_info_t p_ref = (pproc_child_info_t)core_rtl_map_next(
-                                       &(p_this->alive_children),
-                                       NULL);
-        p_ref != NULL;
-        p_ref = (pproc_child_info_t)core_rtl_map_next(
-                    &(p_this->alive_children),
-                    p_ref)) {
+    for(u32* p_id = (u32*)core_rtl_map_next(
+                        &(p_this->alive_children),
+                        NULL);
+        p_id != NULL;
+        p_id = (u32*)core_rtl_map_next(
+                   &(p_this->alive_children),
+                   p_id)) {
+        pproc_child_info_t p_ref = core_rtl_map_get(&(p_this->alive_children), p_id);
         core_rtl_map_set(&(p_this->alive_children),
                          &(p_ref->p_process->process_id),
                          NULL);
@@ -315,17 +321,19 @@ void die(pprocess_obj_t p_this)
     zombie_child(p_this, p_this->process_id);
 
     //Remove all threads
-    for(pproc_thrd_info_t p_ref = (pproc_thrd_info_t)core_rtl_map_next(
-                                      &(p_this->zombie_threads),
-                                      NULL);
-        p_ref != NULL;
-        p_ref = (pproc_thrd_info_t)core_rtl_map_next(
-                    &(p_this->zombie_threads),
-                    p_ref)) {
+    for(u32* p_id = (u32*)core_rtl_map_next(
+                        &(p_this->zombie_threads),
+                        NULL);
+        p_id != NULL;
+        p_id = (u32*)core_rtl_map_next(
+                   &(p_this->zombie_threads),
+                   p_id)) {
+        pproc_thrd_info_t p_ref = core_rtl_map_get(&(p_this->zombie_threads),
+                                  p_id);
         core_rtl_map_set(&(p_parent->zombie_threads),
                          &(p_ref->id),
                          NULL);
-        PRIVATE(clean_thread)(p_ref->id);
+        PRIVATE(unref_thread)(p_ref->id);
         core_mm_heap_free(p_ref, p_this->obj.heap);
     }
 
@@ -348,6 +356,7 @@ void add_child(pprocess_obj_t p_this, pprocess_obj_t p_child)
     //Add thread
     p_ref->p_process = p_child;
     p_ref->waited = false;
+    p_ref->ref = 0;
     core_pm_cond_init(&(p_ref->cond), p_this->p_tbl_lock);
     core_rtl_map_set(&(p_this->alive_children),
                      &(p_ref->p_process->process_id),
@@ -382,6 +391,26 @@ void zombie_child(pprocess_obj_t p_this, u32 child_id)
     if(p_ref->waited) {
         core_pm_cond_signal(&(p_ref->cond), true);
 
+    }
+
+    plist_node_t p_node = p_this->child_wait_list;
+
+    if(p_node != NULL) {
+        do {
+            INC_REF(p_this);
+            pproc_wait_info_t p_info = (pproc_wait_info_t)(p_node->p_item);
+            p_info->p_proc_obj = p_this;
+            p_node = p_node->p_next;
+        } while(p_node != p_this->child_wait_list);
+    }
+
+    if(p_ref->waited) {
+        DEC_REF(p_this);
+
+    } else {
+        if(p_node != NULL) {
+            DEC_REF(p_this);
+        }
     }
 
     core_pm_cond_signal(&(p_this->child_wait_cond), true);
@@ -448,7 +477,32 @@ void zombie_thread(pprocess_obj_t p_this, u32 thread_id)
 
     }
 
+    plist_node_t p_node = p_this->thrd_wait_list;
+
+    if(p_node != NULL) {
+        do {
+            PRIVATE(ref_thread)(thread_id);
+            pthrd_wait_info_t p_info = (pthrd_wait_info_t)(p_node->p_item);
+            p_info->id = thread_id;
+            p_node = p_node->p_next;
+        } while(p_node != p_this->thrd_wait_list);
+    }
+
     core_pm_cond_signal(&(p_this->thrd_wait_cond), true);
+
+    if(p_ref->waited) {
+        //Thread has been waited by id when it is alive
+        PRIVATE(unref_thread)(thread_id);
+
+    } else if(!p_ref->waited) {
+        if(p_node != NULL) {
+            //Thread has been waited without id when it is alive
+            PRIVATE(unref_thread)(thread_id);
+            p_this->remove_thread(p_this, p_ref->id);
+        }
+
+        //Thread has not been waited, do nothing
+    }
 
     (p_this->alive_thread_num)--;
 
@@ -488,13 +542,247 @@ kstatus_t wait_for_zombie_thread(pprocess_obj_t p_this, bool by_id,
     kstatus_t status = ESUCCESS;
 
     if(by_id) {
+        //Thread has been waited by id when it is alive
+        //Try to get thread info
+        pproc_thrd_info_t p_thrd_info = core_rtl_map_get(
+                                            &(p_this->alive_threads),
+                                            p_thread_id);
+
+        if(p_thrd_info != NULL) {
+            //The thread is alive
+            p_thrd_info->waited = true;
+            (p_thrd_info->ref)++;
+            PRIVATE(ref_thread)(p_thrd_info->id);
+
+            //Wait for zombie
+            status = core_pm_cond_wait(&(p_thrd_info->cond), -1);
+
+            if(status != ESUCCESS) {
+                PRIVATE(unref_thread)(p_thrd_info->id);
+                (p_thrd_info->ref)--;
+
+                if(p_thrd_info->ref == 0) {
+                    p_thrd_info->waited = false;
+                }
+
+                core_exception_set_errno(status);
+                return status;
+            }
+
+            (p_thrd_info->ref)--;
+
+            if(p_thrd_info->ref == 0) {
+                p_this->remove_thread(p_this, p_thrd_info->id);
+            }
+
+            core_exception_set_errno(ESUCCESS);
+            return ESUCCESS;
+
+        } else {
+            //Thread has been waited by id  when it is zombie
+            //The thread is zombie
+            p_thrd_info = core_rtl_map_get(
+                              &(p_this->zombie_threads),
+                              p_thread_id);
+
+            if(p_thrd_info == NULL || p_thrd_info->waited) {
+                peinval_except_t p_except = einval_except();
+                RAISE(p_except, "Illegal thread id");
+                return EINVAL;
+            }
+
+            p_thrd_info->waited = true;
+
+            p_this->remove_thread(p_this, p_thrd_info->id);
+
+            core_exception_set_errno(ESUCCESS);
+            return ESUCCESS;
+
+        }
+
     } else {
+        //Test if there is any zombie thread
+        pproc_thrd_info_t p_thrd_info = NULL;
+
+        for(u32* p_id =
+                (u32*)core_rtl_map_next(
+                    &(p_this->zombie_threads), NULL);
+            p_id != NULL;
+            p_id = (u32*)core_rtl_map_next(
+                       &(p_this->zombie_threads), p_id)) {
+            p_thrd_info = (pproc_thrd_info_t)core_rtl_map_get(
+                              &(p_this->zombie_threads),
+                              p_id);
+
+            if(!p_thrd_info->waited) {
+                break;
+
+            } else {
+                p_thrd_info = NULL;
+            }
+        }
+
+        if(p_thrd_info == NULL) {
+            if(p_this->alive_thread_num <= 1) {
+                core_exception_set_errno(EDEADLOCK);
+                return EDEADLOCK;
+            }
+
+            //Thread has been waited without id when it is alive
+            //Wait for zombie id
+            thrd_wait_info_t wait_info = {
+                .id = 0
+            };
+            list_node_t node = {
+                .p_item = &wait_info
+            };
+            core_rtl_list_insert_node_after(NULL, &(p_this->thrd_wait_list),
+                                            &node);
+            status = core_pm_cond_wait(&(p_this->thrd_wait_cond),
+                                       -1);
+
+            if(status != ESUCCESS) {
+                core_exception_set_errno(status);
+                return status;
+            }
+
+            *p_thread_id = wait_info.id;
+            core_rtl_list_node_remove(&node, &(p_this->thrd_wait_list));
+
+            core_exception_set_errno(ESUCCESS);
+            return ESUCCESS;
+
+        } else {
+            //Thread has been waited without id when it is zombie
+            *p_thread_id = p_thrd_info->id;
+            p_this->remove_thread(p_this, p_thrd_info->id);
+            core_exception_set_errno(ESUCCESS);
+            return ESUCCESS;
+        }
+
     }
 }
 
 kstatus_t wait_for_zombie_child(pprocess_obj_t p_this, bool by_id,
-                                u32* p_zombie_child_id)
+                                u32* p_zombie_child_id, pprocess_obj_t* p_p_proc_obj)
 {
+    kstatus_t status = ESUCCESS;
+
+    if(by_id) {
+        pproc_child_info_t p_child_info = core_rtl_map_get(
+                                              &(p_this->alive_children),
+                                              p_zombie_child_id);
+
+        if(p_child_info != NULL) {
+            //The child is alive
+            p_child_info->waited = true;
+            p_child_info->ref++;
+            INC_REF(p_child_info->p_process);
+
+            //Wait for zombie
+            status = core_pm_cond_wait(&(p_child_info->cond), -1);
+
+            if(status != ESUCCESS) {
+                p_child_info->ref--;
+                DEC_REF(p_child_info->p_process);
+
+                if(p_child_info->ref == 0) {
+                    p_child_info->waited = false;
+                }
+
+                core_exception_set_errno(status);
+                return status;
+            }
+
+            *p_p_proc_obj = p_child_info->p_process;
+            p_child_info->ref--;
+
+            if(p_child_info->ref == 0) {
+                remove_child(p_this, *p_zombie_child_id);
+                core_mm_heap_free(p_child_info, p_this->obj.heap);
+            }
+
+            core_exception_set_errno(ESUCCESS);
+            return ESUCCESS;
+
+        } else {
+            //The child is zombie
+            pproc_child_info_t p_child_info = core_rtl_map_get(
+                                                  &(p_this->alive_children),
+                                                  p_zombie_child_id);
+
+            if(p_child_info == NULL || p_child_info->waited) {
+                peinval_except_t p_except = einval_except();
+                RAISE(p_except, "Illegal process id");
+                return EINVAL;
+            }
+
+            *p_p_proc_obj = p_child_info->p_process;
+            p_this->remove_thread(p_this, p_child_info->p_process->process_id);
+            core_exception_set_errno(ESUCCESS);
+            return ESUCCESS;
+            remove_child(p_this, *p_zombie_child_id);
+            core_mm_heap_free(p_child_info, p_this->obj.heap);
+
+            core_exception_set_errno(ESUCCESS);
+            return ESUCCESS;
+        }
+
+    } else {
+        //Test if there is any zombie child
+        pproc_child_info_t p_child_info = NULL;
+
+        for(u32* p_id =
+                (u32*)core_rtl_map_next(
+                    &(p_this->zombie_threads), NULL);
+            p_id != NULL;
+            p_id = (u32*)core_rtl_map_next(
+                       &(p_this->zombie_threads), p_id)) {
+            p_child_info = (pproc_child_info_t)core_rtl_map_get(
+                               &(p_this->zombie_threads),
+                               p_id);
+
+            if(!p_child_info->waited) {
+                break;
+
+            } else {
+                p_child_info = NULL;
+            }
+        }
+
+        if(p_child_info == NULL) {
+            //Child has been waited without id when it is alive
+            proc_wait_info_t wait_info = {
+                .p_proc_obj = NULL
+            };
+            list_node_t node = {
+                .p_item = &wait_info
+            };
+
+            core_rtl_list_insert_node_after(NULL, &(p_this->child_wait_list),
+                                            &node);
+            status = core_pm_cond_wait(&(p_this->child_wait_cond),
+                                       -1);
+
+            if(status != ESUCCESS) {
+                core_exception_set_errno(status);
+                return status;
+            }
+
+            *p_p_proc_obj = wait_info.p_proc_obj;
+            core_rtl_list_node_remove(&node, &(p_this->child_wait_list));
+
+            core_exception_set_errno(ESUCCESS);
+            return ESUCCESS;
+
+        } else {
+            //Child has been waited without id when it is zombie
+            *p_p_proc_obj = p_child_info->p_process;
+            p_this->remove_thread(p_this, p_child_info->p_process->process_id);
+            core_exception_set_errno(ESUCCESS);
+            return ESUCCESS;
+        }
+    }
 }
 
 int compare_num(u32 * p_n1, u32 * p_n2)

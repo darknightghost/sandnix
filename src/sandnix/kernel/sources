@@ -38,6 +38,7 @@ core/main/main.c
 core/kclock/kclock.c
 
 ##pm
+core/pm/pm.c
 core/pm/process/process.c
 core/pm/process/process_obj.c
 core/pm/process/proc_ref_obj.c

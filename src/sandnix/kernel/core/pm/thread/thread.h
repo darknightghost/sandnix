@@ -48,6 +48,11 @@ void		PRIVATE(thread_init)();
 void		PRIVATE(thread_core_init)();
 void		PRIVATE(thread_core_release)();
 void		PRIVATE(thread_id_release)(u32 id);
-void		PRIVATE(clean_thread)(u32 id);
+
+//Add reference to thread object
+void		PRIVATE(ref_thread)(u32 id);
+
+//Decrease reference to thread object
+void		PRIVATE(unref_thread)(u32 id);
 
 #undef	MODULE_NAME
