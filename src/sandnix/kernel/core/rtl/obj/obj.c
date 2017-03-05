@@ -17,6 +17,7 @@
 
 #include "obj.h"
 #include "../../mm/mm.h"
+#include "../../../hal/rtl/rtl.h"
 
 pobj_t obj(u32 class_id, destructor_t destructor,
            compare_obj_t compare_func, to_string_t to_string_func,
@@ -39,15 +40,16 @@ pobj_t obj(u32 class_id, destructor_t destructor,
 
 void core_rtl_obj_inc_ref(pobj_t p_obj)
 {
-    (p_obj->ref_count)++;
+    hal_rtl_atomic_addl(p_obj->ref_count, 1);
     return;
 }
 
 void core_rtl_obj_dec_ref(pobj_t p_obj)
 {
-    (p_obj->ref_count)--;
+    u32 result = 0xFFFFFFFF;
+    hal_rtl_atomic_xaddl(p_obj->ref_count, result);
 
-    if(p_obj->ref_count == 0) {
+    if(result == 1) {
         p_obj->destructor(p_obj);
     }
 

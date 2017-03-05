@@ -56,6 +56,11 @@ void PRIVATE(process_init)()
     return;
 }
 
+void		PRIVATE(add_thread)(u32 process_id, u32 thread_id);
+void		PRIVATE(zombie_process_thrd)(u32 process_id, u32 thread_id);
+void		PRIVATE(remove_process_thrd)(u32 process_id, u32 thread_id);
+void PRIVATE(release_proc_id)(u32 id);
+void		PRIVATE(unlock_proc_tbl)();
 void		core_pm_reg_proc_ref_obj(proc_ref_call_back_t callback);
 u32			core_pm_fork(void* child_start_address);
 u32			core_pm_wait(bool wait_pid, u32 process_id);
