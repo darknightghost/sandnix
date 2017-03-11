@@ -432,7 +432,7 @@ void map(ppage_obj_t p_this, void* virt_addr, u32 attr)
 
     for(u32 i = 0; i < page_num; i++) {
         hal_mmu_pg_tbl_set(core_pm_get_currnt_thread_id(),
-                           virt_addr, mmu_attr,
+                           virt_addr + i * SANDNIX_KERNEL_PAGE_SIZE, mmu_attr,
                            (void*)(p_this->mem_info.phy_mem_info.addr
                                    + i * SANDNIX_KERNEL_PAGE_SIZE));
     }
