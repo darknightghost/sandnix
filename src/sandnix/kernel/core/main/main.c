@@ -26,7 +26,7 @@
 void core_main_main()
 {
     core_kconsole_init();
-    core_kconsole_print_info("Entering kernel main...\n");
+    core_kconsole_print_info("\nEntering kernel main...\n");
 
     core_kconsole_print_info("\nInitializing exception handling framework...\n");
     core_exception_init();
@@ -46,6 +46,31 @@ void core_main_main()
     while(1);
 }
 
+void* thread_func1(u32 thread_id, void* p_args)
+{
+    core_kconsole_print_info("Thread started, id = %u, arg = %u\n",
+                             thread_id, p_args);
+
+    while(true);
+
+    return NULL;
+}
+
+void* thread_func2(u32 thread_id, void* p_args)
+{
+    core_kconsole_print_info("Thread started, id = %u, arg = %u\n",
+                             thread_id, p_args);
+
+    while(true);
+
+    return NULL;
+}
+
 void test()
 {
+    core_pm_set_currnt_thrd_priority(PRIORITY_HIGHEST);
+    core_pm_thread_create(thread_func1, 0, PRIORITY_KRNL_NORMAL, (void*)0x01);
+    //core_pm_thread_create(thread_func2, 0, PRIORITY_KRNL_NORMAL, (void*)0x02);
+    core_pm_set_currnt_thrd_priority(PRIORITY_IDLE);
 }
+
