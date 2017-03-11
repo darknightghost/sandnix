@@ -95,11 +95,11 @@ void PRIVATE(thread_init)()
 
     core_rtl_array_set(&thread_table, 0, p_thread_obj);
 
+    core_rtl_memset(cpu_infos, 0, sizeof(cpu_infos));
     pcore_sched_info_t p_info = &cpu_infos[0];
     p_info->cpu_use_stat_l = 0;
     p_info->cpu_use_stat_h = 0;
     p_info->enable_sched = true;
-    INC_REF(p_thread_obj);
     p_info->p_idle_thread = p_thread_obj;
     p_info->priority = PRIORITY_DISPATCH;
     p_info->current_node = core_mm_heap_alloc(sizeof(list_node_t), sched_heap);
@@ -110,15 +110,14 @@ void PRIVATE(thread_init)()
     //Initialize schedule list
     core_kconsole_print_info("\nInitializing schedule...\n");
     core_rtl_memset(sched_lists, 0, sizeof(sched_lists));
-    core_rtl_memset(cpu_infos, 0, sizeof(cpu_infos));
     core_pm_spnlck_init(&sched_list_lock);
     core_pm_spnlck_init(&sched_lock);
 
     //Set schedule callback
     hal_io_int_callback_set(INT_TICK, on_tick);
-    initialized = true;
 
     hal_cpu_regist_IPI_hndlr(IPI_TYPE_PREEMPT, ipi_preempt);
+    initialized = true;
     return;
 }
 

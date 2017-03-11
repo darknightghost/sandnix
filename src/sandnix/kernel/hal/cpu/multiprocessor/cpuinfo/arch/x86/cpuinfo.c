@@ -23,18 +23,12 @@
 #include "../../cpuinfo.h"
 
 static	bool			initialized = false;
-static	map_t			cpuid_map;
-static	pcpu_id_info_t	cpu_id_infos[MAX_CPU_NUM] = {0};
-
-static	int			cpuid_cmp(void* cpuid1, void* cpuid2);
-static	spnlck_rw_t	lock;
+static	cpu_id_info_t	cpu_id_infos[MAX_CPU_NUM] = {0};
 
 #define	MODULE_NAME hal_cpu
 
 void PRIVATE(cpuinfo_init)()
 {
-    core_rtl_map_init(&cpuid_map, cpuid_cmp, NULL);
-    core_pm_spnlck_rw_init(&lock);
     pcpu_id_info_t p_info = core_mm_heap_alloc(sizeof(cpu_id_info_t),
                             NULL);
 
@@ -42,13 +36,14 @@ void PRIVATE(cpuinfo_init)()
         PANIC(ENOMEM, "Failed to allocate memory for cpu0.\n");
     }
 
+    p_info = &cpu_id_infos[0];
+    p_info->used = true;
     p_info->index = 0;
     p_info->cpuid = hal_cpu_get_cpu_id();
-    core_rtl_map_set(&cpuid_map,
-                     (void*)(p_info->cpuid),
-                     p_info);
 
     initialized = true;
+
+    return;
 }
 
 void PRIVATE(cpu_id_info_core_init)();
@@ -65,57 +60,49 @@ u32	hal_cpu_get_cpu_index()
         return 0;
     }
 
-    core_pm_spnlck_rw_r_lock(&lock);
-    pcpu_id_info_t p_info = (pcpu_id_info_t)core_rtl_map_get(&cpuid_map,
-                            (void*)hal_io_apic_read32(LOCAL_APIC_ID_REG));
+    u32 cpuid = hal_cpu_get_cpu_id();
 
-    core_pm_spnlck_rw_r_unlock(&lock);
+    //Look for index
+    for(u32 i = 0; i < MAX_CPU_NUM; i++) {
+        if(cpu_id_infos[i].used
+           && cpu_id_infos[i].cpuid == cpuid) {
 
-    if(p_info == NULL) {
-        return INVALID_CPU_INDEX;
+            return i;
+        }
     }
 
-    return p_info->index;
+    return INVALID_CPU_INDEX;
 }
 
 u32	hal_cpu_get_cpu_id_by_index(u32 index)
 {
     if(index >= MAX_PROCESS_NUM
-       || cpu_id_infos[index] == NULL) {
+       || !cpu_id_infos[index].used) {
         return INVALID_CPU_ID;
     }
 
-    return cpu_id_infos[index]->cpuid;
+    return cpu_id_infos[index].cpuid;
 }
 
 u32	hal_cpu_get_cpu_index_by_id(u32 id)
 {
-    core_pm_spnlck_rw_r_lock(&lock);
-    pcpu_id_info_t p_info = (pcpu_id_info_t)core_rtl_map_get(&cpuid_map,
-                            (void*)id);
-    core_pm_spnlck_rw_r_unlock(&lock);
-
-    if(p_info == NULL) {
-        return INVALID_CPU_INDEX;
+    if(!initialized) {
+        return 0;
     }
 
-    return p_info->index;
+    //Look for index
+    for(u32 i = 0; i < MAX_CPU_NUM; i++) {
+        if(cpu_id_infos[i].used
+           && cpu_id_infos[i].cpuid == id) {
+
+            return i;
+        }
+    }
+
+    return INVALID_CPU_INDEX;
 }
 
 void hal_cpu_get_info(pcpuinfo_t p_ret)
 {
     UNREFERRED_PARAMETER(p_ret);
-}
-
-int cpuid_cmp(void* cpuid1, void* cpuid2)
-{
-    if((u32)cpuid1 > (u32)cpuid2) {
-        return 1;
-
-    } else if((u32)cpuid1 == (u32)cpuid2) {
-        return 0;
-
-    } else {
-        return -1;
-    }
 }
