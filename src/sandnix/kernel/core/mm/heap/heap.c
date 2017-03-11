@@ -169,6 +169,7 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
         p_heap = heap;
     }
 
+    HEAP_CHECK(p_heap);
     size = (size % 8 ? (size / 8 + 1) * 8 : size);
 
     if(size + HEAP_MEM_BLCK_SZ > p_heap->scale) {
@@ -268,6 +269,7 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
     p_mem_block->allocated = true;
     (p_mem_block->p_pg_block->ref)++;
 
+
     if(p_heap->type & HEAP_MULITHREAD) {
         core_pm_spnlck_unlock(&(p_heap->lock));
     }
@@ -278,7 +280,6 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
     }
 
     HEAP_CHECK(p_heap);
-
     return (void*)((address_t)p_mem_block + HEAP_MEM_BLCK_SZ);
 }
 
@@ -298,6 +299,8 @@ void core_mm_heap_free(
     } else {
         p_heap = heap;
     }
+
+    HEAP_CHECK(p_heap);
 
     if(p_heap->type & HEAP_MULITHREAD) {
         core_pm_spnlck_lock(&(p_heap->lock));
@@ -415,6 +418,15 @@ void core_mm_heap_chk(pheap_t heap)
             p_mem_blk != NULL;
             p_mem_blk = p_mem_blk->p_next) {
             if(p_mem_blk->magic != HEAP_MEMBLOCK_MAGIC) {
+                pehpcorruption_except_t p_except
+                    = ehpcorruption_except(p_heap);
+                RAISE(p_except, NULL);
+            }
+
+            if((p_mem_blk->p_next != NULL
+                && p_mem_blk->p_next->p_prev != p_mem_blk)
+               || (p_mem_blk->p_prev != NULL
+                   && p_mem_blk->p_prev->p_next != p_mem_blk)) {
                 pehpcorruption_except_t p_except
                     = ehpcorruption_except(p_heap);
                 RAISE(p_except, NULL);

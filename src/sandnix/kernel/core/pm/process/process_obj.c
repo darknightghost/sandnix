@@ -349,7 +349,7 @@ void add_child(pprocess_obj_t p_this, pprocess_obj_t p_child)
     pproc_child_info_t p_ref = NULL;
 
     while(p_ref == NULL) {
-        p_ref = core_mm_heap_alloc(sizeof(pproc_child_info_t),
+        p_ref = core_mm_heap_alloc(sizeof(proc_child_info_t),
                                    p_this->obj.heap);
     }
 
@@ -434,7 +434,7 @@ void add_thread(pprocess_obj_t p_this, u32 thread_id)
     pproc_thrd_info_t p_ref = NULL;
 
     while(p_ref == NULL) {
-        p_ref = core_mm_heap_alloc(sizeof(pproc_thrd_info_t), p_this->obj.heap);
+        p_ref = core_mm_heap_alloc(sizeof(proc_thrd_info_t), p_this->obj.heap);
     }
 
     //Add thread
@@ -443,6 +443,7 @@ void add_thread(pprocess_obj_t p_this, u32 thread_id)
     p_ref->waited = false;
     p_ref->ref = 0;
 
+    proc_obj_heap = NULL;
     core_rtl_map_set(&(p_this->alive_threads), &(p_ref->id), p_ref);
 
     (p_this->alive_thread_num)++;

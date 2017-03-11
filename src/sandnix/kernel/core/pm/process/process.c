@@ -41,12 +41,12 @@ void PRIVATE(process_init)()
     }
 
     //Initialize process table
-    core_kconsole_print_info("\nInitializing process table...\n");
+    core_kconsole_print_info("Initializing process table...\n");
     core_rtl_array_init(&process_tbl, MAX_PROCESS_NUM, proc_tbl_heap);
     core_pm_mutex_init(&process_tbl_lck);
 
     //Create process 0
-    core_kconsole_print_info("\nCreating process 0...\n");
+    core_kconsole_print_info("Creating process 0...\n");
     pprocess_obj_t p_proc_0 = process_obj_0(&process_tbl_lck);
     p_proc_0->add_thread(p_proc_0, 0);
 

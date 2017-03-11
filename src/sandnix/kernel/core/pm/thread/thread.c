@@ -74,7 +74,7 @@ void PRIVATE(thread_init)()
         PANIC(ENOMEM, "Failed to create schedule heap.");
     }
 
-    core_kconsole_print_info("\nInitializing thread table...\n");
+    core_kconsole_print_info("Initializing thread table...\n");
 
     //Initialize thread table
     core_rtl_array_init(&thread_table, MAX_THREAD_NUM, sched_heap);
@@ -84,7 +84,7 @@ void PRIVATE(thread_init)()
     core_rtl_list_init(&thread_ref_callback_list);
 
     //Create thread 0
-    core_kconsole_print_info("\nCreating thread 0...\n");
+    core_kconsole_print_info("Creating thread 0...\n");
     pthread_obj_t p_thread_obj = thread_obj_0();
     p_thread_obj->p_node = NULL;
     p_thread_obj->status = TASK_RUNNING;
@@ -108,7 +108,7 @@ void PRIVATE(thread_init)()
     core_pm_spnlck_init(&(p_info->lock));
 
     //Initialize schedule list
-    core_kconsole_print_info("\nInitializing schedule...\n");
+    core_kconsole_print_info("Initializing schedule...\n");
     core_rtl_memset(sched_lists, 0, sizeof(sched_lists));
     core_pm_spnlck_init(&sched_list_lock);
     core_pm_spnlck_init(&sched_lock);
