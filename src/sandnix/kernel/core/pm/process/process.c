@@ -56,11 +56,119 @@ void PRIVATE(process_init)()
     return;
 }
 
-void		PRIVATE(add_thread)(u32 process_id, u32 thread_id);
-void		PRIVATE(zombie_process_thrd)(u32 process_id, u32 thread_id);
-void		PRIVATE(remove_process_thrd)(u32 process_id, u32 thread_id);
-void PRIVATE(release_proc_id)(u32 id);
-void		PRIVATE(unlock_proc_tbl)();
+void PRIVATE(add_thread)(u32 process_id, u32 thread_id)
+{
+    kstatus_t status = core_pm_mutex_acquire(&process_tbl_lck, -1);
+
+    while(status != ESUCCESS) {
+        status = core_pm_mutex_acquire(&process_tbl_lck, -1);
+    }
+
+    //Get process object
+    pprocess_obj_t p_proc_obj = core_rtl_array_get(&process_tbl, process_id);
+
+    if(p_proc_obj == NULL) {
+        core_pm_mutex_release(&process_tbl_lck);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Illegal process id.");
+        return;
+    }
+
+    //Check process status
+    if(p_proc_obj->status != PROCESS_ALIVE) {
+        core_pm_mutex_release(&process_tbl_lck);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Cannot add new thread to a zombie process.");
+        return;
+    }
+
+    //Add thread
+    p_proc_obj->add_thread(p_proc_obj, thread_id);
+
+    core_pm_mutex_release(&process_tbl_lck);
+    return;
+}
+
+void PRIVATE(zombie_process_thrd)(u32 process_id, u32 thread_id)
+{
+    kstatus_t status = core_pm_mutex_acquire(&process_tbl_lck, -1);
+
+    while(status != ESUCCESS) {
+        status = core_pm_mutex_acquire(&process_tbl_lck, -1);
+    }
+
+    //Get process object
+    pprocess_obj_t p_proc_obj = core_rtl_array_get(&process_tbl, process_id);
+
+    if(p_proc_obj == NULL) {
+        core_pm_mutex_release(&process_tbl_lck);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Illegal process id.");
+        return;
+    }
+
+    //Check process status
+    if(p_proc_obj->status != PROCESS_ALIVE) {
+        core_pm_mutex_release(&process_tbl_lck);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Cannot add new thread to a zombie process.");
+        return;
+    }
+
+    //Zombie thread
+    p_proc_obj->zombie_thread(p_proc_obj, thread_id);
+
+    core_pm_mutex_release(&process_tbl_lck);
+    return;
+}
+
+void PRIVATE(remove_process_thrd)(u32 process_id, u32 thread_id)
+{
+    kstatus_t status = core_pm_mutex_acquire(&process_tbl_lck, -1);
+
+    while(status != ESUCCESS) {
+        status = core_pm_mutex_acquire(&process_tbl_lck, -1);
+    }
+
+    //Get process object
+    pprocess_obj_t p_proc_obj = core_rtl_array_get(&process_tbl, process_id);
+
+    if(p_proc_obj == NULL) {
+        core_pm_mutex_release(&process_tbl_lck);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Illegal process id.");
+        return;
+    }
+
+    //Check process status
+    if(p_proc_obj->status != PROCESS_ALIVE) {
+        core_pm_mutex_release(&process_tbl_lck);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Cannot add new thread to a zombie process.");
+        return;
+    }
+
+    //Remove thread
+    p_proc_obj->remove_thread(p_proc_obj, thread_id);
+
+    core_pm_mutex_release(&process_tbl_lck);
+    return;
+}
+
+void PRIVATE(release_proc_id)(u32 id)
+{
+    kstatus_t status = core_pm_mutex_acquire(&process_tbl_lck, -1);
+
+    while(status != ESUCCESS) {
+        status = core_pm_mutex_acquire(&process_tbl_lck, -1);
+    }
+
+    core_rtl_array_set(&process_tbl, id, NULL);
+
+    core_pm_mutex_release(&process_tbl_lck);
+    return;
+}
+
 void		core_pm_reg_proc_ref_obj(proc_ref_call_back_t callback);
 u32			core_pm_fork(void* child_start_address);
 u32			core_pm_wait(bool wait_pid, u32 process_id);

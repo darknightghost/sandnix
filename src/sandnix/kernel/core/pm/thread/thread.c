@@ -274,7 +274,8 @@ u32 core_pm_thread_create(thread_func_t thread_func, u32 k_stack_size,
 
     core_pm_spnlck_rw_w_unlock(&thread_table_lock);
 
-    //TODO:Add new thread to process
+    //Add new thread to process
+    PRIVATE(add_thread)(process_id, new_id);
 
     //Prepare context
     hal_cpu_get_init_kernel_context((void*)(p_thread_obj->k_stack_addr),

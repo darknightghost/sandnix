@@ -42,6 +42,5 @@ void		PRIVATE(add_thread)(u32 process_id, u32 thread_id);
 void		PRIVATE(zombie_process_thrd)(u32 process_id, u32 thread_id);
 void		PRIVATE(remove_process_thrd)(u32 process_id, u32 thread_id);
 void		PRIVATE(release_proc_id)(u32 id);
-void		PRIVATE(unlock_proc_tbl)();
 
 #undef	MODULE_NAME
