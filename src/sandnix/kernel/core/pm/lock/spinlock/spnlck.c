@@ -75,7 +75,6 @@ void core_pm_spnlck_raw_lock(pspnlck_t p_lock)
         MEM_BLOCK;
     }
 
-    p_lock->cpu_index = hal_cpu_get_cpu_index();
     return;
 }
 
@@ -131,7 +130,6 @@ kstatus_t core_pm_spnlck_raw_trylock(pspnlck_t p_lock)
         return EAGAIN;
 
     } else {
-        p_lock->cpu_index = hal_cpu_get_cpu_index();
         return ESUCCESS;
     }
 }

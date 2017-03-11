@@ -23,6 +23,7 @@ typedef struct _cpuinfo {
 } cpuinfo_t, *pcpuinfo_t;
 
 typedef struct _cpu_id_info {
+    bool	used;
     u32		index;
     u32		cpuid;
 } cpu_id_info_t, *pcpu_id_info_t;
