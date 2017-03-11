@@ -84,6 +84,7 @@ pthread_obj_t thread_obj(u32 thread_id, u32 process_id, size_t kernel_stack_size
     p_ret->status_info.runing.time_slices = 0;
     core_rtl_map_init(&(p_ret->ref_objects), (item_compare_t)compare_addr,
                       thread_obj_heap);
+    p_ret->node.p_item = p_ret;
 
     //Methods
     p_ret->add_ref = add_ref;
@@ -153,6 +154,7 @@ pthread_obj_t thread_obj_0()
     p_ret->status_info.runing.time_slices = 0;
     core_rtl_map_init(&(p_ret->ref_objects), (item_compare_t)compare_addr,
                       thread_obj_heap);
+    p_ret->node.p_item = p_ret;
 
     //Methods
     p_ret->add_ref = add_ref;
