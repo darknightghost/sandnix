@@ -86,7 +86,6 @@ void PRIVATE(thread_init)()
     //Create thread 0
     core_kconsole_print_info("Creating thread 0...\n");
     pthread_obj_t p_thread_obj = thread_obj_0();
-    p_thread_obj->p_node = NULL;
     p_thread_obj->status = TASK_RUNNING;
 
     if(p_thread_obj == NULL) {
@@ -102,9 +101,8 @@ void PRIVATE(thread_init)()
     p_info->enable_sched = true;
     p_info->p_idle_thread = p_thread_obj;
     p_info->priority = PRIORITY_DISPATCH;
-    p_info->current_node = core_mm_heap_alloc(sizeof(list_node_t), sched_heap);
+    p_info->current_node = &(p_thread_obj->node);
     p_info->current_node->p_item = p_thread_obj;
-    p_thread_obj->p_node = p_info->current_node;
     core_pm_spnlck_init(&(p_info->lock));
 
     //Initialize schedule list
@@ -118,6 +116,7 @@ void PRIVATE(thread_init)()
 
     hal_cpu_regist_IPI_hndlr(IPI_TYPE_PREEMPT, ipi_preempt);
     initialized = true;
+    p_info->enabled = true;
     return;
 }
 
@@ -380,20 +379,18 @@ void core_pm_resume(u32 thread_id)
             //Wakeup thread
             p_thread_obj->wakeup(p_thread_obj);
 
-            if(p_thread_obj->p_node != NULL) {
-                if(sched_lists[p_thread_obj->priority]
-                   != p_thread_obj->p_node) {
-                    //Move the task to the top of schedule list
-                    plist_node_t p_node = p_thread_obj->p_node;
+            if(sched_lists[p_thread_obj->priority]
+               != &p_thread_obj->node) {
+                //Move the task to the top of schedule list
+                plist_node_t p_node = &(p_thread_obj->node);
 
-                    core_rtl_list_node_remove(
-                        p_node,
-                        &sched_lists[p_thread_obj->priority]);
-                    core_rtl_list_insert_node_before(
-                        NULL,
-                        &sched_lists[p_thread_obj->priority],
-                        p_node);
-                }
+                core_rtl_list_node_remove(
+                    p_node,
+                    &sched_lists[p_thread_obj->priority]);
+                core_rtl_list_insert_node_before(
+                    NULL,
+                    &sched_lists[p_thread_obj->priority],
+                    p_node);
             }
 
             core_pm_spnlck_unlock(&sched_list_lock);
@@ -407,17 +404,15 @@ void core_pm_resume(u32 thread_id)
             p_thread_obj->reset_timeslice(p_thread_obj);
 
             //Insert task to schedule list
-            if(p_thread_obj->p_node != NULL) {
-                plist_node_t p_node = p_thread_obj->p_node;
+            plist_node_t p_node = &(p_thread_obj->node);
 
-                core_rtl_list_insert_node_before(
-                    NULL,
-                    &sched_lists[p_thread_obj->priority],
-                    p_node);
-            }
-
-            core_pm_spnlck_unlock(&sched_list_lock);
+            core_rtl_list_insert_node_before(
+                NULL,
+                &sched_lists[p_thread_obj->priority],
+                p_node);
         }
+
+        core_pm_spnlck_unlock(&sched_list_lock);
 
         //Schedule now
         hal_cpu_send_IPI(-1, IPI_TYPE_PREEMPT, NULL);
@@ -717,7 +712,6 @@ void next_task(pcore_sched_info_t p_info)
         if(p_node == NULL) {
             //Traverse schedule lists
             end_priority = MAX(p_info->priority, PRIORITY_IDLE_TASK);
-            core_pm_spnlck_raw_lock(&sched_list_lock);
 
             for(u32 pri = PRIORITY_DISPATCH - 1;
                 pri > end_priority;
@@ -862,7 +856,7 @@ void next_task(pcore_sched_info_t p_info)
         }
 
         if(p_node == NULL) {
-            p_info->current_node = p_info->p_idle_thread->p_node;
+            p_info->current_node = &(p_info->p_idle_thread->node);
 
         } else {
             p_info->current_node = p_node;
