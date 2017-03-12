@@ -30,15 +30,6 @@ pcontext_t hal_cpu_get_init_kernel_context(void* k_stack,
     //Get stack base
     u32* stack_base = (u32*)((address_t)k_stack + k_stack_size);
 
-    //Get context address
-    stack_base = (u32*)((address_t)stack_base - sizeof(context_t));
-
-    if((address_t)stack_base % 8 != 0) {
-        stack_base = (u32*)((address_t)stack_base - (address_t)stack_base % 8);
-    }
-
-    pcontext_t p_ret = (pcontext_t)stack_base;
-
     //Push parameters
     //p_args
     stack_base--;
@@ -56,6 +47,17 @@ pcontext_t hal_cpu_get_init_kernel_context(void* k_stack,
     stack_base--;
     *stack_base = (u32)0;
 
+    address_t esp = (address_t)stack_base;
+
+    //Get context address
+    stack_base = (u32*)((address_t)stack_base - sizeof(context_t));
+
+    if((address_t)stack_base % 8 != 0) {
+        stack_base = (u32*)((address_t)stack_base - (address_t)stack_base % 8);
+    }
+
+    pcontext_t p_ret = (pcontext_t)stack_base;
+
     //Initialize context
     core_rtl_memset(p_ret, 0, sizeof(context_t));
     p_ret->es = SELECTOR_K_DATA;
@@ -69,7 +71,7 @@ pcontext_t hal_cpu_get_init_kernel_context(void* k_stack,
     p_ret->edi = 0;
     p_ret->esi = 0;
     p_ret->ebp = ((address_t)k_stack + k_stack_size);
-    p_ret->esp = (u32)stack_base;
+    p_ret->esp = esp;
     p_ret->ebx = 0;
     p_ret->edx = 0;
     p_ret->ecx = 0;

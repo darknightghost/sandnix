@@ -276,11 +276,12 @@ u32 core_pm_thread_create(thread_func_t thread_func, u32 k_stack_size,
     PRIVATE(add_thread)(process_id, new_id);
 
     //Prepare context
-    hal_cpu_get_init_kernel_context((void*)(p_thread_obj->k_stack_addr),
-                                    p_thread_obj->k_stack_size,
-                                    thread_func,
-                                    new_id,
-                                    p_arg);
+    p_thread_obj->p_context = hal_cpu_get_init_kernel_context(
+                                  (void*)(p_thread_obj->k_stack_addr),
+                                  p_thread_obj->k_stack_size,
+                                  thread_func,
+                                  new_id,
+                                  p_arg);
 
     //Resume thread
     core_pm_resume(new_id);
@@ -642,7 +643,10 @@ void on_tick(u32 int_num, pcontext_t p_context, u32 err_code)
     }
 
     p_thread_obj->p_context = p_context;
-    p_thread_obj->status = TASK_READY;
+
+    if(p_thread_obj->status == TASK_RUNNING) {
+        p_thread_obj->status = TASK_READY;
+    }
 
     //Switch task
     next_task(p_info);
@@ -677,12 +681,11 @@ void next_task(pcore_sched_info_t p_info)
 {
     //Get current thread object
     pthread_obj_t  p_thread_obj = (pthread_obj_t)(p_info->current_node->p_item);
-    p_thread_obj->status = TASK_READY;
 
     //Search for next task
     plist_node_t p_node = NULL;
 
-    if(!(p_thread_obj->can_run(p_thread_obj))) {
+    if(p_thread_obj->can_run(p_thread_obj)) {
         //Check if current thread can be preempted
         if(p_thread_obj->priority == PRIORITY_HIGHEST) {
             //Highest priority, resume current thread
@@ -740,7 +743,6 @@ void next_task(pcore_sched_info_t p_info)
                 }
             }
 
-            core_pm_spnlck_raw_unlock(&sched_list_lock);
         }
 
         if(p_node != NULL) {

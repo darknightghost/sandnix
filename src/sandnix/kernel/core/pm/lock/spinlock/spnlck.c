@@ -72,8 +72,16 @@ void core_pm_spnlck_raw_lock(pspnlck_t p_lock)
 
     //Get lock
     while(p_lock->owner != ticket) {
+        if(p_lock->cpu_index == hal_cpu_get_cpu_index()) {
+            //Dead lock, raise exception
+            pedeadlock_except_t p_except = edeadlock_except();
+            RAISE(p_except, "Trying to get a spinlock whitch has been got.");
+        }
+
         MEM_BLOCK;
     }
+
+    p_lock->cpu_index = hal_cpu_get_cpu_index();
 
     return;
 }
@@ -130,6 +138,7 @@ kstatus_t core_pm_spnlck_raw_trylock(pspnlck_t p_lock)
         return EAGAIN;
 
     } else {
+        p_lock->cpu_index = hal_cpu_get_cpu_index();
         return ESUCCESS;
     }
 }
@@ -140,14 +149,34 @@ void core_pm_spnlck_unlock(pspnlck_t p_lock)
 
     priority = p_lock->priority;
 
-    (p_lock->owner)++;
+    u16 ticket = p_lock->ticket;
+
+    u16 inc_val = 1;
+    hal_rtl_atomic_xaddw(p_lock->owner, inc_val);
 
     core_pm_set_currnt_thrd_priority(priority);
+
+    if(inc_val > ticket) {
+        //Dead lock next time, raise exception
+        pedeadlock_except_t p_except = edeadlock_except();
+        RAISE(p_except, "Trying to release a spinlock whitch has been released.");
+    }
+
     return;
 }
 
 void core_pm_spnlck_raw_unlock(pspnlck_t p_lock)
 {
-    (p_lock->owner)++;
+    u16 ticket = p_lock->ticket;
+
+    u16 inc_val = 1;
+    hal_rtl_atomic_xaddw(p_lock->owner, inc_val);
+
+    if(inc_val > ticket) {
+        //Dead lock next time, raise exception
+        pedeadlock_except_t p_except = edeadlock_except();
+        RAISE(p_except, "Trying to release a spinlock whitch has been released.");
+    }
+
     return;
 }

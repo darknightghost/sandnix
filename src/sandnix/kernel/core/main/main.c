@@ -48,20 +48,26 @@ void core_main_main()
 
 void* thread_func1(u32 thread_id, void* p_args)
 {
-    core_kconsole_print_info("Thread started, id = %u, arg = %u\n",
-                             thread_id, p_args);
+    while(true) {
+        core_kconsole_print_info("11111111111111111111\n",
+                                 thread_id, p_args);
+        u64 ns = 1000000000000;
+        core_pm_sleep(&ns);
 
-    while(true);
+    }
 
     return NULL;
 }
 
 void* thread_func2(u32 thread_id, void* p_args)
 {
-    core_kconsole_print_info("Thread started, id = %u, arg = %u\n",
-                             thread_id, p_args);
+    while(true) {
+        core_kconsole_print_info("\r22222222",
+                                 thread_id, p_args);
 
-    while(true);
+        u64 ns = 1000000000000;
+        core_pm_sleep(&ns);
+    }
 
     return NULL;
 }

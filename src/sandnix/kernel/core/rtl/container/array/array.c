@@ -50,6 +50,9 @@ kstatus_t core_rtl_array_init(parray_t p_array, u32 num, pheap_t heap)
         return ENOMEM;
     }
 
+    core_rtl_memset(p_array->p_p_blks, 0,
+                    p_array->size / p_array->scale * sizeof(parray_blk_t));
+
     return ESUCCESS;
 }
 
@@ -78,7 +81,7 @@ void* core_rtl_array_set(parray_t p_array, u32 index, void* value)
     if(value == NULL && *p_p_blk == NULL) {
         return NULL;
 
-    } else {
+    } else if(*p_p_blk == NULL) {
         //Allocate new block
         *p_p_blk = core_mm_heap_alloc(sizeof(array_blk_t), p_array->heap);
 
