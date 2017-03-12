@@ -51,10 +51,10 @@ void* thread_func1(u32 thread_id, void* p_args)
     while(true) {
         core_kconsole_print_info("11111111111111111111\n",
                                  thread_id, p_args);
-        u64 ns = 1000000000000;
-        core_pm_sleep(&ns);
+        core_pm_suspend(thread_id);
 
     }
+
 
     return NULL;
 }
@@ -62,13 +62,13 @@ void* thread_func1(u32 thread_id, void* p_args)
 void* thread_func2(u32 thread_id, void* p_args)
 {
     while(true) {
-        core_kconsole_print_info("\r22222222",
-                                 thread_id, p_args);
-
-        u64 ns = 1000000000000;
+        u64 ns = 1000000000;
         core_pm_sleep(&ns);
+        core_pm_resume(1);
     }
 
+    UNREFERRED_PARAMETER(thread_id);
+    UNREFERRED_PARAMETER(p_args);
     return NULL;
 }
 
@@ -76,7 +76,7 @@ void test()
 {
     core_pm_set_currnt_thrd_priority(PRIORITY_HIGHEST);
     core_pm_thread_create(thread_func1, 0, PRIORITY_KRNL_NORMAL, (void*)0x01);
-    //core_pm_thread_create(thread_func2, 0, PRIORITY_KRNL_NORMAL, (void*)0x02);
+    core_pm_thread_create(thread_func2, 0, PRIORITY_KRNL_NORMAL, (void*)0x02);
     core_pm_set_currnt_thrd_priority(PRIORITY_IDLE);
 }
 

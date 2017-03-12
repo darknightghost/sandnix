@@ -103,6 +103,7 @@ void hal_cpu_send_IPI(s32 index, u32 type, void* p_args)
 
         core_pm_spnlck_lock(&send_lock);
         hal_io_broadcast_IPI();
+        hal_io_send_IPI(hal_cpu_get_cpu_id());
         core_pm_spnlck_unlock(&send_lock);
 
     } else {
@@ -172,6 +173,8 @@ void ipi_int_hndlr(u32 int_num, pcontext_t p_context, u32 err_code)
     if(hndlr != NULL) {
         hndlr(p_context, p_args);
     }
+
+    hal_io_IPI_send_eoi();
 
     UNREFERRED_PARAMETER(err_code);
     UNREFERRED_PARAMETER(int_num);
