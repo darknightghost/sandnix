@@ -415,6 +415,7 @@ void core_pm_resume(u32 thread_id)
 
         core_pm_spnlck_unlock(&sched_list_lock);
 
+        DEC_REF(p_thread_obj);
         //Schedule now
         hal_cpu_send_IPI(-1, IPI_TYPE_PREEMPT, NULL);
     }

@@ -405,8 +405,8 @@ void resume(pthread_obj_t p_this, u32 cpu_index)
 void reset_timeslice(pthread_obj_t p_this)
 {
     if(p_this->priority < PRIORITY_DISPATCH
-       && (p_this->status = TASK_READY
-                            || p_this->status == TASK_RUNNING)
+       && (p_this->status == TASK_READY
+           || p_this->status == TASK_RUNNING)
        && p_this->status_info.runing.time_slices == 0) {
         p_this->status_info.runing.time_slices
             = MAX_TIME_SLICE_NUM * p_this->priority / PRIORITY_DISPATCH + 1;
