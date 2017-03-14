@@ -545,8 +545,82 @@ void core_pm_set_currnt_thrd_priority(u32 priority)
     return;
 }
 
-u32			core_pm_get_thrd_priority(u32 thrd_id);
-void		core_pm_set_thrd_priority(u32 thrd_id, u32 priority);
+u32 core_pm_get_thrd_priority(u32 thrd_id)
+{
+    //Get thread object
+    core_pm_spnlck_rw_r_lock(&thread_table_lock);
+    pthread_obj_t p_thread_obj = core_rtl_array_get(
+                                     &thread_table,
+                                     thrd_id);
+
+    if(p_thread_obj == NULL) {
+        core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Illegal thread id.");
+        return 0;
+    }
+
+    INC_REF(p_thread_obj);
+    core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+
+    //Get priority
+    u32 ret = p_thread_obj->priority;
+    DEC_REF(p_thread_obj);
+
+    core_exception_set_errno(ESUCCESS);
+    return ret;
+}
+
+void core_pm_set_thrd_priority(u32 thrd_id, u32 priority)
+{
+    //Get thread object
+    core_pm_spnlck_rw_r_lock(&thread_table_lock);
+    pthread_obj_t p_thread_obj = core_rtl_array_get(
+                                     &thread_table,
+                                     thrd_id);
+
+    if(p_thread_obj == NULL) {
+        core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Illegal thread id.");
+        return;
+    }
+
+    INC_REF(p_thread_obj);
+    core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+
+    //Set priority
+    core_pm_spnlck_lock(&sched_list_lock);
+    u32 old_priority = p_thread_obj->priority;
+
+    if(p_thread_obj->status == TASK_RUNNING) {
+        //Update priority of cpu info
+        for(u32 i = 0; i < MAX_CPU_NUM; i++) {
+            if(cpu_infos[i].enabled) {
+                if(cpu_infos[i].current_node->p_item == (void*)p_thread_obj) {
+                    cpu_infos->priority = priority;
+                }
+            }
+        }
+
+    } else if(p_thread_obj->status == TASK_READY
+              || p_thread_obj->status == TASK_SLEEP) {
+        //Move thread to the schedule list of new priority
+        core_rtl_list_node_remove(
+            &p_thread_obj->node,
+            &sched_lists[old_priority]);
+        core_rtl_list_insert_node_before(
+            NULL,
+            &sched_lists[priority],
+            &p_thread_obj->node);
+    }
+
+    core_pm_spnlck_unlock(&sched_list_lock);
+
+    DEC_REF(p_thread_obj);
+    core_exception_set_errno(ESUCCESS);
+    return;
+}
 
 void core_pm_schedule()
 {
