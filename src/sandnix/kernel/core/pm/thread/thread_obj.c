@@ -291,10 +291,6 @@ pthread_obj_t fork(pthread_obj_t p_this, u32 new_thread_id, u32 new_proc_id)
 
 void thread_die(pthread_obj_t p_this)
 {
-    //Decrease refererence of all objs
-    core_rtl_map_destroy(&(p_this->ref_objects),
-                         (item_destroyer_t)dec_ref_count, NULL, NULL);
-
     //Free stacks
     if(p_this->k_stack_addr != (address_t)init_stack) {
         core_mm_pg_free((void*)(p_this->k_stack_addr));
@@ -306,6 +302,10 @@ void thread_die(pthread_obj_t p_this)
         core_mm_pg_free((void*)p_this->u_stack_addr);
         core_mm_switch_to(current_page_id);
     }
+
+    //Decrease refererence of all objs
+    core_rtl_map_destroy(&(p_this->ref_objects),
+                         (item_destroyer_t)dec_ref_count, NULL, NULL);
 
     return;
 }
