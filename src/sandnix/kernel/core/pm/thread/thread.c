@@ -514,6 +514,7 @@ u32 core_pm_get_currnt_thrd_priority()
         p_thread_obj = (pthread_obj_t)(p_info->current_node->p_item);
     }
 
+    core_exception_set_errno(ESUCCESS);
     return p_thread_obj->priority;
 }
 
@@ -542,11 +543,16 @@ void core_pm_set_currnt_thrd_priority(u32 priority)
     p_info->priority = priority;
 
     hal_io_int(INT_TICK);
+    core_exception_set_errno(ESUCCESS);
     return;
 }
 
 u32 core_pm_get_thrd_priority(u32 thrd_id)
 {
+    if(thrd_id == core_pm_get_currnt_thread_id()) {
+        return core_pm_get_currnt_thrd_priority();
+    }
+
     //Get thread object
     core_pm_spnlck_rw_r_lock(&thread_table_lock);
     pthread_obj_t p_thread_obj = core_rtl_array_get(
@@ -573,6 +579,10 @@ u32 core_pm_get_thrd_priority(u32 thrd_id)
 
 void core_pm_set_thrd_priority(u32 thrd_id, u32 priority)
 {
+    if(thrd_id == core_pm_get_currnt_thread_id()) {
+        return core_pm_set_currnt_thrd_priority(priority);
+    }
+
     //Get thread object
     core_pm_spnlck_rw_r_lock(&thread_table_lock);
     pthread_obj_t p_thread_obj = core_rtl_array_get(
