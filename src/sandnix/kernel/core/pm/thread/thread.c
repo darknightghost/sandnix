@@ -65,6 +65,13 @@ static inline void			add_ref_obj(u32 thread_id, thread_ref_call_back_t callback)
 
 static void					ipi_preempt(pcontext_t p_context, pipi_arg_obj_t p_null);
 
+//Cleaner thread
+static	void*				cleaner_thread(u32 thread_id, void* p_args);
+static	pthread_obj_t		zombie_obj;
+static	u32					cleaner_id;
+static	volatile u32		zombie_ticket;
+static	volatile u32		zombie_current;
+
 void PRIVATE(thread_init)()
 {
     //Initialize heap
@@ -117,6 +124,7 @@ void PRIVATE(thread_init)()
     hal_cpu_regist_IPI_hndlr(IPI_TYPE_PREEMPT, ipi_preempt);
     initialized = true;
     p_info->enabled = true;
+
     return;
 }
 
@@ -133,6 +141,8 @@ void PRIVATE(thread_core_init)()
     NOT_SUPPORT;
     core_pm_spnlck_init(&(p_info->lock));
     p_info->enabled = true;
+    zombie_ticket = 0;
+    zombie_current = 0;
 
     return;
 }
@@ -202,6 +212,16 @@ void PRIVATE(unref_thread)(u32 id)
     DEC_REF(p_thread_obj);
     core_pm_spnlck_rw_w_unlock(&thread_table_lock);
 
+    return;
+}
+
+void PRIVATE(start_thread_cleaner)()
+{
+    cleaner_id = core_pm_thread_create(
+                     cleaner_thread,
+                     0,
+                     PRIORITY_HIGHEST,
+                     NULL);
     return;
 }
 
@@ -289,9 +309,36 @@ u32 core_pm_thread_create(thread_func_t thread_func, u32 k_stack_size,
     return new_id;
 }
 
-void		core_pm_exit(void* retval)
+void core_pm_exit(void* retval)
 {
+    core_pm_set_currnt_thrd_priority(PRIORITY_DISPATCH);
+
+    //Get ticket
+    u32 ticket = 1;
+    hal_rtl_atomic_xaddl(zombie_ticket, ticket);
+
+    //Wait for ticket
+    while(ticket != zombie_current);
+
+    //Disable schedule
+    core_pm_disable_sched();
+
+    //Get thread object
+    pthread_obj_t p_thread_obj = (pthread_obj_t)(cpu_infos[
+                                  hal_cpu_get_cpu_index()].current_node->p_item);
+
+    //Suspend thread
+    core_pm_suspend(p_thread_obj->thread_id);
+    p_thread_obj->status = TASK_ZOMBIE;
+    zombie_obj = p_thread_obj;
+
+    //Awake thread cleaner
+    core_pm_resume(cleaner_id);
+    core_pm_enable_sched();
+    hal_io_int(INT_TICK);
+
     UNREFERRED_PARAMETER(retval);
+    return;
 }
 
 u32			core_pm_join(bool wait_threadid, u32 thread_id, void** p_retval);
@@ -1034,4 +1081,28 @@ void ipi_preempt(pcontext_t p_context, pipi_arg_obj_t p_null)
     hal_io_int(INT_TICK);
     UNREFERRED_PARAMETER(p_context);
     UNREFERRED_PARAMETER(p_null);
+}
+
+void* cleaner_thread(u32 thread_id, void* p_args)
+{
+    while(true)  {
+        //Wait for zombie thread
+        core_pm_suspend(thread_id);
+
+        if(zombie_obj != NULL) {
+            //Zombie thread
+            zombie_obj->die(zombie_obj);
+            PRIVATE(zombie_process_thrd)(
+                zombie_obj->process_id,
+                zombie_obj->thread_id);
+            zombie_obj = NULL;
+
+            //Zombie next thread
+            hal_rtl_atomic_addl(zombie_current, 1);
+
+        }
+    }
+
+    UNREFERRED_PARAMETER(p_args);
+    return NULL;
 }

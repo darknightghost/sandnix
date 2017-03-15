@@ -24,5 +24,6 @@ void core_pm_init()
 {
     PRIVATE(thread_init)();
     PRIVATE(process_init)();
+    PRIVATE(start_thread_cleaner)();
     return;
 }

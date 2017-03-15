@@ -55,4 +55,7 @@ void		PRIVATE(ref_thread)(u32 id);
 //Decrease reference to thread object
 void		PRIVATE(unref_thread)(u32 id);
 
+//Create clean thread
+void		PRIVATE(start_thread_cleaner)();
+
 #undef	MODULE_NAME
