@@ -34,8 +34,8 @@ u32			core_pm_get_euid(u32 pid);
 kstatus_t	core_pm_set_euid(u32 pid, u32 euid);
 u32			core_pm_get_egid(u32 pid);
 kstatus_t	core_pm_set_egid(u32 pid, u32 egid);
-void		core_pm_set_groups(u32* groupids, size_t size);
-size_t		core_pm_get_groups(u32* buf, size_t buf_size);
+void		core_pm_set_groups(u32 pid, u32* groupids, size_t size);
+size_t		core_pm_get_groups(u32 pid, u32* buf, size_t buf_size);
 
 void		PRIVATE(process_init)();
 void		PRIVATE(add_thread)(u32 process_id, u32 thread_id);

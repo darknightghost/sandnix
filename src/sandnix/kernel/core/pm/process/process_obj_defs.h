@@ -34,6 +34,9 @@ typedef	struct	_process_obj {
     pkstring_obj_t			cmd_line;		//Process command line
     pmutex_t				p_tbl_lock;		//Process table lock
 
+    //Subsystem
+    u32			subsys;				//Sub system
+
     //Authority
     u32			ruid;				//Real user id
     u32			euid;				//Effective user id

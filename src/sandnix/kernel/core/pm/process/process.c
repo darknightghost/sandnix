@@ -172,8 +172,69 @@ void PRIVATE(release_proc_id)(u32 id)
 void		core_pm_reg_proc_ref_obj(proc_ref_call_back_t callback);
 u32			core_pm_fork(void* child_start_address);
 u32			core_pm_wait(bool wait_pid, u32 process_id);
-u32			core_pm_get_subsys(u32 pid);
-kstatus_t	core_pm_set_subsys(u32 pid, u32 subsys_id);
+
+u32 core_pm_get_subsys(u32 pid)
+{
+    //Get process object
+    kstatus_t status = core_pm_mutex_acquire(&process_tbl_lck, -1);
+
+    if(status != ESUCCESS) {
+        core_exception_set_errno(status);
+        return 0;
+    }
+
+    pprocess_obj_t p_proc_obj = core_rtl_array_get(
+                                    &process_tbl,
+                                    pid);
+
+    if(p_proc_obj == NULL) {
+        core_pm_mutex_release(&process_tbl_lck);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Inllegal process id.");
+        return 0;
+    }
+
+    INC_REF(p_proc_obj);
+    core_pm_mutex_release(&process_tbl_lck);
+
+    //Get subsystem id
+    u32 ret = p_proc_obj->subsys;
+
+    DEC_REF(p_proc_obj);
+    core_exception_set_errno(ESUCCESS);
+
+    return ret;
+}
+
+kstatus_t core_pm_set_subsys(u32 pid, u32 subsys_id)
+{
+    //Get process object
+    kstatus_t status = core_pm_mutex_acquire(&process_tbl_lck, -1);
+
+    if(status != ESUCCESS) {
+        core_exception_set_errno(status);
+        return status;
+    }
+
+    pprocess_obj_t p_proc_obj = core_rtl_array_get(
+                                    &process_tbl,
+                                    pid);
+
+    if(p_proc_obj == NULL) {
+        core_pm_mutex_release(&process_tbl_lck);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Inllegal process id.");
+        return EINVAL;
+    }
+
+    //Set subsystem id
+    p_proc_obj->subsys = subsys_id;
+    core_pm_mutex_release(&process_tbl_lck);
+
+    core_exception_set_errno(ESUCCESS);
+
+    return ESUCCESS;
+}
 
 u32 core_pm_get_uid(u32 pid)
 {
@@ -295,8 +356,6 @@ kstatus_t core_pm_set_euid(u32 pid, u32 euid)
         return EINVAL;
     }
 
-    core_pm_mutex_release(&process_tbl_lck);
-
     //Set effective uid
     p_proc_obj->euid = euid;
 
@@ -361,8 +420,6 @@ kstatus_t core_pm_set_egid(u32 pid, u32 egid)
         return EINVAL;
     }
 
-    core_pm_mutex_release(&process_tbl_lck);
-
     //Set effective gid
     p_proc_obj->egid = egid;
 
@@ -373,5 +430,93 @@ kstatus_t core_pm_set_egid(u32 pid, u32 egid)
     return ESUCCESS;
 }
 
-void core_pm_set_groups(u32* groupids, size_t size);
-size_t core_pm_get_groups(u32* buf, size_t buf_size);
+void core_pm_set_groups(u32 pid, u32* groupids, size_t size)
+{
+    //Get process object
+    kstatus_t status = core_pm_mutex_acquire(&process_tbl_lck, -1);
+
+    if(status != ESUCCESS) {
+        core_exception_set_errno(status);
+        return;
+    }
+
+    pprocess_obj_t p_proc_obj = core_rtl_array_get(
+                                    &process_tbl,
+                                    pid);
+
+    if(p_proc_obj == NULL) {
+        core_pm_mutex_release(&process_tbl_lck);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Inllegal process id.");
+        return;
+    }
+
+    //Clear groups
+    core_rtl_list_destroy(
+        &(p_proc_obj->groups),
+        proc_tbl_heap,
+        NULL,
+        NULL);
+
+    //Add groups
+    for(u32* p_grp = groupids;
+        (address_t)p_grp < (address_t)groupids + size;
+        p_grp++) {
+        core_rtl_list_insert_after(
+            NULL,
+            &(p_proc_obj->groups),
+            (void*)(*p_grp),
+            proc_tbl_heap);
+    }
+
+    core_pm_mutex_release(&process_tbl_lck);
+
+    core_exception_set_errno(ESUCCESS);
+
+    return;
+}
+
+size_t core_pm_get_groups(u32 pid, u32* buf, size_t buf_size)
+{
+    //Get process object
+    kstatus_t status = core_pm_mutex_acquire(&process_tbl_lck, -1);
+
+    if(status != ESUCCESS) {
+        core_exception_set_errno(status);
+        return 0;
+    }
+
+    pprocess_obj_t p_proc_obj = core_rtl_array_get(
+                                    &process_tbl,
+                                    pid);
+
+    if(p_proc_obj == NULL) {
+        core_pm_mutex_release(&process_tbl_lck);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Inllegal process id.");
+        return 0;
+    }
+
+    //Get group ids
+    size_t ret = 0;
+    plist_node_t p_node = p_proc_obj->groups;
+    u32* p_grp = buf;
+
+    if(p_node != NULL) {
+        do {
+            if((address_t)p_grp - (address_t)buf < buf_size) {
+                *p_grp = (u32)(p_node->p_item);
+            }
+
+            ret += sizeof(u32);
+            p_grp++;
+            p_node = p_node->p_next;
+        } while(p_node != p_proc_obj->groups);
+    }
+
+    core_pm_mutex_release(&process_tbl_lck);
+
+    core_exception_set_errno(ESUCCESS);
+
+    return ret;
+}
