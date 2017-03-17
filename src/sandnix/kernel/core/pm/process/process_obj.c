@@ -79,6 +79,7 @@ pprocess_obj_t process_obj_0(pmutex_t p_tbl_lck)
     }
 
     //Member variables
+    p_ret->subsys = 0;
     p_ret->process_id = 0;
     p_ret->p_parent = NULL;
     p_ret->status = PROCESS_ALIVE;
@@ -185,6 +186,9 @@ pprocess_obj_t fork(pprocess_obj_t p_this, u32 new_process_id)
     p_ret->status = PROCESS_ALIVE;
     p_ret->exit_code = 0;
     p_ret->p_tbl_lock = p_this->p_tbl_lock;
+
+    //Subsystem
+    p_ret->subsys = p_this->subsys;
 
     //Authority
     p_ret->ruid = p_this->ruid;
