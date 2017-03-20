@@ -84,11 +84,11 @@ typedef	struct	_process_obj {
     //void	remove_thread(pprocess_obj_t p_this, u32 thread_id);
     void	(*remove_thread)(struct _process_obj*, u32);
 
-    //bool	wait_for_zombie_thread(pprocess_obj_t p_this, bool by_id,
+    //kstatus_t	wait_for_zombie_thread(pprocess_obj_t p_this, bool by_id,
     //	u32* p_thread_id);
     kstatus_t	(*wait_for_zombie_thread)(struct _process_obj*, bool, u32*);
 
-    //bool	wait_for_zombie_child(pprocess_obj_t p_this, bool by_id,
+    //kstatus_t	wait_for_zombie_child(pprocess_obj_t p_this, bool by_id,
     //	u32* p_zombie_child_id);
     kstatus_t	(*wait_for_zombie_child)(struct _process_obj*, bool, u32*,
                                          struct _process_obj**);

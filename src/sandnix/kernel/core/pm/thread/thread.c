@@ -341,7 +341,43 @@ void core_pm_exit(void* retval)
     return;
 }
 
-u32			core_pm_join(bool wait_threadid, u32 thread_id, void** p_retval);
+u32 core_pm_join(bool wait_threadid, u32 thread_id, void** p_retval)
+{
+    //Wait for thread
+    u32 cur_proc_id = core_pm_get_currnt_proc_id();
+    kstatus_t status = PRIVATE(wait_for_zombie_thread)(
+                           cur_proc_id,
+                           wait_threadid,
+                           &thread_id);
+
+    if(status != ESUCCESS) {
+        return 0;
+    }
+
+    //Get thread obj
+    core_pm_spnlck_rw_r_lock(&thread_table_lock);
+    pthread_obj_t p_thread_obj = core_rtl_array_get(
+                                     &thread_table,
+                                     thread_id);
+
+    if(p_thread_obj == NULL) {
+        core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Illegal thread id.");
+        return 0;
+    }
+
+    core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+
+    //Get return value
+    *p_retval = p_thread_obj->status_info.zombie.retval;
+
+    DEC_REF(p_thread_obj);
+
+    core_exception_set_errno(ESUCCESS);
+
+    return thread_id;
+}
 
 void core_pm_suspend(u32 thread_id)
 {
