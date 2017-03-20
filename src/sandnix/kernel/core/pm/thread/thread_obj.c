@@ -266,12 +266,26 @@ void remove_ref(pthread_obj_t p_this, pthread_ref_obj_t p_obj)
 
 pthread_obj_t fork(pthread_obj_t p_this, u32 new_thread_id, u32 new_proc_id)
 {
-    pthread_obj_t p_ret = thread_obj(new_thread_id, new_proc_id,
-                                     p_this->k_stack_size,
-                                     p_this->priority);
+    pthread_obj_t p_ret = NULL;
+
+    while(p_ret == NULL) {
+        p_ret = thread_obj(new_thread_id, new_proc_id,
+                           p_this->k_stack_size,
+                           p_this->priority);
+    }
 
     if(p_ret == NULL) {
         return NULL;
+    }
+
+    p_ret->k_stack_size = p_this->k_stack_size;
+    p_ret->k_stack_addr = (address_t)NULL;
+
+    while(p_ret->k_stack_addr == (address_t)NULL) {
+        p_ret->k_stack_addr = (address_t)core_mm_pg_alloc(
+                                  NULL,
+                                  p_this->k_stack_size,
+                                  PAGE_ACCESS_RDWR | PAGE_OPTION_KERNEL);
     }
 
     p_ret->u_stack_addr = p_this->u_stack_addr;
