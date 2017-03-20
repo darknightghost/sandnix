@@ -39,6 +39,7 @@ void core_main_main()
 
     core_kconsole_print_info("\nInitializing process management...\n");
     core_pm_init();
+    core_exception_regist_thrd_ref();
 
     void test();
     test();

@@ -25,10 +25,13 @@
 #include "./exception_defs.h"
 #include "../../hal/exception/exception.h"
 
+#define	MODULE_NAME		core_exception
+
 //Initialize module
 void core_exception_init();
 
-pthread_except_stat_obj_t	core_exception_get_0();
+//Regist thread reference object
+void core_exception_regist_thrd_ref();
 
 //Set errno
 void core_exception_set_errno(kstatus_t status);
@@ -52,3 +55,7 @@ void core_exception_remove_hndlr(plist_node_t pos);
 
 //Pop exception hndlr of current thread
 pexcept_hndlr_info_t core_exception_pop_hndlr();
+
+void	PRIVATE(release_stat_id)(u32 id);
+
+#undef	MODULE_NAME

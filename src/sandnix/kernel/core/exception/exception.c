@@ -26,6 +26,8 @@
 
 #include "exception.h"
 
+#define	MODULE_NAME		core_exception
+
 pheap_t		p_except_heap = NULL;
 
 static	bool		initialized = false;
@@ -35,6 +37,7 @@ static	u8			except_heap_buf[4096 * 4];
 
 static	void		call_thread_hndlrs(pexcept_obj_t except);
 static	void		call_globl_hndlrs(pexcept_obj_t except);
+static	pthread_except_stat_obj_t	thread_ref_call_back(u32 thread_id);
 static	spnlck_rw_t	except_info_tbl_lck;
 static	array_t		except_info_tbl;
 
@@ -69,6 +72,23 @@ void core_exception_init()
     }
 
     core_pm_spnlck_rw_w_unlock(&except_info_tbl_lck);
+    return;
+}
+
+void PRIVATE(release_stat_id)(u32 id)
+{
+    core_pm_spnlck_rw_w_lock(&except_info_tbl_lck);
+
+    core_rtl_array_set(&except_info_tbl, id, NULL);
+
+    core_pm_spnlck_rw_w_unlock(&except_info_tbl_lck);
+
+    return;
+}
+
+void core_exception_regist_thrd_ref()
+{
+    core_pm_reg_thread_ref_obj((thread_ref_call_back_t)thread_ref_call_back);
     return;
 }
 
@@ -118,16 +138,6 @@ kstatus_t core_exception_get_errno()
     DEC_REF(p_thread_stat);
 
     return ret;
-}
-
-pthread_except_stat_obj_t core_exception_get_0()
-{
-    core_pm_spnlck_rw_r_lock(&except_info_tbl_lck);
-    pthread_except_stat_obj_t p_ret = (pthread_except_stat_obj_t)core_rtl_array_get(
-                                          &except_info_tbl, 0);
-    core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
-
-    return p_ret;
 }
 
 void core_exception_raise(pexcept_obj_t except)
@@ -410,4 +420,34 @@ void call_globl_hndlrs(pexcept_obj_t except)
     }
 
     return;
+}
+
+pthread_except_stat_obj_t thread_ref_call_back(u32 thread_id)
+{
+    if(thread_id == 0) {
+        core_pm_spnlck_rw_r_lock(&except_info_tbl_lck);
+        pthread_except_stat_obj_t p_ret = (pthread_except_stat_obj_t)core_rtl_array_get(
+                                              &except_info_tbl, 0);
+        core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
+
+        return p_ret;
+
+    } else {
+        pthread_except_stat_obj_t p_stat = NULL;
+
+        while(p_stat == NULL) {
+            p_stat = thread_except_stat_obj(thread_id);
+        }
+
+        core_pm_spnlck_rw_w_lock(&except_info_tbl_lck);
+
+        if(core_rtl_array_set(&except_info_tbl, 0, p_stat) == NULL) {
+            PANIC(ENOMEM,
+                  "Failed to create thread exception status object for thread 0.");
+        }
+
+        core_pm_spnlck_rw_w_unlock(&except_info_tbl_lck);
+
+        return p_stat;
+    }
 }
