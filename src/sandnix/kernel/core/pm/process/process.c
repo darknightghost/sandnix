@@ -169,6 +169,41 @@ void PRIVATE(release_proc_id)(u32 id)
     return;
 }
 
+kstatus_t PRIVATE(wait_for_zombie_thread)(u32 proc_id, bool by_id,
+        u32* p_thrd_id)
+{
+    //Get process object
+    kstatus_t status = core_pm_mutex_acquire(&process_tbl_lck, -1);
+
+    if(status != ESUCCESS) {
+        core_exception_set_errno(status);
+        return status;
+    }
+
+    pprocess_obj_t p_proc_obj = core_rtl_array_get(
+                                    &process_tbl,
+                                    proc_id);
+
+    if(p_proc_obj == NULL) {
+        core_pm_mutex_release(&process_tbl_lck);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Inllegal process id.");
+        return EINVAL;
+    }
+
+    INC_REF(p_proc_obj);
+    core_pm_mutex_release(&process_tbl_lck);
+
+    status = p_proc_obj->wait_for_zombie_thread(
+                 p_proc_obj,
+                 by_id,
+                 p_thrd_id);
+
+    DEC_REF(p_proc_obj);
+    core_exception_set_errno(status);
+    return status;
+}
+
 void		core_pm_reg_proc_ref_obj(proc_ref_call_back_t callback);
 u32			core_pm_fork(void* child_start_address);
 u32			core_pm_wait(bool wait_pid, u32 process_id);

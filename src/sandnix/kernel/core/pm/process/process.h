@@ -42,5 +42,7 @@ void		PRIVATE(add_thread)(u32 process_id, u32 thread_id);
 void		PRIVATE(zombie_process_thrd)(u32 process_id, u32 thread_id);
 void		PRIVATE(remove_process_thrd)(u32 process_id, u32 thread_id);
 void		PRIVATE(release_proc_id)(u32 id);
+kstatus_t	PRIVATE(wait_for_zombie_thread)(u32 proc_id, bool by_id,
+        u32* p_thrd_id);
 
 #undef	MODULE_NAME
