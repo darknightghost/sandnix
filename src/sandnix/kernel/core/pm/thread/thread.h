@@ -58,4 +58,8 @@ void		PRIVATE(unref_thread)(u32 id);
 //Create clean thread
 void		PRIVATE(start_thread_cleaner)();
 
+//Fork
+u32			PRIVATE(fork_thread)(u32 dest_proc_id, thread_func_t entry,
+                                 void* p_arg);
+
 #undef	MODULE_NAME

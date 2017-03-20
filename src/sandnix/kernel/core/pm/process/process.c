@@ -17,6 +17,7 @@
 
 #include "./process.h"
 #include "./process_obj.h"
+#include "../thread/thread.h"
 #include "../lock/mutex/mutex.h"
 #include "../../mm/mm.h"
 #include "../../rtl/rtl.h"
@@ -29,6 +30,10 @@
 static	array_t			process_tbl;
 static	mutex_t			process_tbl_lck;
 static	pheap_t			proc_tbl_heap;
+static	list_t			proc_ref_callback_list;
+
+
+static	void			add_ref_obj(u32 process_id, proc_ref_call_back_t callback);
 
 void PRIVATE(process_init)()
 {
@@ -52,6 +57,8 @@ void PRIVATE(process_init)()
 
     //Add to process table
     core_rtl_array_set(&process_tbl, 0, p_proc_0);
+
+    core_rtl_list_init(&proc_ref_callback_list);
 
     return;
 }
@@ -204,8 +211,71 @@ kstatus_t PRIVATE(wait_for_zombie_thread)(u32 proc_id, bool by_id,
     return status;
 }
 
-void		core_pm_reg_proc_ref_obj(proc_ref_call_back_t callback);
-u32			core_pm_fork(void* child_start_address);
+void core_pm_reg_proc_ref_obj(proc_ref_call_back_t callback)
+{
+    core_pm_mutex_acquire(&process_tbl_lck, -1);
+
+    //Add callback to list
+    core_rtl_list_insert_after(NULL, &proc_ref_callback_list,
+                               callback, proc_tbl_heap);
+
+    //Add objs to existed threads
+    u32 id = 0;
+
+    while(core_rtl_array_get_used_index(&process_tbl, id, &id)) {
+        add_ref_obj(id, callback);
+        id += 1;
+    }
+
+    core_pm_mutex_release(&process_tbl_lck);
+
+    return;
+}
+
+u32 core_pm_fork(thread_func_t child_start_address, void* p_args)
+{
+    u32 process_id = core_pm_get_currnt_proc_id();
+
+    //Get process object
+    kstatus_t status = core_pm_mutex_acquire(&process_tbl_lck, -1);
+
+    if(status != ESUCCESS) {
+        core_exception_set_errno(status);
+        return 0;
+    }
+
+    pprocess_obj_t p_proc_obj = core_rtl_array_get(
+                                    &process_tbl,
+                                    process_id);
+
+    if(p_proc_obj == NULL) {
+        core_pm_mutex_release(&process_tbl_lck);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Inllegal process id.");
+        return 0;
+    }
+
+    //Get new id
+    u32 new_id;
+
+    if(!core_rtl_array_get_free_index(&process_tbl, &new_id)) {
+        core_pm_mutex_release(&process_tbl_lck);
+        peagain_except_t p_except = eagain_except();
+        RAISE(p_except, "Too many process exists.");
+        return 0;
+    }
+
+    //Fork
+    pprocess_obj_t p_new_obj = p_proc_obj->fork(p_proc_obj, new_id);
+    core_rtl_array_set(&process_tbl, new_id, p_new_obj);
+
+    core_pm_mutex_release(&process_tbl_lck);
+
+    //Fork thread
+    PRIVATE(fork_thread)(new_id, child_start_address, p_args);
+    return new_id;
+}
+
 u32			core_pm_wait(bool wait_pid, u32 process_id);
 
 u32 core_pm_get_subsys(u32 pid)
@@ -554,4 +624,18 @@ size_t core_pm_get_groups(u32 pid, u32* buf, size_t buf_size)
     core_exception_set_errno(ESUCCESS);
 
     return ret;
+}
+
+void add_ref_obj(u32 process_id, proc_ref_call_back_t callback)
+{
+    //Get thread object
+    pprocess_obj_t p_proc_obj = core_rtl_array_get(&process_tbl, process_id);
+
+    //Get reference object
+    pproc_ref_obj_t p_ref = callback(process_id);
+
+    //Add reference object
+    p_proc_obj->add_ref_obj(p_proc_obj, p_ref);
+
+    return;
 }

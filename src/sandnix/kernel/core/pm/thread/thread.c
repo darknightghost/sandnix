@@ -309,6 +309,68 @@ u32 core_pm_thread_create(thread_func_t thread_func, u32 k_stack_size,
     return new_id;
 }
 
+u32 PRIVATE(fork_thread)(u32 dest_proc_id, thread_func_t entry, void* p_arg)
+{
+    //Allocacate thread id
+    core_pm_spnlck_rw_w_lock(&thread_table_lock);
+
+    u32 new_id;
+
+    if(!core_rtl_array_get_free_index(&thread_table, &new_id)) {
+        core_pm_spnlck_rw_w_unlock(&thread_table_lock);
+        peagain_except_t p_except = eagain_except();
+        RAISE(p_except, "Too many threads exists.");
+        return 0;
+    }
+
+    //Get current thread object
+    u32 cpu_index = hal_cpu_get_cpu_index();
+    pcore_sched_info_t p_info = &cpu_infos[cpu_index];
+
+    pthread_obj_t p_thread_obj;
+
+    if(p_info->current_node == NULL) {
+        p_thread_obj = p_info->p_idle_thread;
+
+    } else {
+        p_thread_obj = (pthread_obj_t)(p_info->current_node->p_item);
+    }
+
+    //Fork thread object
+    pthread_obj_t p_new_obj = p_thread_obj->fork(
+                                  p_thread_obj,
+                                  new_id,
+                                  dest_proc_id);
+
+    if(p_new_obj == NULL) {
+        core_pm_spnlck_rw_w_unlock(&thread_table_lock);
+        penomem_except_t p_except = enomem_except();
+        RAISE(p_except, "Failed to create thread object.");
+        return 0;
+    }
+
+    //Add thread to thread table
+    core_rtl_array_set(&thread_table, new_id, p_new_obj);
+
+    core_pm_spnlck_rw_w_unlock(&thread_table_lock);
+
+    //Add new thread to process
+    PRIVATE(add_thread)(dest_proc_id, new_id);
+
+    //Prepare context
+    p_new_obj->p_context = hal_cpu_get_init_kernel_context(
+                               (void*)(p_new_obj->k_stack_addr),
+                               p_new_obj->k_stack_size,
+                               entry,
+                               new_id,
+                               p_arg);
+
+    //Resume thread
+    core_pm_resume(new_id);
+
+    return new_id;
+}
+
 void core_pm_exit(void* retval)
 {
     core_pm_set_currnt_thrd_priority(PRIORITY_DISPATCH);
