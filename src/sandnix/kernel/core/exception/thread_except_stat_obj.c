@@ -31,6 +31,8 @@ static	pthread_except_stat_obj_t	on_fork(pthread_except_stat_obj_t p_this,
 
 extern	pheap_t		p_except_heap;
 
+#define	MODULE_NAME		core_exception
+
 pthread_except_stat_obj_t thread_except_stat_obj(u32 thread_id)
 {
     //Create object
@@ -64,6 +66,8 @@ void destructor(pthread_except_stat_obj_t p_this)
 
     //Free memory
     core_mm_heap_free(p_this, p_this->parent.obj.heap);
+
+    PRIVATE(release_stat_id)(p_this->parent.thread_id);
 
     return;
 }
