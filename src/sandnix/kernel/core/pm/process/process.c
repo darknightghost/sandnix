@@ -276,7 +276,49 @@ u32 core_pm_fork(thread_func_t child_start_address, void* p_args)
     return new_id;
 }
 
-u32			core_pm_wait(bool wait_pid, u32 process_id);
+kstatus_t core_pm_wait(bool wait_pid, u32* process_id, u32* exit_code)
+{
+    u32 cur_proc_id = core_pm_get_currnt_proc_id();
+    //Get process object
+    kstatus_t status = core_pm_mutex_acquire(&process_tbl_lck, -1);
+
+    if(status != ESUCCESS) {
+        core_exception_set_errno(status);
+        return status;
+    }
+
+    pprocess_obj_t p_proc_obj = core_rtl_array_get(
+                                    &process_tbl,
+                                    cur_proc_id);
+
+    if(p_proc_obj == NULL) {
+        core_pm_mutex_release(&process_tbl_lck);
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Inllegal process id.");
+        return EINVAL;
+    }
+
+    core_pm_mutex_release(&process_tbl_lck);
+
+    //Get zombie child
+    pprocess_obj_t p_zombie_obj;
+    status = p_proc_obj->wait_for_zombie_child(
+                 p_proc_obj,
+                 wait_pid,
+                 process_id,
+                 &p_zombie_obj);
+
+    if(status != ESUCCESS) {
+        core_exception_set_errno(status);
+        return status;
+    }
+
+    *exit_code = p_zombie_obj->exit_code;
+    DEC_REF(p_zombie_obj);
+
+    core_exception_set_errno(ESUCCESS);
+    return ESUCCESS;
+}
 
 u32 core_pm_get_subsys(u32 pid)
 {

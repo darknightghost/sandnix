@@ -26,7 +26,7 @@
 
 void		core_pm_reg_proc_ref_obj(proc_ref_call_back_t callback);
 u32			core_pm_fork(thread_func_t child_start_address, void* p_args);
-u32			core_pm_wait(bool wait_pid, u32 process_id);
+kstatus_t	core_pm_wait(bool wait_pid, u32* process_id, u32* exit_code);
 u32			core_pm_get_subsys(u32 pid);
 kstatus_t	core_pm_set_subsys(u32 pid, u32 subsys_id);
 u32			core_pm_get_uid(u32 pid);
