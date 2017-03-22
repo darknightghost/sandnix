@@ -1543,6 +1543,7 @@ mstatus_t
 //主类型
 //异步操作
 #define	MSG_MJ_FINISH		0x00000000
+#define	MSG_MJ_CANCEL		0x00000001
 
 //文件操作
 #define MSG_MJ_OPEN			0x00000010
