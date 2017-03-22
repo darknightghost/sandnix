@@ -629,6 +629,7 @@ ppage_obj_t core_mm_get_pg_obj(void** p_base_addr, void* addr)
 
     if(p_ret != NULL) {
         INC_REF(p_ret);
+        p_page_block->status |= PAGE_BLOCK_SHARED;
     }
 
     core_pm_spnlck_unlock(p_lock);

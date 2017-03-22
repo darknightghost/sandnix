@@ -94,3 +94,8 @@ core/exception/except_obj/eownerdead_except.c
 
 ##kconsole
 core/kconsole/kconsole.c
+
+##vfs
+core/vfs/vfs.c
+core/vfs/msg/msg_queue_obj.c
+core/vfs/msg/messages/msg_obj.c
