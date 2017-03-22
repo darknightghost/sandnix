@@ -1489,6 +1489,7 @@ src/sandnix/kernel/core/ipc/ipc.c
 ```
 #####msg
 内核消息机制
+合并到vfs下
 ######模块路径
 ```
 src/sandnix/kernel/core/msg
@@ -1496,28 +1497,28 @@ src/sandnix/kernel/core/msg
 ######接口数据结构
 ```c
 //消息队列
-msg_queue_t
+msg_queue_obj_t
 
 //消息
-msg_t
+msg_obj_t
 
-msg_finish_t
-msg_open_t
-msg_read_t
-msg_write_t
-msg_close_t
-msg_stat_t
-msg_fcntl_t
-msg_link_t
-msg_unlink_t
-msg_chmod_t
-msg_chown_t
-msg_mkdir_t
-msg_access_t
-msg_mknod_t
-msg_ioctl_t
-msg_mount_t
-msg_umount_t
+msg_finish_obj_t
+msg_open_obj_t
+msg_read_obj_t
+msg_write_obj_t
+msg_close_obj_t
+msg_stat_obj_t
+msg_fcntl_obj_t
+msg_link_obj_t
+msg_unlink_obj_t
+msg_chmod_obj_t
+msg_chown_obj_t
+msg_mkdir_obj_t
+msg_access_obj_t
+msg_mknod_obj_t
+msg_ioctl_obj_t
+msg_mount_obj_t
+msg_umount_obj_t
 
 msg_match_t
 msg_hot_plug_t
@@ -1533,33 +1534,38 @@ mstatus_t
 #define MSG_STATUS_PENDING		0x00000002
 #define MSG_STATUS_CANCEL		0x00000003
 
+//消息属性
+#define	MSG_ATTR_ASYNC			0x00000001
+#define	MSG_ATTR_BY_BUF			0x00000002
+#define	MSG_ATTR_BY_PAGE_OBJ	0x00000004
+
 //消息类型
 //主类型
 //异步操作
 #define	MSG_MJ_FINISH		0x00000000
 
 //文件操作
-#define MSG_MJ_OPEN			0x00010000
-#define MSG_MJ_READ			0x00010001
-#define MSG_MJ_WRITE		0x00010002
-#define MSG_MJ_TRUNCATE		0x00010003
-#define MSG_MJ_CLOSE		0x00010004
-#define MSG_MJ_STAT			0x00010005
-#define MSG_MJ_FCNTL		0x00010006
-#define MSG_MJ_LINK			0x00010007
-#define MSG_MJ_CHMOD		0x00010008
-#define MSG_MJ_CHOWN		0x00010009
-#define MSG_MJ_MKDIR		0x0001000A
-#define MSG_MJ_ACCESS		0x0001000B
-#define MSG_MJ_MKNOD		0x0001000C
-#define MSG_MJ_IOCTL		0x0001000D
-#define MSG_MJ_NOTIFY		0x0001000E
-#define MSG_MJ_MOUNT		0x0001000F
+#define MSG_MJ_OPEN			0x00000010
+#define MSG_MJ_READ			0x00000011
+#define MSG_MJ_WRITE		0x00000012
+#define MSG_MJ_TRUNCATE		0x00000013
+#define MSG_MJ_CLOSE		0x00000014
+#define MSG_MJ_STAT			0x00000015
+#define MSG_MJ_FCNTL		0x00000016
+#define MSG_MJ_LINK			0x00000017
+#define MSG_MJ_CHMOD		0x00000018
+#define MSG_MJ_CHOWN		0x00000019
+#define MSG_MJ_MKDIR		0x0000001A
+#define MSG_MJ_ACCESS		0x0000001B
+#define MSG_MJ_MKNOD		0x0000001C
+#define MSG_MJ_IOCTL		0x0000001D
+#define MSG_MJ_NOTIFY		0x0000001E
+#define MSG_MJ_MOUNT		0x0000001F
 
 //设备操作
-#define MSG_MJ_MATCH			0x00020000
-#define MSG_MJ_HOT_PLUG			0x00020001
-#define MSG_MJ_POWER			0x00020002
+#define MSG_MJ_MATCH			0x00000030
+#define MSG_MJ_HOT_PLUG			0x00000031
+#define MSG_MJ_POWER			0x00000032
 
 //次类型
 //MSG_MJ_FINISH
@@ -1640,9 +1646,6 @@ u32 core_msg_init();
 //消息队列
 //创建消息队列
 u32 core_msg_queue_create();
-
-//销毁消息队列
-void core_msg_queue_destroy(u32 queue_id);
 
 //消息
 //创建
