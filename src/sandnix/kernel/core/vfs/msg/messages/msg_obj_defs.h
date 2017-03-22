@@ -21,6 +21,8 @@
 #include "../../../rtl/rtl_defs.h"
 #include "../../../mm/mm_defs.h"
 
+struct	_msg_queue_obj;
+
 typedef	struct	_msg_obj {
     //Object
     obj_t	obj;			//Base class
@@ -30,6 +32,7 @@ typedef	struct	_msg_obj {
     u32		minor_type;		//Minor type
     u32		status;			//Message status
     u32		attr;			//Message attributes
+    struct	_msg_queue_obj*	p_reply_queue;	//Reply queue, only used in async messages
     union {
         struct {
             void*			p_buf;		//Address of buffer
@@ -43,7 +46,11 @@ typedef	struct	_msg_obj {
     } data;					//Message data
 
     //Methods
+    //Complete message
+    //Cancel message
 } msg_obj_t, *pmsg_obj_t;
+
+#include "../msg_queue_obj_defs.h"
 
 //Message status
 #define MSG_STATUS_SUCCESS		0x00000000

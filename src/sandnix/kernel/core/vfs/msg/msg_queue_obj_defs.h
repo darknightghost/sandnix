@@ -19,3 +19,8 @@
 
 #include "../../../../../common/common.h"
 #include "./messages/msg_obj_defs.h"
+#include "../../rtl/rtl_defs.h"
+#include "./messages/msg_obj_defs.h"
+
+typedef	struct	_msg_queue_obj {
+} msg_queue_obj_t, *pmsg_queue_obj_t;
