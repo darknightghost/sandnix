@@ -22,6 +22,9 @@
 
 #define	MODULE_NAME		core_ipc
 
+void	core_ipc_signal_init();
+
+
 void	PRIVATE(add_singal_obj)(pthrd_signal_tbl_obj_t p_sig_obj);
 void	PRIVATE(signal_quit)(int sig);
 void	PRIVATE(signal_quit_with_core_dump)(int sig);

@@ -20,7 +20,31 @@
 #include "../../../../../common/common.h"
 #include "./messages/msg_obj_defs.h"
 #include "../../rtl/rtl_defs.h"
-#include "./messages/msg_obj_defs.h"
+#include "../../pm/pm_defs.h"
 
 typedef	struct	_msg_queue_obj {
+    obj_t			obj;			//Base class
+
+    queue_t			msg_queue;		//Messages
+    u32				msg_count;		//How many messages in the queue
+    mutex_t			lock;			//Queue lock
+    cond_t			msg_cond;		//Used to wait for message
+
+    bool			alive;			//If the message queue is alive
+
+    //Methods
+    //kstatus_t		send(pmsg_queue_obj_t p_this, pmsg_obj_t p_msg,
+    //			mstatus_t* result);
+    kstatus_t	(*send)(struct _msg_queue_obj*, pmsg_obj_t, mstatus_t*);
+
+    //kstatus_t		recv(pmsg_queue_obj_t p_this, pmsg_obj_t* p_ret,
+    //			s32 millisec_timeout);
+    kstatus_t	(*recv)(struct _msg_queue_obj, pmsg_obj_t*, s32);
+
+    //u32			get_msg_count(pmsg_queue_obj_t p_this);
+    u32(*get_msg_count)(struct _msg_queue_obj*);
+
+    //void			destyoy(pmsg_queue_obj_t p_this);
+    void	(*destroy)(struct _msg_queue_obj*);
+
 } msg_queue_obj_t, *pmsg_queue_obj_t;

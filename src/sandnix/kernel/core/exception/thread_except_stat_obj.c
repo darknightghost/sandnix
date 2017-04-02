@@ -27,17 +27,19 @@ static	int				compare(pthread_except_stat_obj_t p_this,
                                 pthread_except_stat_obj_t p_1);
 static	pkstring_obj_t				to_string(pthread_except_stat_obj_t p_this);
 static	pthread_except_stat_obj_t	on_fork(pthread_except_stat_obj_t p_this,
-        u32 thread_id);
+        u32 thread_id,
+        u32 process_id);
 
 extern	pheap_t		p_except_heap;
 
 #define	MODULE_NAME		core_exception
 
-pthread_except_stat_obj_t thread_except_stat_obj(u32 thread_id)
+pthread_except_stat_obj_t thread_except_stat_obj(u32 thread_id, u32 process_id)
 {
     //Create object
     pthread_except_stat_obj_t p_ret = (pthread_except_stat_obj_t)thread_ref_obj(
                                           thread_id,
+                                          process_id,
                                           CLASS_THRAD_EXPECT_STAT,
                                           (thread_obj_fork_t)on_fork,
                                           (destructor_t)destructor,
@@ -88,8 +90,8 @@ pkstring_obj_t to_string(pthread_except_stat_obj_t p_this)
     return p_str;
 }
 
-pthread_except_stat_obj_t on_fork(pthread_except_stat_obj_t p_this, u32 thread_id)
+pthread_except_stat_obj_t on_fork(pthread_except_stat_obj_t p_this, u32 thread_id, u32 process_id)
 {
     UNREFERRED_PARAMETER(p_this);
-    return thread_except_stat_obj(thread_id);
+    return thread_except_stat_obj(thread_id, process_id);
 }

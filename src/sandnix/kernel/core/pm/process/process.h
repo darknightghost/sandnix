@@ -20,6 +20,7 @@
 #include "../../../../../common/common.h"
 
 #include "./process_defs.h"
+#include "./proc_ref_obj.h"
 #include "../thread/thread_defs.h"
 
 #define	MODULE_NAME		core_pm

@@ -20,4 +20,4 @@
 #include "../../../../../common/common.h"
 #include "./thrd_signal_tbl_obj_defs.h"
 
-pthrd_signal_tbl_obj_t	thrd_signal_tbl_obj(u32 thread_id);
+pthrd_signal_tbl_obj_t	thrd_signal_tbl_obj(u32 thread_id, u32 process);

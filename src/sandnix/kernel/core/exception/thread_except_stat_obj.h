@@ -21,4 +21,4 @@
 
 #include "./thread_except_stat_obj_defs.h"
 
-pthread_except_stat_obj_t	thread_except_stat_obj(u32 thread_id);
+pthread_except_stat_obj_t	thread_except_stat_obj(u32 thread_id, u32 process_id);

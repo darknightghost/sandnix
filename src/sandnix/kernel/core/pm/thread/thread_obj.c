@@ -296,7 +296,8 @@ pthread_obj_t fork(pthread_obj_t p_this, u32 new_thread_id, u32 new_proc_id)
     for(pthread_ref_obj_t p_ref = core_rtl_map_next(&(p_this->ref_objects), NULL);
         p_ref != NULL;
         p_ref = core_rtl_map_next(&(p_this->ref_objects), p_ref)) {
-        pthread_ref_obj_t p_new_ref = p_ref->fork(p_ref, new_thread_id);
+        pthread_ref_obj_t p_new_ref = p_ref->fork(p_ref, new_thread_id,
+                                      new_proc_id);
         p_ret->add_ref(p_ret, p_new_ref);
     }
 

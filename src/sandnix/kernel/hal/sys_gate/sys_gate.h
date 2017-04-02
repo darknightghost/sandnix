@@ -20,6 +20,7 @@
 #include "../../../../common/common.h"
 
 #include "./sys_gate_defs.h"
+#include "../cpu/cpu_defs.h"
 
 //Initialize
 void hal_sys_gate_init();
@@ -41,5 +42,13 @@ void hal_sys_gate_go_to_usr(
     int argc,				//Number of arguments
     char* argv[],			//Arguments
     char* env[]);			//Environment
+
+
+//Call user function
+/*
+void hal_sys_set_jump(
+    void* usr_addr,
+    void* p_args);*/
+#define	hal_sys_set_jump(usr_addr, p_args)
 
 
