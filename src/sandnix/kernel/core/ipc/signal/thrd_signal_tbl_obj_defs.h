@@ -24,6 +24,7 @@
 //Signal attributes
 #define	SIG_ATTR_IGNORE			0x01
 #define	SIG_ATTR_CAUGHT			0x02
+#define	SIG_ATTR_DEADLY			0x04
 
 //Masks
 #define	SIG_MASK_CANBEIGNORE	SIG_ATTR_IGNORE
@@ -56,6 +57,12 @@ typedef	struct _thrd_signal_tbl_obj {
     signal_status_t		status[_NSIG];	//Signal status
 
     //Methods
+    //void	signal(u32 sig);
+    void	(*signal)(u32 sig);
+
+    //void	set_default(u32 sig);
+    void	(*set_default)(u32);
+
     //void	set_attr(u32 sig, u32 attr);
     void	(*set_attr)(u32, u32);
 
@@ -64,6 +71,10 @@ typedef	struct _thrd_signal_tbl_obj {
 
     //sig_handler	set_hndlr(u32 sig, sig_handler hndlr);
     sig_handler(*set_hndlr)(u32, sig_handler);
+
+    //void	do_signal(u32 sig);
+    void	(*do_signal)(u32);
+
 } thrd_signal_tbl_obj_t, *pthrd_signal_tbl_obj_t;
 
 

@@ -33,12 +33,15 @@ static	int						compare(pthrd_signal_tbl_obj_t p_this,
                                         pthrd_signal_tbl_obj_t p_1);
 static	pkstring_obj_t			to_string(pthrd_signal_tbl_obj_t p_this);
 static	pthrd_signal_tbl_obj_t	on_fork(pthrd_signal_tbl_obj_t p_this,
-                                        u32 thread_id);
+                                        u32 process_id);
+static	void			signal(u32 sig);
+static	void			set_default(u32 sig);
 static	void			set_attr(u32 sig, u32 attr);
 static	u32				get_attr(u32 sig);
 static	sig_handler		set_hndlr(u32 sig, sig_handler hndlr);
+static	void			do_signal(u32 sig);
 
-pthrd_signal_tbl_obj_t thrd_signal_tbl_obj(u32 thread_id)
+pthrd_signal_tbl_obj_t thrd_signal_tbl_obj(u32 thread_id, u32 process_id)
 {
     if(signal_obj_heap == NULL) {
         signal_obj_heap = core_mm_heap_create(
@@ -52,6 +55,7 @@ pthrd_signal_tbl_obj_t thrd_signal_tbl_obj(u32 thread_id)
     while(p_ret == NULL) {
         p_ret = (pthrd_signal_tbl_obj_t)thread_ref_obj(
                     thread_id,
+                    process_id,
                     CLASS_THREAD_SIGNAL_TBL_OBJ,
                     (thread_obj_fork_t)on_fork,
                     (destructor_t)destructor,
@@ -291,9 +295,25 @@ pthrd_signal_tbl_obj_t thrd_signal_tbl_obj(u32 thread_id)
         SIG_MASK_CANBECAUGHT | SIG_MASK_CANBEIGNORE);
 
     //Methods
+    p_ret->signal = signal;
+    p_ret->set_default = set_default;
     p_ret->set_attr = set_attr;
     p_ret->get_attr = get_attr;
     p_ret->set_hndlr = set_hndlr;
+    p_ret->do_signal = do_signal;
 
     return p_ret;
 }
+
+void					destructor(pthrd_signal_tbl_obj_t p_this);
+int						compare(pthrd_signal_tbl_obj_t p_this,
+                                pthrd_signal_tbl_obj_t p_1);
+pkstring_obj_t			to_string(pthrd_signal_tbl_obj_t p_this);
+pthrd_signal_tbl_obj_t	on_fork(pthrd_signal_tbl_obj_t p_this,
+                                u32 thread_id);
+void			signal(u32 sig);
+void			set_default(u32 sig);
+void			set_attr(u32 sig, u32 attr);
+u32				get_attr(u32 sig);
+sig_handler		set_hndlr(u32 sig, sig_handler hndlr);
+void			do_signal(u32 sig);

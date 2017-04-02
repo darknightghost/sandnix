@@ -20,19 +20,24 @@
 #include "../../../../../../common/common.h"
 #include "../../../rtl/rtl_defs.h"
 #include "../../../mm/mm_defs.h"
+#include "../../../pm/pm_defs.h"
 
 struct	_msg_queue_obj;
+
+typedef u32		mstatus_t;
 
 typedef	struct	_msg_obj {
     //Object
     obj_t	obj;			//Base class
 
     //Message attributes
-    u32		major_type;		//Major type
-    u32		minor_type;		//Minor type
-    u32		status;			//Message status
-    u32		attr;			//Message attributes
-    struct	_msg_queue_obj*	p_reply_queue;	//Reply queue, only used in async messages
+    u32				index;			//Message index
+    mutex_t			lock;			//Lock
+    u32				major_type;		//Major type
+    u32				minor_type;		//Minor type
+    mstatus_t		status;			//Message status
+    u32				attr;			//Message attributes
+    struct	_msg_queue_obj*	reply_queue;	//Reply queue, only used in async messages
     union {
         struct {
             void*			p_buf;		//Address of buffer
@@ -47,7 +52,12 @@ typedef	struct	_msg_obj {
 
     //Methods
     //Complete message
+    //void	complete(pmsg_obj_t p_this);
+    void	(*complete)(struct _msg_obj* p_this);
+
     //Cancel message
+    //void	cancel(pmsg_obj_t p_this);
+    void	(*cancel)(struct _msg_obj* p_this);
 } msg_obj_t, *pmsg_obj_t;
 
 #include "../msg_queue_obj_defs.h"

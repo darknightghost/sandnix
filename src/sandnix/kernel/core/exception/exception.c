@@ -37,7 +37,7 @@ static	u8			except_heap_buf[4096 * 4];
 
 static	void		call_thread_hndlrs(pexcept_obj_t except);
 static	void		call_globl_hndlrs(pexcept_obj_t except);
-static	pthread_except_stat_obj_t	thread_ref_call_back(u32 thread_id);
+static	pthread_except_stat_obj_t	thread_ref_call_back(u32 thread_id, u32 process_id);
 static	spnlck_rw_t	except_info_tbl_lck;
 static	array_t		except_info_tbl;
 
@@ -63,7 +63,7 @@ void core_exception_init()
     initialized = true;
 
     //Create except infomation struct for thread 0
-    pthread_except_stat_obj_t p_stat_0 = thread_except_stat_obj(0);
+    pthread_except_stat_obj_t p_stat_0 = thread_except_stat_obj(0, 0);
     core_pm_spnlck_rw_w_lock(&except_info_tbl_lck);
 
     if(core_rtl_array_set(&except_info_tbl, 0, p_stat_0) == NULL) {
@@ -422,7 +422,7 @@ void call_globl_hndlrs(pexcept_obj_t except)
     return;
 }
 
-pthread_except_stat_obj_t thread_ref_call_back(u32 thread_id)
+pthread_except_stat_obj_t thread_ref_call_back(u32 thread_id, u32 process_id)
 {
     if(thread_id == 0) {
         core_pm_spnlck_rw_r_lock(&except_info_tbl_lck);
@@ -436,7 +436,7 @@ pthread_except_stat_obj_t thread_ref_call_back(u32 thread_id)
         pthread_except_stat_obj_t p_stat = NULL;
 
         while(p_stat == NULL) {
-            p_stat = thread_except_stat_obj(thread_id);
+            p_stat = thread_except_stat_obj(thread_id, process_id);
         }
 
         core_pm_spnlck_rw_w_lock(&except_info_tbl_lck);
