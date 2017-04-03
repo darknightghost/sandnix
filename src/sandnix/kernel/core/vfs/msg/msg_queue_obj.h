@@ -19,3 +19,5 @@
 
 #include "../../../../../common/common.h"
 #include "./msg_queue_obj_defs.h"
+
+pmsg_queue_obj_t	msg_queue(pheap_t heap);

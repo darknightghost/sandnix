@@ -39,12 +39,12 @@ typedef	struct	_msg_queue_obj {
 
     //kstatus_t		recv(pmsg_queue_obj_t p_this, pmsg_obj_t* p_ret,
     //			s32 millisec_timeout);
-    kstatus_t	(*recv)(struct _msg_queue_obj, pmsg_obj_t*, s32);
+    kstatus_t	(*recv)(struct _msg_queue_obj*, pmsg_obj_t*, s32);
 
     //u32			get_msg_count(pmsg_queue_obj_t p_this);
     u32(*get_msg_count)(struct _msg_queue_obj*);
 
-    //void			destyoy(pmsg_queue_obj_t p_this);
+    //void			destroy(pmsg_queue_obj_t p_this);
     void	(*destroy)(struct _msg_queue_obj*);
 
 } msg_queue_obj_t, *pmsg_queue_obj_t;
