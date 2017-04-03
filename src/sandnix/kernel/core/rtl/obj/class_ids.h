@@ -40,5 +40,5 @@
 
 #define		CLASS_MSG_QUEUE_OBJECT		0x00060000
 #define		CLASS_MSG_OBJECT			0x00006001
-#define		CLASS_MSG(major)			(CLASS_MSG_OBJ + (major))
+#define		CLASS_MSG(major)			(CLASS_MSG_OBJECT + (major))
 

@@ -99,3 +99,5 @@ core/kconsole/kconsole.c
 core/vfs/vfs.c
 core/vfs/msg/msg_queue_obj.c
 core/vfs/msg/messages/msg_obj.c
+core/vfs/msg/messages/msg_complete_obj.c
+core/vfs/msg/messages/msg_cancel_obj.c
