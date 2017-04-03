@@ -31,8 +31,10 @@ static	pkstring_obj_t	to_string(pmsg_obj_t p_this);
 
 static	void	complete(pmsg_obj_t p_this, bool success);
 static	void	cancel(pmsg_obj_t p_this);
-static	void	send(pmsg_obj_t p_this);
-static	void	recv(pmsg_obj_t p_this);
+static	kstatus_t	send(pmsg_obj_t p_this);
+static	kstatus_t	recv(pmsg_obj_t p_this);
+static	kstatus_t	forward(pmsg_obj_t p_this);
+static	kstatus_t	wait(pmsg_obj_t p_this);
 
 pmsg_obj_t	msg_obj(
     u32 major_type,
@@ -78,6 +80,8 @@ pmsg_obj_t	msg_obj(
     p_ret->cancel = cancel;
     p_ret->send = send;
     p_ret->recv = recv;
+    p_ret->forward = forward;
+    p_ret->wait = wait;
 
     return p_ret;
 }
@@ -115,7 +119,7 @@ pkstring_obj_t to_string(pmsg_obj_t p_this)
 
 void complete(pmsg_obj_t p_this, bool success)
 {
-    core_pm_mutex_acquire(&(p_this->lock), -1);
+    while(core_pm_mutex_acquire(&(p_this->lock), -1) != ESUCCESS);
 
     //Check status
     if(p_this->status != MSG_STATUS_PENDING) {
@@ -172,7 +176,7 @@ void complete(pmsg_obj_t p_this, bool success)
 
 void cancel(pmsg_obj_t p_this)
 {
-    core_pm_mutex_acquire(&(p_this->lock), -1);
+    while(core_pm_mutex_acquire(&(p_this->lock), -1) != ESUCCESS);
 
     //Check status
     if(p_this->status != MSG_STATUS_PENDING) {
@@ -210,40 +214,89 @@ void cancel(pmsg_obj_t p_this)
     return;
 }
 
-void send(pmsg_obj_t p_this)
+kstatus_t send(pmsg_obj_t p_this)
 {
-    core_pm_mutex_acquire(&(p_this->lock), -1);
+    while(core_pm_mutex_acquire(&(p_this->lock), -1) != ESUCCESS);
 
     //Check status
     if(p_this->status != MSG_STATUS_CREATED) {
         core_pm_mutex_release(&(p_this->lock));
-        peinval_except_t p_except = einval_except();
-        RAISE(p_except, "Illegal message status!");
-        return;
+        return EINVAL;
     }
 
     //Change status
     p_this->status = MSG_STATUS_SENT;
 
     core_pm_mutex_release(&(p_this->lock));
-    return;
+    return ESUCCESS;
 }
 
-void recv(pmsg_obj_t p_this)
+kstatus_t recv(pmsg_obj_t p_this)
 {
-    core_pm_mutex_acquire(&(p_this->lock), -1);
+    while(core_pm_mutex_acquire(&(p_this->lock), -1) != ESUCCESS);
 
     //Check status
     if(p_this->status != MSG_STATUS_SENT) {
         core_pm_mutex_release(&(p_this->lock));
-        peinval_except_t p_except = einval_except();
-        RAISE(p_except, "Illegal message status!");
-        return;
+        return EINVAL;
     }
 
     //Change status
     p_this->status = MSG_STATUS_PENDING;
 
     core_pm_mutex_release(&(p_this->lock));
-    return;
+    return ESUCCESS;
+}
+
+kstatus_t forward(pmsg_obj_t p_this)
+{
+    while(core_pm_mutex_acquire(&(p_this->lock), -1) != ESUCCESS);
+
+    //Check status
+    if(p_this->status != MSG_STATUS_PENDING) {
+        core_pm_mutex_release(&(p_this->lock));
+        return EINVAL;
+    }
+
+    //Change status
+    p_this->status = MSG_STATUS_SENT;
+
+    core_pm_mutex_release(&(p_this->lock));
+    return ESUCCESS;
+}
+
+kstatus_t wait(pmsg_obj_t p_this)
+{
+    while(core_pm_mutex_acquire(&(p_this->lock), -1) != ESUCCESS);
+
+    if(p_this->status == MSG_STATUS_FAILED
+       || p_this->status == MSG_STATUS_SUCCESS
+       || p_this->status == MSG_STATUS_CANCELED) {
+        core_pm_mutex_release(&(p_this->lock));
+        core_exception_set_errno(ESUCCESS);
+        return ESUCCESS;
+
+    } else if(p_this->attr & MSG_ATTR_ASYNC) {
+        core_pm_mutex_release(&(p_this->lock));
+        core_exception_set_errno(ETIMEDOUT);
+        return ETIMEDOUT;
+    }
+
+    kstatus_t status = core_pm_cond_wait(&(p_this->cond), -1);
+
+    if(status != ESUCCESS) {
+        if(p_this->status == MSG_STATUS_FAILED
+           || p_this->status == MSG_STATUS_SUCCESS
+           || p_this->status == MSG_STATUS_CANCELED) {
+            core_exception_set_errno(ESUCCESS);
+            return ESUCCESS;
+        }
+
+        p_this->attr |= MSG_ATTR_ASYNC;
+    }
+
+    core_pm_mutex_release(&(p_this->lock));
+
+    core_exception_set_errno(status);
+    return status;
 }

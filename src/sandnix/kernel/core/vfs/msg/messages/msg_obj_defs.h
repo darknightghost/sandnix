@@ -50,12 +50,20 @@ typedef	struct	_msg_obj {
     void	(*cancel)(struct _msg_obj*);
 
     //Send
-    //void	send(pmsg_obj_t p_this);
-    void	(*send)(struct _msg_obj*);
+    //kstatus_t	send(pmsg_obj_t p_this);
+    kstatus_t	(*send)(struct _msg_obj*);
 
     //Receive
-    //void	recv(pmsg_obj_t p_this);
-    void	(*recv)(struct _msg_obj*);
+    //kstatus_t	recv(pmsg_obj_t p_this);
+    kstatus_t	(*recv)(struct _msg_obj*);
+
+    //Forward
+    //kstatus_t	forward(pmsg_obj_t p_this);
+    kstatus_t	(*forward)(struct _msg_obj*);
+
+    //Wait
+    //kstatus_t	wait(pmsg_obj_t p_this);
+    kstatus_t	(*wait)(struct _msg_obj*);
 } msg_obj_t, *pmsg_obj_t;
 
 #include "../msg_queue_obj_defs.h"
