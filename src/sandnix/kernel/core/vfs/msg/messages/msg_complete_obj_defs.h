@@ -18,14 +18,10 @@
 #pragma once
 
 #include "../../../../../../common/common.h"
-#include "../msg_queue_obj_defs.h"
 #include "./msg_obj_defs.h"
-#include "../../../mm/mm.h"
 
-pmsg_obj_t	msg_obj(
-    u32 major_type,
-    u32 minor_type,
-    u32 attr,
-    pmsg_queue_obj_t p_reply_queue,
-    size_t size,
-    pheap_t heap);
+typedef	struct	_msg_complete_obj {
+    msg_obj_t		msg;				//Base class
+    pmsg_obj_t		p_completed_msg;	//Completed message
+    mstatus_t		status;				//Status
+} msg_complete_obj_t, *pmsg_complete_obj_t;

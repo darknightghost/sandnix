@@ -22,61 +22,62 @@
 #include "../../../mm/mm_defs.h"
 #include "../../../pm/pm_defs.h"
 
-struct	_msg_queue_obj;
+typedef	struct	_msg_queue_obj		msg_queue_obj_t, *pmsg_queue_obj_t;
 
 typedef u32		mstatus_t;
 
 typedef	struct	_msg_obj {
     //Object
     obj_t	obj;			//Base class
+    size_t	size;			//Size of the object
 
     //Message attributes
-    u32				index;			//Message index
-    mutex_t			lock;			//Lock
-    u32				major_type;		//Major type
-    u32				minor_type;		//Minor type
-    mstatus_t		status;			//Message status
-    u32				attr;			//Message attributes
-    struct	_msg_queue_obj*	reply_queue;	//Reply queue, only used in async messages
-    union {
-        struct {
-            void*			p_buf;		//Address of buffer
-            size_t			size;		//Buffer size
-        } by_buffer;
-
-        struct {
-            ppage_obj_t		p_page_obj;	//Page object
-        } by_page_obj;
-
-    } data;					//Message data
+    mutex_t				lock;			//Lock
+    cond_t				cond;			//Cond
+    u32					major_type;		//Major type
+    u32					minor_type;		//Minor type
+    mstatus_t			status;			//Message status
+    u32					attr;			//Message attributes
+    pmsg_queue_obj_t	reply_queue;	//Reply queue, only used in async messages
 
     //Methods
     //Complete message
-    //void	complete(pmsg_obj_t p_this);
-    void	(*complete)(struct _msg_obj* p_this);
+    //void	complete(pmsg_obj_t p_this, bool success);
+    void	(*complete)(struct _msg_obj*, bool);
 
     //Cancel message
     //void	cancel(pmsg_obj_t p_this);
-    void	(*cancel)(struct _msg_obj* p_this);
+    void	(*cancel)(struct _msg_obj*);
+
+    //Send
+    //void	send(pmsg_obj_t p_this);
+    void	(*send)(struct _msg_obj*);
+
+    //Receive
+    //void	recv(pmsg_obj_t p_this);
+    void	(*recv)(struct _msg_obj*);
 } msg_obj_t, *pmsg_obj_t;
 
 #include "../msg_queue_obj_defs.h"
+#include "./msg_complete_obj_defs.h"
+#include "./msg_cancel_obj_defs.h"
 
 //Message status
 #define MSG_STATUS_SUCCESS		0x00000000
 #define MSG_STATUS_FAILED		0x00000001
-#define MSG_STATUS_PENDING		0x00000002
-#define MSG_STATUS_CANCEL		0x00000003
+#define MSG_STATUS_CANCELED		0x00000002
+#define MSG_STATUS_CREATED		0x00000003
+#define MSG_STATUS_SENT			0x00000004
+#define MSG_STATUS_PENDING		0x00000005
 
 //Message attributes
 #define	MSG_ATTR_ASYNC			0x00000001
-#define	MSG_ATTR_BY_BUF			0x00000002
-#define	MSG_ATTR_BY_PAGE_OBJ	0x00000004
 
 //Message types
 //Major types
 //Async message
-#define	MSG_MJ_FINISH		0x00000000			//Message finished
+#define	MSG_MJ_COMPLETED	0x00000000			//Message completed
+#define	MSG_MJ_CANCEL		0x00000001			//Message canceled
 
 //File operations
 #define MSG_MJ_OPEN			0x00000010
