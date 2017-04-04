@@ -41,8 +41,6 @@ void core_main_main()
     core_pm_init();
     core_exception_regist_thrd_ref();
 
-    while(1);
-
     void test();
     test();
 

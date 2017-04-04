@@ -441,7 +441,7 @@ pthread_except_stat_obj_t thread_ref_call_back(u32 thread_id, u32 process_id)
 
         core_pm_spnlck_rw_w_lock(&except_info_tbl_lck);
 
-        if(core_rtl_array_set(&except_info_tbl, 0, p_stat) == NULL) {
+        if(core_rtl_array_set(&except_info_tbl, thread_id, p_stat) == NULL) {
             PANIC(ENOMEM,
                   "Failed to create thread exception status object for thread 0.");
         }
