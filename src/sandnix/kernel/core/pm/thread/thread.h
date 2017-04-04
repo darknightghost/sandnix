@@ -33,6 +33,7 @@ void		core_pm_suspend(u32 thread_id);
 void		core_pm_resume(u32 thread_id);
 void		core_pm_sleep(u64* p_ns);
 u32			core_pm_get_currnt_thread_id();
+void		core_pm_get_currnt_stack_info(address_t* p_stack, size_t* p_size);
 u32			core_pm_get_currnt_proc_id();
 u32			core_pm_get_currnt_thrd_priority();
 void		core_pm_set_currnt_thrd_priority(u32 priority);

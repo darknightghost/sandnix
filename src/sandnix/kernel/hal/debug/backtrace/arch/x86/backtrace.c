@@ -22,11 +22,11 @@
 #include "../../../../exception/exception.h"
 
 #include "../../../../../core/mm/mm.h"
+#include "../../../../../core/pm/pm.h"
 
 void hal_debug_backtrace(plist_t p_ret, pcontext_t p_context, pheap_t heap)
 {
     address_t ebp;
-    address_t stack_base;
 
     //Initialize return list
     core_rtl_list_init(p_ret);
@@ -34,14 +34,12 @@ void hal_debug_backtrace(plist_t p_ret, pcontext_t p_context, pheap_t heap)
     //Get stack base
     ebp = p_context->ebp;
 
-    if(ebp >= (address_t)init_stack
-       && ebp <= (address_t)init_stack + DEFAULT_STACK_SIZE) {
-        stack_base = (address_t)init_stack + DEFAULT_STACK_SIZE;
+    address_t stack_base;
+    size_t stack_size;
 
-    } else {
-        //TODO:Get stack base
-        NOT_SUPPORT;
-    }
+    core_pm_get_currnt_stack_info(&stack_base, &stack_size);
+
+    stack_base += stack_size;
 
     //Backtrace
     while(ebp < stack_base) {

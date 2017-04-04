@@ -199,13 +199,12 @@ kstatus_t PRIVATE(wait_for_zombie_thread)(u32 proc_id, bool by_id,
     }
 
     INC_REF(p_proc_obj);
-    core_pm_mutex_release(&process_tbl_lck);
-
     status = p_proc_obj->wait_for_zombie_thread(
                  p_proc_obj,
                  by_id,
                  p_thrd_id);
 
+    core_pm_mutex_release(&process_tbl_lck);
     DEC_REF(p_proc_obj);
     core_exception_set_errno(status);
     return status;
