@@ -41,35 +41,37 @@ void core_main_main()
     core_pm_init();
     core_exception_regist_thrd_ref();
 
+    while(1);
+
     void test();
     test();
 
     while(1);
 }
 
+void* thread_func2(u32 thread_id, void* p_args);
 void* thread_func1(u32 thread_id, void* p_args)
 {
-    while(true) {
-        core_kconsole_print_info("11111111111111111111\n",
-                                 thread_id, p_args);
-        core_pm_suspend(thread_id);
+    core_kconsole_print_info("thread1 id = %p, arg = %p\n",
+                             thread_id, p_args);
 
-    }
-
+    u32 id2 = core_pm_thread_create(thread_func2, 0,
+                                    PRIORITY_KRNL_NORMAL, (void*)0x02);
+    core_pm_join(true, id2, NULL);
 
     return NULL;
 }
 
 void* thread_func2(u32 thread_id, void* p_args)
 {
-    while(true) {
-        u64 ns = 1000000000;
-        core_pm_sleep(&ns);
-        core_pm_resume(1);
-    }
+    core_kconsole_print_info("thread2 id = %p, arg = %p\n",
+                             thread_id, p_args);
+    u64 ns = 1000000000;
+    core_pm_sleep(&ns);
 
     UNREFERRED_PARAMETER(thread_id);
     UNREFERRED_PARAMETER(p_args);
+    core_pm_exit(NULL);
     return NULL;
 }
 
@@ -77,7 +79,6 @@ void test()
 {
     core_pm_set_currnt_thrd_priority(PRIORITY_HIGHEST);
     core_pm_thread_create(thread_func1, 0, PRIORITY_KRNL_NORMAL, (void*)0x01);
-    core_pm_thread_create(thread_func2, 0, PRIORITY_KRNL_NORMAL, (void*)0x02);
     core_pm_set_currnt_thrd_priority(PRIORITY_IDLE);
 }
 

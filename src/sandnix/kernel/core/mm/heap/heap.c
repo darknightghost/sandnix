@@ -169,7 +169,6 @@ void* core_mm_heap_alloc(size_t size, pheap_t heap)
         p_heap = heap;
     }
 
-    HEAP_CHECK(p_heap);
     size = (size % 8 ? (size / 8 + 1) * 8 : size);
 
     if(size + HEAP_MEM_BLCK_SZ > p_heap->scale) {
@@ -299,8 +298,6 @@ void core_mm_heap_free(
     } else {
         p_heap = heap;
     }
-
-    HEAP_CHECK(p_heap);
 
     if(p_heap->type & HEAP_MULITHREAD) {
         core_pm_spnlck_lock(&(p_heap->lock));

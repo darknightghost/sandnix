@@ -659,7 +659,6 @@ u32 core_pm_get_currnt_thrd_priority()
         p_thread_obj = (pthread_obj_t)(p_info->current_node->p_item);
     }
 
-    core_exception_set_errno(ESUCCESS);
     return p_thread_obj->priority;
 }
 
@@ -688,7 +687,6 @@ void core_pm_set_currnt_thrd_priority(u32 priority)
     p_info->priority = priority;
 
     hal_io_int(INT_TICK);
-    core_exception_set_errno(ESUCCESS);
     return;
 }
 
@@ -856,7 +854,10 @@ void on_tick(u32 int_num, pcontext_t p_context, u32 err_code)
 
     core_pm_spnlck_raw_lock(&sched_lock);
 
-    if(!p_info->enabled || p_info->priority == PRIORITY_HIGHEST) {
+    if((!p_info->enabled
+        || p_info->priority == PRIORITY_HIGHEST)
+       && (((pthread_obj_t)(p_info->current_node->p_item))->status == TASK_READY
+           || ((pthread_obj_t)(p_info->current_node->p_item))->status == TASK_RUNNING))  {
         core_pm_spnlck_raw_unlock(&sched_lock);
         hal_io_irq_send_eoi();
         hal_cpu_context_load(p_context);
