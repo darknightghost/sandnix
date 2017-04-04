@@ -389,17 +389,35 @@ void core_pm_exit(void* retval)
     pthread_obj_t p_thread_obj = (pthread_obj_t)(cpu_infos[
                                   hal_cpu_get_cpu_index()].current_node->p_item);
 
-    //Suspend thread
-    core_pm_suspend(p_thread_obj->thread_id);
+    //Set status
     p_thread_obj->status = TASK_ZOMBIE;
+    p_thread_obj->status_info.zombie.retval = retval;
     zombie_obj = p_thread_obj;
 
     //Awake thread cleaner
-    core_pm_resume(cleaner_id);
+    core_pm_spnlck_rw_r_lock(&thread_table_lock);
+    pthread_obj_t p_cleaner_obj = core_rtl_array_get(&thread_table, cleaner_id);
+    core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+
+    core_pm_spnlck_lock(&sched_list_lock);
+    //Set thread status
+    p_cleaner_obj->status = TASK_READY;
+    p_cleaner_obj->status_info.runing.time_slices = 0;
+    p_cleaner_obj->reset_timeslice(p_cleaner_obj);
+
+    //Insert task to schedule list
+    plist_node_t p_node = &(p_cleaner_obj->node);
+
+    core_rtl_list_insert_node_before(
+        NULL,
+        &sched_lists[p_cleaner_obj->priority],
+        p_node);
+
+    core_pm_spnlck_unlock(&sched_list_lock);
+
     core_pm_enable_sched();
     hal_io_int(INT_TICK);
 
-    UNREFERRED_PARAMETER(retval);
     return;
 }
 
@@ -485,7 +503,10 @@ void core_pm_suspend(u32 thread_id)
     core_pm_spnlck_rw_r_unlock(&thread_table_lock);
 
     //Schedule
-    hal_cpu_send_IPI(-1, IPI_TYPE_PREEMPT, NULL);
+    if(thread_id != currnt_thread) {
+        hal_cpu_send_IPI(-1, IPI_TYPE_PREEMPT, NULL);
+    }
+
     return;
 }
 
@@ -614,6 +635,33 @@ u32 core_pm_get_currnt_thread_id()
     }
 
     return p_thread_obj->thread_id;
+}
+
+void core_pm_get_currnt_stack_info(address_t* p_stack, size_t* p_size)
+{
+    if(!initialized) {
+        *p_stack = (address_t)init_stack;
+        *p_size = DEFAULT_STACK_SIZE;
+        return;
+    }
+
+    //Get thread obj
+    u32 cpu_index = hal_cpu_get_cpu_index();
+    pcore_sched_info_t p_info = &cpu_infos[cpu_index];
+
+    pthread_obj_t p_thread_obj;
+
+    if(p_info->current_node == NULL) {
+        p_thread_obj = p_info->p_idle_thread;
+
+    } else {
+        p_thread_obj = (pthread_obj_t)(p_info->current_node->p_item);
+    }
+
+    *p_stack = (address_t)(p_thread_obj->k_stack_addr);
+    *p_size = (size_t)(p_thread_obj->k_stack_size);
+
+    return;
 }
 
 u32 core_pm_get_currnt_proc_id()
@@ -846,8 +894,18 @@ void on_tick(u32 int_num, pcontext_t p_context, u32 err_code)
     u32 cpu_index = hal_cpu_get_cpu_index();
     pcore_sched_info_t p_info = &cpu_infos[cpu_index];
 
+    if(p_info->in_sched) {
+        hal_io_irq_send_eoi();
+        hal_cpu_context_load(p_context);
+        return;
+
+    } else {
+        p_info->in_sched = true;
+    }
+
     if(!p_info->enable_sched) {
         hal_io_irq_send_eoi();
+        p_info->in_sched = false;
         hal_cpu_context_load(p_context);
         return;
     }
@@ -860,6 +918,7 @@ void on_tick(u32 int_num, pcontext_t p_context, u32 err_code)
            || ((pthread_obj_t)(p_info->current_node->p_item))->status == TASK_RUNNING))  {
         core_pm_spnlck_raw_unlock(&sched_lock);
         hal_io_irq_send_eoi();
+        p_info->in_sched = false;
         hal_cpu_context_load(p_context);
     }
 
@@ -1117,6 +1176,7 @@ void switch_task(pcore_sched_info_t p_info, u32 cpu_index)
 
     p_info->priority = p_thread_obj->priority;
     hal_io_irq_send_eoi();
+    p_info->in_sched = false;
     p_thread_obj->resume(p_thread_obj, cpu_index);
 
     return;

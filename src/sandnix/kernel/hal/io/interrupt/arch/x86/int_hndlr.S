@@ -136,6 +136,7 @@
 	PRIVATE(int_\num):
 		//Save Registers
 		PUSH_CONTEXT
+		cli
 
 		//Call dispatcher
 		movl	%esp, %eax
@@ -150,6 +151,7 @@
 	PRIVATE(int_\num):
 		//Save Registers
 		PUSH_CONTEXT
+		cli
 
 		//Call dispatcher
 		movl	%esp, %eax
@@ -164,6 +166,7 @@
 	PRIVATE(int_\num):
 		//Save Registers
 		PUSH_CONTEXT_WITH_ERRCODE
+		cli
 
 		//Call dispatcher
 		movl	%esp, %ebx

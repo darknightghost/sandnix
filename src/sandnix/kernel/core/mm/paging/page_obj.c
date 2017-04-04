@@ -431,7 +431,7 @@ void map(ppage_obj_t p_this, void* virt_addr, u32 attr)
     u32 page_num = p_this->size / SANDNIX_KERNEL_PAGE_SIZE;
 
     for(u32 i = 0; i < page_num; i++) {
-        hal_mmu_pg_tbl_set(core_pm_get_currnt_thread_id(),
+        hal_mmu_pg_tbl_set(core_pm_get_currnt_proc_id(),
                            virt_addr + i * SANDNIX_KERNEL_PAGE_SIZE, mmu_attr,
                            (void*)(p_this->mem_info.phy_mem_info.addr
                                    + i * SANDNIX_KERNEL_PAGE_SIZE));
@@ -451,7 +451,7 @@ void unmap(ppage_obj_t p_this, void* virt_addr)
     u32 page_num = p_this->size / SANDNIX_KERNEL_PAGE_SIZE;
 
     for(u32 i = 0; i < page_num; i++) {
-        hal_mmu_pg_tbl_set(core_pm_get_currnt_thread_id(),
+        hal_mmu_pg_tbl_set(core_pm_get_currnt_proc_id(),
                            virt_addr, 0,
                            (void*)(p_this->mem_info.phy_mem_info.addr
                                    + i * SANDNIX_KERNEL_PAGE_SIZE));
