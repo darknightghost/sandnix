@@ -156,7 +156,7 @@ void core_pm_spnlck_unlock(pspnlck_t p_lock)
 
     core_pm_set_currnt_thrd_priority(priority);
 
-    if(inc_val > ticket) {
+    if(ticket - (inc_val + (u16)1) > ticket - inc_val) {
         //Dead lock next time, raise exception
         pedeadlock_except_t p_except = edeadlock_except();
         RAISE(p_except, "Trying to release a spinlock whitch has been released.");
@@ -167,12 +167,12 @@ void core_pm_spnlck_unlock(pspnlck_t p_lock)
 
 void core_pm_spnlck_raw_unlock(pspnlck_t p_lock)
 {
-    u16 ticket = p_lock->ticket;
 
     u16 inc_val = 1;
     hal_rtl_atomic_xaddw(p_lock->owner, inc_val);
+    u16 ticket = p_lock->ticket;
 
-    if(inc_val > ticket) {
+    if(ticket - (inc_val + (u16)1) > ticket - inc_val) {
         //Dead lock next time, raise exception
         pedeadlock_except_t p_except = edeadlock_except();
         RAISE(p_except, "Trying to release a spinlock whitch has been released.");
