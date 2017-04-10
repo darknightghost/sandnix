@@ -48,6 +48,7 @@ void core_main_main()
 }
 
 mutex_t m;
+cond_t c;
 
 void* thread_func2(u32 thread_id, void* p_args);
 void* thread_func1(u32 thread_id, void* p_args)
@@ -59,9 +60,21 @@ void* thread_func1(u32 thread_id, void* p_args)
 
     while(true) {
         ns = 1000000000;
-        core_pm_mutex_acquire(&m, -1);
-        core_kconsole_print_info("\rthread1");
         core_pm_sleep(&ns);
+        core_pm_mutex_acquire(&m, -1);
+        core_pm_cond_signal(&c, true);
+        core_pm_mutex_release(&m);
+
+        ns = 1000000000;
+        core_pm_sleep(&ns);
+        core_pm_mutex_acquire(&m, -1);
+        core_pm_cond_signal(&c, false);
+        core_pm_mutex_release(&m);
+
+        ns = 1000000000;
+        core_pm_sleep(&ns);
+        core_pm_mutex_acquire(&m, -1);
+        core_pm_cond_signal(&c, false);
         core_pm_mutex_release(&m);
     }
 
@@ -73,14 +86,10 @@ void* thread_func2(u32 thread_id, void* p_args)
     core_kconsole_print_info("thread2 id = %p, arg = %p\n",
                              thread_id, p_args);
 
-    u64 ns = 600000000;
-    core_pm_sleep(&ns);
-
     while(true) {
-        ns = 1000000000;
         core_pm_mutex_acquire(&m, -1);
-        core_kconsole_print_info("\rthread2");
-        core_pm_sleep(&ns);
+        core_pm_cond_wait(&c, -1);
+        core_kconsole_print_info("\nthread2");
         core_pm_mutex_release(&m);
     }
 
@@ -92,12 +101,10 @@ void* thread_func3(u32 thread_id, void* p_args)
     core_kconsole_print_info("thread3 id = %p, arg = %p\n",
                              thread_id, p_args);
 
-    u64 ns = 700000000;
-    core_pm_sleep(&ns);
-
     while(true) {
         core_pm_mutex_acquire(&m, -1);
-        core_kconsole_print_info("\rthread3");
+        core_pm_cond_wait(&c, -1);
+        core_kconsole_print_info("\nthread3");
         core_pm_mutex_release(&m);
     }
 
@@ -105,8 +112,9 @@ void* thread_func3(u32 thread_id, void* p_args)
 }
 void test()
 {
-    core_kconsole_print_info("\nMutes test\n");
+    core_kconsole_print_info("\nCondition variable test\n");
     core_pm_mutex_init(&m);
+    core_pm_cond_init(&c, &m);
     core_pm_set_currnt_thrd_priority(PRIORITY_HIGHEST);
     core_pm_thread_create(thread_func1, 0, PRIORITY_KRNL_NORMAL, (void*)0x01);
     core_pm_thread_create(thread_func2, 0, PRIORITY_KRNL_NORMAL, (void*)0x02);
