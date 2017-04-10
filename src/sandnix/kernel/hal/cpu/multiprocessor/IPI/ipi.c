@@ -166,9 +166,10 @@ void ipi_int_hndlr(u32 int_num, pcontext_t p_context, u32 err_code)
     void* p_args = p_msg->p_args;
     core_mm_heap_free(p_msg, PRIVATE(ipi_queue_heap));
 
-    core_pm_spnlck_rw_r_lock(&hndlrs_lock);
+    u32 priority;
+    core_pm_spnlck_rw_r_lock(&hndlrs_lock, &priority);
     ipi_hndlr_t hndlr = hndlrs[type];
-    core_pm_spnlck_rw_r_unlock(&hndlrs_lock);
+    core_pm_spnlck_rw_r_unlock(&hndlrs_lock, priority);
 
     if(hndlr != NULL) {
         hndlr(p_context, p_args);

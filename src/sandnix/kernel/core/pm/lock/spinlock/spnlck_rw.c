@@ -28,31 +28,58 @@ void core_pm_spnlck_rw_init(pspnlck_rw_t p_lock)
     return;
 }
 
-void core_pm_spnlck_rw_r_lock(pspnlck_rw_t p_lock)
+void core_pm_spnlck_rw_r_lock(pspnlck_rw_t p_lock, u32* p_priority)
 {
-    core_pm_spnlck_lock(&(p_lock->lock));
+    u32 priority;
 
+    //Set priority
+    priority = core_pm_get_currnt_thrd_priority();
+
+    if(priority < PRIORITY_HIGHEST) {
+        core_pm_set_currnt_thrd_priority(PRIORITY_HIGHEST);
+    }
+
+    //Lock
+    core_pm_spnlck_raw_lock(&(p_lock->lock));
     hal_rtl_atomic_addl(p_lock->reader_count, 1);
-    core_pm_spnlck_unlock(&(p_lock->lock));
+    core_pm_spnlck_raw_unlock(&(p_lock->lock));
+
+    //Save priority
+    *p_priority = priority;
     return;
 }
 
-kstatus_t core_pm_spnlck_rw_r_trylock(pspnlck_rw_t p_lock)
+kstatus_t core_pm_spnlck_rw_r_trylock(pspnlck_rw_t p_lock, u32* p_priority)
 {
+    u32 priority;
+
+    //Set priority
+    priority = core_pm_get_currnt_thrd_priority();
+
+    if(priority < PRIORITY_HIGHEST) {
+        core_pm_set_currnt_thrd_priority(PRIORITY_HIGHEST);
+    }
+
+    //Try lock
     kstatus_t status = core_pm_spnlck_trylock(&(p_lock->lock));
 
     if(status != ESUCCESS) {
+        core_pm_set_currnt_thrd_priority(priority);
         return status;
     }
 
     hal_rtl_atomic_addl(p_lock->reader_count, 1);
     core_pm_spnlck_unlock(&(p_lock->lock));
+
+    //Save priority
+    *p_priority = priority;
     return ESUCCESS;
 }
 
-void core_pm_spnlck_rw_r_unlock(pspnlck_rw_t p_lock)
+void core_pm_spnlck_rw_r_unlock(pspnlck_rw_t p_lock, u32 priority)
 {
     hal_rtl_atomic_subl(p_lock->reader_count, 1);
+    core_pm_set_currnt_thrd_priority(priority);
     return;
 }
 

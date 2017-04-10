@@ -540,7 +540,9 @@ void hal_mmu_pg_tbl_refresh(void* virt_addr)
 
 void hal_mmu_pg_tbl_switch(u32 id)
 {
-    core_pm_spnlck_rw_r_lock(&lock);
+    u32 priority;
+
+    core_pm_spnlck_rw_r_lock(&lock, &priority);
     ppg_tbl_info_t p_pdt_info = (ppg_tbl_info_t)core_rtl_array_get(
                                     &mmu_globl_pg_table,
                                     id);
@@ -554,7 +556,7 @@ void hal_mmu_pg_tbl_switch(u32 id)
         "movl	%0, %%cr3\n"
         ::"a"((p_pdt_info->physical_addr & 0xFFFFF000) | 0x00000008):);
 
-    core_pm_spnlck_rw_r_unlock(&lock);
+    core_pm_spnlck_rw_r_unlock(&lock, priority);
 
     return;
 }
