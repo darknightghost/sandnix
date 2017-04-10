@@ -20,6 +20,7 @@
 #include "../../pm.h"
 #include "../../../rtl/rtl.h"
 #include "../../../exception/exception.h"
+#include "../../../../hal/rtl/rtl.h"
 
 
 void core_pm_cond_init(pcond_t p_cond, pmutex_t p_mutex)
@@ -48,8 +49,10 @@ kstatus_t core_pm_cond_wait(pcond_t p_cond, s32 millisec_timeout)
         return EINVAL;
     }
 
+    u32 ticket = 1;
+    hal_rtl_atomic_xaddl(p_cond->ticket, ticket);
     cond_wait_thrd_info_t wait_info = {
-        .ticket = p_cond->ticket,
+        .ticket = ticket,
         .thread_id = core_pm_get_currnt_thread_id()
     };
 
@@ -75,6 +78,9 @@ kstatus_t core_pm_cond_wait(pcond_t p_cond, s32 millisec_timeout)
         core_pm_mutex_release(p_cond->p_lock);
 
     }
+
+    core_pm_enable_sched();
+    core_pm_schedule();
 
     for(kstatus_t status = core_pm_mutex_acquire(p_cond->p_lock, -1);
         status != ESUCCESS;
