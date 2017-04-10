@@ -95,17 +95,18 @@ void core_exception_regist_thrd_ref()
 void core_exception_set_errno(kstatus_t status)
 {
     //Get thread info
-    core_pm_spnlck_rw_r_lock(&except_info_tbl_lck);
+    u32 priority;
+    core_pm_spnlck_rw_r_lock(&except_info_tbl_lck, &priority);
     pthread_except_stat_obj_t p_thread_stat = (pthread_except_stat_obj_t)core_rtl_array_get(
                 &except_info_tbl, core_pm_get_currnt_thread_id());
 
     if(p_thread_stat == NULL) {
-        core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
+        core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck, priority);
         PANIC(EINVAL, "Failed to get exception status object of curent thread.");
     }
 
     INC_REF(p_thread_stat);
-    core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
+    core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck, priority);
 
     //Set errno
     core_pm_spnlck_rw_w_lock(&(p_thread_stat->lock));
@@ -119,22 +120,23 @@ void core_exception_set_errno(kstatus_t status)
 kstatus_t core_exception_get_errno()
 {
     //Get thread info
-    core_pm_spnlck_rw_r_lock(&except_info_tbl_lck);
+    u32 priority;
+    core_pm_spnlck_rw_r_lock(&except_info_tbl_lck, &priority);
     pthread_except_stat_obj_t p_thread_stat = (pthread_except_stat_obj_t)core_rtl_array_get(
                 &except_info_tbl, core_pm_get_currnt_thread_id());
 
     if(p_thread_stat == NULL) {
-        core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
+        core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck, priority);
         PANIC(EINVAL, "Failed to get exception status object of curent thread.");
     }
 
     INC_REF(p_thread_stat);
-    core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
+    core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck, priority);
 
     //Get errno
-    core_pm_spnlck_rw_r_lock(&(p_thread_stat->lock));
+    core_pm_spnlck_rw_r_lock(&(p_thread_stat->lock), &priority);
     u32 ret = p_thread_stat->errno;
-    core_pm_spnlck_rw_r_unlock(&(p_thread_stat->lock));
+    core_pm_spnlck_rw_r_unlock(&(p_thread_stat->lock), priority);
     DEC_REF(p_thread_stat);
 
     return ret;
@@ -147,12 +149,13 @@ void core_exception_raise(pexcept_obj_t except)
         return;
     }
 
-    core_pm_spnlck_rw_r_lock(&except_info_tbl_lck);
+    u32 priority;
+    core_pm_spnlck_rw_r_lock(&except_info_tbl_lck, &priority);
     pthread_except_stat_obj_t p_ret = (pthread_except_stat_obj_t)core_rtl_array_get(
                                           &except_info_tbl,
                                           core_pm_get_currnt_thread_id());
     p_ret->errno = except->reason;
-    core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
+    core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck, priority);
 
     //Call thread exception handler stack
     call_thread_hndlrs(except);
@@ -218,17 +221,18 @@ except_ret_stat_t core_exception_do_push_hndlr(pexcept_hndlr_info_t p_hndlr_info
     core_rtl_memcpy(&(p_hndlr_info->context), p_context, sizeof(context_t));
 
     //Get handler stack
-    core_pm_spnlck_rw_r_lock(&except_info_tbl_lck);
+    u32 priority;
+    core_pm_spnlck_rw_r_lock(&except_info_tbl_lck, &priority);
     pthread_except_stat_obj_t p_thread_stat = (pthread_except_stat_obj_t)core_rtl_array_get(
                 &except_info_tbl, core_pm_get_currnt_thread_id());
 
     if(p_thread_stat == NULL) {
-        core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
+        core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck, priority);
         PANIC(EINVAL, "Failed to get exception status object of curent thread.");
     }
 
     INC_REF(p_thread_stat);
-    core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
+    core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck, priority);
 
     //Push handler
     core_pm_spnlck_rw_w_lock(&(p_thread_stat->lock));
@@ -251,17 +255,18 @@ except_ret_stat_t core_exception_do_push_hndlr(pexcept_hndlr_info_t p_hndlr_info
 pexcept_hndlr_info_t core_exception_pop_hndlr()
 {
     //Get handler stack
-    core_pm_spnlck_rw_r_lock(&except_info_tbl_lck);
+    u32 priority;
+    core_pm_spnlck_rw_r_lock(&except_info_tbl_lck, &priority);
     pthread_except_stat_obj_t p_thread_stat = (pthread_except_stat_obj_t)core_rtl_array_get(
                 &except_info_tbl, core_pm_get_currnt_thread_id());
 
     if(p_thread_stat == NULL) {
-        core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
+        core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck, priority);
         PANIC(EINVAL, "Failed to get exception status object of curent thread.");
     }
 
     INC_REF(p_thread_stat);
-    core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
+    core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck, priority);
 
     //Push handler
     core_pm_spnlck_rw_w_lock(&(p_thread_stat->lock));
@@ -280,13 +285,14 @@ void call_thread_hndlrs(pexcept_obj_t except)
     context_t context;
 
     //Get handler stack
-    core_pm_spnlck_rw_r_lock(&except_info_tbl_lck);
+    u32 priority;
+    core_pm_spnlck_rw_r_lock(&except_info_tbl_lck, &priority);
     pthread_except_stat_obj_t p_thread_stat = (pthread_except_stat_obj_t)core_rtl_array_get(
                 &except_info_tbl, core_pm_get_currnt_thread_id());
     INC_REF(p_thread_stat);
-    core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
+    core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck, priority);
 
-    core_pm_spnlck_rw_r_lock(&(p_thread_stat->lock));
+    core_pm_spnlck_rw_r_lock(&(p_thread_stat->lock), &priority);
     stack_t p_stack = p_thread_stat->hndlr_stack;
 
     if(!core_rtl_list_empty(&(p_thread_stat->hndlr_stack))) {
@@ -303,7 +309,7 @@ void call_thread_hndlrs(pexcept_obj_t except)
                 switch(status) {
                     case EXCEPT_STATUS_CONTINUE_EXEC:
                         //Continue execution
-                        core_pm_spnlck_rw_r_unlock(&(p_thread_stat->lock));
+                        core_pm_spnlck_rw_r_unlock(&(p_thread_stat->lock), priority);
                         core_rtl_memcpy(&context, except->p_context, sizeof(context_t));
                         DEC_REF(except);
                         hal_cpu_context_load(&context);
@@ -311,7 +317,7 @@ void call_thread_hndlrs(pexcept_obj_t except)
 
                     case EXCEPT_STATUS_UNWIND:
                         //Unwind handlers
-                        core_pm_spnlck_rw_r_unlock(&(p_thread_stat->lock));
+                        core_pm_spnlck_rw_r_unlock(&(p_thread_stat->lock), priority);
                         core_pm_spnlck_rw_w_lock(&(p_thread_stat->lock));
 
                         while(p_stack->p_prev != p_node) {
@@ -336,13 +342,13 @@ void call_thread_hndlrs(pexcept_obj_t except)
 
                     case EXCEPT_STATUS_PANIC:
                         //Panic
-                        core_pm_spnlck_rw_r_unlock(&(p_thread_stat->lock));
+                        core_pm_spnlck_rw_r_unlock(&(p_thread_stat->lock), priority);
                         except->panic(except);
                         break;
 
                     default:
                         //Unknow return value, panic
-                        core_pm_spnlck_rw_r_unlock(&(p_thread_stat->lock));
+                        core_pm_spnlck_rw_r_unlock(&(p_thread_stat->lock), priority);
                         PANIC(EIRETVAL,
                               "Illegal return value 0x%.8X in exception handler %p.",
                               status,
@@ -356,7 +362,7 @@ void call_thread_hndlrs(pexcept_obj_t except)
 
     }
 
-    core_pm_spnlck_rw_r_unlock(&(p_thread_stat->lock));
+    core_pm_spnlck_rw_r_unlock(&(p_thread_stat->lock), priority);
 
     return;
 }
@@ -371,7 +377,8 @@ void call_globl_hndlrs(pexcept_obj_t except)
 
     } else {
         //Looking for handlers
-        core_pm_spnlck_rw_r_lock(&globl_list_lock);
+        u32 priority;
+        core_pm_spnlck_rw_r_lock(&globl_list_lock, &priority);
         plist_node_t p_node;
         p_node = globl_except_hndlr_list->p_prev;
 
@@ -385,7 +392,7 @@ void call_globl_hndlrs(pexcept_obj_t except)
                 switch(status) {
                     case EXCEPT_STATUS_CONTINUE_EXEC:
                         //Continue execution
-                        core_pm_spnlck_rw_r_unlock(&globl_list_lock);
+                        core_pm_spnlck_rw_r_unlock(&globl_list_lock, priority);
                         core_rtl_memcpy(&context, except->p_context, sizeof(context_t));
                         DEC_REF(except);
                         hal_cpu_context_load(&context);
@@ -398,13 +405,13 @@ void call_globl_hndlrs(pexcept_obj_t except)
 
                     case EXCEPT_STATUS_PANIC:
                         //Panic
-                        core_pm_spnlck_rw_r_unlock(&globl_list_lock);
+                        core_pm_spnlck_rw_r_unlock(&globl_list_lock, priority);
                         except->panic(except);
                         break;
 
                     default:
                         //Unknow return value, panic
-                        core_pm_spnlck_rw_r_unlock(&globl_list_lock);
+                        core_pm_spnlck_rw_r_unlock(&globl_list_lock, priority);
                         PANIC(EIRETVAL,
                               "Illegal return value 0x%.8X in exception handler %p.",
                               status,
@@ -416,7 +423,7 @@ void call_globl_hndlrs(pexcept_obj_t except)
             p_node = p_node->p_prev;
         } while(p_node != globl_except_hndlr_list->p_prev);
 
-        core_pm_spnlck_rw_r_unlock(&globl_list_lock);
+        core_pm_spnlck_rw_r_unlock(&globl_list_lock, priority);
     }
 
     return;
@@ -425,10 +432,11 @@ void call_globl_hndlrs(pexcept_obj_t except)
 pthread_except_stat_obj_t thread_ref_call_back(u32 thread_id, u32 process_id)
 {
     if(thread_id == 0) {
-        core_pm_spnlck_rw_r_lock(&except_info_tbl_lck);
+        u32 priority;
+        core_pm_spnlck_rw_r_lock(&except_info_tbl_lck, &priority);
         pthread_except_stat_obj_t p_ret = (pthread_except_stat_obj_t)core_rtl_array_get(
                                               &except_info_tbl, 0);
-        core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck);
+        core_pm_spnlck_rw_r_unlock(&except_info_tbl_lck, priority);
 
         return p_ret;
 

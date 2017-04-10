@@ -404,7 +404,8 @@ size_t hal_mmu_get_phymem_info(pphysical_memory_info_t p_buf, size_t size)
 
     size_t len;
 
-    core_pm_spnlck_rw_r_lock(&lock);
+    u32 priority;
+    core_pm_spnlck_rw_r_lock(&lock, &priority);
     pphysical_memory_info_t p_memblock = core_rtl_map_next(&index_map, NULL);
 
     for(len = 0; p_memblock != NULL; len += sizeof(physical_memory_info_t)) {
@@ -416,7 +417,7 @@ size_t hal_mmu_get_phymem_info(pphysical_memory_info_t p_buf, size_t size)
         p_memblock = core_rtl_map_next(&index_map, p_memblock);
     }
 
-    core_pm_spnlck_rw_r_unlock(&lock);
+    core_pm_spnlck_rw_r_unlock(&lock, priority);
     return len;
 }
 

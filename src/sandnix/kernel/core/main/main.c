@@ -47,15 +47,23 @@ void core_main_main()
     while(1);
 }
 
+mutex_t m;
+
 void* thread_func2(u32 thread_id, void* p_args);
 void* thread_func1(u32 thread_id, void* p_args)
 {
     core_kconsole_print_info("thread1 id = %p, arg = %p\n",
                              thread_id, p_args);
+    u64 ns = 500000000;
+    core_pm_sleep(&ns);
 
-    u32 id2 = core_pm_thread_create(thread_func2, 0,
-                                    PRIORITY_KRNL_NORMAL, (void*)0x02);
-    core_pm_join(true, id2, NULL);
+    while(true) {
+        ns = 1000000000;
+        core_pm_mutex_acquire(&m, -1);
+        core_kconsole_print_info("\rthread1");
+        core_pm_sleep(&ns);
+        core_pm_mutex_release(&m);
+    }
 
     return NULL;
 }
@@ -64,19 +72,45 @@ void* thread_func2(u32 thread_id, void* p_args)
 {
     core_kconsole_print_info("thread2 id = %p, arg = %p\n",
                              thread_id, p_args);
-    u64 ns = 1000000000;
+
+    u64 ns = 600000000;
     core_pm_sleep(&ns);
 
-    UNREFERRED_PARAMETER(thread_id);
-    UNREFERRED_PARAMETER(p_args);
-    core_pm_exit(NULL);
+    while(true) {
+        ns = 1000000000;
+        core_pm_mutex_acquire(&m, -1);
+        core_kconsole_print_info("\rthread2");
+        core_pm_sleep(&ns);
+        core_pm_mutex_release(&m);
+    }
+
     return NULL;
 }
 
+void* thread_func3(u32 thread_id, void* p_args)
+{
+    core_kconsole_print_info("thread3 id = %p, arg = %p\n",
+                             thread_id, p_args);
+
+    u64 ns = 700000000;
+    core_pm_sleep(&ns);
+
+    while(true) {
+        core_pm_mutex_acquire(&m, -1);
+        core_kconsole_print_info("\rthread3");
+        core_pm_mutex_release(&m);
+    }
+
+    return NULL;
+}
 void test()
 {
+    core_kconsole_print_info("\nMutes test\n");
+    core_pm_mutex_init(&m);
     core_pm_set_currnt_thrd_priority(PRIORITY_HIGHEST);
     core_pm_thread_create(thread_func1, 0, PRIORITY_KRNL_NORMAL, (void*)0x01);
+    core_pm_thread_create(thread_func2, 0, PRIORITY_KRNL_NORMAL, (void*)0x02);
+    core_pm_thread_create(thread_func3, 0, PRIORITY_KRNL_NORMAL, (void*)0x03);
     core_pm_set_currnt_thrd_priority(PRIORITY_IDLE);
 }
 

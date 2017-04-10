@@ -27,13 +27,13 @@
 void		core_pm_spnlck_rw_init(pspnlck_rw_t p_lock);
 
 //Read lock
-void		core_pm_spnlck_rw_r_lock(pspnlck_rw_t p_lock);
+void		core_pm_spnlck_rw_r_lock(pspnlck_rw_t p_lock, u32* p_priority);
 
 //Read try lock
-kstatus_t	core_pm_spnlck_rw_r_trylock(pspnlck_rw_t p_lock);
+kstatus_t	core_pm_spnlck_rw_r_trylock(pspnlck_rw_t p_lock, u32* p_priority);
 
-//Read ublock
-void		core_pm_spnlck_rw_r_unlock(pspnlck_rw_t p_lock);
+//Read unlock
+void		core_pm_spnlck_rw_r_unlock(pspnlck_rw_t p_lock, u32 priority);
 
 //Write lock
 void		core_pm_spnlck_rw_w_lock(pspnlck_rw_t p_lock);

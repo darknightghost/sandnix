@@ -395,9 +395,10 @@ void core_pm_exit(void* retval)
     zombie_obj = p_thread_obj;
 
     //Awake thread cleaner
-    core_pm_spnlck_rw_r_lock(&thread_table_lock);
+    u32 priority;
+    core_pm_spnlck_rw_r_lock(&thread_table_lock, &priority);
     pthread_obj_t p_cleaner_obj = core_rtl_array_get(&thread_table, cleaner_id);
-    core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+    core_pm_spnlck_rw_r_unlock(&thread_table_lock, priority);
 
     core_pm_spnlck_lock(&sched_list_lock);
     //Set thread status
@@ -435,19 +436,20 @@ u32 core_pm_join(bool wait_threadid, u32 thread_id, void** p_retval)
     }
 
     //Get thread obj
-    core_pm_spnlck_rw_r_lock(&thread_table_lock);
+    u32 priority;
+    core_pm_spnlck_rw_r_lock(&thread_table_lock, &priority);
     pthread_obj_t p_thread_obj = core_rtl_array_get(
                                      &thread_table,
                                      thread_id);
 
     if(p_thread_obj == NULL) {
-        core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+        core_pm_spnlck_rw_r_unlock(&thread_table_lock, priority);
         peinval_except_t p_except = einval_except();
         RAISE(p_except, "Illegal thread id.");
         return 0;
     }
 
-    core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+    core_pm_spnlck_rw_r_unlock(&thread_table_lock, priority);
 
     //Get return value
     *p_retval = p_thread_obj->status_info.zombie.retval;
@@ -464,7 +466,8 @@ void core_pm_suspend(u32 thread_id)
     u32 currnt_thread = core_pm_get_currnt_thread_id();
 
     //Get thread obj
-    core_pm_spnlck_rw_r_lock(&thread_table_lock);
+    u32 priority;
+    core_pm_spnlck_rw_r_lock(&thread_table_lock, &priority);
 
     if(currnt_thread == thread_id) {
         core_pm_disable_sched();
@@ -477,7 +480,7 @@ void core_pm_suspend(u32 thread_id)
             core_pm_enable_sched();
         }
 
-        core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+        core_pm_spnlck_rw_r_unlock(&thread_table_lock, priority);
         peinval_except_t p_except = einval_except();
         RAISE(p_except, "Thread does not exists.");
         return;
@@ -487,7 +490,7 @@ void core_pm_suspend(u32 thread_id)
             core_pm_enable_sched();
         }
 
-        core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+        core_pm_spnlck_rw_r_unlock(&thread_table_lock, priority);
         peinval_except_t p_except = einval_except();
         RAISE(p_except, "Cannot suspend a zombie thread.");
         return;
@@ -500,7 +503,7 @@ void core_pm_suspend(u32 thread_id)
         core_pm_enable_sched();
     }
 
-    core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+    core_pm_spnlck_rw_r_unlock(&thread_table_lock, priority);
 
     //Schedule
     if(thread_id != currnt_thread) {
@@ -513,14 +516,15 @@ void core_pm_suspend(u32 thread_id)
 void core_pm_resume(u32 thread_id)
 {
     //Get thread obj
-    core_pm_spnlck_rw_r_lock(&thread_table_lock);
+    u32 priority;
+    core_pm_spnlck_rw_r_lock(&thread_table_lock, &priority);
     pthread_obj_t p_thread_obj = core_rtl_array_get(&thread_table, thread_id);
 
     if(p_thread_obj != NULL) {
         INC_REF(p_thread_obj);
     }
 
-    core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+    core_pm_spnlck_rw_r_unlock(&thread_table_lock, priority);
 
     if(p_thread_obj == NULL) {
         //Raise exception
@@ -745,20 +749,21 @@ u32 core_pm_get_thrd_priority(u32 thrd_id)
     }
 
     //Get thread object
-    core_pm_spnlck_rw_r_lock(&thread_table_lock);
+    u32 priority;
+    core_pm_spnlck_rw_r_lock(&thread_table_lock, &priority);
     pthread_obj_t p_thread_obj = core_rtl_array_get(
                                      &thread_table,
                                      thrd_id);
 
     if(p_thread_obj == NULL) {
-        core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+        core_pm_spnlck_rw_r_unlock(&thread_table_lock, priority);
         peinval_except_t p_except = einval_except();
         RAISE(p_except, "Illegal thread id.");
         return 0;
     }
 
     INC_REF(p_thread_obj);
-    core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+    core_pm_spnlck_rw_r_unlock(&thread_table_lock, priority);
 
     //Get priority
     u32 ret = p_thread_obj->priority;
@@ -775,20 +780,21 @@ void core_pm_set_thrd_priority(u32 thrd_id, u32 priority)
     }
 
     //Get thread object
-    core_pm_spnlck_rw_r_lock(&thread_table_lock);
+    u32 tmp_priority;
+    core_pm_spnlck_rw_r_lock(&thread_table_lock, &tmp_priority);
     pthread_obj_t p_thread_obj = core_rtl_array_get(
                                      &thread_table,
                                      thrd_id);
 
     if(p_thread_obj == NULL) {
-        core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+        core_pm_spnlck_rw_r_unlock(&thread_table_lock, tmp_priority);
         peinval_except_t p_except = einval_except();
         RAISE(p_except, "Illegal thread id.");
         return;
     }
 
     INC_REF(p_thread_obj);
-    core_pm_spnlck_rw_r_unlock(&thread_table_lock);
+    core_pm_spnlck_rw_r_unlock(&thread_table_lock, tmp_priority);
 
     //Set priority
     core_pm_spnlck_lock(&sched_list_lock);
