@@ -469,6 +469,11 @@ void core_pm_suspend(u32 thread_id)
     u32 priority;
     core_pm_spnlck_rw_r_lock(&thread_table_lock, &priority);
 
+    //Get schedule status
+    u32 cpu_index = hal_cpu_get_cpu_index();
+    pcore_sched_info_t p_info = &cpu_infos[cpu_index];
+    bool if_enable_sched = p_info->enable_sched;
+
     if(currnt_thread == thread_id) {
         core_pm_disable_sched();
     }
@@ -499,7 +504,7 @@ void core_pm_suspend(u32 thread_id)
         p_thread_obj->status = TASK_SUSPEND;
     }
 
-    if(currnt_thread == thread_id) {
+    if(currnt_thread == thread_id && if_enable_sched) {
         core_pm_enable_sched();
     }
 
@@ -508,6 +513,9 @@ void core_pm_suspend(u32 thread_id)
     //Schedule
     if(thread_id != currnt_thread) {
         hal_cpu_send_IPI(-1, IPI_TYPE_PREEMPT, NULL);
+
+    } else {
+        hal_io_int(INT_TICK);
     }
 
     return;
@@ -609,11 +617,20 @@ void core_pm_sleep(u64* p_ns)
         p_thread_obj = (pthread_obj_t)(p_info->current_node->p_item);
     }
 
+    //Get schedule status
+    bool if_enable_sched = p_info->enable_sched;
+
     //Sleep thread
-    core_pm_disable_sched();
+    if(if_enable_sched) {
+        core_pm_disable_sched();
+    }
+
     p_thread_obj->status = TASK_SLEEP;
     p_thread_obj->set_sleep_time(p_thread_obj, p_ns);
-    core_pm_enable_sched();
+
+    if(if_enable_sched) {
+        core_pm_enable_sched();
+    }
 
     hal_io_int(INT_TICK);
     return;
