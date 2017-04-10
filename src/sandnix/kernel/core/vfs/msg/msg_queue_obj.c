@@ -28,6 +28,7 @@ static	pkstring_obj_t	to_string(pmsg_queue_obj_t p_this);
 
 static	kstatus_t		send(pmsg_queue_obj_t p_this, pmsg_obj_t p_msg,
                              mstatus_t* result);
+static	kstatus_t		forward(pmsg_queue_obj_t p_this, pmsg_obj_t p_msg);
 static	kstatus_t		recv(pmsg_queue_obj_t p_this, pmsg_obj_t* p_ret,
                              s32 millisec_timeout);
 static	u32				get_msg_count(pmsg_queue_obj_t p_this);
@@ -57,6 +58,7 @@ pmsg_queue_obj_t msg_queue(pheap_t heap)
 
     //Methods
     p_ret->send = send;
+    p_ret->forward = forward;
     p_ret->recv = recv;
     p_ret->get_msg_count = get_msg_count;
     p_ret->destroy = destroy;
@@ -101,7 +103,13 @@ pkstring_obj_t to_string(pmsg_queue_obj_t p_this)
 kstatus_t send(pmsg_queue_obj_t p_this, pmsg_obj_t p_msg,
                mstatus_t* result)
 {
-    while(core_pm_mutex_acquire(&(p_this->lock), -1) != ESUCCESS);
+    kstatus_t status;
+
+    while((status = core_pm_mutex_acquire(&(p_this->lock), -1)) == EAGAIN);
+
+    if(status != ESUCCESS) {
+        return status;
+    }
 
     //Check queue status
     if(!p_this->alive) {
@@ -111,7 +119,7 @@ kstatus_t send(pmsg_queue_obj_t p_this, pmsg_obj_t p_msg,
         return EINVAL;
     }
 
-    kstatus_t status = p_msg->send(p_msg);
+    status = p_msg->send(p_msg);
 
     if(status != ESUCCESS) {
         core_pm_mutex_release(&(p_this->lock));
@@ -141,12 +149,60 @@ kstatus_t send(pmsg_queue_obj_t p_this, pmsg_obj_t p_msg,
 
 }
 
+kstatus_t forward(pmsg_queue_obj_t p_this, pmsg_obj_t p_msg)
+{
+    kstatus_t status = ESUCCESS;
+
+    while((status = core_pm_mutex_acquire(&(p_this->lock), -1)) == EAGAIN);
+
+    if(status != ESUCCESS) {
+        return status;
+    }
+
+    //Check queue status
+    if(!p_this->alive) {
+        core_pm_mutex_release(&(p_this->lock));
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Dead message queue.");
+        return EINVAL;
+    }
+
+    status = p_msg->forward(p_msg);
+
+    if(status != ESUCCESS) {
+        core_pm_mutex_release(&(p_this->lock));
+        peinval_except_t p_except = einval_except();
+        RAISE(p_except, "Illegal message.");
+        return EINVAL;
+    }
+
+    //Push message
+    core_rtl_queue_push(&(p_this->msg_queue), p_msg);
+    (p_this->msg_count)++;
+    INC_REF(p_msg);
+
+    //Set cond
+    core_pm_cond_signal(&(p_this->msg_cond), false);
+
+    core_pm_mutex_release(&(p_this->lock));
+
+    status = ESUCCESS;
+    core_exception_set_errno(status);
+
+    return status;
+
+}
+
 kstatus_t recv(pmsg_queue_obj_t p_this, pmsg_obj_t* p_ret,
                s32 millisec_timeout)
 {
     kstatus_t status = ESUCCESS;
 
-    while(core_pm_mutex_acquire(&(p_this->lock), -1) != ESUCCESS);
+    while((status = core_pm_mutex_acquire(&(p_this->lock), -1)) == EAGAIN);
+
+    if(status != ESUCCESS) {
+        return status;
+    }
 
     //Check queue status
     if(!p_this->alive) {

@@ -532,7 +532,7 @@ void core_pm_resume(u32 thread_id)
     //Check thread status
     if(p_thread_obj->status == TASK_ZOMBIE) {
         //Zombie
-        //Raise exception
+        //Raise excepion
         DEC_REF(p_thread_obj);
         peinval_except_t p_except = einval_except();
         RAISE(p_except, "Unable to resume a zombie thread.");

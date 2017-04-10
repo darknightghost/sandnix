@@ -37,6 +37,9 @@ typedef	struct	_msg_queue_obj {
     //			mstatus_t* result);
     kstatus_t	(*send)(struct _msg_queue_obj*, pmsg_obj_t, mstatus_t*);
 
+    //kstatus_t		forward(pmsg_queue_obj_t p_this, pmsg_obj_t* p_msg);
+    kstatus_t	(*forward)(struct _msg_queue_obj*, pmsg_obj_t);
+
     //kstatus_t		recv(pmsg_queue_obj_t p_this, pmsg_obj_t* p_ret,
     //			s32 millisec_timeout);
     kstatus_t	(*recv)(struct _msg_queue_obj*, pmsg_obj_t*, s32);
