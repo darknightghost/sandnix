@@ -47,36 +47,27 @@ void core_main_main()
     while(1);
 }
 
-mutex_t m;
-cond_t c;
 
 void* thread_func2(u32 thread_id, void* p_args);
 void* thread_func1(u32 thread_id, void* p_args)
 {
     core_kconsole_print_info("thread1 id = %p, arg = %p\n",
                              thread_id, p_args);
-    u64 ns = 500000000;
+    u32 thread2_id = core_pm_thread_create(thread_func2, 0, PRIORITY_KRNL_NORMAL,
+                                           (void*)0x02);
+
+    u64 ns = 100000000;
     core_pm_sleep(&ns);
 
-    while(true) {
-        ns = 1000000000;
-        core_pm_sleep(&ns);
-        core_pm_mutex_acquire(&m, -1);
-        core_pm_cond_signal(&c, true);
-        core_pm_mutex_release(&m);
+    u32 retval;
 
-        ns = 1000000000;
-        core_pm_sleep(&ns);
-        core_pm_mutex_acquire(&m, -1);
-        core_pm_cond_signal(&c, false);
-        core_pm_mutex_release(&m);
+    u32 joined_id = core_pm_join(true, thread2_id, (void**)&retval);
 
-        ns = 1000000000;
-        core_pm_sleep(&ns);
-        core_pm_mutex_acquire(&m, -1);
-        core_pm_cond_signal(&c, false);
-        core_pm_mutex_release(&m);
+    if(joined_id == thread2_id) {
+        core_kconsole_print_info("thread 2 joined, return value = %u\n", retval);
     }
+
+    while(true);
 
     return NULL;
 }
@@ -86,39 +77,14 @@ void* thread_func2(u32 thread_id, void* p_args)
     core_kconsole_print_info("thread2 id = %p, arg = %p\n",
                              thread_id, p_args);
 
-    while(true) {
-        core_pm_mutex_acquire(&m, -1);
-        core_pm_cond_wait(&c, -1);
-        core_kconsole_print_info("\nthread2");
-        core_pm_mutex_release(&m);
-    }
-
-    return NULL;
+    return (void*)1;
 }
 
-void* thread_func3(u32 thread_id, void* p_args)
-{
-    core_kconsole_print_info("thread3 id = %p, arg = %p\n",
-                             thread_id, p_args);
-
-    while(true) {
-        core_pm_mutex_acquire(&m, -1);
-        core_pm_cond_wait(&c, -1);
-        core_kconsole_print_info("\nthread3");
-        core_pm_mutex_release(&m);
-    }
-
-    return NULL;
-}
 void test()
 {
     core_kconsole_print_info("\nCondition variable test\n");
-    core_pm_mutex_init(&m);
-    core_pm_cond_init(&c, &m);
     core_pm_set_currnt_thrd_priority(PRIORITY_HIGHEST);
     core_pm_thread_create(thread_func1, 0, PRIORITY_KRNL_NORMAL, (void*)0x01);
-    core_pm_thread_create(thread_func2, 0, PRIORITY_KRNL_NORMAL, (void*)0x02);
-    core_pm_thread_create(thread_func3, 0, PRIORITY_KRNL_NORMAL, (void*)0x03);
     core_pm_set_currnt_thrd_priority(PRIORITY_IDLE);
 }
 
