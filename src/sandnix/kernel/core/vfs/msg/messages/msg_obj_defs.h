@@ -109,6 +109,8 @@ typedef	struct	_msg_obj {
 #define MSG_MJ_MATCH			0x00000030
 #define MSG_MJ_HOT_PLUG			0x00000031
 #define MSG_MJ_POWER			0x00000032
+#define	MSG_MJ_IRQ				0x00000033
+#define	MSG_MJ_FILTER			0x00000034
 
 //Minor types
 //MSG_MJ_FINISH
@@ -171,7 +173,8 @@ typedef	struct	_msg_obj {
 
 //MSG_MJ_MATCH
 #define MSG_MN_MATCH			0x00000000
-#define MSG_MN_UNMATCH			0x00000001
+#define MSG_MN_TAKEOVER			0x00000001
+#define MSG_MN_UNMATCH			0x00000002
 
 //MSG_MJ_HOT_PLUG
 #define MSG_MN_PLUGIN			0x00000000
@@ -182,3 +185,11 @@ typedef	struct	_msg_obj {
 #define MSG_MN_SUSPEND			0x00000001
 #define MSG_MN_RESUME			0x00000002
 #define MSG_MN_HIBERNATE		0x00000003
+
+//MSG_MJ_IRQ
+#define	MSG_MN_IRQ				0x00000000
+
+//MSG_MJ_FILTER
+#define	MSG_MN_ADD_FILTER		0x00000000
+#define	MSG_MN_REMOVE_FILTER	0x00000001
+#define	MSG_MN_FILTER_DATA		0x00000002

@@ -473,7 +473,7 @@ void zombie_thread(pprocess_obj_t p_this, u32 thread_id)
                      &thread_id,
                      NULL);
     core_rtl_map_set(&(p_this->zombie_threads),
-                     &thread_id,
+                     &(p_ref->id),
                      p_ref);
 
     //Awake waiting thread
