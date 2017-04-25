@@ -18,4 +18,7 @@
 #pragma once
 
 #include "../../../../common/common.h"
+#include "./file_obj.h"
 #include "./msg/msg.h"
+
+void	core_vfs_init();

@@ -15,14 +15,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../../../../common/common.h"
-#include "./vfs.h"
+#pragma once
+#include "./file_obj_defs.h"
 
 #define	MODULE_NAME		core_vfs
 
-void core_vfs_init()
-{
-    PRIVATE(file_obj_init)();
+//Initialize
+void	PRIVATE(file_obj_init)();
 
-    return;
-}
+//Constructor
+pfile_obj_t		file_obj(u32 inode, u32 uid, u32 gid, u32 mode, size_t size);
+
+#undef	MODULE_NAME

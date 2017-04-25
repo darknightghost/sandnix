@@ -18,4 +18,5 @@
 #pragma once
 
 #include "../../../../common/common.h"
+#include "./file_obj_defs.h"
 #include "./msg/msg_defs.h"
