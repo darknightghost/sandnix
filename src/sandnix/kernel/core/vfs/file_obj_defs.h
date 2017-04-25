@@ -24,6 +24,10 @@
 
 #define	MODULE_NAME		core_vfs
 
+#ifndef	MAX_FILEOBJ_NUM
+    #define	MAX_FILEOBJ_NUM		8192
+#endif
+
 //File object
 typedef struct	_file_obj {
     //Parent
@@ -63,10 +67,10 @@ typedef struct	_file_obj {
 
     //Protected methods
     //Lock
-    //void			lock(pfile_obj_t p_this);
-    void	(*lock)(struct _file_obj* p_this);
-    //void			unlock(pfile_obj_t p_this);
-    void	(*unlock)(struct _file_obj* p_this);
+    //void			lock_obj(pfile_obj_t p_this);
+    void	(*lock_obj)(struct _file_obj* p_this);
+    //void			unlock_obj(pfile_obj_t p_this);
+    void	(*unlock_obj)(struct _file_obj* p_this);
 } file_obj_t, *pfile_obj_t;
 
 //Modes

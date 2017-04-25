@@ -24,6 +24,6 @@
 void	PRIVATE(file_obj_init)();
 
 //Constructor
-pfile_obj_t		file_obj(u32 inode, u32 uid, u32 gid, u32 mode, size_t size);
+pfile_obj_t		file_obj(u32 class_id, u32 inode, u32 uid, u32 gid, u32 mode, size_t size);
 
 #undef	MODULE_NAME
