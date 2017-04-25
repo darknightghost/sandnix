@@ -68,5 +68,8 @@
             <option macro="-DMAX_CPU_NUM" name="Maxium number of cpu" target="CFLAGS|ASFLAGS|DEPFLAGS" type="input" value="64"/>
             <option macro="-DMAX_PROCESS_NUM" name="Maxium number of process" target="CFLAGS|ASFLAGS|DEPFLAGS" type="input" value="65535"/>
         </option>
+		<option name="Virtual filesystem options." type="menu">
+            <option macro="-DMAX_FILEOBJ_NUM" name="Maxium number of file objects." target="CFLAGS|ASFLAGS|DEPFLAGS" type="input" value="8192"/>
+		</option>
     </options>
 </target>
