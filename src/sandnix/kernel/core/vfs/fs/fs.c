@@ -14,15 +14,3 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
-#include "../../../../common/common.h"
-#include "./vfs.h"
-
-#define	MODULE_NAME		core_vfs
-
-void core_vfs_init()
-{
-    PRIVATE(file_obj_init)();
-
-    return;
-}
