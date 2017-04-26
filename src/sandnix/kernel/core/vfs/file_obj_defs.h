@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma onces
+#pragma once
 
 #include "../../../../common/common.h"
 #include "./msg/msg_queue_obj_defs.h"
@@ -45,32 +45,32 @@ typedef struct	_file_obj {
     //Methods
     //This method is used to set the alive flag to false.
     //void		die(pfile_obj_t p_this);
-    void	(*die)(struct _file_obj* p_this);
+    void	(*die)(struct _file_obj*);
 
     //File owner id
     //u32			get_uid(pfile_obj_t p_this);
-    u32(*get_uid)(struct _file_obj* p_this);
-    //kstatus_t		set_uid(pfile_obj_t p_this, u32 new_uid);
-    kstatus_t	(*set_uid)(struct _file_obj* p_this, u32 new_uid);
+    u32(*get_uid)(struct _file_obj*);
+    //kstatus_t		set_uid(pfile_obj_t p_this, u32 new_uid, u32 process_id);
+    kstatus_t	(*set_uid)(struct _file_obj*, u32, u32);
 
     //File group id
     //u32			get_gid(pfile_obj_t p_this);
-    u32(*get_gid)(struct _file_obj* p_this);
-    //kstatus_t		set_gid(pfile_obj_t p_this, u32 new_gid);
-    kstatus_t	(*set_gid)(struct _file_obj* p_this, u32 new_gid);
+    u32(*get_gid)(struct _file_obj*);
+    //kstatus_t		set_gid(pfile_obj_t p_this, u32 new_gid, u32 process_id);
+    kstatus_t	(*set_gid)(struct _file_obj*, u32, u32);
 
     //Mode
     //u32			get_mode(pfile_obj_t p_this);
-    u32(*get_mode)(struct _file_obj* p_this);
-    //kstatus_t		set_mode(pfile_obj_t p_this, u32 new_mode);
-    kstatus_t	(*set_mode)(struct _file_obj* p_this, u32 new_mode);
+    u32(*get_mode)(struct _file_obj*);
+    //kstatus_t		set_mode(pfile_obj_t p_this, u32 new_mode, u32 process_id);
+    kstatus_t	(*set_mode)(struct _file_obj*, u32, u32);
 
     //Protected methods
     //Lock
     //void			lock_obj(pfile_obj_t p_this);
-    void	(*lock_obj)(struct _file_obj* p_this);
+    void	(*lock_obj)(struct _file_obj*);
     //void			unlock_obj(pfile_obj_t p_this);
-    void	(*unlock_obj)(struct _file_obj* p_this);
+    void	(*unlock_obj)(struct _file_obj*);
 } file_obj_t, *pfile_obj_t;
 
 //Modes
