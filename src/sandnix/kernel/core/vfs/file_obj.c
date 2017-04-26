@@ -37,11 +37,11 @@ static	pkstring_obj_t	to_string(pfile_obj_t p_this);
 
 static	void			die(pfile_obj_t p_this);
 static	u32				get_uid(pfile_obj_t p_this);
-static	kstatus_t		set_uid(pfile_obj_t p_this, u32 new_uid);
+static	kstatus_t		set_uid(pfile_obj_t p_this, u32 new_uid, u32 process_id);
 static	u32				get_gid(pfile_obj_t p_this);
-static	kstatus_t		set_gid(pfile_obj_t p_this, u32 new_gid);
+static	kstatus_t		set_gid(pfile_obj_t p_this, u32 new_gid, u32 process_id);
 static	u32				get_mode(pfile_obj_t p_this);
-static	kstatus_t		set_mode(pfile_obj_t p_this, u32 new_mode);
+static	kstatus_t		set_mode(pfile_obj_t p_this, u32 new_mode, u32 process_id);
 static	void			lock_obj(pfile_obj_t p_this);
 static	void			unlock_obj(pfile_obj_t p_this);
 
@@ -120,16 +120,213 @@ pfile_obj_t file_obj(u32 class_id, u32 inode, u32 uid, u32 gid, u32 mode, size_t
     return p_ret;
 }
 
-void  destructor(pfile_obj_t p_this);
-int compare(pfile_obj_t p_this, pfile_obj_t p_obj);
-pkstring_obj_t to_string(pfile_obj_t p_this);
+void destructor(pfile_obj_t p_this)
+{
+    core_mm_heap_free(p_this, p_this->obj.heap);
+    return;
+}
 
-void die(pfile_obj_t p_this);
-u32 get_uid(pfile_obj_t p_this);
-kstatus_t set_uid(pfile_obj_t p_this, u32 new_uid);
-u32 get_gid(pfile_obj_t p_this);
-kstatus_t set_gid(pfile_obj_t p_this, u32 new_gid);
-u32 get_mode(pfile_obj_t p_this);
-kstatus_t set_mode(pfile_obj_t p_this, u32 new_mode);
-void lock_obj(pfile_obj_t p_this);
-void unlock_obj(pfile_obj_t p_this);
+int compare(pfile_obj_t p_this, pfile_obj_t p_obj)
+{
+    if((address_t)p_this > (address_t)p_obj) {
+        return 1;
+
+    } else if((address_t)p_this == (address_t)p_obj) {
+        return 0;
+
+    } else {
+        return -1;
+    }
+}
+
+pkstring_obj_t to_string(pfile_obj_t p_this)
+{
+    return kstring("File object.", p_this->obj.heap);
+}
+
+void die(pfile_obj_t p_this)
+{
+    p_this->lock_obj(p_this);
+    p_this->alive = false;
+    p_this->unlock_obj(p_this);
+
+    return;
+}
+
+u32 get_uid(pfile_obj_t p_this)
+{
+    p_this->lock_obj(p_this);
+
+    if(!p_this->alive) {
+        p_this->unlock_obj(p_this);
+        core_exception_set_errno(EIO);
+        return 0;
+    }
+
+    u32 ret = p_this->uid;
+    p_this->unlock_obj(p_this);
+
+    core_exception_set_errno(ESUCCESS);
+    return ret;
+}
+
+kstatus_t set_uid(pfile_obj_t p_this, u32 new_uid, u32 process_id)
+{
+    //Check privilege
+    if(process_id != 0) {
+        core_exception_set_errno(EPERM);
+        return EPERM;
+    }
+
+    p_this->lock_obj(p_this);
+
+    //Check if the file object is alive
+    if(!p_this->alive) {
+        p_this->unlock_obj(p_this);
+        core_exception_set_errno(EIO);
+        return EIO;
+    }
+
+    p_this->uid = new_uid;
+
+    p_this->unlock_obj(p_this);
+    core_exception_set_errno(ESUCCESS);
+
+    return ESUCCESS;
+}
+
+u32 get_gid(pfile_obj_t p_this)
+{
+    p_this->lock_obj(p_this);
+
+    if(!p_this->alive) {
+        p_this->unlock_obj(p_this);
+        core_exception_set_errno(EIO);
+        return 0;
+    }
+
+    u32 ret = p_this->gid;
+    p_this->unlock_obj(p_this);
+
+    core_exception_set_errno(ESUCCESS);
+    return ret;
+}
+
+kstatus_t set_gid(pfile_obj_t p_this, u32 new_gid, u32 process_id)
+{
+    //Check privilege
+    if(process_id != 0) {
+        if(core_pm_get_euid(process_id) == p_this->uid) {
+            if(core_pm_get_gid(process_id) != new_gid) {
+                core_exception_set_errno(EPERM);
+                return EPERM;
+
+            } else {
+                size_t group_buf_size = core_pm_get_groups(
+                                            process_id,
+                                            NULL,
+                                            0);
+
+                if(group_buf_size == 0) {
+                    core_exception_set_errno(EPERM);
+                    return EPERM;
+                }
+
+                u32* p_group_buf = core_mm_heap_alloc(group_buf_size,
+                                                      file_obj_heap);
+                bool found = false;
+
+                for(u32* p = p_group_buf;
+                    p - p_group_buf < group_buf_size / sizeof(u32);
+                    p++) {
+                    if(*p == new_gid) {
+                        found = true;
+                    }
+                }
+
+                core_mm_heap_free(p_group_buf, file_obj_heap);
+
+                if(!found) {
+                    core_exception_set_errno(EPERM);
+                    return EPERM;
+                }
+
+            }
+
+        } else {
+            core_exception_set_errno(EPERM);
+            return EPERM;
+        }
+    }
+
+    p_this->lock_obj(p_this);
+
+    //Check if the file object is alive
+    if(!p_this->alive) {
+        p_this->unlock_obj(p_this);
+        core_exception_set_errno(EIO);
+        return EIO;
+    }
+
+    p_this->gid = new_gid;
+
+    p_this->unlock_obj(p_this);
+    core_exception_set_errno(ESUCCESS);
+
+    return ESUCCESS;
+}
+
+u32 get_mode(pfile_obj_t p_this)
+{
+    p_this->lock_obj(p_this);
+
+    if(!p_this->alive) {
+        p_this->unlock_obj(p_this);
+        core_exception_set_errno(EIO);
+        return 0;
+    }
+
+    u32 ret = p_this->mode;
+    p_this->unlock_obj(p_this);
+
+    core_exception_set_errno(ESUCCESS);
+    return ret;
+}
+
+kstatus_t set_mode(pfile_obj_t p_this, u32 new_mode, u32 process_id)
+{
+    //Check privilege
+    if(process_id != 0) {
+        core_exception_set_errno(EPERM);
+        return EPERM;
+    }
+
+    p_this->lock_obj(p_this);
+
+    //Check if the file object is alive
+    if(!p_this->alive) {
+        p_this->unlock_obj(p_this);
+        core_exception_set_errno(EIO);
+        return EIO;
+    }
+
+    p_this->mode = new_mode;
+
+    p_this->unlock_obj(p_this);
+    core_exception_set_errno(ESUCCESS);
+
+    return ESUCCESS;
+}
+
+void lock_obj(pfile_obj_t p_this)
+{
+    core_pm_mutex_acquire(&(p_this->lock), -1);
+    return;
+}
+
+void unlock_obj(pfile_obj_t p_this)
+{
+    core_pm_mutex_release(&(p_this->lock));
+    return;
+}
+
