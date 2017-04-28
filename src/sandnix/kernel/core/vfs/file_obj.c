@@ -120,8 +120,28 @@ pfile_obj_t file_obj(u32 class_id, u32 inode, u32 uid, u32 gid, u32 mode, size_t
     return p_ret;
 }
 
+pfile_obj_t core_vfs_get_file_obj_by_id(u32 id)
+{
+    core_pm_mutex_acquire(&file_obj_table_lock, -1);
+    pfile_obj_t p_ret = core_rtl_array_get(&file_obj_table, id);
+
+    if(p_ret != NULL) {
+        INC_REF(p_ret);
+    }
+
+    core_pm_mutex_release(&file_obj_table_lock);
+
+    return p_ret;
+}
+
 void destructor(pfile_obj_t p_this)
 {
+    //Release id
+    core_pm_mutex_acquire(&file_obj_table_lock, -1);
+    core_rtl_array_set(&file_obj_table, p_this->file_obj_id, NULL);
+    core_pm_mutex_release(&file_obj_table_lock);
+
+    //Free memory
     core_mm_heap_free(p_this, p_this->obj.heap);
     return;
 }

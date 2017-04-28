@@ -16,16 +16,17 @@
 */
 
 #pragma once
-#include "./file_obj_defs.h"
+
+#include "./dev_defs.h"
+
+#include "../../../../../common/common.h"
 
 #define	MODULE_NAME		core_vfs
 
-//Initialize
-void	PRIVATE(file_obj_init)();
+void	PRIVATE(dev_init)();
+//core_vfs_dev_reg_drv
+//core_vfs_dev_create_drv_node
+//core_vfs_dev_create_dev_node
+//core_vfs_dev_create
 
-//Constructor
-pfile_obj_t		file_obj(u32 class_id, u32 inode, u32 uid, u32 gid, u32 mode, size_t size);
-
-pfile_obj_t		core_vfs_get_file_obj_by_id(u32 id);
-
-#undef	MODULE_NAME
+#undef MODULE_NAME
