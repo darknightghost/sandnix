@@ -14,18 +14,3 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
-#pragma once
-#include "./file_obj_defs.h"
-
-#define	MODULE_NAME		core_vfs
-
-//Initialize
-void	PRIVATE(file_obj_init)();
-
-//Constructor
-pfile_obj_t		file_obj(u32 class_id, u32 inode, u32 uid, u32 gid, u32 mode, size_t size);
-
-pfile_obj_t		core_vfs_get_file_obj_by_id(u32 id);
-
-#undef	MODULE_NAME
