@@ -16,16 +16,7 @@
 */
 
 #pragma once
-#include "./file_obj_defs.h"
-
-#define	MODULE_NAME		core_vfs
-
-//Initialize
-void	PRIVATE(file_obj_init)();
-
-//Constructor
-pfile_obj_t		file_obj(u32 class_id, u32 inode, size_t size);
-
-pfile_obj_t		core_vfs_get_file_obj_by_id(u32 id);
-
-#undef	MODULE_NAME
+#include "../../../../../common/common.h"
+#include "../msg/msg_queue_obj_defs.h"
+#include "../../rtl/rtl_defs.h"
+#include "../../pm/pm_defs.h"
