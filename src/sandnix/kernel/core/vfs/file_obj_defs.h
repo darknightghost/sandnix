@@ -34,41 +34,24 @@ typedef struct	_file_obj {
     obj_t		obj;
 
     //Attributes
-    u32			file_obj_id;	//Id of the file object.
-    mutex_t		lock;			//File object lock.
-    bool		alive;			//If the file object cannot be access, set it to false.
-    u32			inode;			//Inode number of the file.
-    u32			uid;			//User id of the owner of the file.
-    u32			gid;			//Group id of the group which ownes the file.
-    u32			mode;			//File mode.
+    u32					file_obj_id;//Id of the file object.
+    mutex_t				lock;		//File object lock.
+    bool				alive;		//If the file object cannot be access, set it to false.
+    u32					inode;		//Inode number of the file.
+    pmsg_queue_obj_t	msg_queue;	//Message queue.
 
     //Methods
-    //This method is used to set the alive flag to false.
-    //void		die(pfile_obj_t p_this);
-    void	(*die)(struct _file_obj*);
+    //This method is used to set the alive flag to false and destroy the message queue.
+    //void		destroy(pfile_obj_t p_this);
+    void	(*destroy)(struct _file_obj*);
 
-    //File owner id
-    //u32			get_uid(pfile_obj_t p_this);
-    u32(*get_uid)(struct _file_obj*);
-    //kstatus_t		set_uid(pfile_obj_t p_this, u32 new_uid, u32 process_id);
-    kstatus_t	(*set_uid)(struct _file_obj*, u32, u32);
-
-    //File group id
-    //u32			get_gid(pfile_obj_t p_this);
-    u32(*get_gid)(struct _file_obj*);
-    //kstatus_t		set_gid(pfile_obj_t p_this, u32 new_gid, u32 process_id);
-    kstatus_t	(*set_gid)(struct _file_obj*, u32, u32);
-
-    //Mode
-    //u32			get_mode(pfile_obj_t p_this);
-    u32(*get_mode)(struct _file_obj*);
-    //kstatus_t		set_mode(pfile_obj_t p_this, u32 new_mode, u32 process_id);
-    kstatus_t	(*set_mode)(struct _file_obj*, u32, u32);
+    //This method is used to send message.
 
     //Protected methods
     //Lock
     //void			lock_obj(pfile_obj_t p_this);
     void	(*lock_obj)(struct _file_obj*);
+
     //void			unlock_obj(pfile_obj_t p_this);
     void	(*unlock_obj)(struct _file_obj*);
 } file_obj_t, *pfile_obj_t;

@@ -26,7 +26,7 @@
 void	PRIVATE(dev_init)();
 //core_vfs_dev_reg_drv
 //core_vfs_dev_create_drv_node
-//core_vfs_dev_create_dev_node
+//core_vfs_dev_create_dev_slot
 //core_vfs_dev_create
 
 #undef MODULE_NAME
