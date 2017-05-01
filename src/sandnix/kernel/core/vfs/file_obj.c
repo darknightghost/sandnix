@@ -104,8 +104,8 @@ pfile_obj_t file_obj(u32 class_id, u32 inode, size_t size)
     p_ret->msg_queue = msg_queue(file_obj_heap);
 
     //Methods
-    p_this->send = send;
-    p_this->recv = recv;
+    p_ret->send = send;
+    p_ret->recv = recv;
     p_ret->destroy = destroy;
     p_ret->lock_obj = lock_obj;
     p_ret->unlock_obj = unlock_obj;
@@ -159,18 +159,18 @@ pkstring_obj_t to_string(pfile_obj_t p_this)
 
 kstatus_t send(pfile_obj_t p_this, pmsg_obj_t p_msg, mstatus_t* result)
 {
-    p_this->msg_queue->send(
-        p_this->msg_queue,
-        p_msg,
-        result);
+    return p_this->msg_queue->send(
+               p_this->msg_queue,
+               p_msg,
+               result);
 }
 
 kstatus_t recv(pfile_obj_t p_this, pmsg_obj_t* p_ret, s32 millisec_timeout)
 {
-    p_this->msg_queue->recv(
-        p_this->msg_queue,
-        p_ret,
-        millisec_timeout);
+    return p_this->msg_queue->recv(
+               p_this->msg_queue,
+               p_ret,
+               millisec_timeout);
 }
 
 void destroy(pfile_obj_t p_this)
