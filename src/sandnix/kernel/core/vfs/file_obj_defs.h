@@ -46,6 +46,14 @@ typedef struct	_file_obj {
     void	(*destroy)(struct _file_obj*);
 
     //This method is used to send message.
+    //void	send(pfile_obj_t p_this, pmsg_obj_t p_msg,
+    //			mstatus_t* result);
+    kstatus_t	(*send)(struct _file_obj*, pmsg_obj_t, mstatus_t*);
+
+    //This method is used to reveive message.
+    //kstatus_t		recv(pfile_obj_t p_this, pmsg_obj_t* p_ret,
+    //			s32 millisec_timeout);
+    kstatus_t	(*recv)(struct _file_obj*, pmsg_obj_t*, s32);
 
     //Protected methods
     //Lock

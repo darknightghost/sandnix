@@ -19,11 +19,15 @@
 
 #include "../../../../../../common/common.h"
 #include "./cond_defs.h"
+#include "../../../mm/mm_defs.h"
 
 #define	MODULE_NAME		core_pm
 
 void		core_pm_cond_init(pcond_t p_cond, pmutex_t p_mutex);
 kstatus_t	core_pm_cond_wait(pcond_t p_cond, s32 millisec_timeout);
+kstatus_t	core_pm_cond_multi_wait(pcond_t* conds, size_t num,
+                                    u32* p_ret_indexs, size_t* p_ret_num,
+                                    s32 millisec_timeout, pheap_t heap);
 kstatus_t	core_pm_cond_signal(pcond_t p_cond, bool broadcast);
 void		core_pm_cond_destroy(pcond_t p_cond);
 

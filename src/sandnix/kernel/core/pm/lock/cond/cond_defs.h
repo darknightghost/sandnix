@@ -32,7 +32,8 @@ typedef	struct	_cond {
 } cond_t, *pcond_t;
 
 typedef	struct	_cond_wait_thrd_info {
-    u32		ticket;
-    u32		thread_id;
+    list_node_t	list_node;
+    u32			ticket;
+    u32			thread_id;
 } cond_wait_thrd_info_t, *pcond_wait_thrd_info_t;
 
