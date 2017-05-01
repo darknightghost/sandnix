@@ -20,3 +20,16 @@
 #include "../msg/msg_queue_obj_defs.h"
 #include "../../rtl/rtl_defs.h"
 #include "../../pm/pm_defs.h"
+#include "../file_obj_defs.h"
+
+typedef struct	_driver_obj {
+    file_obj_t		file_object;	//Parent file object
+
+    //Member variables
+    u32		process_id;			//Which process is the driver process
+    u32		uid;				//Driver directory uid
+    u32		gid;				//Driver directory gid
+    u32		mode;				//Driver directory mode
+
+    list_t	devices;			//Devices list
+} driver_obj_t, *pdriver_obj_t;
