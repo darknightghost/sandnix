@@ -24,7 +24,6 @@ menuentry 'Sandnix 0.0.2' {
         multiboot2 (hd0,3)/sandnix root=/dev/sda1 driver_init=/bin/dinit debug=on
         module2 (hd0,3)/sandnix-initrd
 }
-
 ```
 
 # Something else
