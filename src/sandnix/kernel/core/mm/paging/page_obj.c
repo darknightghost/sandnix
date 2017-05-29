@@ -54,7 +54,7 @@ static	u32			get_attr(ppage_obj_t p_this);
 static	size_t		get_size(ppage_obj_t p_this);
 
 //Fork page object
-static	ppage_obj_t	fork(ppage_obj_t p_this);
+static	ppage_obj_t	fork(ppage_obj_t p_this, void* virt_addr, u32 attr);
 
 //Do copy-on-write
 static	void		copy_on_write(ppage_obj_t p_this, void* virt_addr,
@@ -300,7 +300,7 @@ size_t get_size(ppage_obj_t p_this)
     return p_this->size;
 }
 
-ppage_obj_t fork(ppage_obj_t p_this)
+ppage_obj_t fork(ppage_obj_t p_this, void* virt_addr, u32 attr)
 {
     ppage_obj_t p_ret = (ppage_obj_t)obj(CLASS_PAGE_OBJECT,
                                          (destructor_t)destructer,
@@ -332,6 +332,7 @@ ppage_obj_t fork(ppage_obj_t p_this)
 
         p_this->copy_on_write_ref.p_next = p_ret;
         p_ret->copy_on_write_ref.p_prev = p_this;
+        p_this->map(p_this, virt_addr, attr);
 
     } else {
         //Not allocated

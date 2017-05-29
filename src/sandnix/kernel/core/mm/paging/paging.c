@@ -296,10 +296,9 @@ void core_mm_pg_tbl_fork(u32 src_index, u32 dest_index)
             } else {
                 //Fork page object
                 p_new_page_block->p_pg_obj =
-                    p_page_block->p_pg_obj->fork(p_new_page_block->p_pg_obj);
-                p_page_block->p_pg_obj->map(p_page_block->p_pg_obj,
-                                            (void*)(p_page_block->begin),
-                                            p_page_block->status);
+                    p_page_block->p_pg_obj->fork(p_new_page_block->p_pg_obj,
+                                                 (void*)(p_page_block->begin),
+                                                 p_page_block->status);
             }
         }
 

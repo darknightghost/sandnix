@@ -55,7 +55,7 @@ typedef struct _page_obj {
     size_t	(*get_size)(struct _page_obj* p_this);
 
     //Fork page object
-    struct _page_obj *	(*fork)(struct _page_obj* p_this);
+    struct _page_obj *	(*fork)(struct _page_obj* p_this, void* virt_addr, u32 attr);
 
     //Do copy-on-write
     void	(*copy_on_write)(struct _page_obj* p_this, void* virt_addr,
