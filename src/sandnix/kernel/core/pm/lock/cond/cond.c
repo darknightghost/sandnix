@@ -117,7 +117,8 @@ kstatus_t core_pm_cond_wait(pcond_t p_cond, s32 millisec_timeout)
 }
 
 kstatus_t core_pm_cond_multi_wait(pcond_t* conds, size_t num, u32* p_ret_indexs,
-                                  size_t* p_ret_num, s32 millisec_timeout, pheap_t heap)
+                                  size_t* p_ret_num, s32 millisec_timeout,
+                                  pheap_t heap)
 {
     //Get locks
     pmutex_t* locks = (pmutex_t*)core_mm_heap_alloc(sizeof(pmutex_t) * num, heap);

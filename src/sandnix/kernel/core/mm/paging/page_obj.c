@@ -325,7 +325,11 @@ ppage_obj_t fork(ppage_obj_t p_this)
 
         //Copy on write reference
         p_ret->copy_on_write_ref.p_next = p_this->copy_on_write_ref.p_next;
-        p_this->copy_on_write_ref.p_next->copy_on_write_ref.p_prev = p_ret;
+
+        if(p_this->copy_on_write_ref.p_next != NULL) {
+            p_this->copy_on_write_ref.p_next->copy_on_write_ref.p_prev = p_ret;
+        }
+
         p_this->copy_on_write_ref.p_next = p_ret;
         p_ret->copy_on_write_ref.p_prev = p_this;
 
