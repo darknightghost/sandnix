@@ -883,7 +883,7 @@ char* core_rtl_strncpy(char* dest, const char* src, size_t len)
         p_src++, p_dest++, count++) {
         *p_dest = *p_src;
 
-        if(p_src == '\0') {
+        if(*p_src == '\0') {
             return dest;
         }
     }

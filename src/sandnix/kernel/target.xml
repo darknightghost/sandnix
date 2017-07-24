@@ -13,10 +13,10 @@
             <DEPFLAGS>$(ARCHDEF)</DEPFLAGS>
             <DEPRULE>$(DEP) $(DEPFLAGS) -MM $&lt; | awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(dir $@)&quot;,$$0)} NR != 1 {print $$0}' | cat &gt; $@</DEPRULE>
             <CC>gcc</CC>
-            <CFLAGS>-Wall $(ARCHDEF) -Werror-implicit-function-declaration -Wunused-parameter -std=gnu99 -m32 -nostdlib -Werror -mno-sse2 -mno-sse -fno-strict-aliasing -Wno-strict-aliasing -fno-builtin</CFLAGS>
+            <CFLAGS>-Wall $(ARCHDEF) -Werror-implicit-function-declaration -Wunused-parameter -std=gnu99 -m32 -nostdlib -Werror -mno-sse2 -mno-sse -fno-strict-aliasing -Wno-strict-aliasing -fno-builtin -fno-stack-protector</CFLAGS>
             <CCRULE>$(CC) $(CFLAGS) -c -o $@ $&lt;</CCRULE>
             <AS>gcc</AS>
-            <ASFLAGS>$(ARCHDEF) -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=gnu99 -m32 -nostdlib -Werror -fno-strict-aliasing -Wno-strict-aliasing</ASFLAGS>
+            <ASFLAGS>$(ARCHDEF) -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=gnu99 -m32 -nostdlib -Werror -fno-strict-aliasing -Wno-strict-aliasing -fno-stack-protector</ASFLAGS>
             <ASRULE>$(AS) -c $(ASFLAGS) -o $@ $&lt;</ASRULE>
             <LD>ld</LD>
             <LDFLAGS>-m elf_i386 -Ttext 0xc0101000 -e _start --no-omagic -Map $(OUTDIR)/kernel.map</LDFLAGS>
@@ -32,10 +32,10 @@
             <DEPFLAGS>$(ARCHDEF)</DEPFLAGS>
             <DEPRULE>$(DEP) $(DEPFLAGS) -MM $&lt; | awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(dir $@)&quot;,$$0)} NR != 1 {print $$0}' | cat &gt; $@</DEPRULE>
             <CC>arm-none-eabi-gcc</CC>
-            <CFLAGS>-Wall $(ARCHDEF) -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -Werror -march=armv7-a -mlong-calls -fno-strict-aliasing -Wno-strict-aliasing</CFLAGS>
+            <CFLAGS>-Wall $(ARCHDEF) -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -Werror -march=armv7-a -mlong-calls -fno-strict-aliasing -Wno-strict-aliasing -fno-stack-protector</CFLAGS>
             <CCRULE>$(CC) -c $(CFLAGS) -o $@ $&lt;</CCRULE>
             <AS>arm-none-eabi-gcc</AS>
-            <ASFLAGS>$(ARCHDEF) -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -Werror -march=armv7-a -fno-strict-aliasing -Wno-strict-aliasing</ASFLAGS>
+            <ASFLAGS>$(ARCHDEF) -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=c99 -nostdlib -Werror -march=armv7-a -fno-strict-aliasing -Wno-strict-aliasing -fno-stack-protector</ASFLAGS>
             <ASRULE>$(AS) -c $(ASFLAGS) -o $@ $&lt;</ASRULE>
             <LD>arm-none-eabi-ld</LD>
             <LDFLAGS>-Ttext 0xC0000000 -e _start --no-omagic</LDFLAGS>
