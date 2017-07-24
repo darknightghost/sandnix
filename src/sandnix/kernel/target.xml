@@ -13,10 +13,10 @@
             <DEPFLAGS>$(ARCHDEF)</DEPFLAGS>
             <DEPRULE>$(DEP) $(DEPFLAGS) -MM $&lt; | awk 'NR == 1 {printf(&quot;%s%s\n&quot;,&quot;$(dir $@)&quot;,$$0)} NR != 1 {print $$0}' | cat &gt; $@</DEPRULE>
             <CC>gcc</CC>
-            <CFLAGS>-Wall $(ARCHDEF) -Werror-implicit-function-declaration -Wunused-parameter -std=gnu99 -m32 -nostdlib -Werror -mno-sse2 -mno-sse -fno-strict-aliasing -Wno-strict-aliasing -fno-builtin -fno-stack-protector</CFLAGS>
+            <CFLAGS>-Wall $(ARCHDEF) -Werror-implicit-function-declaration -Wunused-parameter -std=gnu99 -m32 -nostdlib -Werror -mno-sse2 -mno-sse -fno-strict-aliasing -Wno-strict-aliasing -fno-builtin -fno-stack-protector -fno-PIC</CFLAGS>
             <CCRULE>$(CC) $(CFLAGS) -c -o $@ $&lt;</CCRULE>
             <AS>gcc</AS>
-            <ASFLAGS>$(ARCHDEF) -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=gnu99 -m32 -nostdlib -Werror -fno-strict-aliasing -Wno-strict-aliasing -fno-stack-protector</ASFLAGS>
+            <ASFLAGS>$(ARCHDEF) -D_ASM -Wall -Werror-implicit-function-declaration -Wunused-parameter -std=gnu99 -m32 -nostdlib -Werror -fno-strict-aliasing -Wno-strict-aliasing -fno-stack-protector -fno-PIC</ASFLAGS>
             <ASRULE>$(AS) -c $(ASFLAGS) -o $@ $&lt;</ASRULE>
             <LD>ld</LD>
             <LDFLAGS>-m elf_i386 -Ttext 0xc0101000 -e _start --no-omagic -Map $(OUTDIR)/kernel.map</LDFLAGS>

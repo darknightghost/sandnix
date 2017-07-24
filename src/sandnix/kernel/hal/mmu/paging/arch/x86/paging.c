@@ -65,7 +65,7 @@ static void			pte_info_destroy(ppte_tbl_info_t p_pte_info, void* p_null);
 
 void start_paging()
 {
-    address_t offset;
+    address_t offset = 0;
     ppde_t p_init_pde_tbl;
     ppde_t p_pde;
     ppte_t p_init_pte_tbl;
@@ -85,11 +85,10 @@ void start_paging()
     __asm__ __volatile__(
         "call	_ADDR\n"
         "_ADDR:\n"
-        "popl	%%eax\n"
-        "subl	$_ADDR,%%eax\n"
-        "movl	%%eax, %0\n"
-        ::"m"(offset)
-        :"eax", "memory");
+        "popl	%0\n"
+        "subl	$_ADDR,%0\n"
+        :"=ax"(offset)
+        ::"memory");
 
     if(offset == 0) {
         PANIC(ENOTSUP,
