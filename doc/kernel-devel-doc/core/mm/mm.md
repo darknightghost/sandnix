@@ -1,35 +1,35 @@
-#MM Module
-##Summary
+# MM Module
+## Summary
 This module supports heap and policy of paging.
-##Sub Modules
+## Sub Modules
 * <a href="./paging.md">Paging</a>
 
-##Interfaces
-###`void core_mm_init();`
-####Description
+## Interfaces
+### `void core_mm_init();`
+#### Description
 Initialize this module.
-####Parameters
+#### Parameters
 None.
-####Return value
+#### Return value
 None.
 
-###`void core_mm_core_init(u32 cpuid);`
-####Description
+### `void core_mm_core_init(u32 cpuid);`
+#### Description
 Initialize datastructures of a new cpu core.
-####Parameters
+#### Parameters
 * cpuid
 ID of new cpu core.
 
-####Return value
+#### Return value
 None
 
-###`void core_mm_core_release(u32 cpuid);`
-####Description
-Releas the datastructures of a cpu core.
-####Parameters
+### `void core_mm_core_release(u32 cpuid);`
+#### Description
+Release the datastructures of a cpu core.
+#### Parameters
 * cpuid
 ID of new cpu core.
 
-####Return value
+#### Return value
 None
 
